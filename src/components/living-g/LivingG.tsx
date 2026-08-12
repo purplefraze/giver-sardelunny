@@ -79,37 +79,39 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
       className={cn("h-full w-full select-none", className)}
     >
       {/*
-        Canonical geometry, drawn as three band-clipped copies so a press can
-        swell ONLY its own region while the rest stays perfectly still.
+        Canonical geometry, drawn once and never transformed, plus one
+        soft-masked copy per region on top. Only the pressed region's copy
+        swells, so a single loop breathes while the rest stays perfectly still —
+        and because the base beneath is always fully opaque, no boundary, seam
+        or rectangle is ever visible.
       */}
       <defs>
-        {/*
-          Soft-edged region masks. Adjacent fades are exact complements, so the
-          unpressed G renders as one continuous shape; while a region swells the
-          feather hides the boundary entirely (never a visible line or box).
-        */}
-        <linearGradient id={`${uid}-fade-top`} gradientUnits="userSpaceOnUse" x1="0" y1="156" x2="0" y2="204">
+        <linearGradient id={`${uid}-fade-top`} gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="210">
           <stop offset="0" stopColor="#fff" />
           <stop offset="1" stopColor="#000" />
         </linearGradient>
-        <linearGradient id={`${uid}-fade-mid`} gradientUnits="userSpaceOnUse" x1="0" y1="576" x2="0" y2="624">
+        <linearGradient id={`${uid}-fade-mid`} gradientUnits="userSpaceOnUse" x1="0" y1="570" x2="0" y2="630">
           <stop offset="0" stopColor="#fff" />
           <stop offset="1" stopColor="#000" />
         </linearGradient>
         <mask id={`${uid}-mask-top`}>
-          <rect x="0" y="0" width="576" height="156" fill="#fff" />
-          <rect x="0" y="156" width="576" height="48" fill={`url(#${uid}-fade-top)`} />
+          <rect x="0" y="0" width="576" height="150" fill="#fff" />
+          <rect x="0" y="150" width="576" height="60" fill={`url(#${uid}-fade-top)`} />
         </mask>
         <mask id={`${uid}-mask-middle`}>
-          <rect x="0" y="156" width="576" height="48" fill={`url(#${uid}-fade-top)`} transform="rotate(180 288 180)" />
-          <rect x="0" y="204" width="576" height="372" fill="#fff" />
-          <rect x="0" y="576" width="576" height="48" fill={`url(#${uid}-fade-mid)`} />
+          <rect x="0" y="150" width="576" height="60" fill={`url(#${uid}-fade-top)`} transform="rotate(180 288 180)" />
+          <rect x="0" y="210" width="576" height="360" fill="#fff" />
+          <rect x="0" y="570" width="576" height="60" fill={`url(#${uid}-fade-mid)`} />
         </mask>
         <mask id={`${uid}-mask-bottom`}>
-          <rect x="0" y="576" width="576" height="48" fill={`url(#${uid}-fade-mid)`} transform="rotate(180 288 600)" />
-          <rect x="0" y="624" width="576" height="509" fill="#fff" />
+          <rect x="0" y="570" width="576" height="60" fill={`url(#${uid}-fade-mid)`} transform="rotate(180 288 600)" />
+          <rect x="0" y="630" width="576" height="503" fill="#fff" />
         </mask>
       </defs>
+
+      <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+        <path d={LIVING_G_PATH} />
+      </g>
 
       {ORDER.map((key) => {
         const isPressed = pressed === key;
@@ -130,6 +132,7 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
           </g>
         );
       })}
+
 
 
       {/* Region content */}

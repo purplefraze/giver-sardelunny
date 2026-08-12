@@ -144,6 +144,14 @@
   --world-accent: oklch(0.68 0.16 175);
 }
 
+/* Wish world — same G, blue. Blue + Yellow (Give) = Green (Home). */
+[data-world="wish"] {
+  --world-bg: oklch(0.985 0.008 100);
+  --world-g: oklch(0.62 0.2 250);
+  --world-ink: oklch(0.42 0.14 255);
+  --world-accent: oklch(0.68 0.16 240);
+}
+
 [data-world="profile"] {
   --world-bg: oklch(0.72 0.13 205);
   --world-g: oklch(0.72 0.2 48);

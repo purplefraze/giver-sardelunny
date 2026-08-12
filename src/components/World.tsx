@@ -12,8 +12,9 @@ export type RegionSpec = {
 };
 
 type Props = {
-  world: "home" | "profile" | "community" | "wish";
-  word: string;
+  world: "home" | "profile" | "community" | "wish" | "give";
+  /** Optional corner word. Omit for worlds where the G colour is the only cue. */
+  word?: string;
   regions: Record<RegionKey, RegionSpec>;
   onLocked?: (locked: boolean) => void;
   children?: React.ReactNode;
@@ -41,9 +42,11 @@ export function World({ world, word, regions, onLocked, children }: Props) {
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
-        {word}
-      </span>
+      {word ? (
+        <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
+          {word}
+        </span>
+      ) : null}
       {children}
 
 

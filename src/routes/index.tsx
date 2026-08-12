@@ -33,6 +33,7 @@ function Index() {
   const [pane, setPane] = useState(1);
   const [locked, setLocked] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
+  const [giveOpen, setGiveOpen] = useState(false);
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
@@ -94,7 +95,8 @@ function Index() {
                 bottom: {
                   label: "Give",
                   panelTitle: "Give",
-                  panelBody: <Composer prompt="What are you giving?" verb="Give it" />,
+                  panelBody: null,
+                  onPress: () => setGiveOpen(true),
                 },
               }}
             />
@@ -145,7 +147,6 @@ function Index() {
           >
             <World
               world="wish"
-              word="Wish"
               regions={{
                 top: {
                   label: "Search Wishes",
@@ -177,13 +178,52 @@ function Index() {
                 },
               }}
             >
-              <button
-                type="button"
-                onClick={() => setWishOpen(false)}
-                className="absolute right-5 top-4 z-20 px-2 py-1 text-[11px] font-black uppercase tracking-[0.3em] opacity-60"
-              >
-                Back
-              </button>
+              <BackArrow onClick={() => setWishOpen(false)} />
+            </World>
+          </div>
+
+          {/* Give world — the same Living G, in yellow. */}
+          <div
+            className={`absolute inset-0 z-40 transition-transform duration-300 ease-out ${
+              giveOpen ? "translate-x-0" : "pointer-events-none invisible translate-x-full"
+            }`}
+            aria-hidden={!giveOpen}
+          >
+            <World
+              world="give"
+              regions={{
+                top: {
+                  label: "Search Gives",
+                  panelTitle: "Search gives",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Search inside Gives — things, skills, time, knowledge,
+                      help. Coming next.
+                    </p>
+                  ),
+                },
+                middle: {
+                  label: "My Gives",
+                  panelTitle: "Make a give",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Your own Give space — offer something you have or
+                      something you can do. Coming next.
+                    </p>
+                  ),
+                },
+                bottom: {
+                  label: "Community Gives",
+                  panelTitle: "Community gives",
+                  panelBody: (
+                    <p className="opacity-70">
+                      What other people are offering the community. Coming next.
+                    </p>
+                  ),
+                },
+              }}
+            >
+              <BackArrow onClick={() => setGiveOpen(false)} />
             </World>
           </div>
 
@@ -225,5 +265,21 @@ function Composer({ prompt, verb }: { prompt: string; verb: string }) {
         {verb}
       </button>
     </>
+  );
+}
+
+/** Minimal back affordance: a single arrow in the upper-left safe area. */
+function BackArrow({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Back"
+      className="absolute left-3 top-3 z-20 p-3 opacity-60 active:scale-90"
+    >
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M15 5 8 12l7 7" />
+      </svg>
+    </button>
   );
 }

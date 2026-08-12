@@ -45,8 +45,18 @@ const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
  */
 export function LivingG({ regions, className, showLabels = true }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
+  /** The temporary word cue: appears on press, fades away on its own. */
+  const [cue, setCue] = useState<RegionKey | null>(null);
+  const cueTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const down = useRef<{ x: number; y: number } | null>(null);
   const release = () => setPressed(null);
+
+  const showCue = (key: RegionKey) => {
+    setCue(key);
+    if (cueTimer.current) clearTimeout(cueTimer.current);
+    cueTimer.current = setTimeout(() => setCue(null), 900);
+  };
+
 
 
   const pressAnchor = pressed

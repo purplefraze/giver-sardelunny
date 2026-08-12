@@ -135,7 +135,9 @@ function Index() {
                   panelBody: <p>{ME.about}</p>,
                 },
               }}
-            />
+            >
+              <BackArrow onClick={() => setPane(1)} />
+            </World>
           </Pager>
 
           {/* Wish world — the same Living G, in blue. */}

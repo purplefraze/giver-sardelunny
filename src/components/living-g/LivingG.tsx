@@ -114,18 +114,19 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
             >
               {region.render?.(ring)}
             </g>
-            {showLabels && region.label ? (
+            {region.label ? (
               <text
                 x={label.x}
                 y={label.y - ((words.length - 1) * 30) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill="var(--world-ink)"
-                className="font-black uppercase transition-transform duration-150"
+                className="font-black uppercase transition-[opacity,transform] duration-300 ease-out"
                 style={{
                   fontSize: key === "top" ? 26 : 30,
                   letterSpacing: "-0.045em",
-                  transform: `scale(${isPressed ? 0.94 : 1})`,
+                  opacity: showLabels || cue === key ? 0.72 : 0,
+                  transform: `scale(${isPressed ? 0.96 : 1})`,
                   transformOrigin: `${label.x}px ${label.y}px`,
                 }}
               >
@@ -136,6 +137,7 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
                 ))}
               </text>
             ) : null}
+
           </g>
         );
       })}

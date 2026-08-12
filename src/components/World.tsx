@@ -7,13 +7,16 @@ export type RegionSpec = {
   panelTitle: string;
   panelBody: React.ReactNode;
   render?: (a: { x: number; y: number }) => React.ReactNode;
+  /** When set, the press runs this instead of opening the region panel. */
+  onPress?: () => void;
 };
 
 type Props = {
-  world: "home" | "profile" | "community";
+  world: "home" | "profile" | "community" | "wish";
   word: string;
   regions: Record<RegionKey, RegionSpec>;
   onLocked?: (locked: boolean) => void;
+  children?: React.ReactNode;
 };
 
 /** One world = one enormous Living G with three independent regions. */

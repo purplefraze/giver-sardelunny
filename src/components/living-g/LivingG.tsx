@@ -96,11 +96,10 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
         return (
           <g key={`art-${key}`} clipPath={`url(#${uid}-band-${key})`}>
             <g
-              className="transition-[transform,filter] duration-150 ease-out"
+              className="transition-transform duration-150 ease-out"
               style={{
-                transform: `scale(${isPressed ? 1.02 : 1})`,
+                transform: `scale(${isPressed ? 1.022 : 1})`,
                 transformOrigin: `${ring.x}px ${ring.y}px`,
-                filter: isPressed ? "brightness(1.06)" : "none",
               }}
             >
               <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">

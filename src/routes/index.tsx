@@ -197,9 +197,11 @@ function Index() {
           >
             <World
               world="give"
+              identity="Give"
+              tagline="Share what you can. Discover what others are giving."
               regions={{
                 top: {
-                  label: "Search Gives",
+                  label: "Search",
                   panelTitle: "Search gives",
                   panelBody: (
                     <p className="opacity-70">
@@ -209,21 +211,22 @@ function Index() {
                   ),
                 },
                 middle: {
-                  label: "My Gives",
-                  panelTitle: "Make a give",
+                  label: "Share",
+                  panelTitle: "Share a give",
                   panelBody: (
                     <p className="opacity-70">
-                      Your own Give space — offer something you have or
+                      Your own Give space — share something you have or
                       something you can do. Coming next.
                     </p>
                   ),
                 },
                 bottom: {
-                  label: "Community Gives",
+                  label: "Discover",
                   panelTitle: "Community gives",
                   panelBody: (
                     <p className="opacity-70">
-                      What other people are offering the community. Coming next.
+                      What other people are sharing with the community. Coming
+                      next.
                     </p>
                   ),
                 },

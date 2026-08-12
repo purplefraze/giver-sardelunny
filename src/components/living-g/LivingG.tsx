@@ -83,24 +83,39 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
         swell ONLY its own region while the rest stays perfectly still.
       */}
       <defs>
-        {ORDER.map((key) => (
-          <clipPath key={key} id={`${uid}-band-${key}`}>
-            {/* Bands overlap slightly so no antialias seam is ever visible. */}
-            <rect
-              x={G_REGION_BANDS[key].x}
-              y={G_REGION_BANDS[key].y - 1}
-              width={G_REGION_BANDS[key].width}
-              height={G_REGION_BANDS[key].height + 2}
-            />
-          </clipPath>
-        ))}
+        {/*
+          Soft-edged region masks. Adjacent fades are exact complements, so the
+          unpressed G renders as one continuous shape; while a region swells the
+          feather hides the boundary entirely (never a visible line or box).
+        */}
+        <linearGradient id={`${uid}-fade-top`} gradientUnits="userSpaceOnUse" x1="0" y1="156" x2="0" y2="204">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="1" stopColor="#000" />
+        </linearGradient>
+        <linearGradient id={`${uid}-fade-mid`} gradientUnits="userSpaceOnUse" x1="0" y1="576" x2="0" y2="624">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="1" stopColor="#000" />
+        </linearGradient>
+        <mask id={`${uid}-mask-top`}>
+          <rect x="0" y="0" width="576" height="156" fill="#fff" />
+          <rect x="0" y="156" width="576" height="48" fill={`url(#${uid}-fade-top)`} />
+        </mask>
+        <mask id={`${uid}-mask-middle`}>
+          <rect x="0" y="156" width="576" height="48" fill={`url(#${uid}-fade-top)`} transform="rotate(180 288 180)" />
+          <rect x="0" y="204" width="576" height="372" fill="#fff" />
+          <rect x="0" y="576" width="576" height="48" fill={`url(#${uid}-fade-mid)`} />
+        </mask>
+        <mask id={`${uid}-mask-bottom`}>
+          <rect x="0" y="576" width="576" height="48" fill={`url(#${uid}-fade-mid)`} transform="rotate(180 288 600)" />
+          <rect x="0" y="624" width="576" height="509" fill="#fff" />
+        </mask>
       </defs>
 
       {ORDER.map((key) => {
         const isPressed = pressed === key;
         const ring = RING[key];
         return (
-          <g key={`art-${key}`} clipPath={`url(#${uid}-band-${key})`}>
+          <g key={`art-${key}`} mask={`url(#${uid}-mask-${key})`}>
             <g
               className="transition-transform duration-150 ease-out"
               style={{
@@ -115,6 +130,7 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
           </g>
         );
       })}
+
 
       {/* Region content */}
       {ORDER.map((key) => {

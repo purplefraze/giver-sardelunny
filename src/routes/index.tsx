@@ -147,7 +147,6 @@ function Index() {
           >
             <World
               world="wish"
-              word="Wish"
               regions={{
                 top: {
                   label: "Search Wishes",
@@ -179,13 +178,52 @@ function Index() {
                 },
               }}
             >
-              <button
-                type="button"
-                onClick={() => setWishOpen(false)}
-                className="absolute right-5 top-4 z-20 px-2 py-1 text-[11px] font-black uppercase tracking-[0.3em] opacity-60"
-              >
-                Back
-              </button>
+              <BackArrow onClick={() => setWishOpen(false)} />
+            </World>
+          </div>
+
+          {/* Give world — the same Living G, in yellow. */}
+          <div
+            className={`absolute inset-0 z-40 transition-transform duration-300 ease-out ${
+              giveOpen ? "translate-x-0" : "pointer-events-none invisible translate-x-full"
+            }`}
+            aria-hidden={!giveOpen}
+          >
+            <World
+              world="give"
+              regions={{
+                top: {
+                  label: "Search Gives",
+                  panelTitle: "Search gives",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Search inside Gives — things, skills, time, knowledge,
+                      help. Coming next.
+                    </p>
+                  ),
+                },
+                middle: {
+                  label: "My Gives",
+                  panelTitle: "Make a give",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Your own Give space — offer something you have or
+                      something you can do. Coming next.
+                    </p>
+                  ),
+                },
+                bottom: {
+                  label: "Community Gives",
+                  panelTitle: "Community gives",
+                  panelBody: (
+                    <p className="opacity-70">
+                      What other people are offering the community. Coming next.
+                    </p>
+                  ),
+                },
+              }}
+            >
+              <BackArrow onClick={() => setGiveOpen(false)} />
             </World>
           </div>
 

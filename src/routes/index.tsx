@@ -33,6 +33,7 @@ function Index() {
   const [pane, setPane] = useState(1);
   const [locked, setLocked] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
+  const [giveOpen, setGiveOpen] = useState(false);
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">

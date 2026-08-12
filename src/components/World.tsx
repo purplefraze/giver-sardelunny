@@ -44,6 +44,8 @@ export function World({ world, word, regions, onLocked, children }: Props) {
       <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
         {word}
       </span>
+      {children}
+
 
       {/* Scale reference: the G occupies ~80% of viewport height, centred. */}
       <div className="flex flex-1 items-center justify-center">

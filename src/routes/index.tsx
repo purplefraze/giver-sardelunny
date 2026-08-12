@@ -151,9 +151,11 @@ function Index() {
           >
             <World
               world="wish"
+              identity="Wish"
+              tagline="Make a wish. Grant a wish."
               regions={{
                 top: {
-                  label: "Search Wishes",
+                  label: "Search",
                   panelTitle: "Search wishes",
                   panelBody: (
                     <p className="opacity-70">
@@ -162,7 +164,7 @@ function Index() {
                   ),
                 },
                 middle: {
-                  label: "My Wishes",
+                  label: "Make",
                   panelTitle: "Make a wish",
                   panelBody: (
                     <p className="opacity-70">
@@ -172,7 +174,7 @@ function Index() {
                   ),
                 },
                 bottom: {
-                  label: "Grant a Wish",
+                  label: "Grant",
                   panelTitle: "Grant a wish",
                   panelBody: (
                     <p className="opacity-70">

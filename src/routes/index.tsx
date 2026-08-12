@@ -151,7 +151,6 @@ function Index() {
             <World
               world="wish"
               identity="Wish"
-              tagline="Make a wish. Grant a wish."
               regions={{
                 top: {
                   label: "Search",
@@ -197,7 +196,6 @@ function Index() {
             <World
               world="give"
               identity="Give"
-              tagline="Share what you can. Discover what others are giving."
               regions={{
                 top: {
                   label: "Search",

@@ -141,6 +141,57 @@ function Index() {
             />
           </Pager>
 
+          {/* Wish world — the same Living G, in blue. */}
+          <div
+            className={`absolute inset-0 z-40 transition-transform duration-300 ease-out ${
+              wishOpen ? "translate-x-0" : "pointer-events-none invisible translate-x-full"
+            }`}
+            aria-hidden={!wishOpen}
+          >
+            <World
+              world="wish"
+              word="Wish"
+              regions={{
+                top: {
+                  label: "Search Wishes",
+                  panelTitle: "Search wishes",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Search inside Wishes. Coming next.
+                    </p>
+                  ),
+                },
+                middle: {
+                  label: "My Wishes",
+                  panelTitle: "Make a wish",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Your own Wish space — make a wish, see your wishes. Coming
+                      next.
+                    </p>
+                  ),
+                },
+                bottom: {
+                  label: "Grant a Wish",
+                  panelTitle: "Grant a wish",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Wishes from other people you could fulfil. Coming next.
+                    </p>
+                  ),
+                },
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setWishOpen(false)}
+                className="absolute right-5 top-4 z-20 px-2 py-1 text-[11px] font-black uppercase tracking-[0.3em] opacity-60"
+              >
+                Back
+              </button>
+            </World>
+          </div>
+
           <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2">
             {[0, 1, 2].map((i) => (
               <span

@@ -20,13 +20,20 @@ type Props = {
 };
 
 /** One world = one enormous Living G with three independent regions. */
-export function World({ world, word, regions, onLocked }: Props) {
+export function World({ world, word, regions, onLocked, children }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
 
   const setPanel = (key: RegionKey | null) => {
     setOpen(key);
     onLocked?.(key !== null);
   };
+
+  const press = (key: RegionKey) => () => {
+    const custom = regions[key].onPress;
+    if (custom) custom();
+    else setPanel(key);
+  };
+
 
   return (
     <div

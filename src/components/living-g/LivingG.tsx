@@ -48,8 +48,8 @@ const FALLOFF: Record<RegionKey, number> = {
  */
 const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
   top: G_ANCHORS.smallRing,
-  middle: { x: G_ANCHORS.upperRing.x, y: G_ANCHORS.upperRing.y - 66 },
-  bottom: { x: G_ANCHORS.lowerRing.x, y: G_ANCHORS.lowerRing.y - 96 },
+  middle: { x: G_ANCHORS.upperRing.x, y: G_ANCHORS.upperRing.y - 32 },
+  bottom: { x: G_ANCHORS.lowerRing.x, y: G_ANCHORS.lowerRing.y - 46 },
 };
 
 const LABEL_SIZE: Record<RegionKey, number> = {

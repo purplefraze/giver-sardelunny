@@ -34,6 +34,14 @@ const RING: Record<RegionKey, Anchor> = {
   bottom: G_ANCHORS.lowerRing,
 };
 
+/** How far each loop's press response reaches before dissolving away. */
+const FALLOFF: Record<RegionKey, number> = {
+  top: 150,
+  middle: 320,
+  bottom: 360,
+};
+
+
 /**
  * Where a region's word cue sits: inside the negative space of its own loop,
  * lifted above the point of contact so a finger never covers it.

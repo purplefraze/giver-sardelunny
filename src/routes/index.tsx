@@ -94,7 +94,8 @@ function Index() {
                 bottom: {
                   label: "Give",
                   panelTitle: "Give",
-                  panelBody: <Composer prompt="What are you giving?" verb="Give it" />,
+                  panelBody: null,
+                  onPress: () => setGiveOpen(true),
                 },
               }}
             />

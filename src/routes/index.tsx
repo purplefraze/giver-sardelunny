@@ -77,7 +77,8 @@ function Index() {
 
             <World
               world="home"
-              word="Giver"
+              identity="Giver"
+              tagline="Kindness is currency."
               onLocked={setLocked}
               regions={{
                 top: {
@@ -100,6 +101,7 @@ function Index() {
                 },
               }}
             />
+
 
             <World
               world="profile"

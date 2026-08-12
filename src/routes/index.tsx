@@ -3,12 +3,7 @@ import { useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { Pager } from "@/components/Pager";
 import { World, ringPhoto } from "@/components/World";
-import {
-  COMMUNITY_GIVES,
-  COMMUNITY_WISHES,
-  ME,
-  SEARCH_RESULTS,
-} from "@/data/giver";
+import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
 
 export const Route = createFileRoute("/")({
   head: () => ({

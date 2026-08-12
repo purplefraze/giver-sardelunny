@@ -52,7 +52,20 @@ export function World({ world, word, identity, tagline, regions, onLocked, child
           {word}
         </span>
       ) : null}
+      {identity ? (
+        <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8 text-center">
+          <span className="text-[12px] font-black uppercase tracking-[0.42em] opacity-65">
+            {identity}
+          </span>
+          {tagline ? (
+            <span className="text-[11px] font-medium tracking-[0.02em] opacity-45">
+              {tagline}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {children}
+
 
 
       {/* Scale reference: the G occupies ~80% of viewport height, centred. */}

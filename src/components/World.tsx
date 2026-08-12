@@ -7,23 +7,33 @@ export type RegionSpec = {
   panelTitle: string;
   panelBody: React.ReactNode;
   render?: (a: { x: number; y: number }) => React.ReactNode;
+  /** When set, the press runs this instead of opening the region panel. */
+  onPress?: () => void;
 };
 
 type Props = {
-  world: "home" | "profile" | "community";
+  world: "home" | "profile" | "community" | "wish";
   word: string;
   regions: Record<RegionKey, RegionSpec>;
   onLocked?: (locked: boolean) => void;
+  children?: React.ReactNode;
 };
 
 /** One world = one enormous Living G with three independent regions. */
-export function World({ world, word, regions, onLocked }: Props) {
+export function World({ world, word, regions, onLocked, children }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
 
   const setPanel = (key: RegionKey | null) => {
     setOpen(key);
     onLocked?.(key !== null);
   };
+
+  const press = (key: RegionKey) => () => {
+    const custom = regions[key].onPress;
+    if (custom) custom();
+    else setPanel(key);
+  };
+
 
   return (
     <div
@@ -34,6 +44,8 @@ export function World({ world, word, regions, onLocked }: Props) {
       <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
         {word}
       </span>
+      {children}
+
 
       {/* Scale reference: the G occupies ~80% of viewport height, centred. */}
       <div className="flex flex-1 items-center justify-center">
@@ -41,15 +53,15 @@ export function World({ world, word, regions, onLocked }: Props) {
           className="h-[80%] max-w-[86%]"
           showLabels={false}
           regions={{
-            top: { label: regions.top.label, onPress: () => setPanel("top"), render: regions.top.render },
+            top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },
             middle: {
               label: regions.middle.label,
-              onPress: () => setPanel("middle"),
+              onPress: press("middle"),
               render: regions.middle.render,
             },
             bottom: {
               label: regions.bottom.label,
-              onPress: () => setPanel("bottom"),
+              onPress: press("bottom"),
               render: regions.bottom.render,
             },
           }}

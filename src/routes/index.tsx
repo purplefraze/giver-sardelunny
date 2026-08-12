@@ -3,12 +3,7 @@ import { useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { Pager } from "@/components/Pager";
 import { World, ringPhoto } from "@/components/World";
-import {
-  COMMUNITY_GIVES,
-  COMMUNITY_WISHES,
-  ME,
-  SEARCH_RESULTS,
-} from "@/data/giver";
+import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,6 +32,7 @@ function Index() {
   const [gaveTo, setGaveTo] = useState<string | null>(null);
   const [pane, setPane] = useState(1);
   const [locked, setLocked] = useState(false);
+  const [wishOpen, setWishOpen] = useState(false);
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
@@ -84,26 +80,16 @@ function Index() {
               onLocked={setLocked}
               regions={{
                 top: {
-                  label: "Search",
-                  panelTitle: "Search",
-                  panelBody: (
-                    <>
-                      <input
-                        placeholder="What are you looking for?"
-                        className="w-full border-b-2 border-current bg-transparent pb-3 text-2xl font-bold outline-none placeholder:opacity-40"
-                      />
-                      {SEARCH_RESULTS.map((r) => (
-                        <p key={r} className="opacity-70">
-                          {r}
-                        </p>
-                      ))}
-                    </>
-                  ),
+                  label: "Profile",
+                  panelTitle: "Profile",
+                  panelBody: null,
+                  onPress: () => setPane(2),
                 },
                 middle: {
                   label: "Wish",
                   panelTitle: "Wish",
-                  panelBody: <Composer prompt="What do you wish for?" verb="Make a wish" />,
+                  panelBody: null,
+                  onPress: () => setWishOpen(true),
                 },
                 bottom: {
                   label: "Give",
@@ -149,6 +135,57 @@ function Index() {
               }}
             />
           </Pager>
+
+          {/* Wish world — the same Living G, in blue. */}
+          <div
+            className={`absolute inset-0 z-40 transition-transform duration-300 ease-out ${
+              wishOpen ? "translate-x-0" : "pointer-events-none invisible translate-x-full"
+            }`}
+            aria-hidden={!wishOpen}
+          >
+            <World
+              world="wish"
+              word="Wish"
+              regions={{
+                top: {
+                  label: "Search Wishes",
+                  panelTitle: "Search wishes",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Search inside Wishes. Coming next.
+                    </p>
+                  ),
+                },
+                middle: {
+                  label: "My Wishes",
+                  panelTitle: "Make a wish",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Your own Wish space — make a wish, see your wishes. Coming
+                      next.
+                    </p>
+                  ),
+                },
+                bottom: {
+                  label: "Grant a Wish",
+                  panelTitle: "Grant a wish",
+                  panelBody: (
+                    <p className="opacity-70">
+                      Wishes from other people you could fulfil. Coming next.
+                    </p>
+                  ),
+                },
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setWishOpen(false)}
+                className="absolute right-5 top-4 z-20 px-2 py-1 text-[11px] font-black uppercase tracking-[0.3em] opacity-60"
+              >
+                Back
+              </button>
+            </World>
+          </div>
 
           <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2">
             {[0, 1, 2].map((i) => (

@@ -85,26 +85,16 @@ function Index() {
               onLocked={setLocked}
               regions={{
                 top: {
-                  label: "Search",
-                  panelTitle: "Search",
-                  panelBody: (
-                    <>
-                      <input
-                        placeholder="What are you looking for?"
-                        className="w-full border-b-2 border-current bg-transparent pb-3 text-2xl font-bold outline-none placeholder:opacity-40"
-                      />
-                      {SEARCH_RESULTS.map((r) => (
-                        <p key={r} className="opacity-70">
-                          {r}
-                        </p>
-                      ))}
-                    </>
-                  ),
+                  label: "Profile",
+                  panelTitle: "Profile",
+                  panelBody: null,
+                  onPress: () => setPane(2),
                 },
                 middle: {
                   label: "Wish",
                   panelTitle: "Wish",
-                  panelBody: <Composer prompt="What do you wish for?" verb="Make a wish" />,
+                  panelBody: null,
+                  onPress: () => setWishOpen(true),
                 },
                 bottom: {
                   label: "Give",

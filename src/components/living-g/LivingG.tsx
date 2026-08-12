@@ -161,10 +161,15 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
             onPointerDown={(e) => {
               down.current = { x: e.clientX, y: e.clientY };
               setPressed(key);
+              showCue(key);
+            }}
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") showCue(key);
             }}
             onPointerUp={release}
             onPointerLeave={release}
             onPointerCancel={release}
+
             onClick={(e) => {
               // A horizontal swipe across the G must not fire a region.
               const d = down.current;

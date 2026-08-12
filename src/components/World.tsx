@@ -42,9 +42,11 @@ export function World({ world, word, regions, onLocked, children }: Props) {
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
-        {word}
-      </span>
+      {word ? (
+        <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
+          {word}
+        </span>
+      ) : null}
       {children}
 
 

@@ -86,28 +86,31 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
         or rectangle is ever visible.
       */}
       <defs>
-        <linearGradient id={`${uid}-fade-top`} gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="210">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#000" />
-        </linearGradient>
-        <linearGradient id={`${uid}-fade-mid`} gradientUnits="userSpaceOnUse" x1="0" y1="570" x2="0" y2="630">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#000" />
-        </linearGradient>
-        <mask id={`${uid}-mask-top`}>
-          <rect x="0" y="0" width="576" height="150" fill="#fff" />
-          <rect x="0" y="150" width="576" height="60" fill={`url(#${uid}-fade-top)`} />
-        </mask>
-        <mask id={`${uid}-mask-middle`}>
-          <rect x="0" y="150" width="576" height="60" fill={`url(#${uid}-fade-top)`} transform="rotate(180 288 180)" />
-          <rect x="0" y="210" width="576" height="360" fill="#fff" />
-          <rect x="0" y="570" width="576" height="60" fill={`url(#${uid}-fade-mid)`} />
-        </mask>
-        <mask id={`${uid}-mask-bottom`}>
-          <rect x="0" y="570" width="576" height="60" fill={`url(#${uid}-fade-mid)`} transform="rotate(180 288 600)" />
-          <rect x="0" y="630" width="576" height="503" fill="#fff" />
-        </mask>
+        {/*
+          Soft radial falloffs centred on each loop, so a swell reads as that
+          loop breathing and dissolves organically into the rest of the stroke —
+          never a straight edge or a boundary line anywhere.
+        */}
+        {ORDER.map((key) => (
+          <radialGradient
+            key={key}
+            id={`${uid}-fall-${key}`}
+            gradientUnits="userSpaceOnUse"
+            cx={RING[key].x}
+            cy={RING[key].y}
+            r={FALLOFF[key]}
+          >
+            <stop offset="0.55" stopColor="#fff" />
+            <stop offset="1" stopColor="#000" />
+          </radialGradient>
+        ))}
+        {ORDER.map((key) => (
+          <mask key={key} id={`${uid}-mask-${key}`}>
+            <rect x="0" y="0" width="576" height="1133" fill={`url(#${uid}-fall-${key})`} />
+          </mask>
+        ))}
       </defs>
+
 
       <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
         <path d={LIVING_G_PATH} />

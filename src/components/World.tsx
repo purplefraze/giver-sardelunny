@@ -53,15 +53,15 @@ export function World({ world, word, regions, onLocked, children }: Props) {
           className="h-[80%] max-w-[86%]"
           showLabels={false}
           regions={{
-            top: { label: regions.top.label, onPress: () => setPanel("top"), render: regions.top.render },
+            top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },
             middle: {
               label: regions.middle.label,
-              onPress: () => setPanel("middle"),
+              onPress: press("middle"),
               render: regions.middle.render,
             },
             bottom: {
               label: regions.bottom.label,
-              onPress: () => setPanel("bottom"),
+              onPress: press("bottom"),
               render: regions.bottom.render,
             },
           }}

@@ -49,38 +49,35 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
   const release = () => setPressed(null);
 
 
+  const pressAnchor = pressed
+    ? pressed === "top"
+      ? G_ANCHORS.smallRing
+      : pressed === "middle"
+        ? G_ANCHORS.upperRing
+        : G_ANCHORS.lowerRing
+    : null;
+
   return (
     <svg
       viewBox={LIVING_G_VIEWBOX}
       className={cn("h-full w-full select-none", className)}
     >
-      <defs>
-        {ORDER.map((key) => (
-          <clipPath key={key} id={`g-band-${key}`}>
-            <rect {...G_REGION_BANDS[key]} />
-          </clipPath>
-        ))}
-      </defs>
-
-      {/* Canonical geometry */}
-      <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-        <path d={LIVING_G_PATH} />
+      {/* Canonical geometry — subtle swell + brightness at the pressed region */}
+      <g
+        className="transition-[transform,filter] duration-150 ease-out"
+        style={{
+          transform: `scale(${pressed ? 1.012 : 1})`,
+          transformOrigin: pressAnchor
+            ? `${pressAnchor.x}px ${pressAnchor.y}px`
+            : "center",
+          filter: pressed ? "brightness(1.06)" : "none",
+        }}
+      >
+        <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+          <path d={LIVING_G_PATH} />
+        </g>
       </g>
 
-      {/* Pressed-region colour response: same path, clipped, never re-drawn */}
-      {ORDER.map((key) => (
-        <g
-          key={key}
-          clipPath={`url(#g-band-${key})`}
-          className="transition-opacity duration-150"
-          style={{ opacity: pressed === key ? 1 : 0 }}
-          pointerEvents="none"
-        >
-          <g transform={LIVING_G_TRANSFORM} fill="var(--world-accent)">
-            <path d={LIVING_G_PATH} />
-          </g>
-        </g>
-      ))}
 
       {/* Region content */}
       {ORDER.map((key) => {

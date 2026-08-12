@@ -85,7 +85,13 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
       <defs>
         {ORDER.map((key) => (
           <clipPath key={key} id={`${uid}-band-${key}`}>
-            <rect {...G_REGION_BANDS[key]} />
+            {/* Bands overlap slightly so no antialias seam is ever visible. */}
+            <rect
+              x={G_REGION_BANDS[key].x}
+              y={G_REGION_BANDS[key].y - 1}
+              width={G_REGION_BANDS[key].width}
+              height={G_REGION_BANDS[key].height + 2}
+            />
           </clipPath>
         ))}
       </defs>

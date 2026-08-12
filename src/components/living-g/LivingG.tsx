@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buzz } from "@/lib/haptics";
 import {
@@ -28,11 +28,34 @@ type Props = {
 
 const ORDER: RegionKey[] = ["top", "middle", "bottom"];
 
-/** Where a region's words sit (kept clear of the strokes). */
-const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
-  top: { x: 150, y: 96 },
+const RING: Record<RegionKey, Anchor> = {
+  top: G_ANCHORS.smallRing,
   middle: G_ANCHORS.upperRing,
   bottom: G_ANCHORS.lowerRing,
+};
+
+/** How far each loop's press response reaches before dissolving away. */
+const FALLOFF: Record<RegionKey, number> = {
+  top: 150,
+  middle: 320,
+  bottom: 360,
+};
+
+
+/**
+ * Where a region's word cue sits: inside the negative space of its own loop,
+ * lifted above the point of contact so a finger never covers it.
+ */
+const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
+  top: G_ANCHORS.smallRing,
+  middle: { x: G_ANCHORS.upperRing.x, y: G_ANCHORS.upperRing.y - 66 },
+  bottom: { x: G_ANCHORS.lowerRing.x, y: G_ANCHORS.lowerRing.y - 96 },
+};
+
+const LABEL_SIZE: Record<RegionKey, number> = {
+  top: 15,
+  middle: 30,
+  bottom: 30,
 };
 
 /**
@@ -50,6 +73,7 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
   const cueTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const down = useRef<{ x: number; y: number } | null>(null);
   const release = () => setPressed(null);
+  const uid = useId().replace(/:/g, "");
 
   const showCue = (key: RegionKey) => {
     setCue(key);
@@ -57,36 +81,69 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
     cueTimer.current = setTimeout(() => setCue(null), 900);
   };
 
-
-
-  const pressAnchor = pressed
-    ? pressed === "top"
-      ? G_ANCHORS.smallRing
-      : pressed === "middle"
-        ? G_ANCHORS.upperRing
-        : G_ANCHORS.lowerRing
-    : null;
-
   return (
     <svg
       viewBox={LIVING_G_VIEWBOX}
       className={cn("h-full w-full select-none", className)}
     >
-      {/* Canonical geometry — subtle swell + brightness at the pressed region */}
-      <g
-        className="transition-[transform,filter] duration-150 ease-out"
-        style={{
-          transform: `scale(${pressed ? 1.012 : 1})`,
-          transformOrigin: pressAnchor
-            ? `${pressAnchor.x}px ${pressAnchor.y}px`
-            : "center",
-          filter: pressed ? "brightness(1.06)" : "none",
-        }}
-      >
-        <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-          <path d={LIVING_G_PATH} />
-        </g>
+      {/*
+        Canonical geometry, drawn once and never transformed, plus one
+        soft-masked copy per region on top. Only the pressed region's copy
+        swells, so a single loop breathes while the rest stays perfectly still —
+        and because the base beneath is always fully opaque, no boundary, seam
+        or rectangle is ever visible.
+      */}
+      <defs>
+        {/*
+          Soft radial falloffs centred on each loop, so a swell reads as that
+          loop breathing and dissolves organically into the rest of the stroke —
+          never a straight edge or a boundary line anywhere.
+        */}
+        {ORDER.map((key) => (
+          <radialGradient
+            key={key}
+            id={`${uid}-fall-${key}`}
+            gradientUnits="userSpaceOnUse"
+            cx={RING[key].x}
+            cy={RING[key].y}
+            r={FALLOFF[key]}
+          >
+            <stop offset="0.55" stopColor="#fff" />
+            <stop offset="1" stopColor="#000" />
+          </radialGradient>
+        ))}
+        {ORDER.map((key) => (
+          <mask key={key} id={`${uid}-mask-${key}`}>
+            <rect x="0" y="0" width="576" height="1133" fill={`url(#${uid}-fall-${key})`} />
+          </mask>
+        ))}
+      </defs>
+
+
+      <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+        <path d={LIVING_G_PATH} />
       </g>
+
+      {ORDER.map((key) => {
+        const isPressed = pressed === key;
+        const ring = RING[key];
+        return (
+          <g key={`art-${key}`} mask={`url(#${uid}-mask-${key})`}>
+            <g
+              className="transition-transform duration-150 ease-out"
+              style={{
+                transform: `scale(${isPressed ? 1.022 : 1})`,
+                transformOrigin: `${ring.x}px ${ring.y}px`,
+              }}
+            >
+              <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+                <path d={LIVING_G_PATH} />
+              </g>
+            </g>
+          </g>
+        );
+      })}
+
 
 
       {/* Region content */}
@@ -94,12 +151,7 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
         const region = regions?.[key];
         if (!region) return null;
         const isPressed = pressed === key;
-        const ring =
-          key === "top"
-            ? G_ANCHORS.smallRing
-            : key === "middle"
-              ? G_ANCHORS.upperRing
-              : G_ANCHORS.lowerRing;
+        const ring = RING[key];
         const label = LABEL_ANCHORS[key];
         const words = (region.label ?? "").split(" ");
 
@@ -117,21 +169,23 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
             {region.label ? (
               <text
                 x={label.x}
-                y={label.y - ((words.length - 1) * 30) / 2}
+                y={label.y - ((words.length - 1) * LABEL_SIZE[key]) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill="var(--world-ink)"
-                className="font-black uppercase transition-[opacity,transform] duration-300 ease-out"
+                className="font-black uppercase transition-[opacity] duration-300 ease-out"
                 style={{
-                  fontSize: key === "top" ? 26 : 30,
+                  fontSize: LABEL_SIZE[key],
                   letterSpacing: "-0.045em",
                   opacity: showLabels || cue === key ? 0.72 : 0,
-                  transform: `scale(${isPressed ? 0.96 : 1})`,
-                  transformOrigin: `${label.x}px ${label.y}px`,
                 }}
               >
                 {words.map((word, i) => (
-                  <tspan key={word + i} x={label.x} dy={i === 0 ? 0 : 30}>
+                  <tspan
+                    key={word + i}
+                    x={label.x}
+                    dy={i === 0 ? 0 : LABEL_SIZE[key]}
+                  >
                     {word}
                   </tspan>
                 ))}
@@ -141,6 +195,7 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
           </g>
         );
       })}
+
 
       {/* Invisible hit areas */}
       {ORDER.map((key) => {

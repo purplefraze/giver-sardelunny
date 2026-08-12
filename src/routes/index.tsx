@@ -212,14 +212,14 @@ function Index() {
                 },
                 middle: {
                   label: "Share",
-                  panelTitle: "Share a give",
+                  panelTitle: "What are you sharing?",
                   panelBody: (
                     <p className="opacity-70">
-                      Your own Give space — share something you have or
-                      something you can do. Coming next.
+                      Share something you have, know, or can do.
                     </p>
                   ),
                 },
+
                 bottom: {
                   label: "Discover",
                   panelTitle: "Community gives",

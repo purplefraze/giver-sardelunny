@@ -1,0 +1,93 @@
+import { useState } from "react";
+import { LivingG, type RegionKey } from "@/components/living-g/LivingG";
+import { Panel } from "@/components/Panel";
+
+export type RegionSpec = {
+  label: string;
+  panelTitle: string;
+  panelBody: React.ReactNode;
+  render?: (a: { x: number; y: number }) => React.ReactNode;
+};
+
+type Props = {
+  world: "home" | "profile" | "community";
+  word: string;
+  regions: Record<RegionKey, RegionSpec>;
+  onLocked?: (locked: boolean) => void;
+};
+
+/** One world = one enormous Living G with three independent regions. */
+export function World({ world, word, regions, onLocked }: Props) {
+  const [open, setOpen] = useState<RegionKey | null>(null);
+
+  const setPanel = (key: RegionKey | null) => {
+    setOpen(key);
+    onLocked?.(key !== null);
+  };
+
+  return (
+    <div
+      data-world={world}
+      className="relative flex h-full w-full flex-col overflow-hidden"
+      style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
+    >
+      <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
+        {word}
+      </span>
+
+      <div className="flex flex-1 items-center justify-center px-1 pb-3 pt-10">
+        <LivingG
+          regions={{
+            top: { label: regions.top.label, onPress: () => setPanel("top"), render: regions.top.render },
+            middle: {
+              label: regions.middle.label,
+              onPress: () => setPanel("middle"),
+              render: regions.middle.render,
+            },
+            bottom: {
+              label: regions.bottom.label,
+              onPress: () => setPanel("bottom"),
+              render: regions.bottom.render,
+            },
+          }}
+        />
+      </div>
+
+      {(["top", "middle", "bottom"] as RegionKey[]).map((key) => (
+        <Panel
+          key={key}
+          open={open === key}
+          onClose={() => setPanel(null)}
+          title={regions[key].panelTitle}
+        >
+          {regions[key].panelBody}
+        </Panel>
+      ))}
+    </div>
+  );
+}
+
+/** Circular photo that scales with the G geometry. */
+export function ringPhoto(src: string, alt: string, radius = 96) {
+  return function render(a: { x: number; y: number }) {
+    const id = `photo-${alt.replace(/\s+/g, "-")}-${Math.round(a.y)}`;
+    return (
+      <>
+        <defs>
+          <clipPath id={id}>
+            <circle cx={a.x} cy={a.y} r={radius} />
+          </clipPath>
+        </defs>
+        <image
+          href={src}
+          x={a.x - radius}
+          y={a.y - radius}
+          width={radius * 2}
+          height={radius * 2}
+          preserveAspectRatio="xMidYMid slice"
+          clipPath={`url(#${id})`}
+        />
+      </>
+    );
+  };
+}

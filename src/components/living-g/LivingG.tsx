@@ -45,8 +45,18 @@ const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
  */
 export function LivingG({ regions, className, showLabels = true }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
+  /** The temporary word cue: appears on press, fades away on its own. */
+  const [cue, setCue] = useState<RegionKey | null>(null);
+  const cueTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const down = useRef<{ x: number; y: number } | null>(null);
   const release = () => setPressed(null);
+
+  const showCue = (key: RegionKey) => {
+    setCue(key);
+    if (cueTimer.current) clearTimeout(cueTimer.current);
+    cueTimer.current = setTimeout(() => setCue(null), 900);
+  };
+
 
 
   const pressAnchor = pressed
@@ -104,18 +114,19 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
             >
               {region.render?.(ring)}
             </g>
-            {showLabels && region.label ? (
+            {region.label ? (
               <text
                 x={label.x}
                 y={label.y - ((words.length - 1) * 30) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill="var(--world-ink)"
-                className="font-black uppercase transition-transform duration-150"
+                className="font-black uppercase transition-[opacity,transform] duration-300 ease-out"
                 style={{
                   fontSize: key === "top" ? 26 : 30,
                   letterSpacing: "-0.045em",
-                  transform: `scale(${isPressed ? 0.94 : 1})`,
+                  opacity: showLabels || cue === key ? 0.72 : 0,
+                  transform: `scale(${isPressed ? 0.96 : 1})`,
                   transformOrigin: `${label.x}px ${label.y}px`,
                 }}
               >
@@ -126,6 +137,7 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
                 ))}
               </text>
             ) : null}
+
           </g>
         );
       })}
@@ -149,10 +161,15 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
             onPointerDown={(e) => {
               down.current = { x: e.clientX, y: e.clientY };
               setPressed(key);
+              showCue(key);
+            }}
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") showCue(key);
             }}
             onPointerUp={release}
             onPointerLeave={release}
             onPointerCancel={release}
+
             onClick={(e) => {
               // A horizontal swipe across the G must not fire a region.
               const d = down.current;

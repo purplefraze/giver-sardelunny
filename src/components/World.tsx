@@ -15,13 +15,18 @@ type Props = {
   world: "home" | "profile" | "community" | "wish" | "give";
   /** Optional corner word. Omit for worlds where the G colour is the only cue. */
   word?: string;
+  /** Quiet page identity: which world am I in. */
+  identity?: string;
+  /** One quiet secondary line under the identity. */
+  tagline?: string;
   regions: Record<RegionKey, RegionSpec>;
   onLocked?: (locked: boolean) => void;
   children?: React.ReactNode;
 };
 
 /** One world = one enormous Living G with three independent regions. */
-export function World({ world, word, regions, onLocked, children }: Props) {
+export function World({ world, word, identity, tagline, regions, onLocked, children }: Props) {
+
   const [open, setOpen] = useState<RegionKey | null>(null);
 
   const setPanel = (key: RegionKey | null) => {
@@ -47,7 +52,20 @@ export function World({ world, word, regions, onLocked, children }: Props) {
           {word}
         </span>
       ) : null}
+      {identity ? (
+        <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8 text-center">
+          <span className="text-[12px] font-black uppercase tracking-[0.42em] opacity-65">
+            {identity}
+          </span>
+          {tagline ? (
+            <span className="text-[11px] font-medium tracking-[0.02em] opacity-45">
+              {tagline}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {children}
+
 
 
       {/* Scale reference: the G occupies ~80% of viewport height, centred. */}

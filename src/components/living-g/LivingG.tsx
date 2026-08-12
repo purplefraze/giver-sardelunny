@@ -139,10 +139,13 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
             key={`hit-${key}`}
             {...G_REGION_BANDS[key]}
             fill="transparent"
+            stroke="none"
             role="button"
             tabIndex={0}
             aria-label={region.label ?? key}
-            style={{ cursor: "pointer" }}
+            className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+            style={{ cursor: "pointer", outline: "none" }}
+
             onPointerDown={(e) => {
               down.current = { x: e.clientX, y: e.clientY };
               setPressed(key);

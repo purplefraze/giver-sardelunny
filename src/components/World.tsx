@@ -35,8 +35,11 @@ export function World({ world, word, regions, onLocked }: Props) {
         {word}
       </span>
 
-      <div className="flex flex-1 items-center justify-center px-1 pb-3 pt-10">
+      {/* Scale reference: the G occupies ~80% of viewport height, centred. */}
+      <div className="flex flex-1 items-center justify-center">
         <LivingG
+          className="h-[80%] max-w-[86%]"
+          showLabels={false}
           regions={{
             top: { label: regions.top.label, onPress: () => setPanel("top"), render: regions.top.render },
             middle: {

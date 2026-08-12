@@ -12,8 +12,9 @@ export type RegionSpec = {
 };
 
 type Props = {
-  world: "home" | "profile" | "community" | "wish";
-  word: string;
+  world: "home" | "profile" | "community" | "wish" | "give";
+  /** Optional corner word. Omit for worlds where the G colour is the only cue. */
+  word?: string;
   regions: Record<RegionKey, RegionSpec>;
   onLocked?: (locked: boolean) => void;
   children?: React.ReactNode;

@@ -9,8 +9,14 @@ export type Member = {
   photo: string;
   blurb: string;
   mode: "Wishing" | "Giving" | "Trading";
+  /** World palette used for this person's Living G. */
+  world: "give" | "wish" | "trade";
+  /** Their current activity, kept to a handful of words. */
+  headline: string;
   activity: string;
   about: string;
+  /** Two short lines maximum. */
+  aboutLines: string[];
 };
 
 export const MEMBERS: Member[] = [
@@ -19,18 +25,24 @@ export const MEMBERS: Member[] = [
     name: "Maya",
     photo: maya,
     blurb: "Two streets over. Keeps the plant swap alive.",
-    mode: "Wishing",
-    activity: "Wishing for a sewing machine for a month — mending everyone's coats.",
+    mode: "Giving",
+    world: "give",
+    headline: "Haircuts",
+    activity: "Giving haircuts on her back step, Saturday mornings.",
     about: "Maya, 29. Fixes things. Terrible at asking for help, learning fast.",
+    aboutLines: ["Maya, 29.", "Cuts hair. Fixes things."],
   },
   {
     id: "john",
     name: "John",
     photo: john,
     blurb: "Retired carpenter. Shed full of tools.",
-    mode: "Giving",
-    activity: "Giving away a full set of garden tools. Free to whoever digs.",
+    mode: "Wishing",
+    world: "wish",
+    headline: "A lift on Tuesdays",
+    activity: "Wishing for a lift to the allotment on Tuesdays.",
     about: "John, 58. Believes a thing unused is a thing wasted.",
+    aboutLines: ["John, 58.", "Carpenter. Bad knees."],
   },
   {
     id: "sofia",
@@ -38,10 +50,14 @@ export const MEMBERS: Member[] = [
     photo: sofia,
     blurb: "Bakes far too much bread on Sundays.",
     mode: "Trading",
+    world: "trade",
+    headline: "Bread for bike repairs",
     activity: "Trading sourdough loaves for help with her bike chain.",
     about: "Sofia, 34. Trades in flour, favours and very strong coffee.",
+    aboutLines: ["Sofia, 34.", "Bakes too much bread."],
   },
 ];
+
 
 export const ME = {
   name: "You",

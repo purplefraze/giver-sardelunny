@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { LivingG, type RegionKey } from "@/components/living-g/LivingG";
+import { BackArrow } from "@/components/BackArrow";
+import { G_PRESENCE, LivingG, type RegionKey } from "@/components/living-g/LivingG";
 import { Panel } from "@/components/Panel";
 
 export type RegionSpec = {
@@ -12,7 +13,7 @@ export type RegionSpec = {
 };
 
 type Props = {
-  world: "home" | "profile" | "community" | "wish" | "give";
+  world: "home" | "profile" | "community" | "wish" | "give" | "trade";
   /** Optional corner word. Omit for worlds where the G colour is the only cue. */
   word?: string;
   /** Quiet page identity: which world am I in. */
@@ -21,12 +22,22 @@ type Props = {
   tagline?: string;
   regions: Record<RegionKey, RegionSpec>;
   onLocked?: (locked: boolean) => void;
+  /** Every world that was opened from somewhere has a way back. */
+  onBack?: () => void;
   children?: React.ReactNode;
 };
 
 /** One world = one enormous Living G with three independent regions. */
-export function World({ world, word, identity, tagline, regions, onLocked, children }: Props) {
-
+export function World({
+  world,
+  word,
+  identity,
+  tagline,
+  regions,
+  onLocked,
+  onBack,
+  children,
+}: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
 
   const setPanel = (key: RegionKey | null) => {
@@ -40,15 +51,15 @@ export function World({ world, word, identity, tagline, regions, onLocked, child
     else setPanel(key);
   };
 
-
   return (
     <div
       data-world={world}
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
+      {onBack ? <BackArrow onClick={onBack} /> : null}
       {word ? (
-        <span className="absolute left-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
+        <span className="absolute right-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
           {word}
         </span>
       ) : null}
@@ -66,12 +77,10 @@ export function World({ world, word, identity, tagline, regions, onLocked, child
       ) : null}
       {children}
 
-
-
       {/* Scale reference: the G occupies ~80% of viewport height, centred. */}
       <div className="flex flex-1 items-center justify-center">
         <LivingG
-          className="h-[80%] max-w-[86%]"
+          className={G_PRESENCE}
           showLabels={false}
           regions={{
             top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },

@@ -9,6 +9,9 @@ import {
   LIVING_G_VIEWBOX,
 } from "./g-path";
 
+/** The one canonical presence of a full-size Living G on any screen. */
+export const G_PRESENCE = "h-[80%] max-w-[86%]";
+
 export type RegionKey = "top" | "middle" | "bottom";
 
 export type Anchor = { x: number; y: number };

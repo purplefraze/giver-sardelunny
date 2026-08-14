@@ -171,10 +171,10 @@ function blockText(a: Anchor, kicker: string, lines: string[], offsetY: number) 
         dominantBaseline="middle"
         fill="var(--world-ink)"
         className="font-black"
-        style={{ fontSize: 34, letterSpacing: "-0.03em" }}
+        style={{ fontSize: 29, letterSpacing: "-0.03em" }}
       >
         {lines.map((line, i) => (
-          <tspan key={line} x={a.x} dy={i === 0 ? 0 : 38}>
+          <tspan key={line} x={a.x} dy={i === 0 ? 0 : 34}>
             {line}
           </tspan>
         ))}

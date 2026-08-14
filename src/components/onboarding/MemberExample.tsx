@@ -82,7 +82,7 @@ export function MemberExample({
         />
       </div>
 
-      <div className="flex items-center justify-between px-7 pb-9">
+      <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-7 pb-9">
         <button
           type="button"
           disabled={first}

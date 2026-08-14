@@ -244,6 +244,15 @@
   --world-accent: oklch(0.72 0.19 305);
 }
 
+/* Meeting the community — blue, the Community colour. */
+[data-world="meet"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-community);
+  --world-ink: oklch(0.4 0.15 255);
+  --world-accent: var(--giver-discovery);
+}
+
+
 /* Profile / You — green. */
 [data-world="profile"] {
   --world-bg: var(--giver-paper);

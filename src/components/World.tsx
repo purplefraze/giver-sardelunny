@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG, type RegionKey } from "@/components/living-g/LivingG";
@@ -25,6 +25,8 @@ type Props = {
   onLocked?: (locked: boolean) => void;
   /** Every world that was opened from somewhere has a way back. */
   onBack?: () => void;
+  /** False while this world is not the top of the navigation stack. */
+  active?: boolean;
   children?: React.ReactNode;
 };
 
@@ -37,6 +39,7 @@ export function World({
   regions,
   onLocked,
   onBack,
+  active = true,
   children,
 }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
@@ -45,6 +48,14 @@ export function World({
     setOpen(key);
     onLocked?.(key !== null);
   };
+
+  // A loop panel never outlives its world: leaving the world disposes it.
+  useEffect(() => {
+    if (!active && open !== null) {
+      setOpen(null);
+      onLocked?.(false);
+    }
+  }, [active, open, onLocked]);
 
   const press = (key: RegionKey) => () => {
     const custom = regions[key].onPress;
@@ -56,9 +67,15 @@ export function World({
     <div
       data-world={world}
       className="relative flex h-full w-full flex-col overflow-hidden"
-      style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
+      style={{
+        background: "var(--world-bg)",
+        color: "var(--world-ink)",
+        pointerEvents: active ? undefined : "none",
+      }}
     >
-      {onBack ? <BackArrow onClick={onBack} /> : null}
+      {/* One unambiguous exit per depth: while a panel is open, only its arrow shows. */}
+      {onBack && open === null ? <BackArrow onClick={onBack} /> : null}
+
       {word ? (
         <span className="absolute right-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
           {word}

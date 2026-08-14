@@ -48,9 +48,10 @@ export const MEMBERS: Member[] = [
     headline: "Ride to the airport",
     activity: "Wishing for a ride to the airport this Tuesday, 4 PM.",
     about: "John, 58. Believes a thing unused is a thing wasted.",
-    aboutLines: ["John, 58.", "Carpenter.", "Bad knees."],
+    aboutLines: ["John, 58.", "Carpenter."],
     bottomKicker: "Wish",
-    bottomLines: ["Airport ride", "Tuesday 4pm"],
+    bottomLines: ["Ride to", "the airport", "This Tuesday", "4 pm"],
+
   },
   {
     id: "sofia",

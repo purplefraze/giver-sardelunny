@@ -6,28 +6,33 @@ import { MEMBERS, type Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 
 /**
- * The opening of Giver, told entirely through the canonical Living G.
- * Colour is the chapter marker: orange welcome -> purple possibility ->
- * the community's own colours -> arrival at the green Home G.
+ * The opening of Giver. ONE orange Living G speaks: it never moves, never
+ * resizes, never changes colour. Only the words in its bottom loop change.
+ * Then the community colour arrives, and we meet three people.
  */
-type Stage =
-  | "welcome"
-  | "sparks"
-  | "use"
-  | "giveaway"
-  | "invite"
-  | "before"
-  | "meet"
-  | "choose"
-  | "celebrate";
+type Stage = "opening" | "meet-intro" | "meet" | "choose" | "celebrate";
 
-/** appear -> breathe -> read -> respond -> move. */
-const BEAT: Partial<Record<Stage, { ms: number; next: Stage }>> = {
-  welcome: { ms: 3400, next: "sparks" },
-  sparks: { ms: 2600, next: "use" },
-  use: { ms: 2600, next: "giveaway" },
-  giveaway: { ms: 3600, next: "invite" },
-};
+/** Each opening message: ~3s on screen, gentle fade between. */
+const OPENING: string[][] = [
+  ["Welcome to", "Giver"],
+  ["Kindness is", "currency"],
+  ["To start", "you off"],
+  ["Here's", "100 Sparks"],
+  ["50 Sparks", "are yours"],
+  ["50 Sparks", "are yours", "to give away"],
+  ["Are you", "a Giver?"],
+];
+
+/** The blue chapter that hands over to the three people. */
+const MEET_INTRO: string[][] = [
+  ["Meet three", "Givers"],
+  ["Someone", "giving"],
+  ["Someone", "wishing"],
+  ["Someone", "trading"],
+];
+
+const HOLD = 3000;
+const FADE = 600;
 
 const NAME_COLOUR: Record<Member["world"], string> = {
   give: "var(--giver-give)",
@@ -35,100 +40,60 @@ const NAME_COLOUR: Record<Member["world"], string> = {
   trade: "var(--giver-trade)",
 };
 
+/** Plays a list of messages in one loop: fade in, hold, fade out. */
+function useMessages(script: string[][], onEnd: () => void, active: boolean) {
+  const [i, setI] = useState(0);
+  const [shown, setShown] = useState(true);
+  const last = i === script.length - 1;
+
+  useEffect(() => {
+    if (!active) return;
+    setI(0);
+    setShown(true);
+  }, [active, script]);
+
+  useEffect(() => {
+    if (!active || last) return;
+    const out = setTimeout(() => setShown(false), HOLD);
+    const next = setTimeout(() => {
+      setI((v) => v + 1);
+      setShown(true);
+    }, HOLD + FADE);
+    return () => {
+      clearTimeout(out);
+      clearTimeout(next);
+    };
+  }, [active, i, last, script]);
+
+  return { lines: script[i]!, opacity: shown ? 1 : 0, last, onEnd };
+}
+
 export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {
-  const [stage, setStage] = useState<Stage>("welcome");
+  const [stage, setStage] = useState<Stage>("opening");
   const [who, setWho] = useState(0);
   const [chosen, setChosen] = useState<Member | null>(null);
-  const [inviteReady, setInviteReady] = useState(false);
 
-  useEffect(() => {
-    const beat = BEAT[stage];
-    if (!beat) return;
-    const t = setTimeout(() => setStage(beat.next), beat.ms);
-    return () => clearTimeout(t);
-  }, [stage]);
-
-  useEffect(() => {
-    if (stage !== "invite") return;
-    setInviteReady(false);
-    const t = setTimeout(() => setInviteReady(true), 900);
-    return () => clearTimeout(t);
-  }, [stage]);
-
-  const advance = (next: Stage) => () => {
-    buzz();
-    setStage(next);
-  };
-
-  if (stage === "welcome") {
+  if (stage === "opening") {
     return (
-      <IntroG
-        world="welcome"
-        middle={{ lines: ["Welcome to", "Giver."] }}
-        bottom={{ lines: ["Kindness is", "currency."] }}
-        onAdvance={advance("sparks")}
+      <OpeningSequence
+        onDone={() => {
+          buzz();
+          setStage("meet-intro");
+        }}
       />
     );
   }
 
-  if (stage === "sparks") {
+  if (stage === "meet-intro") {
     return (
-      <IntroG
-        world="sparks"
-        middle={{ lines: ["100", "Sparks"] }}
-        onAdvance={advance("use")}
+      <MeetIntro
+        onBack={() => setStage("opening")}
+        onDone={() => {
+          buzz();
+          setWho(0);
+          setStage("meet");
+        }}
       />
-    );
-  }
-
-  if (stage === "use") {
-    return (
-      <IntroG
-        world="sparks"
-        middle={{ lines: ["50 are yours", "to use."] }}
-        onAdvance={advance("giveaway")}
-      />
-    );
-  }
-
-  if (stage === "giveaway") {
-    return (
-      <IntroG
-        world="sparks"
-        middle={{ lines: ["50 are yours", "to use."] }}
-        bottom={{ lines: ["50 are yours", "to give away."] }}
-        onAdvance={advance("invite")}
-      />
-    );
-  }
-
-  if (stage === "invite") {
-    return (
-      <IntroG
-        world="sparks"
-        middle={{ lines: ["Are you", "a Giver?"] }}
-        onAdvance={inviteReady ? advance("before") : undefined}
-      >
-        <ForwardCue
-          show={inviteReady}
-          label="Yes — meet the community"
-          onClick={advance("before")}
-        />
-      </IntroG>
-    );
-  }
-
-  if (stage === "before") {
-    return (
-      <IntroG
-        world="sparks"
-        middle={{ lines: ["Meet three", "people."] }}
-        bottom={{ lines: ["Giving.", "Wishing.", "Trading."] }}
-        onAdvance={advance("meet")}
-      >
-        <BackArrow onClick={() => setStage("invite")} />
-        <ForwardCue show label="Meet them" onClick={advance("meet")} />
-      </IntroG>
     );
   }
 
@@ -139,7 +104,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         member={member}
         first={who === 0}
         last={who === MEMBERS.length - 1}
-        onBack={() => setStage("before")}
+        onBack={() => setStage("meet-intro")}
         onPrev={() => setWho((w) => Math.max(0, w - 1))}
         onNext={() => setWho((w) => Math.min(MEMBERS.length - 1, w + 1))}
         onDone={() => setStage("choose")}
@@ -186,6 +151,42 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         ))}
       </div>
     </div>
+  );
+}
+
+/** The orange G, speaking. Copy lives only in the bottom loop. */
+function OpeningSequence({ onDone }: { onDone: () => void }) {
+  const { lines, opacity, last } = useMessages(OPENING, onDone, true);
+  const [arrow, setArrow] = useState(false);
+
+  useEffect(() => {
+    if (!last) return;
+    const t = setTimeout(() => setArrow(true), 1400);
+    return () => clearTimeout(t);
+  }, [last]);
+
+  return (
+    <IntroG world="welcome" bottom={{ lines }} copyOpacity={opacity}>
+      <ForwardCue show={last && arrow} label="Yes — meet the community" onClick={onDone} />
+    </IntroG>
+  );
+}
+
+/** The blue chapter: the community arrives. */
+function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const { lines, opacity, last } = useMessages(MEET_INTRO, onDone, true);
+
+  useEffect(() => {
+    if (!last) return;
+    const t = setTimeout(onDone, HOLD);
+    return () => clearTimeout(t);
+  }, [last, onDone]);
+
+  return (
+    <IntroG world="meet" bottom={{ lines }} copyOpacity={opacity}>
+      <BackArrow onClick={onBack} />
+      <ForwardCue show label="Meet them" onClick={onDone} />
+    </IntroG>
   );
 }
 

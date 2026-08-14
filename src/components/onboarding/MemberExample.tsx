@@ -80,7 +80,6 @@ export function MemberExample({
                 loopText({
                   anchor,
                   region: "middle",
-                  kicker: `About ${member.name}`,
                   lines: member.aboutLines,
                 }),
             },
@@ -89,8 +88,8 @@ export function MemberExample({
                 loopText({
                   anchor,
                   region: "bottom",
-                  kicker: member.mode,
-                  lines: [member.headline],
+                  kicker: member.bottomKicker,
+                  lines: member.bottomLines,
                 }),
             },
           }}
@@ -107,7 +106,7 @@ export function MemberExample({
             cues ? "opacity-40" : "opacity-0",
           )}
         >
-          {member.mode} — tap {member.name} to read more
+          Tap {member.name}
         </span>
         <button
           type="button"

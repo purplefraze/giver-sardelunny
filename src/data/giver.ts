@@ -15,8 +15,12 @@ export type Member = {
   headline: string;
   activity: string;
   about: string;
-  /** Two short lines maximum. */
+  /** Two or three short lines maximum. */
   aboutLines: string[];
+  /** Word above their current activity, inside the bottom loop. */
+  bottomKicker: string;
+  /** Their activity, one idea per line, inside the bottom loop. */
+  bottomLines: string[];
 };
 
 export const MEMBERS: Member[] = [
@@ -30,7 +34,9 @@ export const MEMBERS: Member[] = [
     headline: "Haircuts",
     activity: "Giving haircuts on her back step, Saturday mornings.",
     about: "Maya, 29. Fixes things. Terrible at asking for help, learning fast.",
-    aboutLines: ["Maya, 29.", "Cuts hair. Fixes things."],
+    aboutLines: ["Maya, 29.", "Cuts hair.", "Fixes things."],
+    bottomKicker: "Giving",
+    bottomLines: ["Haircuts"],
   },
   {
     id: "john",
@@ -39,10 +45,12 @@ export const MEMBERS: Member[] = [
     blurb: "Retired carpenter. Shed full of tools.",
     mode: "Wishing",
     world: "wish",
-    headline: "A lift on Tuesdays",
-    activity: "Wishing for a lift to the allotment on Tuesdays.",
+    headline: "Ride to the airport",
+    activity: "Wishing for a ride to the airport this Tuesday, 4 PM.",
     about: "John, 58. Believes a thing unused is a thing wasted.",
-    aboutLines: ["John, 58.", "Carpenter. Bad knees."],
+    aboutLines: ["John, 58.", "Carpenter.", "Bad knees."],
+    bottomKicker: "Wish",
+    bottomLines: ["Airport ride", "Tuesday 4pm"],
   },
   {
     id: "sofia",
@@ -54,7 +62,9 @@ export const MEMBERS: Member[] = [
     headline: "Bread for bike repairs",
     activity: "Trading sourdough loaves for help with her bike chain.",
     about: "Sofia, 34. Trades in flour, favours and very strong coffee.",
-    aboutLines: ["Sofia, 34.", "Bakes too much bread."],
+    aboutLines: ["Sofia, 34", "Loves to bake"],
+    bottomKicker: "Trading",
+    bottomLines: ["Bread for", "bike repairs"],
   },
 ];
 

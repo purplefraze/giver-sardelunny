@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buzz } from "@/lib/haptics";
 import {
@@ -59,6 +59,22 @@ const LABEL_SIZE: Record<RegionKey, number> = {
 };
 
 /**
+ * ONE interaction rhythm for every Living G, everywhere.
+ * touch -> the loop breathes -> the word becomes readable -> haptic -> move.
+ */
+export const RHYTHM = {
+  /** Loop swell in/out. */
+  swell: 220,
+  /** Cue fade in — fast enough to feel instant. */
+  cueIn: 120,
+  /** How long the cue stays readable before navigation begins. */
+  read: 300,
+  /** Cue lingers a beat after release, then dissolves. */
+  cueOut: 420,
+  hold: 1100,
+} as const;
+
+/**
  * The Living G.
  *
  * The visible artwork is the canonical traced geometry and NEVER changes shape:
@@ -73,12 +89,21 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
   const cueTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const down = useRef<{ x: number; y: number } | null>(null);
   const release = () => setPressed(null);
+  const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (cueTimer.current) clearTimeout(cueTimer.current);
+      if (navTimer.current) clearTimeout(navTimer.current);
+    },
+    [],
+  );
   const uid = useId().replace(/:/g, "");
 
   const showCue = (key: RegionKey) => {
     setCue(key);
     if (cueTimer.current) clearTimeout(cueTimer.current);
-    cueTimer.current = setTimeout(() => setCue(null), 900);
+    cueTimer.current = setTimeout(() => setCue(null), RHYTHM.hold);
   };
 
   return (
@@ -130,8 +155,8 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
         return (
           <g key={`art-${key}`} mask={`url(#${uid}-mask-${key})`}>
             <g
-              className="transition-transform duration-150 ease-out"
               style={{
+                transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
                 transform: `scale(${isPressed ? 1.022 : 1})`,
                 transformOrigin: `${ring.x}px ${ring.y}px`,
               }}
@@ -158,9 +183,9 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
         return (
           <g key={`content-${key}`} pointerEvents="none">
             <g
-              className="transition-transform duration-150"
               style={{
-                transform: `scale(${isPressed ? 0.94 : 1})`,
+                transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
+                transform: `scale(${isPressed ? 0.985 : 1})`,
                 transformOrigin: `${ring.x}px ${ring.y}px`,
               }}
             >
@@ -173,11 +198,14 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill="var(--world-ink)"
-                className="font-black uppercase transition-[opacity] duration-300 ease-out"
+                className="font-black uppercase"
                 style={{
                   fontSize: LABEL_SIZE[key],
                   letterSpacing: "-0.045em",
-                  opacity: showLabels || cue === key ? 0.72 : 0,
+                  opacity: showLabels || cue === key ? 0.78 : 0,
+                  transition: `opacity ${
+                    cue === key ? RHYTHM.cueIn : RHYTHM.cueOut
+                  }ms ease-out`,
                 }}
               >
                 {words.map((word, i) => (
@@ -234,8 +262,11 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
               ) {
                 return;
               }
+              // Rhythm: the cue stays readable for a beat, then we move.
               buzz();
-              region.onPress?.();
+              if (navTimer.current) clearTimeout(navTimer.current);
+              const run = region.onPress;
+              navTimer.current = setTimeout(() => run?.(), RHYTHM.read);
             }}
 
             onKeyDown={(e) => {

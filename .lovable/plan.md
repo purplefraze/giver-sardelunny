@@ -1,69 +1,53 @@
-# Giver — mobile-first prototype
+# Permanently fix Profile / Community navigation
 
-One shape. Three Gs. Different meanings.
+## Confirmed diagnosis
 
-## 1. The Living G as a fixed asset
+The bug is caused by multiple navigation layers that do not share one source of truth:
 
-Trace the attached reference into a single reusable SVG component (`LivingG`) built from stroked paths on one shared viewBox, matching the reference silhouette: small open ring top-right, large open ring upper body, the S-curve spine that links it into the large open lower ring, identical stroke weight and round caps throughout.
+1. **App state and browser history diverge.** `src/routes/index.tsx` opens a world by appending to a React `stack`, then a side effect independently calls `window.history.pushState`. The visible Back arrow only removes the React stack entry; it does not consume the browser-history entry. Repeated Profile/Community visits therefore accumulate stale history entries. At Home, the `popstate` listener is removed entirely, so device/browser Back can consume those stale entries without changing the UI.
+2. **Open loop panels survive world exit.** Every Profile and Community `World` remains mounted while hidden. Its local `open` panel state is therefore preserved. Leaving a world with a panel open and later returning can reveal that old full-screen panel immediately.
+3. **Two back controls occupy the same position when a panel is open.** The world-level Back arrow remains mounted beneath the panel-level Back arrow. They share the same label, coordinates, and z-index. The later panel control normally paints on top, but the duplicate target is ambiguous and makes the exit hierarchy fragile.
+4. **Layering is fragile but not the primary failure.** Closed screens correctly use both `invisible` and `pointer-events-none`, so they are not currently intercepting taps. However, Home remains live underneath every world and relies only on z-index coverage. This should be made defensive while navigation is corrected.
+5. **Profile and Community do not route to each other.** Both are leaf worlds opened only from Home, and both call the same `pop` function. The Living G hit regions are not cross-routing them.
 
-- Geometry is authored once and never altered per screen. Only colour changes.
-- Tracing is done against pixel measurements of the uploaded image (ring centres, radii, stroke width, gap openings) so proportions, spacing and openings match rather than being eyeballed as three circles.
-- No font glyph, no redrawn g.
-- The visible strokes are non-interactive. Interaction lives in a separate overlay layer of large invisible hit shapes (top band, middle band, bottom band) sized to the regions of the G, so taps never require hitting a thin stroke and the G looks identical whether or not a region is active.
-- Props: `palette` (colour token set), `regions` (labels + handlers per region), `showLabels`.
+A runtime trace confirmed the mismatch: entering Profile increased browser history while the in-app Back behavior only changed React state. Opening a Profile panel also produced two simultaneous `Back` controls.
 
-## 2. Onboarding
+## Recommended implementation
 
-Single flow, no tab bar, minimal chrome.
+### 1. Establish one navigation source of truth
 
-1. **Welcome** — huge type: "Welcome to Giver." Kindness is currency.
-2. **Sparks** — "Lucky you." / thanks for joining / 100 Sparks to start / 50 yours to use, 50 yours to give. Sparks shown as energy (spark marks, counters), never a wallet or balance sheet. Then "Want to make your first act of generosity now?" with a bold **Let's give** and a quiet text-only **Maybe later**.
-3. **Meet members** — Maya (Wishing), John (Giving), Sofia (Trading). Each is presented inside a Living G shaped around them, not a card: top region = their current Wish/Give/Trade, middle = their photo/identity, bottom = About Me. Tapping a region reveals that snippet in place. Move between the three people by swiping/arrows.
-4. **Give the 50** — choosing a person triggers a celebratory moment: spark burst animation, scale swell, haptic buzz where supported, then "Yippee. You just made your first act of generosity on Giver." No modal chrome, no transaction language.
-5. Transition into the three-G app, landing on Home.
+Replace the custom React array plus raw `window.history.pushState` effect with TanStack Router-managed navigation state for the active world. Profile, Community, Give, Wish, Trade, and Messages can share the same typed world state without adding routes, a navigation bar, or visual UI.
 
-"Maybe later" skips straight to Home; the 50 give-away Sparks stay unspent.
+- Living G/Home actions update the router-managed world state.
+- World Back clears that state through the router.
+- Device/browser Back and the visible Back arrow therefore operate on the same history model.
+- Remove the manual `pushState`/conditional `popstate` logic completely.
 
-## 3. The three-G system
+### 2. Make panel depth explicit and disposable
 
-Horizontal pager with exactly three full-viewport panes: Community ← Home → Profile, starting on Home.
+Ensure a loop panel cannot outlive its world:
 
-- Swipe/drag with snap-to-pane; releases always settle on one pane, never halfway.
-- Track is `100vw` panes inside an `overflow-hidden` viewport, so no horizontal overflow and no clipped Gs or text.
-- Tiny three-dot / word indicator at the top; no tab bar, no menus.
+- Close the active panel before leaving its world.
+- Reset panel state whenever its world becomes inactive.
+- While a panel is open, render only the panel-level Back arrow; suppress the underlying world-level Back arrow so there is one unambiguous exit target.
 
-Each pane: one very large G filling most of the mobile canvas, a short world word, nothing else.
+### 3. Harden inactive screens
 
-| World | Top | Middle | Bottom |
-| --- | --- | --- | --- |
-| Home | Search | Wish | Give |
-| Profile | My Activity | Me | About Me |
-| Community | Community Map | Community Wishes | Community Gives |
+Keep inactive worlds non-interactive at their outer boundary, including Home while another world is active. Preserve the existing appearance, transitions, Living G geometry, hit areas, colors, and content.
 
-Each region presses independently (scale swell + colour response + haptic) and opens its own minimal sheet/screen: Search = one big input with a few mock results; Wish and Give = one-line "what do you wish for / what are you giving" plus a confirm; Profile regions reveal mock activity, identity, About Me; Community regions reveal a placeholder map panel and short mock wish/give lists.
+### 4. Verify the complete exit hierarchy
 
-## 4. Colour
+Test on mobile viewport and browser/device Back behavior:
 
-Three bold solid palettes driven entirely by CSS variables in `src/styles.css`, applied per pane via a data attribute — no colours hardcoded in components, no gradients. Prototype direction:
+- Home → Profile → Home, repeatedly.
+- Home → Community → Home, repeatedly.
+- Profile panel → Profile → Home.
+- Community panel → Community → Home.
+- Alternate Profile and Community many times and verify history does not accumulate stale app entries.
+- Confirm hidden worlds and Home cannot intercept taps.
+- Confirm exactly one visible Back control at every navigation depth.
+- Regression-check Wish and Give because they use the same shared world navigation.
 
-- Home: acid lime-green G on off-white, black type (closest to the reference).
-- Profile: black G on bright yellow.
-- Community: white G on deep teal.
+## Scope guard
 
-Type: Helvetica-like grotesque, enormous headline sizes, generous white space.
-
-## 5. Scope
-
-No backend, auth, database, or Spark ledger. All state is in-memory React state (Sparks count, chosen recipient, current pane). Mock data only for the three members and community lists.
-
-## Technical notes
-
-- `src/components/living-g/LivingG.tsx` — traced SVG + region hit overlay; `regions.ts` for hit-area rects; palettes as token sets.
-- `src/routes/index.tsx` — onboarding + app shell (the prototype is one route; onboarding step and pane are local state so swiping stays smooth). Route `head()` gets Giver-specific title/description/OG tags.
-- Pager: pointer/touch drag with translateX and a snap on release; iPhone-sized viewport is the reference (390×844), with `overscroll-behavior-x: contain` and `touch-action: pan-y` on the track.
-- Haptics via `navigator.vibrate` guarded by feature detection.
-- Self-check before delivery: verify each of the nine regions fires its own action, the pager snaps from every drag distance/direction, and no horizontal scroll exists at 390px.
-
-## Assumptions
-
-Third member is Sofia (Trading) unless you'd prefer another name. Palette above is a starting point and swappable via tokens.
+No redesign of Profile or Community. No new navigation bar. No Discovery destination. No changes to Living G geometry, independent swell, invisible hit areas, onboarding, copy, or canonical colors.

@@ -148,18 +148,27 @@
   --giver-paper: oklch(0.985 0.008 100);
   --giver-ink: oklch(0.16 0.01 100);
 
-  /* Functional colour: colour means where you are. */
-  --giver-green: oklch(0.85 0.22 128); /* Giver / Home */
-  --giver-blue: oklch(0.62 0.2 250); /* Wish */
-  --giver-yellow: oklch(0.86 0.19 95); /* Give */
-  --giver-trade: oklch(0.62 0.24 350); /* Trade — provisional */
+  /* ---- CANONICAL COLOUR IDENTITY — one colour per product area ----
+     GIVE = orange, WISH = purple, PROFILE/YOU = green, TRADE = red,
+     COMMUNITY = blue, DISCOVERY = yellow (supporting only). */
+  --giver-give: oklch(0.72 0.2 48); /* Orange — Give */
+  --giver-wish: oklch(0.55 0.24 300); /* Purple — Wish */
+  --giver-profile: oklch(0.72 0.21 140); /* Green — Profile / You / Giver */
+  --giver-trade: oklch(0.58 0.23 27); /* Red — Trade */
+  --giver-community: oklch(0.58 0.19 250); /* Blue — Community */
+  --giver-discovery: oklch(0.86 0.19 95); /* Yellow — discovery, maps, finding */
+
+  /* Legacy aliases kept pointing at the canonical spectrum. */
+  --giver-green: var(--giver-profile);
+  --giver-blue: var(--giver-community);
+  --giver-yellow: var(--giver-discovery);
 
   /* Brand accent — NOT locked. Candidates kept side by side; swap the
      one line below to evaluate lime / orange / purple app-wide. */
   --giver-accent-lime: oklch(0.85 0.22 128);
-  --giver-accent-orange: oklch(0.72 0.2 48);
-  --giver-accent-purple: oklch(0.55 0.24 300);
-  --giver-accent: var(--giver-accent-lime);
+  --giver-accent-orange: var(--giver-give);
+  --giver-accent-purple: var(--giver-wish);
+  --giver-accent: var(--giver-profile);
 
   /* Geometry + motion. */
   --giver-radius: 999px;
@@ -174,77 +183,81 @@
   --color-giver-paper: var(--giver-paper);
   --color-giver-ink: var(--giver-ink);
   --color-giver-accent: var(--giver-accent);
-  --color-wish: var(--giver-blue);
-  --color-give: var(--giver-yellow);
-  --color-giver: var(--giver-green);
+  --color-wish: var(--giver-wish);
+  --color-give: var(--giver-give);
+  --color-trade: var(--giver-trade);
+  --color-community: var(--giver-community);
+  --color-discovery: var(--giver-discovery);
+  --color-giver: var(--giver-profile);
 }
 
 /* ---------------------------------------------------------------
    Giver — world colour stories.
-   One shape, three Gs. Swap these tokens to re-skin the prototype.
+   One shape, one colour per area: GIVE orange, WISH purple,
+   PROFILE/YOU green, TRADE red, COMMUNITY blue, DISCOVERY yellow.
    --------------------------------------------------------------- */
 
+/* Home / Giver — green, the same identity as You. */
 [data-world="home"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-green);
+  --world-g: var(--giver-profile);
   --world-ink: oklch(0.42 0.14 145);
-  --world-accent: oklch(0.68 0.16 175);
+  --world-accent: var(--giver-discovery);
 }
 
-
-/* Wish world — same G, blue. Blue + Yellow (Give) = Green (Home). */
+/* Wish — purple. */
 [data-world="wish"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-blue);
-  --world-ink: oklch(0.42 0.14 255);
-  --world-accent: oklch(0.68 0.16 240);
+  --world-g: var(--giver-wish);
+  --world-ink: oklch(0.4 0.2 300);
+  --world-accent: var(--giver-discovery);
 }
 
-/* Give world — same G, yellow. Blue (Wish) + Yellow (Give) = Green (Home). */
+/* Give — orange. */
 [data-world="give"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-yellow);
-  --world-ink: oklch(0.45 0.11 85);
-  --world-accent: oklch(0.9 0.17 100);
+  --world-g: var(--giver-give);
+  --world-ink: oklch(0.45 0.16 45);
+  --world-accent: var(--giver-discovery);
 }
 
-/* Trade — provisional flat colour, clearly distinct from Wish blue and Give yellow. */
+/* Trade — red. */
 [data-world="trade"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-trade);
-  --world-ink: oklch(0.42 0.16 350);
-  --world-accent: oklch(0.7 0.2 345);
+  --world-ink: oklch(0.44 0.19 27);
+  --world-accent: var(--giver-discovery);
 }
 
 /* Onboarding chapters — the same G, different expressions. */
 [data-world="welcome"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-accent-orange);
+  --world-g: var(--giver-give);
   --world-ink: oklch(0.42 0.15 45);
-  --world-accent: oklch(0.82 0.17 60);
+  --world-accent: var(--giver-discovery);
 }
 
 [data-world="sparks"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-accent-purple);
+  --world-g: var(--giver-wish);
   --world-ink: oklch(0.4 0.2 300);
   --world-accent: oklch(0.72 0.19 305);
 }
 
-
-
+/* Profile / You — green. */
 [data-world="profile"] {
-  --world-bg: oklch(0.72 0.13 205);
-  --world-g: oklch(0.72 0.2 48);
-  --world-ink: oklch(0.99 0.01 200);
-  --world-accent: oklch(0.98 0.02 90);
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-profile);
+  --world-ink: oklch(0.4 0.14 145);
+  --world-accent: var(--giver-discovery);
 }
 
+/* Community — blue. */
 [data-world="community"] {
-  --world-bg: oklch(0.35 0.07 195);
-  --world-g: oklch(0.62 0.22 25);
-  --world-ink: oklch(0.9 0.11 200);
-  --world-accent: oklch(0.88 0.14 195);
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-community);
+  --world-ink: oklch(0.4 0.15 255);
+  --world-accent: var(--giver-discovery);
 }
 
 @keyframes fade-up {

@@ -4,13 +4,17 @@ import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { loopText } from "@/components/living-g/loop-text";
 import type { Member } from "@/data/giver";
+import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 /**
  * One community member, shown through the approved full-size Living G.
  * The G is identical to Home/Wish/Give: same geometry, scale and anchor.
  * Their words are fitted INSIDE the loops — the G never adapts to the content.
+ * Each loop opens a deeper preview, and every deeper page comes back here.
  */
+type Deep = "profile" | "about" | "activity" | null;
+
 export function MemberExample({
   member,
   first,
@@ -28,8 +32,13 @@ export function MemberExample({
   onNext: () => void;
   onDone: () => void;
 }) {
-  const [profile, setProfile] = useState(false);
+  const [deep, setDeep] = useState<Deep>(null);
   const [cues, setCues] = useState(true);
+
+  useEffect(() => {
+    setDeep(null);
+    setCues(true);
+  }, [member.id]);
 
   useEffect(() => {
     if (!cues) return;
@@ -37,13 +46,21 @@ export function MemberExample({
     return () => clearTimeout(t);
   }, [cues]);
 
+  const open = (d: Exclude<Deep, null>) => () => {
+    buzz();
+    setDeep(d);
+  };
+
   return (
     <div
       data-world={member.world}
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <BackArrow onClick={first ? onBack : onPrev} label="Back" />
+      <BackArrow
+        onClick={first ? onBack : onPrev}
+        label={first ? "Back" : `Back to the person before ${member.name}`}
+      />
 
       <GStage>
         <LivingG
@@ -52,7 +69,7 @@ export function MemberExample({
           showLabels
           regions={{
             top: {
-              onPress: () => setProfile(true),
+              onPress: open("profile"),
               render: (anchor) => {
                 const clipId = `member-photo-${member.id}`;
                 return (
@@ -76,6 +93,7 @@ export function MemberExample({
               },
             },
             middle: {
+              onPress: open("about"),
               render: (anchor) =>
                 loopText({
                   anchor,
@@ -84,6 +102,7 @@ export function MemberExample({
                 }),
             },
             bottom: {
+              onPress: open("activity"),
               render: (anchor) =>
                 loopText({
                   anchor,
@@ -97,7 +116,7 @@ export function MemberExample({
       </GStage>
 
       <div
-        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-7 pb-8"
+        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-7"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
       >
         <span
@@ -118,23 +137,44 @@ export function MemberExample({
         </button>
       </div>
 
-      {/* Temporary full profile view — always a way back. */}
+      {/* Deeper previews — always a way back to this exact person. */}
       <div
         className={cn(
           "absolute inset-0 z-30 flex flex-col px-7 pb-10 pt-16 transition-opacity duration-200 ease-out",
-          profile ? "opacity-100" : "invisible pointer-events-none opacity-0",
+          deep ? "opacity-100" : "invisible pointer-events-none opacity-0",
         )}
         style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
-        aria-hidden={!profile}
+        aria-hidden={!deep}
       >
-        {profile ? <BackArrow onClick={() => setProfile(false)} /> : null}
-        <h2 className="mt-6 text-[16vw] font-black uppercase leading-[0.82] tracking-[-0.05em]">
-          {member.name}
-        </h2>
-        <p className="mt-8 text-2xl font-medium leading-tight">{member.about}</p>
-        <p className="mt-6 text-2xl font-medium leading-tight opacity-70">
-          {member.activity}
-        </p>
+        {deep ? (
+          <>
+            <BackArrow onClick={() => setDeep(null)} label={`Back to ${member.name}`} />
+            <h2 className="mt-6 text-[16vw] font-black uppercase leading-[0.82] tracking-[-0.05em]">
+              {deep === "activity" ? member.bottomKicker : member.name}
+            </h2>
+            {deep === "profile" ? (
+              <>
+                <p className="mt-8 text-2xl font-medium leading-tight">{member.about}</p>
+                <p className="mt-6 text-2xl font-medium leading-tight opacity-70">
+                  {member.activity}
+                </p>
+              </>
+            ) : null}
+            {deep === "about" ? (
+              <p className="mt-8 text-2xl font-medium leading-tight">{member.about}</p>
+            ) : null}
+            {deep === "activity" ? (
+              <>
+                <p className="mt-8 text-2xl font-medium leading-tight">
+                  {member.headline}
+                </p>
+                <p className="mt-6 text-2xl font-medium leading-tight opacity-70">
+                  {member.activity}
+                </p>
+              </>
+            ) : null}
+          </>
+        ) : null}
       </div>
     </div>
   );

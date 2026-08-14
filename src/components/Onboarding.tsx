@@ -30,8 +30,8 @@ const BEAT: Partial<Record<Stage, { ms: number; next: Stage }>> = {
 };
 
 const NAME_COLOUR: Record<Member["world"], string> = {
-  give: "var(--giver-yellow)",
-  wish: "var(--giver-blue)",
+  give: "var(--giver-give)",
+  wish: "var(--giver-wish)",
   trade: "var(--giver-trade)",
 };
 

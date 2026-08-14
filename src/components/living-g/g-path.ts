@@ -20,3 +20,13 @@ export const G_REGION_BANDS = {
   middle: { x: 0, y: 180, width: 576, height: 420 },
   bottom: { x: 0, y: 600, width: 576, height: 533 },
 } as const;
+
+/**
+ * Largest circle that fits inside each loop's negative space (measured), pulled
+ * in for breathing room. CONTENT-ONLY constants: they never affect geometry.
+ */
+export const LOOP_SAFE_RADIUS = {
+  top: 40,
+  middle: 104,
+  bottom: 172,
+} as const;

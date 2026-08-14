@@ -140,7 +140,7 @@ export function MemberExample({
       {/* Deeper previews — always a way back to this exact person. */}
       <div
         className={cn(
-          "absolute inset-0 z-30 flex flex-col px-7 pb-10 pt-16 transition-opacity duration-200 ease-out",
+          "absolute inset-0 z-50 flex flex-col px-7 pb-10 pt-16 transition-opacity duration-200 ease-out",
           deep ? "opacity-100" : "invisible pointer-events-none opacity-0",
         )}
         style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BackArrow } from "@/components/BackArrow";
 import { MemberExample } from "@/components/onboarding/MemberExample";
 import { MEMBERS, type Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
@@ -23,6 +24,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         member={member}
         first={who === 0}
         last={who === MEMBERS.length - 1}
+        onBack={() => setStep("before")}
         onPrev={() => setWho((w) => Math.max(0, w - 1))}
         onNext={() => setWho((w) => Math.min(MEMBERS.length - 1, w + 1))}
         onDone={() => setStep("choose")}
@@ -50,6 +52,17 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
           </p>
         </div>
       )}
+
+      {step === "sparks" ? <BackArrow onClick={() => setStep("welcome")} /> : null}
+      {step === "before" ? <BackArrow onClick={() => setStep("sparks")} /> : null}
+      {step === "choose" ? (
+        <BackArrow
+          onClick={() => {
+            setWho(MEMBERS.length - 1);
+            setStep("meet");
+          }}
+        />
+      ) : null}
 
       {step === "sparks" && (
         <div className="flex flex-1 flex-col justify-center gap-7 animate-[fade-up_500ms_ease-out]">

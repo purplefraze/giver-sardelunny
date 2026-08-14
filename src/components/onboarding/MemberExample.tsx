@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
+import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { loopText } from "@/components/living-g/loop-text";
 import type { Member } from "@/data/giver";
@@ -60,7 +61,7 @@ export function MemberExample({
         </span>
       </button>
 
-      <div className="flex flex-1 items-center justify-center">
+      <GStage>
         <LivingG
           key={member.id}
           className={G_PRESENCE}
@@ -86,7 +87,7 @@ export function MemberExample({
             },
           }}
         />
-      </div>
+      </GStage>
 
       <div
         className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-7 pb-8"

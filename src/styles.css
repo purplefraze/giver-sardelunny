@@ -216,6 +216,21 @@
   --world-accent: oklch(0.7 0.2 345);
 }
 
+/* Onboarding chapters — the same G, different expressions. */
+[data-world="welcome"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-accent-orange);
+  --world-ink: oklch(0.42 0.15 45);
+  --world-accent: oklch(0.82 0.17 60);
+}
+
+[data-world="sparks"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-accent-purple);
+  --world-ink: oklch(0.4 0.2 300);
+  --world-accent: oklch(0.72 0.19 305);
+}
+
 
 
 [data-world="profile"] {

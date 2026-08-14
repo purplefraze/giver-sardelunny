@@ -155,7 +155,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   return (
     <div
       className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
-      style={{ background: "var(--giver-accent)", color: "var(--giver-ink)" }}
+      style={{ background: "var(--giver-ink)", color: "var(--giver-accent)" }}
     >
       <BackArrow
         onClick={() => {

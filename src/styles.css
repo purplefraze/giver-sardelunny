@@ -258,6 +258,17 @@
   }
 }
 
+/* Quiet appearance for words living inside the Living G. */
+@keyframes g-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+
 @keyframes spark-burst {
   0% {
     opacity: 0;

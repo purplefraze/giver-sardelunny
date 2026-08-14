@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
+import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG, type RegionKey } from "@/components/living-g/LivingG";
 import { Panel } from "@/components/Panel";
 
@@ -77,8 +78,8 @@ export function World({
       ) : null}
       {children}
 
-      {/* Scale reference: the G occupies ~80% of viewport height, centred. */}
-      <div className="flex flex-1 items-center justify-center">
+      {/* ONE scale system: the canonical stage owns size and anchor. */}
+      <GStage>
         <LivingG
           className={G_PRESENCE}
           showLabels={false}
@@ -96,7 +97,7 @@ export function World({
             },
           }}
         />
-      </div>
+      </GStage>
 
       {(["top", "middle", "bottom"] as RegionKey[]).map((key) => (
         <Panel

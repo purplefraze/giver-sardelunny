@@ -1,9 +1,9 @@
 /**
  * THE canonical stage for every full-screen Living G.
  *
- * One scale system, everywhere: the G is centred in the usable viewport
- * (safe areas excluded) and stands at ~79% of that height, with its locked
- * aspect ratio preserved and a small deliberate margin around it.
+ * One scale system, everywhere: the G consumes up to 94% of the usable
+ * viewport height, with its locked aspect ratio preserved and only enough
+ * edge room to keep the complete silhouette intentionally framed.
  * Huge, never cropped. Surrounding content adapts around it — the G never
  * shrinks to make room, because it is positioned independently of page content.
  */
@@ -20,7 +20,7 @@ export function GStage({ children }: { children: React.ReactNode }) {
     >
       <div
         className="pointer-events-auto"
-        style={{ height: "79%", aspectRatio: "576 / 1133", maxWidth: "92%" }}
+        style={{ height: "94%", aspectRatio: "576 / 1133", maxWidth: "96%" }}
       >
         {children}
       </div>

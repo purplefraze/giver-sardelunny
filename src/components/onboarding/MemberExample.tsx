@@ -45,28 +45,36 @@ export function MemberExample({
     >
       <BackArrow onClick={first ? onBack : onPrev} label="Back" />
 
-      {/* Identity cue — small, outside the G. */}
-      <button
-        type="button"
-        onClick={() => setProfile(true)}
-        className="relative z-10 mx-auto flex items-center gap-3 px-7 pt-6 text-left active:scale-95"
-      >
-        <img
-          src={member.photo}
-          alt={member.name}
-          className="h-9 w-9 rounded-full object-cover"
-        />
-        <span className="text-base font-black uppercase tracking-[0.16em]">
-          {member.name}
-        </span>
-      </button>
-
       <GStage>
         <LivingG
           key={member.id}
           className={G_PRESENCE}
           showLabels
           regions={{
+            top: {
+              onPress: () => setProfile(true),
+              render: (anchor) => {
+                const clipId = `member-photo-${member.id}`;
+                return (
+                  <>
+                    <defs>
+                      <clipPath id={clipId}>
+                        <circle cx={anchor.x} cy={anchor.y} r="38" />
+                      </clipPath>
+                    </defs>
+                    <image
+                      href={member.photo}
+                      x={anchor.x - 38}
+                      y={anchor.y - 38}
+                      width="76"
+                      height="76"
+                      preserveAspectRatio="xMidYMid slice"
+                      clipPath={`url(#${clipId})`}
+                    />
+                  </>
+                );
+              },
+            },
             middle: {
               render: (anchor) =>
                 loopText({
@@ -104,10 +112,10 @@ export function MemberExample({
         <button
           type="button"
           onClick={last ? onDone : onNext}
-          className="rounded-full px-6 py-4 text-base font-black uppercase tracking-[-0.02em] active:scale-95"
-          style={{ background: "var(--world-g)", color: "var(--world-bg)" }}
+          aria-label={last ? "Continue" : `Meet the next person after ${member.name}`}
+          className="flex h-9 w-9 items-center justify-center text-3xl font-bold leading-none transition-transform active:scale-90"
         >
-          Next
+          <span aria-hidden="true">→</span>
         </button>
       </div>
 

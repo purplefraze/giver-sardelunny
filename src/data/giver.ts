@@ -62,7 +62,7 @@ export const MEMBERS: Member[] = [
     headline: "Bread for bike repairs",
     activity: "Trading sourdough loaves for help with her bike chain.",
     about: "Sofia, 34. Trades in flour, favours and very strong coffee.",
-    aboutLines: ["Sofia, 34.", "Loves to bake."],
+    aboutLines: ["Sofia, 34", "Loves to bake"],
     bottomKicker: "Trading",
     bottomLines: ["Bread for", "bike repairs"],
   },

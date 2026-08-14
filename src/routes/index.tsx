@@ -87,6 +87,7 @@ function Index() {
           <World
             world="home"
             identity="Giver"
+            active={top === null}
             regions={{
               top: {
                 label: "Profile",
@@ -120,6 +121,7 @@ function Index() {
           <Screen open={top === "profile"}>
             <World
               world="profile"
+              active={top === "profile"}
               identity="You"
               onBack={pop}
               regions={{
@@ -158,6 +160,7 @@ function Index() {
           <Screen open={top === "community"}>
             <World
               world="community"
+              active={top === "community"}
               identity="Community"
               onBack={pop}
               regions={{
@@ -189,6 +192,7 @@ function Index() {
           <Screen open={top === "wish"}>
             <World
               world="wish"
+              active={top === "wish"}
               identity="Wish"
               onBack={pop}
               regions={{
@@ -228,6 +232,7 @@ function Index() {
           <Screen open={top === "give"}>
             <World
               world="give"
+              active={top === "give"}
               identity="Give"
               onBack={pop}
               regions={{

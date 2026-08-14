@@ -106,7 +106,7 @@ export function MemberExample({
             cues ? "opacity-40" : "opacity-0",
           )}
         >
-          {member.mode} — tap {member.name} to read more
+          Tap {member.name}
         </span>
         <button
           type="button"

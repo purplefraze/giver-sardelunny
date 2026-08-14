@@ -50,7 +50,7 @@ export const MEMBERS: Member[] = [
     about: "John, 58. Believes a thing unused is a thing wasted.",
     aboutLines: ["John, 58.", "Carpenter.", "Bad knees."],
     bottomKicker: "Wish",
-    bottomLines: ["Ride to", "the airport", "Tuesday 4 PM"],
+    bottomLines: ["Airport ride", "Tuesday 4pm"],
   },
   {
     id: "sofia",

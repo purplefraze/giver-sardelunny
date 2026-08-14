@@ -1,11 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { useCallback, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { World, ringPhoto } from "@/components/World";
 import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
 
+type Screen = "profile" | "community" | "wish" | "give";
+
+const SCREENS: Screen[] = ["profile", "community", "wish", "give"];
+
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): { w?: Screen } => {
+    const w = search.w;
+    return typeof w === "string" && SCREENS.includes(w as Screen)
+      ? { w: w as Screen }
+      : {};
+  },
   head: () => ({
     meta: [
       { title: "Giver — Wishing. Giving. Trading." },
@@ -27,26 +37,40 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Screen = "profile" | "community" | "wish" | "give";
-
 function Index() {
   const [entered, setEntered] = useState(false);
   const [gaveTo, setGaveTo] = useState<string | null>(null);
-  /** Press-driven stack. No swiping between areas, no page dots. */
-  const [stack, setStack] = useState<Screen[]>([]);
 
-  const push = useCallback((s: Screen) => setStack((v) => [...v, s]), []);
-  const pop = useCallback(() => setStack((v) => v.slice(0, -1)), []);
-  const top = stack[stack.length - 1] ?? null;
+  /**
+   * ONE source of truth for which world is open: the router.
+   * The visible back arrow and the device/browser back gesture therefore
+   * operate on exactly the same history model — no manual pushState.
+   */
+  const navigate = useNavigate({ from: Route.fullPath });
+  const router = useRouter();
+  const { w } = Route.useSearch();
+  const top = w ?? null;
 
-  // The platform back gesture / browser back closes one screen at a time.
-  useEffect(() => {
-    if (!top) return;
-    window.history.pushState({ giver: top }, "");
-    const onPop = () => setStack((v) => v.slice(0, -1));
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, [top]);
+  /** How many world entries this session pushed, so back() never leaves Giver. */
+  const depth = useRef(0);
+
+  const push = useCallback(
+    (s: Screen) => {
+      depth.current += 1;
+      navigate({ search: { w: s } });
+    },
+    [navigate],
+  );
+
+  const pop = useCallback(() => {
+    if (depth.current > 0) {
+      depth.current -= 1;
+      router.history.back();
+      return;
+    }
+    navigate({ search: {}, replace: true });
+  }, [navigate, router]);
+
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">

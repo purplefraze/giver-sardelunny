@@ -53,7 +53,6 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         </div>
       )}
 
-      {step === "sparks" ? <BackArrow onClick={() => setStep("welcome")} /> : null}
       {step === "before" ? <BackArrow onClick={() => setStep("sparks")} /> : null}
       {step === "choose" ? (
         <BackArrow

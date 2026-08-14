@@ -9,8 +9,11 @@ import {
   LIVING_G_VIEWBOX,
 } from "./g-path";
 
-/** The one canonical presence of a full-size Living G on any screen. */
-export const G_PRESENCE = "h-[80%] max-w-[86%]";
+/**
+ * The one canonical presence of a full-size Living G on any screen.
+ * Scale and anchor are owned by <GStage>; the artwork simply fills it.
+ */
+export const G_PRESENCE = "h-full w-full";
 
 export type RegionKey = "top" | "middle" | "bottom";
 

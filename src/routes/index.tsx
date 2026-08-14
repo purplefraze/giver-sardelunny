@@ -11,7 +11,7 @@ const SCREENS: Screen[] = ["profile", "community", "wish", "give"];
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { w?: Screen } => {
-    const w = search.w;
+    const w = search["w"];
     return typeof w === "string" && SCREENS.includes(w as Screen)
       ? { w: w as Screen }
       : {};

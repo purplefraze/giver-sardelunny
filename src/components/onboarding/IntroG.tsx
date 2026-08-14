@@ -14,14 +14,21 @@ export function IntroG({
   middle,
   bottom,
   onAdvance,
+  copyOpacity = 1,
   children,
 }: {
   world: string;
   middle?: LoopCopy;
   bottom?: LoopCopy;
   onAdvance?: (() => void) | undefined;
+  /** Gentle fade of the words inside the loops. The G itself never moves. */
+  copyOpacity?: number;
   children?: React.ReactNode;
 }) {
+  const fade = {
+    opacity: copyOpacity,
+    transition: "opacity 600ms var(--giver-ease)",
+  } as const;
   return (
     <div
       data-world={world}
@@ -43,10 +50,7 @@ export function IntroG({
                 ? {
                     middle: {
                       render: (anchor) => (
-                        <g
-                          key={middle.lines.join("|")}
-                          style={{ animation: "g-fade 620ms var(--giver-ease) both" }}
-                        >
+                        <g style={fade}>
                           {loopText({
                             anchor,
                             region: "middle",
@@ -62,10 +66,7 @@ export function IntroG({
                 ? {
                     bottom: {
                       render: (anchor) => (
-                        <g
-                          key={bottom.lines.join("|")}
-                          style={{ animation: "g-fade 620ms var(--giver-ease) both" }}
-                        >
+                        <g style={fade}>
                           {loopText({
                             anchor,
                             region: "bottom",
@@ -85,3 +86,4 @@ export function IntroG({
     </div>
   );
 }
+

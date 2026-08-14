@@ -19,7 +19,7 @@ export function IntroG({
   world: string;
   middle?: LoopCopy;
   bottom?: LoopCopy;
-  onAdvance?: () => void;
+  onAdvance?: (() => void) | undefined;
   children?: React.ReactNode;
 }) {
   return (

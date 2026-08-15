@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { buzz } from "@/lib/haptics";
 import {
-  G_ANCHORS,
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
   LOOP_SAFE_RADIUS,
@@ -29,17 +28,21 @@ export type Mode = (typeof MODES)[number];
 
 type P = { x: number; y: number };
 
-/** The ear's canonical home, and the disc that carries it. */
-const HOME: P = G_ANCHORS.smallRing;
-const EAR_R = 74;
+/**
+ * The ear's canonical home and the disc that carries it, measured off the
+ * canonical path so the disc contains the whole ear (and its neck tip) and
+ * nothing else — the middle loop is over 100 units away.
+ */
+const HOME: P = { x: 502, y: 76 };
+const EAR_R = 84;
 
 /** The three resting configurations, in viewBox space. */
 const SEAT: Record<Mode, P> = {
   give: HOME,
   // docked in the concave of the central S-curve: exchange, two sides meeting
-  trade: { x: 470, y: 524 },
+  trade: { x: 490, y: 520 },
   // mirrored across the G
-  borrow: { x: 80, y: 80 },
+  borrow: { x: 88, y: 76 },
 };
 
 const MAGNET = 110;
@@ -60,14 +63,8 @@ function nearest(p: P): Mode {
   return best;
 }
 
-/** Where a captured word sits: clear of the ear, never over the stroke. */
-const WORD_OFFSET: Record<Mode, P> = {
-  give: { x: 0, y: 104 },
-  trade: { x: 0, y: 104 },
-  borrow: { x: 0, y: 104 },
-};
-
-const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.78);
+/** The captured word lives in the ear's own negative space, so it travels with it. */
+const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
 export function EarSelector({
   mode,
@@ -178,27 +175,6 @@ export function EarSelector({
                 transition: "opacity 200ms ease-out",
               }}
             />
-            <text
-              x={seat.x + WORD_OFFSET[m].x}
-              y={seat.y + WORD_OFFSET[m].y}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="var(--world-g)"
-              className="font-black lowercase"
-              style={{
-                fontSize: WORD_SIZE,
-                letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-                opacity: active ? 0.9 : 0,
-                transform: `scale(${active ? 1 : 0.3})`,
-                transformOrigin: `${seat.x + WORD_OFFSET[m].x}px ${
-                  seat.y + WORD_OFFSET[m].y
-                }px`,
-                transition:
-                  "opacity 200ms ease-out, transform 220ms cubic-bezier(0.22,1,0.36,1)",
-              }}
-            >
-              {m}
-            </text>
           </g>
         );
       })}
@@ -216,6 +192,27 @@ export function EarSelector({
             <path d={LIVING_G_PATH} />
           </g>
         </g>
+        {/* dot -> word: the mode reads inside the ear that carries it */}
+        <text
+          x={HOME.x}
+          y={HOME.y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="var(--world-g)"
+          className="font-black lowercase"
+          pointerEvents="none"
+          style={{
+            fontSize: WORD_SIZE,
+            letterSpacing: LOOP_ROLE_STYLE.action.tracking,
+            opacity: dragging ? 0 : 0.9,
+            transform: `scale(${dragging ? 0.3 : 1})`,
+            transformOrigin: `${HOME.x}px ${HOME.y}px`,
+            transition:
+              "opacity 200ms ease-out, transform 220ms cubic-bezier(0.22,1,0.36,1)",
+          }}
+        >
+          {mode}
+        </text>
         <circle
           cx={HOME.x}
           cy={HOME.y}

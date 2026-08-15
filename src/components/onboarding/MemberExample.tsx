@@ -147,7 +147,7 @@ export function MemberExample({
           <>
             <BackArrow onClick={() => setDeep(null)} label={`Back to ${member.name}`} />
             <h2 className="mt-6 text-[16vw] font-black uppercase leading-[0.82] tracking-[-0.05em]">
-              {deep === "activity" ? member.bottomKicker : member.name}
+              {deep === "activity" ? member.bottomKicker : member.username}
             </h2>
             {deep === "profile" ? (
               <>

@@ -25,7 +25,7 @@ const HINGE = G_ANCHORS.smallRing;
 /** Destinations, defined off the canonical geometry — they scale with the G. */
 const SEAT: Record<Mode, { x: number; y: number }> = {
   // the arm's natural down-right ear — where it already sits
-  give: { x: HINGE.x + 46, y: HINGE.y + 96 },
+  give: { x: HINGE.x + 30, y: HINGE.y + 112 },
   // pulled down the spine, pointing into the connecting S-curve
   trade: { x: HINGE.x, y: HINGE.y + 400 },
   // the mirrored left ear
@@ -56,7 +56,7 @@ function nearest(p: { x: number; y: number }): Mode {
 const WORD_OFFSET: Record<Mode, { x: number; y: number }> = {
   give: { x: 0, y: 62 },
   trade: { x: 0, y: 64 },
-  borrow: { x: -6, y: -56 },
+  borrow: { x: -4, y: 62 },
 };
 
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.82);

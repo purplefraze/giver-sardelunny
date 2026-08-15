@@ -34,7 +34,14 @@ type Props = {
   showLabels?: boolean;
   /** Interactive layer drawn above the artwork (e.g. the top-loop selector). */
   overlay?: React.ReactNode;
+  /**
+   * THE SELECTOR'S HOME. When the mode selector owns the small top circle, the
+   * canonical ear + stem are removed ONCE by a tight static cut — applied to
+   * the base artwork and every swell copy, so no fragment can peek back.
+   */
+  earCut?: boolean;
 };
+
 
 
 const ORDER: RegionKey[] = ["top", "middle", "bottom"];

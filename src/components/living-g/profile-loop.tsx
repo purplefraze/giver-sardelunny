@@ -94,7 +94,6 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
   // content we keep stepping down and, in the very worst case, return the
   // smallest readable composition rather than nothing.
   const start = ideal * LOOP_PROFILE_FLEX.max;
-  const preferred = Math.max(LOOP_MIN_SIZE, ideal * LOOP_PROFILE_FLEX.min);
   let fallback: Row[] = [];
   for (let base = start; base >= LOOP_MIN_SIZE; base -= 0.5) {
     const rows: { text: string; size: number; role: LoopRole; lead: boolean }[] = [];
@@ -159,7 +158,6 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
     // Always remember the tightest composition we have seen, so a loop can
     // never come out blank.
     fallback = placed;
-    if (ok && base <= start && base >= Math.min(preferred, start)) return placed;
     if (ok) return placed;
   }
   return fallback;

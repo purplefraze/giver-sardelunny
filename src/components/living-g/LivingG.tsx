@@ -61,10 +61,15 @@ const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
   bottom: { x: G_ANCHORS.lowerRing.x, y: G_ANCHORS.lowerRing.y - 46 },
 };
 
+/**
+ * Primary loop ACTION words ("give", "wish", "grant", "discover"). One scale,
+ * derived from each loop's safe radius so equivalent actions always carry
+ * equivalent weight — substantial next to a full-screen G, never tiny labels.
+ */
 const LABEL_SIZE: Record<RegionKey, number> = {
-  top: 15,
-  middle: 30,
-  bottom: 30,
+  top: Math.round(LOOP_SAFE_RADIUS.top * 0.52),
+  middle: Math.round(LOOP_SAFE_RADIUS.middle * 0.56),
+  bottom: Math.round(LOOP_SAFE_RADIUS.bottom * 0.42),
 };
 
 /**

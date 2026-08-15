@@ -4,6 +4,7 @@ import {
   LOOP_IDEAL_RATIO,
   LOOP_MIN_SIZE,
   LOOP_ROLE_SIZE,
+  LOOP_PROFILE_FLEX,
   LOOP_ROLE_STYLE,
   LOOP_TEXT_FILL,
 } from "./type-scale";
@@ -88,12 +89,16 @@ function halfChord(r: number, dy: number) {
 type Row = { text: string; size: number; role: LoopRole; y: number };
 
 function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
-  for (let base = ideal; base >= LOOP_MIN_SIZE; base -= 0.5) {
+  // Profiles flex, but only inside a tightly controlled range of the ideal
+  // primary size: no profile is ever enormous next to another.
+  const start = ideal * LOOP_PROFILE_FLEX.max;
+  const floor = Math.max(LOOP_MIN_SIZE, ideal * LOOP_PROFILE_FLEX.min);
+  for (let base = start; base >= floor; base -= 0.5) {
     const rows: { text: string; size: number; role: LoopRole; lead: boolean }[] = [];
     for (const block of blocks) {
       const role = block.role ?? "primary";
       const full = Math.max(LOOP_MIN_SIZE, base * SIZE_RATIO[role]);
-      const max = radius * 1.6;
+      const max = radius * 1.72;
       // A logical phrase stays on ONE line, condensed a little if needed,
       // before we ever allow it to break.
       let size = full;

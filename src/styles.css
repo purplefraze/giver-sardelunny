@@ -157,9 +157,27 @@
   --giver-trade: oklch(0.58 0.23 27); /* Red — Trade */
   --giver-community: oklch(0.58 0.19 250); /* Blue — Community */
   --giver-discovery: oklch(0.86 0.19 95); /* Yellow — discovery, maps, finding */
+  --giver-borrow: oklch(0.7 0.19 350); /* Pink — Borrow (and lending) */
+
+  /* ---- COMPLEMENTARY TYPOGRAPHY TOKENS ----
+     THE G CHOOSES THE TYPE COLOUR. Every mode's in-loop typography colour is
+     its G colour's complementary hue, pulled to a readable lightness. Never
+     black, white, grey or an unrelated accent. */
+  --giver-give-complement: oklch(0.45 0.16 250); /* orange G -> blue type */
+  --giver-wish-complement: oklch(0.44 0.15 135); /* purple G -> green type */
+  --giver-profile-complement: oklch(0.44 0.19 330); /* green G -> magenta type */
+  --giver-trade-complement: oklch(0.45 0.12 205); /* red G -> teal type */
+  --giver-community-complement: oklch(0.46 0.11 75); /* blue G -> amber type */
+  --giver-discovery-complement: oklch(0.44 0.16 285); /* yellow G -> violet type */
+  --giver-borrow-complement: oklch(0.44 0.14 155); /* pink G -> green type */
+
+  /* Orange/green aliases, named by colour for convenience. */
+  --giver-orange: var(--giver-give);
+  --giver-orange-complement: var(--giver-give-complement);
 
   /* Legacy aliases kept pointing at the canonical spectrum. */
   --giver-green: var(--giver-profile);
+  --giver-green-complement: var(--giver-profile-complement);
   --giver-blue: var(--giver-community);
   --giver-yellow: var(--giver-discovery);
 
@@ -188,6 +206,7 @@
   --color-trade: var(--giver-trade);
   --color-community: var(--giver-community);
   --color-discovery: var(--giver-discovery);
+  --color-borrow: var(--giver-borrow);
   --color-giver: var(--giver-profile);
 }
 
@@ -210,7 +229,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-profile);
   --world-ink: oklch(0.42 0.14 145);
-  --world-text: oklch(0.44 0.19 330);
+  --world-text: var(--giver-profile-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -219,7 +238,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-wish);
   --world-ink: oklch(0.4 0.2 300);
-  --world-text: oklch(0.44 0.15 135);
+  --world-text: var(--giver-wish-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -228,7 +247,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-give);
   --world-ink: oklch(0.45 0.16 45);
-  --world-text: oklch(0.45 0.16 250);
+  --world-text: var(--giver-give-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -237,7 +256,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-trade);
   --world-ink: oklch(0.44 0.19 27);
-  --world-text: oklch(0.45 0.12 205);
+  --world-text: var(--giver-trade-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -246,17 +265,8 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-give);
   --world-ink: oklch(0.42 0.15 45);
-  --world-text: oklch(0.45 0.16 250);
+  --world-text: var(--giver-give-complement);
   --world-accent: var(--giver-discovery);
-}
-
-/* Sparks that are the user's own — the Wish/self colour, purple. */
-[data-world="sparks"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--giver-wish);
-  --world-ink: oklch(0.4 0.2 300);
-  --world-text: oklch(0.44 0.15 135);
-  --world-accent: oklch(0.72 0.19 305);
 }
 
 /* Sparks to gift — the giving colour for this prototype state, green. */
@@ -264,7 +274,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-profile);
   --world-ink: oklch(0.42 0.14 145);
-  --world-text: oklch(0.44 0.19 330);
+  --world-text: var(--giver-profile-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -273,7 +283,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-community);
   --world-ink: oklch(0.4 0.15 255);
-  --world-text: oklch(0.46 0.11 75);
+  --world-text: var(--giver-community-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -282,7 +292,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-discovery);
   --world-ink: oklch(0.52 0.15 85);
-  --world-text: oklch(0.44 0.16 285);
+  --world-text: var(--giver-discovery-complement);
   --world-accent: var(--giver-give);
 }
 
@@ -290,7 +300,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-community);
   --world-ink: oklch(0.4 0.15 255);
-  --world-text: oklch(0.46 0.11 75);
+  --world-text: var(--giver-community-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -298,7 +308,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-trade);
   --world-ink: oklch(0.44 0.19 27);
-  --world-text: oklch(0.45 0.12 205);
+  --world-text: var(--giver-trade-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -307,7 +317,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-profile);
   --world-ink: oklch(0.4 0.14 145);
-  --world-text: oklch(0.44 0.19 330);
+  --world-text: var(--giver-profile-complement);
   --world-accent: var(--giver-discovery);
 }
 
@@ -316,7 +326,17 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-community);
   --world-ink: oklch(0.4 0.15 255);
-  --world-text: oklch(0.46 0.11 75);
+  --world-text: var(--giver-community-complement);
+  --world-accent: var(--giver-discovery);
+}
+
+/* Borrow — pink G, green complement. Temporary access, returned to its owner. */
+[data-world="borrow"],
+[data-world="borrowing"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-borrow);
+  --world-ink: oklch(0.44 0.17 350);
+  --world-text: var(--giver-borrow-complement);
   --world-accent: var(--giver-discovery);
 }
 

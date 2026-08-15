@@ -31,21 +31,19 @@ const OPENING: Beat[] = [
   { world: "welcome", bottom: ["kindness is", "currency"] },
   // "to start you off" is addressed to the user: the middle loop is me.
   { world: "welcome", middle: ["to start", "you off"] },
-  // Sparks are introduced as a gift into the world: the bottom loop.
   { world: "welcome", bottom: ["here's", "100 sparks"] },
-  // Mine to use — the wish/self colour.
-  { world: "sparks", middle: ["50 sparks", "are yours"] },
-  // Mine to give away — the giving colour, taught spatially.
+  // Straight from the orange admin voice to GREEN, and green stays green.
+  { world: "gift", middle: ["50 sparks", "are yours"] },
   {
     world: "gift",
     middle: ["50 sparks", "are yours"],
-    bottom: ["50 sparks", "are yours", "to gift"],
+    bottom: ["50 sparks", "are yours", "to give"],
   },
-  { world: "welcome", bottom: ["are you", "a giver?"] },
+  { world: "gift", bottom: ["are you", "a giver?"] },
 ];
 
 /** Straight into the people. */
-const MEET_INTRO: Beat[] = [{ world: "meet", bottom: ["meet three", "givers"] }];
+const MEET_INTRO: Beat[] = [{ world: "meet", bottom: ["meet four", "givers"] }];
 
 const HOLD = 3000;
 const FADE = 600;
@@ -54,7 +52,9 @@ const ROLE_COLOUR: Record<Member["world"], string> = {
   giving: "var(--giver-discovery)",
   wishing: "var(--giver-community)",
   trading: "var(--giver-trade)",
+  borrowing: "var(--giver-borrow)",
 };
+
 
 /** Plays a list of beats in one loop: fade in, hold, fade out. */
 function useBeats(script: Beat[], active: boolean) {
@@ -191,7 +191,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
       {...(beat.bottom ? { bottom: { lines: beat.bottom } } : {})}
       copyOpacity={opacity}
     >
-      <ForwardCue show={last && arrow} label="yes — meet three givers" onClick={onDone} />
+      <ForwardCue show={last && arrow} label="yes — meet four givers" onClick={onDone} />
     </IntroG>
   );
 }

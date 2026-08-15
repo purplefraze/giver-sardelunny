@@ -2,6 +2,7 @@ import giuliaAsset from "@/assets/giulia.jpg.asset.json";
 import sofiaAsset from "@/assets/sofia-profile.jpg.asset.json";
 import robinAsset from "@/assets/robin.jpg.asset.json";
 import me from "@/assets/me.jpg";
+import kai from "@/assets/kai.jpg";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
 
 /**
@@ -17,9 +18,9 @@ export type Member = {
   distance: string;
   photo: string;
   blurb: string;
-  mode: "wishing" | "giving" | "trading";
-  /** Role colour world: GIVING yellow, WISHING blue, TRADING trade colour. */
-  world: "giving" | "wishing" | "trading";
+  mode: "wishing" | "giving" | "trading" | "borrowing";
+  /** Role colour world: giving, wishing, trading, borrowing (pink). */
+  world: "giving" | "wishing" | "trading" | "borrowing";
   /** Word for what they are doing on Giver. */
   action: string;
   /** Their current activity, kept to a handful of words. */
@@ -127,6 +128,36 @@ export const MEMBERS: Member[] = [
       wishes: ["a trailer for one weekend"],
       gives: ["stage lighting for the street party", "a wheelbarrow of kindling"],
       trades: ["tool sharpening for a car wash", "firewood for festival tickets"],
+    },
+  },
+  {
+    // Temporary prototype person for the fourth mode: BORROW (pink).
+    // Username, photo and profile details are placeholders for now.
+    id: "kai",
+    name: "Kai",
+    username: "@kai",
+    distance: "1.1 km away",
+    photo: kai,
+    blurb: "temporary borrow example.",
+    mode: "borrowing",
+    world: "borrowing",
+    action: "borrow",
+    headline: "a bike for the summer",
+    activity: "borrowing a bike for the summer.",
+    about: "24, about 1.1 km away. temporary prototype person for borrow.",
+    age: "24",
+    byDay: "bike commuter",
+    byNight: "night swimmer",
+    weekend: "river trails",
+    bottom: [
+      { text: "borrow", role: "secondary" },
+      { text: "a bike", role: "primary" },
+      { text: "for the summer", role: "primary", lead: true },
+    ],
+    history: {
+      wishes: ["a helmet, any size"],
+      gives: ["a spare set of lights"],
+      trades: ["nothing yet"],
     },
   },
 ];

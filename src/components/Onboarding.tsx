@@ -31,9 +31,10 @@ type Beat = {
 
 const OPENING: Beat[] = [
   { world: "welcome", bottom: ["welcome to", "giver"] },
-  { world: "welcome", bottom: ["kindness as", "currency"] },
+  { world: "welcome", bottom: ["kindness", "as", "currency"] },
   // Addressed to the user: the middle loop is me.
-  { world: "welcome", middle: ["to help you", "get started..."] },
+  { world: "welcome", middle: ["to get you", "started..."] },
+
   { world: "welcome", bottom: ["here's", "100 sparks", "from giver"] },
   // ONE coordinated beat: the G turns green as the green words arrive.
   { world: "gift", middle: ["50 sparks", "for you", "to wish"] },

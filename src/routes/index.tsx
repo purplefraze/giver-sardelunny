@@ -93,24 +93,24 @@ function Index() {
           {/* HOME — the root. The G is the navigation. */}
           <World
             world="home"
-            identity="Giver"
+            identity="giver"
             active={top === null}
             regions={{
               top: {
-                label: "Profile",
-                panelTitle: "Profile",
+                label: "profile",
+                panelTitle: "profile",
                 panelBody: null,
                 onPress: () => push("profile"),
               },
               middle: {
-                label: "Wish",
-                panelTitle: "Wish",
+                label: "wish",
+                panelTitle: "wish",
                 panelBody: null,
                 onPress: () => push("wish"),
               },
               bottom: {
-                label: "Give",
-                panelTitle: "Give",
+                label: "give",
+                panelTitle: "give",
                 panelBody: null,
                 onPress: () => push("give"),
               },
@@ -122,46 +122,46 @@ function Index() {
             <World
               world="profile"
               active={top === "profile"}
-              identity="You"
+              identity="you"
               onBack={pop}
               overlay={
                 <TopLoopSelector
                   position={myTopPos}
                   onChange={setMyTopPos}
-                  states={[
-                    topLoopContent.photo(ME.photo, "me-top"),
-                    topLoopContent.sparks(gaveTo ? 50 : 100),
-                    topLoopContent.placeholder(),
-                  ]}
+                  content={
+                    <>
+                      {topLoopContent.photo(ME.photo, "me-top")}
+                      {topLoopContent.stateLabel(HISTORY_STATES[myTopPos])}
+                    </>
+                  }
                 />
               }
               regions={{
                 top: {
-                  label: "Activity",
-                  panelTitle: "My activity",
+                  label: "",
+                  panelTitle: HISTORY_STATES[myTopPos],
                   panelBody: (
                     <>
-                      <p>
+                      {MY_HISTORY[myTopPos].map((line) => (
+                        <p key={line}>{line}</p>
+                      ))}
+                      <p className="opacity-70">
                         {gaveTo
-                          ? `You gave 50 Sparks to ${gaveTo}.`
-                          : "You still have 50 Sparks to give away."}
-                      </p>
-                      <p className="opacity-70">No wishes yet. No gives yet.</p>
-                      <p className="text-3xl font-black">
-                        {gaveTo ? "50" : "100"} Sparks of energy left
+                          ? `you gave 50 sparks to ${gaveTo}.`
+                          : "you still have 50 sparks to give away."}
                       </p>
                     </>
                   ),
                 },
                 middle: {
                   label: "",
-                  panelTitle: "Me",
-                  panelBody: <p>{ME.name} — new to Giver.</p>,
+                  panelTitle: "me",
+                  panelBody: <p>{ME.name} — new to giver.</p>,
                   render: ringPhoto(ME.photo, "me", 92),
                 },
                 bottom: {
-                  label: "About",
-                  panelTitle: "About me",
+                  label: "about",
+                  panelTitle: "about me",
                   panelBody: <p>{ME.about}</p>,
                 },
               }}
@@ -172,66 +172,66 @@ function Index() {
             <World
               world="community"
               active={top === "community"}
-              identity="Community"
+              identity="community"
               onBack={pop}
               regions={{
                 top: {
-                  label: "Map",
-                  panelTitle: "Nearby",
+                  label: "map",
+                  panelTitle: "nearby",
                   panelBody: (
                     <p className="opacity-70">
-                      The map lands here — who is wishing and giving around you,
+                      the map lands here — who is wishing and giving around you,
                       right now.
                     </p>
                   ),
                 },
                 middle: {
-                  label: "Wishes",
-                  panelTitle: "Wishes",
+                  label: "wishes",
+                  panelTitle: "wishes",
                   panelBody: COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>),
                 },
                 bottom: {
-                  label: "Gives",
-                  panelTitle: "Gives",
+                  label: "gives",
+                  panelTitle: "gives",
                   panelBody: COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>),
                 },
               }}
             />
           </Screen>
 
-          {/* Wish world — the same Living G, in blue. */}
+          {/* Wish world — the same Living G, in purple. */}
           <Screen open={top === "wish"}>
             <World
               world="wish"
               active={top === "wish"}
-              identity="Wish"
+              identity="wish"
               onBack={pop}
               regions={{
                 top: {
-                  label: "Search",
-                  panelTitle: "Search wishes",
+                  label: "search",
+                  panelTitle: "search wishes",
                   panelBody: (
                     <p className="opacity-70">
-                      Search inside Wishes. Coming next.
+                      search inside wishes. coming next.
                     </p>
                   ),
                 },
                 middle: {
-                  label: "Make",
-                  panelTitle: "Make a wish",
+                  label: "make",
+                  panelTitle: "make a wish",
                   panelBody: (
                     <p className="opacity-70">
-                      Your own Wish space — make a wish, see your wishes. Coming
+                      your own wish space — make a wish, see your wishes. coming
                       next.
                     </p>
                   ),
                 },
                 bottom: {
-                  label: "Grant",
-                  panelTitle: "Grant a wish",
+                  label: "grant",
+                  panelTitle: "grant a wish",
                   panelBody: (
                     <p className="opacity-70">
-                      Wishes from other people you could fulfil. Coming next.
+                      wishes from other people you could fulfil. coming next.
                     </p>
                   ),
                 },
@@ -239,39 +239,39 @@ function Index() {
             />
           </Screen>
 
-          {/* Give world — the same Living G, in yellow. */}
+          {/* Give world — the same Living G, in orange. */}
           <Screen open={top === "give"}>
             <World
               world="give"
               active={top === "give"}
-              identity="Give"
+              identity="give"
               onBack={pop}
               regions={{
                 top: {
-                  label: "Search",
-                  panelTitle: "Search gives",
+                  label: "search",
+                  panelTitle: "search gives",
                   panelBody: (
                     <p className="opacity-70">
-                      Search inside Gives — things, skills, time, knowledge,
-                      help. Coming next.
+                      search inside gives — things, skills, time, knowledge,
+                      help. coming next.
                     </p>
                   ),
                 },
                 middle: {
-                  label: "Share",
-                  panelTitle: "What are you sharing?",
+                  label: "share",
+                  panelTitle: "what are you sharing?",
                   panelBody: (
                     <p className="opacity-70">
-                      Share something you have, know, or can do.
+                      share something you have, know, or can do.
                     </p>
                   ),
                 },
                 bottom: {
-                  label: "Discover",
-                  panelTitle: "Community gives",
+                  label: "discover",
+                  panelTitle: "community gives",
                   panelBody: (
                     <p className="opacity-70">
-                      What other people are sharing with the community. Coming
+                      what other people are sharing with the community. coming
                       next.
                     </p>
                   ),
@@ -280,6 +280,7 @@ function Index() {
             />
           </Screen>
         </>
+
       )}
     </main>
   );

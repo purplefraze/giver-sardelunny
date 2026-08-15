@@ -89,11 +89,13 @@ function halfChord(r: number, dy: number) {
 type Row = { text: string; size: number; role: LoopRole; y: number };
 
 function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
-  // Profiles flex, but only inside a tightly controlled range of the ideal
-  // primary size: no profile is ever enormous next to another.
+  // Profiles flex inside a controlled range of the ideal primary size, but the
+  // loop must NEVER render empty: if the preferred range cannot hold the
+  // content we keep stepping down and, in the very worst case, return the
+  // smallest readable composition rather than nothing.
   const start = ideal * LOOP_PROFILE_FLEX.max;
-  const floor = Math.max(LOOP_MIN_SIZE, ideal * LOOP_PROFILE_FLEX.min);
-  for (let base = start; base >= floor; base -= 0.5) {
+  let fallback: Row[] = [];
+  for (let base = start; base >= LOOP_MIN_SIZE; base -= 0.5) {
     const rows: { text: string; size: number; role: LoopRole; lead: boolean }[] = [];
     for (const block of blocks) {
       const role = block.role ?? "primary";
@@ -140,26 +142,25 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
       (sum, row, i) => sum + row.size * 1.02 + (i === 0 ? 0 : row.lead ? lead : gap),
       0,
     );
-    if (total > radius * 1.94) continue;
 
     let y = -total / 2;
     const placed: Row[] = [];
-    let ok = true;
+    let ok = total <= radius * 1.94;
     for (let i = 0; i < rows.length; i += 1) {
       const row = rows[i]!;
       if (i > 0) y += row.lead ? lead : gap;
       const centre = y + (row.size * 1.02) / 2;
       const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.46) * 2;
-      if (widthOf(row.text, row.size, row.role) > allowed) {
-        ok = false;
-        break;
-      }
+      if (widthOf(row.text, row.size, row.role) > allowed) ok = false;
       placed.push({ text: row.text, size: row.size, role: row.role, y: centre });
       y += row.size * 1.02;
     }
+    // Always remember the tightest composition we have seen, so a loop can
+    // never come out blank.
+    fallback = placed;
     if (ok) return placed;
   }
-  return [];
+  return fallback;
 }
 
 /** Render a typed block stack safely inside a loop's negative space. */

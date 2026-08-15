@@ -55,28 +55,40 @@ function halfChord(r: number, dy: number) {
 type Row = { text: string; size: number; role: "message" | "label"; y: number };
 
 function fit(blocks: Block[], radius: number, ideal: number): Row[] {
+  // The loop must never render empty: we keep the tightest composition seen as
+  // a fallback if nothing fits the safe circle perfectly.
+  let fallback: Row[] = [];
   for (let base = ideal; base >= LOOP_MIN_SIZE; base -= 0.5) {
-    const rows: { text: string; size: number; role: "message" | "label" }[] = [];
-    for (const block of blocks) {
-      const full = Math.max(
+    const max = radius * 1.78;
+    const sizeOf = (role: "message" | "label") =>
+      Math.max(
         LOOP_MIN_SIZE,
-        base * (block.role === "label" ? LOOP_ROLE_SIZE.label : LOOP_ROLE_SIZE.message),
+        base * (role === "label" ? LOOP_ROLE_SIZE.label : LOOP_ROLE_SIZE.message),
       );
-      const max = radius * 1.78;
-      // A given line is already a deliberate phrase: keep it on ONE line,
-      // condensed a little if needed, before ever allowing it to break.
-      let kept = false;
-      for (const f of [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64]) {
-        const s = Math.max(LOOP_MIN_SIZE, full * f);
-        if (widthOf(block.text, s, block.role) <= max) {
-          rows.push({ text: block.text, size: s, role: block.role });
-          kept = true;
-          break;
-        }
+
+    // ONE scale per composition: every message line in this loop shares the
+    // single size that lets the widest phrase fit. Never one big line next to
+    // one small line.
+    let factor = 1;
+    for (const block of blocks) {
+      const full = sizeOf(block.role);
+      const need = widthOf(block.text, full, block.role);
+      if (need > max) factor = Math.min(factor, Math.max(0.6, max / need));
+    }
+
+    const rows: { text: string; size: number; role: "message" | "label" }[] = [];
+    let wrapped = false;
+    for (const block of blocks) {
+      const size = Math.max(LOOP_MIN_SIZE, sizeOf(block.role) * factor);
+      // A given line is already a deliberate phrase: keep it on ONE line
+      // whenever the shared scale allows it.
+      if (widthOf(block.text, size, block.role) <= max) {
+        rows.push({ text: block.text, size, role: block.role });
+        continue;
       }
-      if (kept) continue;
-      for (const text of wrap(block.text, full, max, block.role)) {
-        rows.push({ text, size: full, role: block.role });
+      wrapped = true;
+      for (const text of wrap(block.text, size, max, block.role)) {
+        rows.push({ text, size, role: block.role });
       }
     }
 
@@ -84,25 +96,23 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
     const gap = base * 0.1;
     const total =
       rows.reduce((sum, row) => sum + row.size * 1.02, 0) + gap * (rows.length - 1);
-    if (total > radius * 1.84) continue;
-
 
     let y = -total / 2;
     const placed: Row[] = [];
-    let ok = true;
+    // A supplied line is a deliberate phrase: a composition only counts as a
+    // fit when no phrase had to break.
+    let ok = total <= radius * 1.84 && !wrapped;
     for (const row of rows) {
       const centre = y + (row.size * 1.02) / 2;
       const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.56) * 2;
-      if (widthOf(row.text, row.size, row.role) > allowed) {
-        ok = false;
-        break;
-      }
+      if (widthOf(row.text, row.size, row.role) > allowed) ok = false;
       placed.push({ ...row, y: centre });
       y += row.size * 1.02 + gap;
     }
+    fallback = placed;
     if (ok) return placed;
   }
-  return [];
+  return fallback;
 }
 
 /**

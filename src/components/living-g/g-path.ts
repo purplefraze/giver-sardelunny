@@ -30,3 +30,16 @@ export const LOOP_SAFE_RADIUS = {
   middle: 122,
   bottom: 172,
 } as const;
+
+/**
+ * TRUE optical centre of each loop's negative space, measured off the canonical
+ * path (largest inscribed circle per loop). CONTENT-ONLY: in-loop typography is
+ * centred here, while G_ANCHORS keeps owning swell origins and hit bands.
+ * Never used to move, scale or redraw the G itself.
+ */
+export const LOOP_CENTRE = {
+  top: { x: 496, y: 78 },
+  middle: { x: 272, y: 298 },
+  bottom: { x: 270, y: 840 },
+} as const;
+

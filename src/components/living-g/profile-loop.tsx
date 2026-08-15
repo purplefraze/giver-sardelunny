@@ -1,13 +1,24 @@
 import type { Anchor, RegionKey } from "./LivingG";
 import { LOOP_SAFE_RADIUS } from "./g-path";
+import {
+  LOOP_IDEAL_RATIO,
+  LOOP_MIN_SIZE,
+  LOOP_ROLE_SIZE,
+  LOOP_ROLE_STYLE,
+  LOOP_TEXT_FILL,
+} from "./type-scale";
 
 /**
  * The reusable profile typography system for the Living G loops.
  *
- * Content is composed FOR the circle: a stack of typed blocks
- * (PRIMARY / SECONDARY label / TERTIARY detail) is scaled up as large as the
- * loop's safe inscribed circle allows, with logical phrases kept intact
- * wherever they fit. The G never adapts to the content.
+ * Content is composed FOR the circle: a stack of typed blocks is scaled up as
+ * large as the loop's safe inscribed circle allows, with logical phrases kept
+ * intact wherever they fit. The G never adapts to the content.
+ *
+ * Roles map onto the shared Living G type scale (type-scale.ts):
+ *   primary   -> primary loop message / action
+ *   secondary -> small label above an answer ("by day", "giving")
+ *   tertiary  -> supporting detail ("+1 more", "this tuesday")
  */
 
 export type LoopRole = "primary" | "secondary" | "tertiary";
@@ -29,15 +40,21 @@ export function clampField(text: string) {
 
 /** Average glyph width of the bold display face, as a share of font size. */
 const WIDTH_RATIO: Record<LoopRole, number> = {
-  primary: 0.62,
-  secondary: 0.74, // tracked-out label
-  tertiary: 0.62,
+  primary: 0.58,
+  secondary: 0.72, // tracked-out label
+  tertiary: 0.58,
 };
 
 const SIZE_RATIO: Record<LoopRole, number> = {
-  primary: 1,
-  secondary: 0.44,
-  tertiary: 0.62,
+  primary: LOOP_ROLE_SIZE.message,
+  secondary: LOOP_ROLE_SIZE.label,
+  tertiary: LOOP_ROLE_SIZE.detail,
+};
+
+const STYLE: Record<LoopRole, { opacity: number; tracking: string }> = {
+  primary: LOOP_ROLE_STYLE.message,
+  secondary: LOOP_ROLE_STYLE.label,
+  tertiary: LOOP_ROLE_STYLE.detail,
 };
 
 function widthOf(text: string, size: number, role: LoopRole) {
@@ -71,19 +88,19 @@ function halfChord(r: number, dy: number) {
 type Row = { text: string; size: number; role: LoopRole; y: number };
 
 function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
-  for (let base = ideal; base >= 9; base -= 0.5) {
+  for (let base = ideal; base >= LOOP_MIN_SIZE; base -= 0.5) {
     const rows: { text: string; size: number; role: LoopRole; lead: boolean }[] = [];
     for (const block of blocks) {
       const role = block.role ?? "primary";
-      const full = Math.max(8, base * SIZE_RATIO[role]);
-      const max = radius * 1.66;
+      const full = Math.max(LOOP_MIN_SIZE, base * SIZE_RATIO[role]);
+      const max = radius * 1.6;
       // A logical phrase stays on ONE line, condensed a little if needed,
       // before we ever allow it to break.
       let size = full;
       let lines = [block.text];
       let single = false;
       for (const f of [1, 0.94, 0.88, 0.82, 0.76]) {
-        const s = Math.max(8, full * f);
+        const s = Math.max(LOOP_MIN_SIZE, full * f);
         if (widthOf(block.text, s, role) <= max) {
           size = s;
           single = true;
@@ -97,7 +114,7 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
         lines = wrap(block.text, full, max, role);
         if (lines.length > 2) {
           for (let f = 0.96; f >= 0.5; f -= 0.03) {
-            const s = Math.max(8, full * f);
+            const s = Math.max(LOOP_MIN_SIZE, full * f);
             const candidate = wrap(block.text, s, max, role);
             if (candidate.length <= 2) {
               size = s;
@@ -112,13 +129,13 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
       );
     }
 
-    const gap = base * 0.12;
-    const lead = base * 0.4;
+    const gap = base * 0.1;
+    const lead = base * 0.32;
     const total = rows.reduce(
-      (sum, row, i) => sum + row.size * 1.04 + (i === 0 ? 0 : row.lead ? lead : gap),
+      (sum, row, i) => sum + row.size * 1.02 + (i === 0 ? 0 : row.lead ? lead : gap),
       0,
     );
-    if (total > radius * 1.86) continue;
+    if (total > radius * 1.78) continue;
 
     let y = -total / 2;
     const placed: Row[] = [];
@@ -126,25 +143,19 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
     for (let i = 0; i < rows.length; i += 1) {
       const row = rows[i]!;
       if (i > 0) y += row.lead ? lead : gap;
-      const centre = y + (row.size * 1.04) / 2;
-      const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.52) * 2;
+      const centre = y + (row.size * 1.02) / 2;
+      const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.54) * 2;
       if (widthOf(row.text, row.size, row.role) > allowed) {
         ok = false;
         break;
       }
       placed.push({ text: row.text, size: row.size, role: row.role, y: centre });
-      y += row.size * 1.04;
+      y += row.size * 1.02;
     }
     if (ok) return placed;
   }
   return [];
 }
-
-const STYLE: Record<LoopRole, { opacity: number; tracking: string }> = {
-  primary: { opacity: 0.95, tracking: "-0.035em" },
-  secondary: { opacity: 0.5, tracking: "0.18em" },
-  tertiary: { opacity: 0.68, tracking: "0.02em" },
-};
 
 /** Render a typed block stack safely inside a loop's negative space. */
 export function profileLoop({
@@ -159,7 +170,7 @@ export function profileLoop({
   lift?: number;
 }) {
   const radius = LOOP_SAFE_RADIUS[region];
-  const rows = compose(blocks, radius, Math.round(radius * 0.42));
+  const rows = compose(blocks, radius, Math.round(radius * LOOP_IDEAL_RATIO));
   const dy = -Math.min(lift, Math.max(0, radius * 0.14));
 
   return (
@@ -171,8 +182,8 @@ export function profileLoop({
           y={anchor.y + row.y + dy}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="var(--world-ink)"
-          className="font-black uppercase"
+          fill={LOOP_TEXT_FILL}
+          className="font-black lowercase"
           style={{
             fontSize: row.size,
             letterSpacing: STYLE[row.role].tracking,

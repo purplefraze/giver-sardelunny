@@ -88,6 +88,9 @@ export const RHYTHM = {
   /** Cue lingers a beat after release, then dissolves. */
   cueOut: 420,
   hold: 1100,
+  /** How long a deliberate press-and-hold takes to reveal a loop's label. */
+  holdReveal: 1500,
+
 } as const;
 
 /**

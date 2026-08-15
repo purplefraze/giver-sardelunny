@@ -34,12 +34,12 @@ type P = { x: number; y: number };
  * nothing else — the middle loop is over 100 units away.
  */
 const HOME: P = { x: 502, y: 76 };
-const EAR_R = 84;
+const EAR_R = 100;
 
 /** The four resting configurations, in viewBox space. */
 const SEAT: Record<Mode, P> = {
   // top centre, above the middle loop: asking
-  wish: { x: 296, y: 62 },
+  wish: { x: 292, y: 44 },
   give: HOME,
   // docked in the concave of the central S-curve: exchange, two sides meeting
   trade: { x: 490, y: 520 },

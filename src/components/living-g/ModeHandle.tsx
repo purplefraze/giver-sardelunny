@@ -200,19 +200,12 @@ export function ModeHandle({
       })}
 
       {/* The arm itself: hinged on the small loop, following the finger. */}
-      <g
-        style={{
-          transition: dragging
-            ? "none"
-            : `transform ${SNAP}ms cubic-bezier(0.22,1,0.36,1)`,
-          transform: `translate(${pos.x - rest.x}px, ${pos.y - rest.y}px)`,
-        }}
-      >
+      <g>
         <line
           x1={HINGE.x}
           y1={HINGE.y}
-          x2={rest.x}
-          y2={rest.y}
+          x2={pos.x}
+          y2={pos.y}
           stroke="var(--world-g)"
           strokeWidth={dragging ? 9 : 8}
           strokeLinecap="round"
@@ -220,8 +213,8 @@ export function ModeHandle({
         />
         {/* The head that captures the destination. */}
         <circle
-          cx={rest.x}
-          cy={rest.y}
+          cx={pos.x}
+          cy={pos.y}
           r={dragging ? 25 : 23}
           fill="none"
           stroke="var(--world-g)"
@@ -230,9 +223,10 @@ export function ModeHandle({
         />
         <circle
           id="mode-handle-grip"
-          cx={rest.x}
-          cy={rest.y}
+          cx={pos.x}
+          cy={pos.y}
           r={44}
+
           fill="transparent"
           className="touch-none outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
           style={{ cursor: "grab", outline: "none" }}

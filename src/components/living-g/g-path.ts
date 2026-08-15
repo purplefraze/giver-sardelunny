@@ -55,3 +55,37 @@ export const LOOP_RIM_RADIUS = {
   bottom: 246,
 } as const;
 
+
+/**
+ * THE MODE SELECTOR, AUTHORED. The moving piece is the G's own small circular
+ * end plus its stem, re-authored as explicit geometry (a ring and a tapered
+ * stem) measured off the canonical path by ray-casting. READ-ONLY: the
+ * canonical path is never edited, rotated or deformed to make the selector.
+ *
+ *   home      canonical centre of the small circle
+ *   innerR/outerR   the ring's measured hole and outer edge
+ *   stemWidth measured width of the stem that joins it to the middle loop
+ *   gap       clearance between the middle loop's rim and the ring's outer edge
+ *   cut*      the TIGHT static cut that removes the original ear + stem only
+ */
+export const EAR_GEOMETRY = {
+  home: { x: 499.4, y: 78.5 },
+  innerR: 50,
+  outerR: 79,
+  stemWidth: 34,
+  gap: 24.5,
+  cutR: 100,
+  cutStemWidth: 54,
+} as const;
+
+/**
+ * The static ear cut's stem segment, in viewBox space: it starts just OUTSIDE
+ * the middle loop's rim (so the rim itself is never touched) and ends at the
+ * ear's home.
+ */
+export const EAR_CUT_STEM = {
+  x1: 414.5,
+  y1: 160.5,
+  x2: EAR_GEOMETRY.home.x,
+  y2: EAR_GEOMETRY.home.y,
+} as const;

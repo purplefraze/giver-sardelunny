@@ -55,6 +55,9 @@ function halfChord(r: number, dy: number) {
 type Row = { text: string; size: number; role: "message" | "label"; y: number };
 
 function fit(blocks: Block[], radius: number, ideal: number): Row[] {
+  // The loop must never render empty: we keep the tightest composition seen as
+  // a fallback if nothing fits the safe circle perfectly.
+  let fallback: Row[] = [];
   for (let base = ideal; base >= LOOP_MIN_SIZE; base -= 0.5) {
     const rows: { text: string; size: number; role: "message" | "label" }[] = [];
     for (const block of blocks) {
@@ -84,25 +87,21 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
     const gap = base * 0.1;
     const total =
       rows.reduce((sum, row) => sum + row.size * 1.02, 0) + gap * (rows.length - 1);
-    if (total > radius * 1.84) continue;
-
 
     let y = -total / 2;
     const placed: Row[] = [];
-    let ok = true;
+    let ok = total <= radius * 1.84;
     for (const row of rows) {
       const centre = y + (row.size * 1.02) / 2;
       const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.56) * 2;
-      if (widthOf(row.text, row.size, row.role) > allowed) {
-        ok = false;
-        break;
-      }
+      if (widthOf(row.text, row.size, row.role) > allowed) ok = false;
       placed.push({ ...row, y: centre });
       y += row.size * 1.02 + gap;
     }
+    fallback = placed;
     if (ok) return placed;
   }
-  return [];
+  return fallback;
 }
 
 /**

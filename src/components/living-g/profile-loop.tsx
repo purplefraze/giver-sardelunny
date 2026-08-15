@@ -75,8 +75,25 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
     const rows: { text: string; size: number; role: LoopRole; lead: boolean }[] = [];
     for (const block of blocks) {
       const role = block.role ?? "primary";
-      const size = Math.max(8, base * SIZE_RATIO[role]);
-      const lines = wrap(block.text, size, radius * 1.66, role);
+      const full = Math.max(8, base * SIZE_RATIO[role]);
+      const max = radius * 1.66;
+      // A logical phrase stays on ONE line, condensed a little if needed,
+      // before we ever allow it to break.
+      let size = full;
+      let lines = [block.text];
+      let single = false;
+      for (const f of [1, 0.94, 0.88, 0.82, 0.76]) {
+        const s = Math.max(8, full * f);
+        if (widthOf(block.text, s, role) <= max) {
+          size = s;
+          single = true;
+          break;
+        }
+      }
+      if (!single) {
+        size = full;
+        lines = wrap(block.text, full, max, role);
+      }
       lines.forEach((text, i) =>
         rows.push({ text, size, role, lead: i === 0 && !!block.lead }),
       );

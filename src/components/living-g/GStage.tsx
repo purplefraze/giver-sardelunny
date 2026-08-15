@@ -13,7 +13,6 @@ import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
  * shrinks to make room, because it is positioned independently of page content.
  */
 const W = LIVING_G_FRAME.width / LIVING_G_BOX.width; // frame width per artwork width
-const H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
 const ART_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 
 export function GStage({ children }: { children: React.ReactNode }) {

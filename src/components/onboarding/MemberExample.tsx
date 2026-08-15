@@ -152,19 +152,32 @@ export function MemberExample({
         />
       </GStage>
 
+      {/*
+        BOTH directions, together, in the thumb zone. Same placement for every
+        person, so nothing ever jumps from top to bottom between profiles.
+      */}
       <div
-        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-end px-7"
+        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-9"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
       >
         <button
           type="button"
+          onClick={first ? onBack : onPrev}
+          aria-label={first ? "back" : `back to the person before ${member.name}`}
+          className="flex h-11 w-11 items-center justify-center text-3xl font-bold leading-none transition-transform active:scale-90"
+        >
+          <span aria-hidden="true">←</span>
+        </button>
+        <button
+          type="button"
           onClick={last ? onDone : onNext}
           aria-label={last ? "continue" : `meet the next person after ${member.name}`}
-          className="flex h-9 w-9 items-center justify-center text-3xl font-bold leading-none transition-transform active:scale-90"
+          className="flex h-11 w-11 items-center justify-center text-3xl font-bold leading-none transition-transform active:scale-90"
         >
           <span aria-hidden="true">→</span>
         </button>
       </div>
+
 
       {/* Deeper previews — always a way back to this exact person. */}
       <div

@@ -75,14 +75,15 @@ const FALLOFF: Record<RegionKey, number> = {
 
 
 /**
- * Where a region's word cue sits: inside the negative space of its own loop,
- * lifted above the point of contact so a finger never covers it.
+ * How far a region's action copy is lifted inside its own loop, so a finger
+ * never covers it. The CENTRE always comes from the loop itself (loopOrigin).
  */
-const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
-  top: G_ANCHORS.smallRing,
-  middle: { x: G_ANCHORS.upperRing.x, y: G_ANCHORS.upperRing.y - 32 },
-  bottom: { x: G_ANCHORS.lowerRing.x, y: G_ANCHORS.lowerRing.y - 46 },
+const LABEL_LIFT: Record<RegionKey, number> = {
+  top: 0,
+  middle: 32,
+  bottom: 46,
 };
+
 
 /**
  * PRIMARY MODE ACTION COPY — ONE fixed token per loop, from type-scale.ts.

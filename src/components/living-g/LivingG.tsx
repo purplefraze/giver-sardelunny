@@ -15,7 +15,15 @@ import {
   LOOP_SAFE_RADIUS,
 } from "./g-path";
 
-import { LOOP_ACTION_RATIO, LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
+import {
+  ACTION_LINE_HEIGHT,
+  ACTION_SIZE,
+  ACTION_WRAP_FACTOR,
+  LOOP_ROLE_STYLE,
+  LOOP_TEXT_FILL,
+} from "./type-scale";
+import { loopOrigin, wrapLines, wrapWidth } from "./loop-layout";
+
 
 /**
  * The one canonical presence of a full-size Living G on any screen.

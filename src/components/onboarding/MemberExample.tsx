@@ -3,6 +3,11 @@ import { BackArrow } from "@/components/BackArrow";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { loopText } from "@/components/living-g/loop-text";
+import {
+  TopLoopSelector,
+  topLoopContent,
+  type TopLoopPosition,
+} from "@/components/living-g/TopLoopSelector";
 import type { Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -33,6 +38,8 @@ export function MemberExample({
   onDone: () => void;
 }) {
   const [deep, setDeep] = useState<Deep>(null);
+  /** Prototype top-loop selector state: stays where the user leaves it. */
+  const [topPos, setTopPos] = useState<TopLoopPosition>(0);
 
   useEffect(() => {
     setDeep(null);
@@ -67,32 +74,22 @@ export function MemberExample({
           key={member.id}
           className={G_PRESENCE}
           showLabels
+          overlay={
+            <TopLoopSelector
+              position={topPos}
+              onChange={setTopPos}
+              states={[
+                topLoopContent.photo(member.photo, member.id),
+                topLoopContent.sparks(100),
+                topLoopContent.placeholder(),
+              ]}
+            />
+          }
           regions={{
             top: {
               onPress: open("profile"),
-              render: (anchor) => {
-                const clipId = `member-photo-${member.id}`;
-                const r = 45;
-                return (
-                  <>
-                    <defs>
-                      <clipPath id={clipId}>
-                        <circle cx={anchor.x} cy={anchor.y} r={r} />
-                      </clipPath>
-                    </defs>
-                    <image
-                      href={member.photo}
-                      x={anchor.x - r}
-                      y={anchor.y - r}
-                      width={r * 2}
-                      height={r * 2}
-                      preserveAspectRatio="xMidYMid slice"
-                      clipPath={`url(#${clipId})`}
-                    />
-                  </>
-                );
-              },
             },
+
             middle: {
               onPress: open("about"),
               render: (anchor) =>

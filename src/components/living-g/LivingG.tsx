@@ -30,7 +30,10 @@ type Props = {
   regions?: Partial<Record<RegionKey, GRegion>>;
   className?: string;
   showLabels?: boolean;
+  /** Interactive layer drawn above the artwork (e.g. the top-loop selector). */
+  overlay?: React.ReactNode;
 };
+
 
 const ORDER: RegionKey[] = ["top", "middle", "bottom"];
 
@@ -88,7 +91,7 @@ export const RHYTHM = {
  * Interaction lives in an invisible overlay of generous hit bands, so the G
  * looks identical whether or not a region is interactive.
  */
-export function LivingG({ regions, className, showLabels = true }: Props) {
+export function LivingG({ regions, className, showLabels = true, overlay }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
   /** The temporary word cue: appears on press, fades away on its own. */
   const [cue, setCue] = useState<RegionKey | null>(null);
@@ -281,6 +284,9 @@ export function LivingG({ regions, className, showLabels = true }: Props) {
           />
         );
       })}
+
+      {overlay}
     </svg>
+
   );
 }

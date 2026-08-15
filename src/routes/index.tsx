@@ -1,6 +1,11 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
+import {
+  TopLoopSelector,
+  topLoopContent,
+  type TopLoopPosition,
+} from "@/components/living-g/TopLoopSelector";
 import { World, ringPhoto } from "@/components/World";
 import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
@@ -40,6 +45,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [entered, setEntered] = useState(false);
   const [gaveTo, setGaveTo] = useState<string | null>(null);
+  /** Prototype top-loop selector on my own profile; stays where I leave it. */
+  const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
 
   /**
    * ONE source of truth for which world is open: the router.
@@ -117,6 +124,17 @@ function Index() {
               active={top === "profile"}
               identity="You"
               onBack={pop}
+              overlay={
+                <TopLoopSelector
+                  position={myTopPos}
+                  onChange={setMyTopPos}
+                  states={[
+                    topLoopContent.photo(ME.photo, "me-top"),
+                    topLoopContent.sparks(gaveTo ? 50 : 100),
+                    topLoopContent.placeholder(),
+                  ]}
+                />
+              }
               regions={{
                 top: {
                   label: "Activity",

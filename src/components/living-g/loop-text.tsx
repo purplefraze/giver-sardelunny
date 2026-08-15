@@ -66,7 +66,7 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
       // A given line is already a deliberate phrase: keep it on ONE line,
       // condensed a little if needed, before ever allowing it to break.
       let kept = false;
-      for (const f of [1, 0.94, 0.88, 0.82, 0.76]) {
+      for (const f of [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64]) {
         const s = Math.max(LOOP_MIN_SIZE, full * f);
         if (widthOf(block.text, s, block.role) <= max) {
           rows.push({ text: block.text, size: s, role: block.role });

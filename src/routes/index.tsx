@@ -33,23 +33,27 @@ const MY_HISTORY: string[][] = [
 const MODE_CONTENT: Record<
   Mode,
   {
+    /** What this mode is called in the plural: gives, wishes, trades, borrows. */
+    noun: string;
     mine: { title: string; body: React.ReactNode };
     community: { title: string; body: React.ReactNode };
   }
 > = {
   wish: {
+    noun: "wishes",
     mine: {
-      title: "what are you wishing for?",
+      title: "my wishes",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
     community: {
-      title: "wishes around you",
+      title: "community wishes",
       body: <>{COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>)}</>,
     },
   },
   give: {
+    noun: "gives",
     mine: {
-      title: "what are you sharing?",
+      title: "my gives",
       body: (
         <p className="opacity-70">
           share something you have, know, or can do.
@@ -57,19 +61,20 @@ const MODE_CONTENT: Record<
       ),
     },
     community: {
-      title: "gives around you",
+      title: "community gives",
       body: <>{COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>)}</>,
     },
   },
   trade: {
+    noun: "trades",
     mine: {
-      title: "what are you trading?",
+      title: "my trades",
       body: (
         <p className="opacity-70">offer something, ask for something back.</p>
       ),
     },
     community: {
-      title: "trades around you",
+      title: "community trades",
       body: (
         <p className="opacity-70">
           open trades from the people nearby. coming next.
@@ -78,12 +83,13 @@ const MODE_CONTENT: Record<
     },
   },
   borrow: {
+    noun: "borrows",
     mine: {
-      title: "what do you need to borrow?",
+      title: "my borrows",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
     community: {
-      title: "lending around you",
+      title: "community borrows",
       body: (
         <p className="opacity-70">
           what people nearby are happy to lend. coming next.
@@ -92,6 +98,7 @@ const MODE_CONTENT: Record<
     },
   },
 };
+
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { w?: Screen } => {

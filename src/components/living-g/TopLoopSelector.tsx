@@ -127,13 +127,14 @@ export function TopLoopSelector({
         const active = position === i;
         return (
           <g key={a}>
+            {/* A detent punched into the loop's own stroke. */}
             <circle
               cx={p.x}
               cy={p.y}
-              r={3.4}
-              fill="var(--world-g)"
+              r={4}
+              fill="var(--world-bg)"
               style={{
-                opacity: active ? 0 : 0.32,
+                opacity: active ? 0 : 0.9,
                 transition: `opacity ${TRANSITION}ms ease-out`,
               }}
             />
@@ -173,11 +174,17 @@ export function TopLoopSelector({
         <circle
           cx={CENTRE.x}
           cy={CENTRE.y}
-          r={dragging ? 10 : 8.6}
+          r={dragging ? 12 : 10.5}
+          fill="var(--world-bg)"
+          style={{ transition: `r ${TRANSITION}ms ease-out` }}
+        />
+        <circle
+          cx={CENTRE.x}
+          cy={CENTRE.y}
+          r={dragging ? 6.4 : 5.4}
           fill="var(--world-g)"
           style={{ transition: `r ${TRANSITION}ms ease-out` }}
         />
-        <circle cx={CENTRE.x} cy={CENTRE.y} r={3.1} fill="var(--world-bg)" />
         {/* Forgiving finger target that travels with the handle. */}
         <circle
           id={`${uid}-grip`}

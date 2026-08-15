@@ -1,19 +1,30 @@
 import { useId, useRef, useState } from "react";
 import { buzz } from "@/lib/haptics";
 import { G_ANCHORS } from "./g-path";
+import { LOOP_TEXT_FILL } from "./type-scale";
 
 /**
- * TOP-LOOP THREE-POSITION SELECTOR.
+ * TOP-LOOP THREE-POSITION SELECTOR — the profile's HISTORY selector.
  *
- * A tiny physical gadget built into the Living G: the small top loop's handle
- * can be dragged around the loop between three evenly spaced snap positions.
- * Drag -> magnetic pull -> snap -> haptic click -> the top-loop content changes.
+ * The small top loop's handle drags around the loop between three evenly
+ * spaced snap positions. Drag -> magnetic pull -> snap -> haptic click -> the
+ * selected history changes:
  *
- * The Living G geometry is untouched: this is a pure interaction/content layer
- * drawn in the same SVG user space, anchored on the small ring.
+ *   position 1 -> past wishes
+ *   position 2 -> past gives
+ *   position 3 -> past trades
+ *
+ * The physical mechanism is deliberately unchanged; only its meaning is fixed.
+ * The Living G geometry is untouched: this is a pure interaction layer drawn in
+ * the same SVG user space, anchored on the small ring.
  */
 
 export type TopLoopPosition = 0 | 1 | 2;
+
+/** The three history states, in order. Lowercase, like all Giver copy. */
+export const HISTORY_STATES = ["past wishes", "past gives", "past trades"] as const;
+
+export type HistoryState = (typeof HISTORY_STATES)[number];
 
 const CENTRE = G_ANCHORS.smallRing;
 /** Orbit radius — just outside the top loop's stroke, still inside the frame. */
@@ -51,10 +62,7 @@ function nearest(angle: number): TopLoopPosition {
   return best;
 }
 
-/**
- * Hook for a future sound layer: one tick per snap. Deliberately silent for now
- * — haptics carry the confirmation.
- */
+/** One subtle haptic tick per successful snap. */
 function tick(_position: TopLoopPosition) {
   buzz(10);
 }
@@ -62,12 +70,12 @@ function tick(_position: TopLoopPosition) {
 export function TopLoopSelector({
   position,
   onChange,
-  states,
+  content,
 }: {
   position: TopLoopPosition;
   onChange: (next: TopLoopPosition) => void;
-  /** Content for each snap position, drawn inside the top loop. */
-  states: [React.ReactNode, React.ReactNode, React.ReactNode];
+  /** Permanent top-loop content (the profile photo) — never a toggle state. */
+  content?: React.ReactNode;
 }) {
   const uid = useId().replace(/:/g, "");
   const [dragAngle, setDragAngle] = useState<number | null>(null);
@@ -106,20 +114,8 @@ export function TopLoopSelector({
 
   return (
     <g>
-      {/* Top-loop content: one state visible at a time, softly cross-faded. */}
-      <g pointerEvents="none">
-        {states.map((node, i) => (
-          <g
-            key={i}
-            style={{
-              opacity: position === i ? 1 : 0,
-              transition: `opacity ${TRANSITION}ms ease-out`,
-            }}
-          >
-            {node}
-          </g>
-        ))}
-      </g>
+      {/* The loop's permanent content — the photo stays, always. */}
+      {content ? <g pointerEvents="none">{content}</g> : null}
 
       {/* Snap positions — physical resting points belonging to the top loop. */}
       {ANGLES.map((a, i) => {
@@ -148,7 +144,7 @@ export function TopLoopSelector({
               style={{ cursor: "pointer", outline: "none" }}
               role="button"
               tabIndex={0}
-              aria-label={`Top loop position ${i + 1}`}
+              aria-label={HISTORY_STATES[i]}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
@@ -196,10 +192,11 @@ export function TopLoopSelector({
           style={{ cursor: "grab", outline: "none" }}
           role="slider"
           tabIndex={0}
-          aria-label="Top loop selector"
+          aria-label="history selector"
           aria-valuemin={1}
           aria-valuemax={3}
           aria-valuenow={position + 1}
+          aria-valuetext={HISTORY_STATES[position]}
           onPointerDown={(e) => {
             e.stopPropagation();
             (e.target as SVGElement).setPointerCapture?.(e.pointerId);
@@ -241,7 +238,7 @@ export function TopLoopSelector({
   );
 }
 
-/** Shared content helpers so every profile's selector looks the same. */
+/** Shared content helper: the photo that fills the top loop. */
 export const topLoopContent = {
   photo: (href: string, key: string) => (
     <>
@@ -261,43 +258,18 @@ export const topLoopContent = {
       />
     </>
   ),
-  /** Prototype demonstration state only — not final architecture. */
-  sparks: (count: number) => (
-    <>
-      <text
-        x={CENTRE.x}
-        y={CENTRE.y - 7}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="var(--world-ink)"
-        className="font-black"
-        style={{ fontSize: 30, letterSpacing: "-0.05em" }}
-      >
-        {count}
-      </text>
-      <text
-        x={CENTRE.x}
-        y={CENTRE.y + 16}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="var(--world-ink)"
-        className="font-black uppercase"
-        style={{ fontSize: 9, letterSpacing: "0.2em", opacity: 0.6 }}
-      >
-        Sparks
-      </text>
-    </>
-  ),
-  /** Deliberately unassigned third state. */
-  placeholder: () => (
-    <circle
-      cx={CENTRE.x}
-      cy={CENTRE.y}
-      r={17}
-      fill="none"
-      stroke="var(--world-ink)"
-      strokeWidth={2.2}
-      opacity={0.28}
-    />
+  /** The selected history state, named just under the loop. */
+  stateLabel: (label: string) => (
+    <text
+      x={CENTRE.x}
+      y={CENTRE.y + CONTENT_R + 58}
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fill={LOOP_TEXT_FILL}
+      className="font-black lowercase"
+      style={{ fontSize: 19, letterSpacing: "-0.03em", opacity: 0.8 }}
+    >
+      {label}
+    </text>
   ),
 };

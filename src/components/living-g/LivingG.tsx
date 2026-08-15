@@ -7,7 +7,9 @@ import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
   LIVING_G_VIEWBOX,
+  LOOP_SAFE_RADIUS,
 } from "./g-path";
+import { LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
 
 /**
  * The one canonical presence of a full-size Living G on any screen.
@@ -61,10 +63,15 @@ const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
   bottom: { x: G_ANCHORS.lowerRing.x, y: G_ANCHORS.lowerRing.y - 46 },
 };
 
+/**
+ * Primary loop ACTION words ("give", "wish", "grant", "discover"). One scale,
+ * derived from each loop's safe radius so equivalent actions always carry
+ * equivalent weight — substantial next to a full-screen G, never tiny labels.
+ */
 const LABEL_SIZE: Record<RegionKey, number> = {
-  top: 15,
-  middle: 30,
-  bottom: 30,
+  top: Math.round(LOOP_SAFE_RADIUS.top * 0.52),
+  middle: Math.round(LOOP_SAFE_RADIUS.middle * 0.56),
+  bottom: Math.round(LOOP_SAFE_RADIUS.bottom * 0.42),
 };
 
 /**
@@ -206,12 +213,12 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
                 y={label.y - ((words.length - 1) * LABEL_SIZE[key]) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fill="var(--world-ink)"
-                className="font-black uppercase"
+                fill={LOOP_TEXT_FILL}
+                className="font-black lowercase"
                 style={{
                   fontSize: LABEL_SIZE[key],
-                  letterSpacing: "-0.045em",
-                  opacity: showLabels || cue === key ? 0.78 : 0,
+                  letterSpacing: LOOP_ROLE_STYLE.action.tracking,
+                  opacity: showLabels || cue === key ? LOOP_ROLE_STYLE.action.opacity : 0,
                   transition: `opacity ${
                     cue === key ? RHYTHM.cueIn : RHYTHM.cueOut
                   }ms ease-out`,

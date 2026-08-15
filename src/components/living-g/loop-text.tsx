@@ -58,15 +58,28 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
   for (let base = ideal; base >= LOOP_MIN_SIZE; base -= 0.5) {
     const rows: { text: string; size: number; role: "message" | "label" }[] = [];
     for (const block of blocks) {
-      const size = Math.max(
+      const full = Math.max(
         LOOP_MIN_SIZE,
         base * (block.role === "label" ? LOOP_ROLE_SIZE.label : LOOP_ROLE_SIZE.message),
       );
-      // A given line is already a deliberate phrase: keep it whole where it fits.
-      for (const text of wrap(block.text, size, radius * 1.62, block.role)) {
-        rows.push({ text, size, role: block.role });
+      const max = radius * 1.62;
+      // A given line is already a deliberate phrase: keep it on ONE line,
+      // condensed a little if needed, before ever allowing it to break.
+      let kept = false;
+      for (const f of [1, 0.94, 0.88, 0.82, 0.76]) {
+        const s = Math.max(LOOP_MIN_SIZE, full * f);
+        if (widthOf(block.text, s, block.role) <= max) {
+          rows.push({ text: block.text, size: s, role: block.role });
+          kept = true;
+          break;
+        }
+      }
+      if (kept) continue;
+      for (const text of wrap(block.text, full, max, block.role)) {
+        rows.push({ text, size: full, role: block.role });
       }
     }
+
 
     const gap = base * 0.14;
     const total =

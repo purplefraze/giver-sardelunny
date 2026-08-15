@@ -4,6 +4,10 @@ import robinAsset from "@/assets/robin.jpg.asset.json";
 import me from "@/assets/me.jpg";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
 
+/**
+ * All user-facing copy in Giver is lowercase. Proper nouns entered by a person
+ * ("Burning Man") keep their own capitalisation.
+ */
 export type Member = {
   id: string;
   name: string;
@@ -13,10 +17,10 @@ export type Member = {
   distance: string;
   photo: string;
   blurb: string;
-  mode: "Wishing" | "Giving" | "Trading";
+  mode: "wishing" | "giving" | "trading";
   /** Role colour world: GIVING yellow, WISHING blue, TRADING trade colour. */
   world: "giving" | "wishing" | "trading";
-  /** Word for what they are doing on Giver: GIVING / WISH / TRADING. */
+  /** Word for what they are doing on Giver. */
   action: string;
   /** Their current activity, kept to a handful of words. */
   headline: string;
@@ -29,8 +33,10 @@ export type Member = {
   weekend: string;
   /** Bottom loop: what are they doing on Giver? */
   bottom: LoopBlock[];
-  /** Extra active items hidden behind the "+N MORE" cue. */
+  /** Extra active items hidden behind the "+N more" cue. */
   alsoGiving?: string[];
+  /** Prototype history, one short line per state. */
+  history: { wishes: string[]; gives: string[]; trades: string[] };
 };
 
 export const MEMBERS: Member[] = [
@@ -40,24 +46,29 @@ export const MEMBERS: Member[] = [
     username: "@giulia",
     distance: "0.7 km away",
     photo: giuliaAsset.url,
-    blurb: "Two streets over. Keeps the plant swap alive.",
-    mode: "Giving",
+    blurb: "two streets over. keeps the plant swap alive.",
+    mode: "giving",
     world: "giving",
-    action: "Giving",
-    headline: "Science tutoring",
-    activity: "Giving science tutoring, weekday evenings.",
+    action: "giving",
+    headline: "science tutoring",
+    activity: "giving science tutoring, weekday evenings.",
     about:
-      "29, about 0.7 km away. High-school chemistry teacher. Out on her bike most weekends.",
+      "29, about 0.7 km away. high-school chemistry teacher. out on her bike most weekends.",
     age: "29",
-    byDay: "Chemistry teacher",
-    byNight: "Cuddle bug",
-    weekend: "Cycling",
+    byDay: "chemistry teacher",
+    byNight: "cuddle bug",
+    weekend: "cycling",
     bottom: [
-      { text: "Giving", role: "secondary" },
-      { text: "Science tutoring", role: "primary" },
+      { text: "giving", role: "secondary" },
+      { text: "science tutoring", role: "primary" },
       { text: "+1 more", role: "tertiary", lead: true },
     ],
-    alsoGiving: ["After-school dog walking"],
+    alsoGiving: ["after-school dog walking"],
+    history: {
+      wishes: ["a lift to the coast", "someone to water the plants"],
+      gives: ["chemistry revision, 6 evenings", "two boxes of jam jars"],
+      trades: ["bike inner tubes for tomatoes"],
+    },
   },
   {
     id: "sofia",
@@ -65,23 +76,28 @@ export const MEMBERS: Member[] = [
     username: "@sofia",
     distance: "< 1 km away",
     photo: sofiaAsset.url,
-    blurb: "Reads cards on Sundays. Always has the kettle on.",
-    mode: "Wishing",
+    blurb: "reads cards on sundays. always has the kettle on.",
+    mode: "wishing",
     world: "wishing",
-    action: "Wish",
-    headline: "Ride to the airport",
-    activity: "Wishing for a ride to the airport this Tuesday, 4 PM.",
-    about: "26, less than a kilometre away. Business grad. Deep into tarot and spirituality.",
+    action: "wish",
+    headline: "ride to the airport",
+    activity: "wishing for a ride to the airport this tuesday, 4 pm.",
+    about: "26, less than a kilometre away. business grad. deep into tarot and spirituality.",
     age: "26",
-    byDay: "Business grad",
-    byNight: "Wouldn't you like to know",
-    weekend: "Who knows",
+    byDay: "business grad",
+    byNight: "wouldn't you like to know",
+    weekend: "who knows",
     bottom: [
-      { text: "Wish", role: "secondary" },
-      { text: "Ride to the airport", role: "primary" },
-      { text: "This Tuesday", role: "tertiary", lead: true },
+      { text: "wish", role: "secondary" },
+      { text: "ride to the airport", role: "primary" },
+      { text: "this tuesday", role: "tertiary", lead: true },
       { text: "4 pm", role: "tertiary" },
     ],
+    history: {
+      wishes: ["a desk lamp", "help moving a sofa"],
+      gives: ["tarot readings, sundays"],
+      trades: ["a tarot reading for a haircut"],
+    },
   },
   {
     id: "robin",
@@ -89,48 +105,58 @@ export const MEMBERS: Member[] = [
     username: "@robin",
     distance: "1.5 km away",
     photo: robinAsset.url,
-    blurb: "Festivals, bonfires and a shed full of tools.",
-    mode: "Trading",
+    blurb: "festivals, bonfires and a shed full of tools.",
+    mode: "trading",
     world: "trading",
-    action: "Trading",
-    headline: "Firewood for a Burning Man ticket",
-    activity: "Trading a year's supply of firewood for a Burning Man ticket.",
+    action: "trading",
+    headline: "firewood for a Burning Man ticket",
+    activity: "trading a year's supply of firewood for a Burning Man ticket.",
     about:
-      "43, about 1.5 km away. Music festivals, bonfires and boys. Tall enough that he has never owned a ladder.",
+      "43, about 1.5 km away. music festivals, bonfires and boys. tall enough that he has never owned a ladder.",
     age: "43",
-    byDay: "Light guru",
-    byNight: "Psychic oracle",
-    weekend: "Festy bestie",
+    byDay: "light guru",
+    byNight: "psychic oracle",
+    weekend: "festy bestie",
     bottom: [
-      { text: "Trading", role: "secondary" },
-      { text: "A year's supply of firewood", role: "primary" },
-      { text: "For", role: "secondary", lead: true },
-      { text: "A Burning Man ticket", role: "primary" },
+      { text: "trading", role: "secondary" },
+      { text: "a year's supply of firewood", role: "primary" },
+      { text: "for", role: "secondary", lead: true },
+      { text: "a Burning Man ticket", role: "primary" },
     ],
+    history: {
+      wishes: ["a trailer for one weekend"],
+      gives: ["stage lighting for the street party", "a wheelbarrow of kindling"],
+      trades: ["tool sharpening for a car wash", "firewood for festival tickets"],
+    },
   },
 ];
 
 export const ME = {
-  name: "You",
+  name: "you",
   photo: me,
-  activity: "You gave 50 Sparks. Your first act of generosity.",
-  about: "New here. Curious. Reckons kindness is currency.",
+  activity: "you gave 50 sparks. your first act of generosity.",
+  about: "new here. curious. reckons kindness is currency.",
+  history: {
+    wishes: ["nothing yet"],
+    gives: ["50 sparks, gifted"],
+    trades: ["nothing yet"],
+  },
 };
 
 export const COMMUNITY_WISHES = [
-  "A ladder for one afternoon — Ravi, 300m",
-  "Someone to walk Bess on Thursdays — Aggie, 1.1km",
-  "Cot mattress, any condition — Nell, 700m",
+  "a ladder for one afternoon — ravi, 300m",
+  "someone to walk bess on thursdays — aggie, 1.1km",
+  "cot mattress, any condition — nell, 700m",
 ];
 
 export const COMMUNITY_GIVES = [
-  "Six bags of apples. Come and take them — Tom, 400m",
-  "Free piano lessons, Sundays — Ines, 900m",
-  "Two winter coats, kids age 6 — Sam, 1.4km",
+  "six bags of apples. come and take them — tom, 400m",
+  "free piano lessons, sundays — ines, 900m",
+  "two winter coats, kids age 6 — sam, 1.4km",
 ];
 
 export const SEARCH_RESULTS = [
-  "Sewing machine — 3 nearby",
-  "Garden tools — 5 nearby",
-  "Sourdough — 2 nearby",
+  "sewing machine — 3 nearby",
+  "garden tools — 5 nearby",
+  "sourdough — 2 nearby",
 ];

@@ -108,8 +108,8 @@ function Index() {
                 onPress: () => push("give"),
               },
             }}
-          >
-          </World>
+          />
+
 
           <Screen open={top === "profile"}>
             <World

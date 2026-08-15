@@ -281,11 +281,9 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
 
             onPointerDown={(e) => {
               down.current = { x: e.clientX, y: e.clientY };
+              revealed.current = false;
               setPressed(key);
-              showCue(key);
-            }}
-            onPointerEnter={(e) => {
-              if (e.pointerType === "mouse") showCue(key);
+              holdCue(key);
             }}
             onPointerUp={release}
             onPointerLeave={release}
@@ -300,12 +298,17 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
               ) {
                 return;
               }
-              // Rhythm: the cue stays readable for a beat, then we move.
+              // A hold TEACHES; only a tap travels.
+              if (revealed.current) {
+                revealed.current = false;
+                return;
+              }
               buzz();
               if (navTimer.current) clearTimeout(navTimer.current);
               const run = region.onPress;
               navTimer.current = setTimeout(() => run?.(), RHYTHM.read);
             }}
+
 
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") region.onPress?.();

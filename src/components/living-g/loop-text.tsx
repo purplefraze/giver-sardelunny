@@ -59,27 +59,34 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
   // a fallback if nothing fits the safe circle perfectly.
   let fallback: Row[] = [];
   for (let base = ideal; base >= LOOP_MIN_SIZE; base -= 0.5) {
+    const max = radius * 1.78;
+    const sizeOf = (role: "message" | "label") =>
+      Math.max(
+        LOOP_MIN_SIZE,
+        base * (role === "label" ? LOOP_ROLE_SIZE.label : LOOP_ROLE_SIZE.message),
+      );
+
+    // ONE scale per composition: every message line in this loop shares the
+    // single size that lets the widest phrase fit. Never one big line next to
+    // one small line.
+    let factor = 1;
+    for (const block of blocks) {
+      const full = sizeOf(block.role);
+      const need = widthOf(block.text, full, block.role);
+      if (need > max) factor = Math.min(factor, Math.max(0.6, max / need));
+    }
+
     const rows: { text: string; size: number; role: "message" | "label" }[] = [];
     for (const block of blocks) {
-      const full = Math.max(
-        LOOP_MIN_SIZE,
-        base * (block.role === "label" ? LOOP_ROLE_SIZE.label : LOOP_ROLE_SIZE.message),
-      );
-      const max = radius * 1.78;
-      // A given line is already a deliberate phrase: keep it on ONE line,
-      // condensed a little if needed, before ever allowing it to break.
-      let kept = false;
-      for (const f of [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64]) {
-        const s = Math.max(LOOP_MIN_SIZE, full * f);
-        if (widthOf(block.text, s, block.role) <= max) {
-          rows.push({ text: block.text, size: s, role: block.role });
-          kept = true;
-          break;
-        }
+      const size = Math.max(LOOP_MIN_SIZE, sizeOf(block.role) * factor);
+      // A given line is already a deliberate phrase: keep it on ONE line
+      // whenever the shared scale allows it.
+      if (widthOf(block.text, size, block.role) <= max) {
+        rows.push({ text: block.text, size, role: block.role });
+        continue;
       }
-      if (kept) continue;
-      for (const text of wrap(block.text, full, max, block.role)) {
-        rows.push({ text, size: full, role: block.role });
+      for (const text of wrap(block.text, size, max, block.role)) {
+        rows.push({ text, size, role: block.role });
       }
     }
 

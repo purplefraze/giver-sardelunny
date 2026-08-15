@@ -161,15 +161,17 @@
 
   /* ---- COMPLEMENTARY TYPOGRAPHY TOKENS ----
      THE G CHOOSES THE TYPE COLOUR. Every mode's in-loop typography colour is
-     its G colour's complementary hue, pulled to a readable lightness. Never
-     black, white, grey or an unrelated accent. */
-  --giver-give-complement: oklch(0.45 0.16 250); /* orange G -> blue type */
-  --giver-wish-complement: oklch(0.44 0.15 135); /* purple G -> green type */
-  --giver-profile-complement: oklch(0.44 0.19 330); /* green G -> magenta type */
-  --giver-trade-complement: oklch(0.45 0.12 205); /* red G -> teal type */
-  --giver-community-complement: oklch(0.46 0.11 75); /* blue G -> amber type */
-  --giver-discovery-complement: oklch(0.44 0.16 285); /* yellow G -> violet type */
-  --giver-borrow-complement: oklch(0.44 0.14 155); /* pink G -> green type */
+     its G colour's complementary hue, kept BRIGHT, ELECTRIC and ALIVE — never
+     dark, muddy, navy, forest or grey, and never black or white. Lightness is
+     tuned only far enough to stay readable on warm paper. */
+  --giver-give-complement: oklch(0.52 0.27 265); /* orange G -> vivid royal blue */
+  --giver-wish-complement: oklch(0.68 0.18 92); /* purple G -> bright yellow */
+  --giver-profile-complement: oklch(0.56 0.28 340); /* green G -> hot magenta */
+  --giver-trade-complement: oklch(0.62 0.15 195); /* red G -> electric turquoise */
+  --giver-community-complement: oklch(0.68 0.17 70); /* blue G -> bright amber */
+  --giver-discovery-complement: oklch(0.52 0.27 285); /* yellow G -> electric violet */
+  --giver-borrow-complement: oklch(0.6 0.22 152); /* pink G -> bright green */
+
 
   /* Orange/green aliases, named by colour for convenience. */
   --giver-orange: var(--giver-give);

@@ -77,6 +77,7 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
     }
 
     const rows: { text: string; size: number; role: "message" | "label" }[] = [];
+    let wrapped = false;
     for (const block of blocks) {
       const size = Math.max(LOOP_MIN_SIZE, sizeOf(block.role) * factor);
       // A given line is already a deliberate phrase: keep it on ONE line
@@ -85,6 +86,7 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
         rows.push({ text: block.text, size, role: block.role });
         continue;
       }
+      wrapped = true;
       for (const text of wrap(block.text, size, max, block.role)) {
         rows.push({ text, size, role: block.role });
       }
@@ -97,7 +99,9 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
 
     let y = -total / 2;
     const placed: Row[] = [];
-    let ok = total <= radius * 1.84;
+    // A supplied line is a deliberate phrase: a composition only counts as a
+    // fit when no phrase had to break.
+    let ok = total <= radius * 1.84 && !wrapped;
     for (const row of rows) {
       const centre = y + (row.size * 1.02) / 2;
       const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.56) * 2;

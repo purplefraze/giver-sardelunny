@@ -80,17 +80,17 @@ export function World({
       {onBack && open === null ? <BackArrow onClick={onBack} /> : null}
 
       {word ? (
-        <span className="absolute right-6 top-5 z-10 text-[11px] font-black uppercase tracking-[0.3em] opacity-55">
+        <span className="absolute right-6 top-5 z-10 text-[11px] font-black lowercase tracking-[0.28em] opacity-55">
           {word}
         </span>
       ) : null}
       {identity ? (
         <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8 text-center">
-          <span className="text-[12px] font-black uppercase tracking-[0.42em] opacity-65">
+          <span className="text-[13px] font-black lowercase tracking-[0.34em] opacity-70">
             {identity}
           </span>
           {tagline ? (
-            <span className="text-[11px] font-medium tracking-[0.02em] opacity-45">
+            <span className="text-[11px] font-medium lowercase tracking-[0.02em] opacity-45">
               {tagline}
             </span>
           ) : null}

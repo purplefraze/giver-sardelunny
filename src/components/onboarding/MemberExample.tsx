@@ -46,6 +46,13 @@ export function MemberExample({
     setDeep(null);
   }, [member.id]);
 
+  // Fail loudly in dev if a profile has no words for its loops, instead of
+  // silently rendering an empty Living G.
+  if (import.meta.env.DEV && (!member.bottom?.length || !member.byDay)) {
+    console.error(`[giver] profile "${member.id}" is missing loop content`, member);
+  }
+
+
   const historyLines = [
     member.history.wishes,
     member.history.gives,

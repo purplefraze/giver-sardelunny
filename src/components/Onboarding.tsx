@@ -240,38 +240,124 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   }
 
   if (stage === "celebrate" && chosen) {
-    return <Celebration username={chosen.username} onDone={() => onDone(chosen.name)} />;
+    return (
+      <FirstGenerosity
+        username={chosen.username}
+        onDone={() => onDone(chosen.name)}
+      />
+    );
   }
 
   // The first act of generosity. Not optional: one of the four, or nothing.
+  return (
+    <ChooseRecipient
+      onBack={() => {
+        setWho(MEMBERS.length - 1);
+        setStage("meet");
+      }}
+      onChoose={(m) => {
+        buzz([10, 40, 18]);
+        setChosen(m);
+        setStage("celebrate");
+      }}
+    />
+  );
+}
+
+/**
+ * A sequence of lines that arrive one after another with the established fade
+ * rhythm — no typewriter, no popping. Reports when the whole thought has
+ * settled, so what comes next can wait its turn.
+ */
+function useSpeech(count: number, step = 620, settle = 700) {
+  const [shown, setShown] = useState(0);
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 1; i <= count; i += 1) {
+      timers.push(setTimeout(() => setShown(i), i * step));
+    }
+    timers.push(setTimeout(() => setSettled(true), count * step + settle));
+    return () => timers.forEach(clearTimeout);
+  }, [count, step, settle]);
+
+  return { shown, settled };
+}
+
+/** One line of speech: it simply becomes present, slowly and softly. */
+function Spoken({
+  show,
+  className,
+  style,
+  children,
+}: {
+  show: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn("block", className)}
+      style={{
+        opacity: show ? 1 : 0,
+        transition: "opacity 780ms cubic-bezier(0.32,0,0.24,1)",
+        ...style,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * THE QUESTION SPEAKS FIRST. Giver asks, phrase by phrase; only once the whole
+ * question has settled do the four people arrive — all together.
+ */
+const QUESTION = ["who", "would you", "like to give", "your 50 sparks", "to?"];
+
+function ChooseRecipient({
+  onBack,
+  onChoose,
+}: {
+  onBack: () => void;
+  onChoose: (m: Member) => void;
+}) {
+  const { shown, settled } = useSpeech(QUESTION.length);
+
   return (
     <div
       className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
       style={{ background: "var(--giver-paper)", color: "var(--giver-ink)" }}
     >
-      <BackArrow
-        onClick={() => {
-          setWho(MEMBERS.length - 1);
-          setStage("meet");
-        }}
-      />
+      <BackArrow onClick={onBack} />
       <h1
-        className="max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.98] tracking-[-0.04em] animate-[fade-up_500ms_ease-out]"
+        className="text-[13vw] font-black lowercase leading-[0.92] tracking-[-0.05em]"
         style={{ color: "var(--giver-profile)" }}
       >
-        who would you like to gift your 50 sparks to?
+        {QUESTION.map((phrase, i) => (
+          <Spoken key={phrase} show={i < shown}>
+            {phrase}
+          </Spoken>
+        ))}
       </h1>
-      <div className="mt-12 flex flex-col items-start gap-5">
+
+      {/* The choices arrive as one, after the question. */}
+      <div
+        className="mt-11 flex flex-col items-start gap-4"
+        style={{
+          opacity: settled ? 1 : 0,
+          transition: "opacity 900ms cubic-bezier(0.32,0,0.24,1)",
+          pointerEvents: settled ? "auto" : "none",
+        }}
+      >
         {MEMBERS.map((m) => (
           <button
             key={m.id}
             type="button"
-            onClick={() => {
-              buzz([10, 40, 18]);
-              setChosen(m);
-              setStage("celebrate");
-            }}
-            className="text-left text-[11vw] font-black lowercase leading-[0.95] tracking-[-0.05em] transition-transform active:scale-95"
+            onClick={() => onChoose(m)}
+            className="text-left text-[9.5vw] font-black lowercase leading-[0.95] tracking-[-0.05em] transition-transform active:scale-95"
             style={{ color: ROLE_COLOUR[m.world] }}
           >
             {m.username}
@@ -282,106 +368,156 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   );
 }
 
-/** Giver, speaking. The colour follows the meaning, never the page. */
-function OpeningSequence({ onDone }: { onDone: () => void }) {
-  const { world, copy, last } = useBeats(OPENING);
-  const [arrow, setArrow] = useState(false);
-
-  useEffect(() => {
-    if (!last) return;
-    const t = setTimeout(() => setArrow(true), 1800);
-    return () => clearTimeout(t);
-  }, [last]);
-
-  return (
-    <IntroG
-      world={world}
-      top={copy("top")}
-      middle={copy("middle")}
-      bottom={copy("bottom")}
-    >
-      <ForwardCue show={last && arrow} label="yes — meet four givers" onClick={onDone} />
-    </IntroG>
-  );
-}
-
-/** One line, then straight into the people. */
-function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
-  const { world, copy, last } = useBeats(MEET_INTRO);
-
-  useEffect(() => {
-    if (!last) return;
-    const t = setTimeout(onDone, HOLD);
-    return () => clearTimeout(t);
-  }, [last, onDone]);
-
-  return (
-    <IntroG world={world} middle={copy("middle")} bottom={copy("bottom")}>
-
-      <BackArrow onClick={onBack} />
-      <ForwardCue show label="meet them" onClick={onDone} />
-    </IntroG>
-  );
-}
-
-/** The only forward affordance in onboarding: one small arrow, safe area kept. */
-function ForwardCue({
-  show,
-  label,
-  onClick,
+/**
+ * THE FIRST GIFT, MADE HUMAN. A warm pat on the back, the sparks confirmed,
+ * then one honest question about messaging — asked, never assumed.
+ */
+function FirstGenerosity({
+  username,
+  onDone,
 }: {
-  show: boolean;
-  label: string;
-  onClick: () => void;
+  username: string;
+  onDone: () => void;
 }) {
+  const [asked, setAsked] = useState(false);
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const { shown, settled } = useSpeech(3, 1100, 900);
+
+  useEffect(() => {
+    if (!settled) return;
+    const t = setTimeout(() => setAsked(true), 1200);
+    return () => clearTimeout(t);
+  }, [settled]);
+
+  if (asked) {
+    return (
+      <MessagingConsent
+        username={username}
+        allowed={allowed}
+        onAnswer={(yes) => {
+          buzz();
+          setAllowed(yes);
+        }}
+        onDone={onDone}
+      />
+    );
+  }
+
   return (
     <div
-      className="absolute inset-x-0 bottom-0 z-20 flex justify-end px-7"
-      style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
+      style={{ background: "var(--giver-paper)", color: "var(--giver-ink)" }}
     >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        aria-label={label}
-        className="flex h-10 w-10 items-center justify-center text-3xl font-bold leading-none transition-opacity duration-500 active:scale-90"
-        style={{ opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none" }}
+      <Spoken
+        show={shown >= 1}
+        className="max-w-[11ch] text-[13vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
+        style={{ color: "var(--giver-profile)" }}
       >
-        <span aria-hidden="true">→</span>
-      </button>
+        give yourself a pat on the back
+      </Spoken>
+      <Spoken
+        show={shown >= 2}
+        className="mt-8 max-w-[15ch] text-[7.5vw] font-black lowercase leading-[0.94] tracking-[-0.04em]"
+      >
+        you&apos;ve already made your first act of generosity on giver
+      </Spoken>
+      <Spoken
+        show={shown >= 3}
+        className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
+      >
+        50 sparks have now been given to {username}
+      </Spoken>
     </div>
   );
 }
 
-/** One editorial column, one alignment axis. Green is the accent, never the flood. */
-function Celebration({ username, onDone }: { username: string; onDone: () => void }) {
+/** Messaging is a permission, so Giver asks. "not now" costs nothing. */
+function MessagingConsent({
+  username,
+  allowed,
+  onAnswer,
+  onDone,
+}: {
+  username: string;
+  allowed: boolean | null;
+  onAnswer: (yes: boolean) => void;
+  onDone: () => void;
+}) {
+  const { shown } = useSpeech(2, 780, 500);
+
   return (
     <div
-      className="relative flex h-full w-full flex-col overflow-hidden px-7 pt-20"
-      style={{ background: "var(--giver-paper)", color: "var(--giver-profile)" }}
+      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
+      style={{ background: "var(--giver-paper)", color: "var(--giver-ink)" }}
     >
-      <h1 className="text-[19vw] font-black lowercase leading-[0.78] tracking-[-0.06em] animate-[fade-up_500ms_ease-out]">
-        yippee!
-      </h1>
-      <p className="mt-8 max-w-[15ch] text-[7.5vw] font-black lowercase leading-[0.92] tracking-[-0.04em] animate-[fade-up_600ms_250ms_ease-out_both]">
-        you just made your first act of generosity on giver
-      </p>
-      <p className="mt-7 max-w-[16ch] text-[5.5vw] font-black lowercase leading-[0.95] tracking-[-0.03em] opacity-70 animate-[fade-up_600ms_500ms_ease-out_both]">
-        50 sparks have been gifted to {username}
-      </p>
+      <Spoken
+        show={shown >= 1}
+        className="max-w-[14ch] text-[8.5vw] font-black lowercase leading-[0.94] tracking-[-0.045em]"
+      >
+        {username} might want to say thanks.
+      </Spoken>
+
+      {allowed === null ? (
+        <Spoken
+          show={shown >= 2}
+          className="mt-8 max-w-[13ch] text-[10.5vw] font-black lowercase leading-[0.9] tracking-[-0.05em]"
+          style={{ color: "var(--giver-profile)" }}
+        >
+          okay if they message you?
+        </Spoken>
+      ) : (
+        <Spoken
+          show
+          className="mt-8 max-w-[15ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em] opacity-70"
+        >
+          {allowed
+            ? `you can now message each other`
+            : `no messages for now. ${username} still felt it.`}
+        </Spoken>
+      )}
+
+      <div
+        className="mt-12 flex items-baseline gap-9"
+        style={{
+          opacity: allowed === null && shown >= 2 ? 1 : 0,
+          transition: "opacity 700ms cubic-bezier(0.32,0,0.24,1)",
+          pointerEvents: allowed === null && shown >= 2 ? "auto" : "none",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => onAnswer(true)}
+          className="text-[9vw] font-black lowercase leading-none tracking-[-0.05em] transition-transform active:scale-95"
+          style={{ color: "var(--giver-profile)" }}
+        >
+          yes
+        </button>
+        <button
+          type="button"
+          onClick={() => onAnswer(false)}
+          className="text-[6.5vw] font-black lowercase leading-none tracking-[-0.04em] opacity-70 transition-transform active:scale-95"
+        >
+          not now
+        </button>
+      </div>
+
       <button
         type="button"
         onClick={() => {
           buzz();
           onDone();
         }}
-        className="mt-auto mb-10 self-center text-[8vw] font-black lowercase leading-none tracking-[-0.04em] transition-transform active:scale-95 animate-[fade-up_600ms_750ms_ease-out_both]"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="absolute inset-x-0 bottom-0 mx-auto w-fit text-[8vw] font-black lowercase leading-none tracking-[-0.04em] transition-transform active:scale-95"
+        style={{
+          paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))",
+          opacity: allowed === null ? 0 : 1,
+          transition: "opacity 800ms cubic-bezier(0.32,0,0.24,1)",
+          pointerEvents: allowed === null ? "none" : "auto",
+        }}
       >
         enter giver
       </button>
     </div>
   );
 }
+

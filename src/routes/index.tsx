@@ -12,9 +12,10 @@ import { World, ringPhoto } from "@/components/World";
 import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
 
-type Screen = "profile" | "community" | "wish" | "give";
+/** The only place you ever go: your own profile. Everything else is a mode. */
+type Screen = "profile";
 
-const SCREENS: Screen[] = ["profile", "community", "wish", "give"];
+const SCREENS: Screen[] = ["profile"];
 
 /** My own history, in the toggle's order: past wishes, gives, trades. */
 const MY_HISTORY: string[][] = [
@@ -22,6 +23,75 @@ const MY_HISTORY: string[][] = [
   ME.history.gives,
   ME.history.trades,
 ];
+
+/**
+ * ONE LIVING G, FOUR MODES.
+ * Mode never navigates: it only changes what the same persistent G holds.
+ *   middle loop = mine in this mode
+ *   bottom loop = the community in this mode
+ */
+const MODE_CONTENT: Record<
+  Mode,
+  {
+    mine: { title: string; body: React.ReactNode };
+    community: { title: string; body: React.ReactNode };
+  }
+> = {
+  wish: {
+    mine: {
+      title: "what are you wishing for?",
+      body: <p className="opacity-70">make a wish. keep it small and human.</p>,
+    },
+    community: {
+      title: "wishes around you",
+      body: <>{COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>)}</>,
+    },
+  },
+  give: {
+    mine: {
+      title: "what are you sharing?",
+      body: (
+        <p className="opacity-70">
+          share something you have, know, or can do.
+        </p>
+      ),
+    },
+    community: {
+      title: "gives around you",
+      body: <>{COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>)}</>,
+    },
+  },
+  trade: {
+    mine: {
+      title: "what are you trading?",
+      body: (
+        <p className="opacity-70">offer something, ask for something back.</p>
+      ),
+    },
+    community: {
+      title: "trades around you",
+      body: (
+        <p className="opacity-70">
+          open trades from the people nearby. coming next.
+        </p>
+      ),
+    },
+  },
+  borrow: {
+    mine: {
+      title: "what do you need to borrow?",
+      body: <p className="opacity-70">ask to borrow something for a while.</p>,
+    },
+    community: {
+      title: "lending around you",
+      body: (
+        <p className="opacity-70">
+          what people nearby are happy to lend. coming next.
+        </p>
+      ),
+    },
+  },
+};
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { w?: Screen } => {
@@ -42,7 +112,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "One shape. Three Gs. Wish, give and trade with the people around you.",
+          "One shape. One Living G. Wish, give, trade and borrow with the people around you.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -56,20 +126,18 @@ function Index() {
   const [gaveTo, setGaveTo] = useState<string | null>(null);
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
-  /** Which outward exchange mode the give side is working in. */
+  /** Which mode the one persistent Living G is currently working in. */
   const [mode, setMode] = useState<Mode>("give");
 
   /**
-   * ONE source of truth for which world is open: the router.
-   * The visible back arrow and the device/browser back gesture therefore
-   * operate on exactly the same history model — no manual pushState.
+   * ONE source of truth for the only depth that exists: the router.
+   * Modes are state; profile is the single pushed screen.
    */
   const navigate = useNavigate({ from: Route.fullPath });
   const router = useRouter();
   const { w } = Route.useSearch();
   const top = w ?? null;
 
-  /** How many world entries this session pushed, so back() never leaves Giver. */
   const depth = useRef(0);
 
   const push = useCallback(
@@ -89,6 +157,7 @@ function Index() {
     navigate({ search: {}, replace: true });
   }, [navigate, router]);
 
+  const content = MODE_CONTENT[mode];
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
@@ -101,33 +170,31 @@ function Index() {
         />
       ) : (
         <>
-          {/* HOME — the root. The G is the navigation. */}
+          {/* THE WORKSPACE — one Living G, always yours. Mode is a state of it. */}
           <World
-            world="home"
+            world={mode}
             identity="giver"
             active={top === null}
+            overlay={<EarSelector mode={mode} onChange={setMode} />}
             regions={{
               top: {
-                label: "profile",
-                panelTitle: "profile",
+                label: "you",
+                panelTitle: "you",
                 panelBody: null,
                 onPress: () => push("profile"),
               },
               middle: {
-                label: "wish",
-                panelTitle: "wish",
-                panelBody: null,
-                onPress: () => push("wish"),
+                label: "mine",
+                panelTitle: content.mine.title,
+                panelBody: content.mine.body,
               },
               bottom: {
-                label: "give",
-                panelTitle: "give",
-                panelBody: null,
-                onPress: () => push("give"),
+                label: "community",
+                panelTitle: content.community.title,
+                panelBody: content.community.body,
               },
             }}
           />
-
 
           <Screen open={top === "profile"}>
             <World
@@ -178,129 +245,7 @@ function Index() {
               }}
             />
           </Screen>
-
-          <Screen open={top === "community"}>
-            <World
-              world="community"
-              active={top === "community"}
-              identity="community"
-              onBack={pop}
-              regions={{
-                top: {
-                  label: "map",
-                  panelTitle: "nearby",
-                  panelBody: (
-                    <p className="opacity-70">
-                      the map lands here — who is wishing and giving around you,
-                      right now.
-                    </p>
-                  ),
-                },
-                middle: {
-                  label: "wishes",
-                  panelTitle: "wishes",
-                  panelBody: COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>),
-                },
-                bottom: {
-                  label: "gives",
-                  panelTitle: "gives",
-                  panelBody: COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>),
-                },
-              }}
-            />
-          </Screen>
-
-          {/* Wish world — the same Living G, in purple. */}
-          <Screen open={top === "wish"}>
-            <World
-              world="wish"
-              active={top === "wish"}
-              identity="wish"
-              onBack={pop}
-              regions={{
-                top: {
-                  label: "search",
-                  panelTitle: "search wishes",
-                  panelBody: (
-                    <p className="opacity-70">
-                      search inside wishes. coming next.
-                    </p>
-                  ),
-                },
-                middle: {
-                  label: "make",
-                  panelTitle: "make a wish",
-                  panelBody: (
-                    <p className="opacity-70">
-                      your own wish space — make a wish, see your wishes. coming
-                      next.
-                    </p>
-                  ),
-                },
-                bottom: {
-                  label: "grant",
-                  panelTitle: "grant a wish",
-                  panelBody: (
-                    <p className="opacity-70">
-                      wishes from other people you could fulfil. coming next.
-                    </p>
-                  ),
-                },
-              }}
-            />
-          </Screen>
-
-          {/* Give world — the same Living G, in orange. */}
-          <Screen open={top === "give"}>
-            <World
-              world="give"
-              active={top === "give"}
-              onBack={pop}
-              overlay={<EarSelector mode={mode} onChange={setMode} />}
-              regions={{
-                top: {
-                  label: "search",
-                  panelTitle: "search gives",
-                  panelBody: (
-                    <p className="opacity-70">
-                      search inside gives — things, skills, time, knowledge,
-                      help. coming next.
-                    </p>
-                  ),
-                },
-                middle: {
-                  label: "share",
-                  panelTitle:
-                    mode === "give"
-                      ? "what are you sharing?"
-                      : mode === "trade"
-                        ? "what are you trading?"
-                        : "what do you need to borrow?",
-                  panelBody: (
-                    <p className="opacity-70">
-                      {mode === "give"
-                        ? "share something you have, know, or can do."
-                        : mode === "trade"
-                          ? "offer something, ask for something back."
-                          : "ask to borrow something for a while."}
-                    </p>
-                  ),
-                },
-                bottom: {
-                  label: "discover",
-                  panelTitle: "community gives",
-                  panelBody: (
-                    <p className="opacity-70">
-                      what other people are sharing with the community. coming
-                      next.
-                    </p>
-                  ),
-                },
-              }}
-            />
-          </Screen>
         </>
-
       )}
     </main>
   );

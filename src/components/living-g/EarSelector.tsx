@@ -23,7 +23,7 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * Separate from the profile HISTORY toggle.
  */
 
-export const MODES = ["give", "trade", "borrow"] as const;
+export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
 type P = { x: number; y: number };
@@ -36,14 +36,17 @@ type P = { x: number; y: number };
 const HOME: P = { x: 502, y: 76 };
 const EAR_R = 84;
 
-/** The three resting configurations, in viewBox space. */
+/** The four resting configurations, in viewBox space. */
 const SEAT: Record<Mode, P> = {
+  // top centre, above the middle loop: asking
+  wish: { x: 292, y: 44 },
   give: HOME,
   // docked in the concave of the central S-curve: exchange, two sides meeting
   trade: { x: 490, y: 520 },
   // mirrored across the G
   borrow: { x: 88, y: 76 },
 };
+
 
 const MAGNET = 110;
 const SNAP_MS = 200;
@@ -145,6 +148,16 @@ export function EarSelector({
     }
   };
 
+  /** On arrival the word speaks up, then settles back into a restrained state. */
+  const [reveal, setReveal] = useState(false);
+  useEffect(() => {
+    setReveal(true);
+    const t = setTimeout(() => setReveal(false), 1400);
+    return () => clearTimeout(t);
+  }, [mode]);
+
+
+
 
 
 
@@ -198,7 +211,7 @@ export function EarSelector({
           style={{
             fontSize: WORD_SIZE,
             letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-            opacity: dragging ? 0 : 0.9,
+            opacity: dragging ? 0 : reveal ? 0.95 : 0.4,
             transform: `scale(${dragging ? 0.3 : 1})`,
             transformOrigin: `${HOME.x}px ${HOME.y}px`,
             transition:
@@ -218,7 +231,7 @@ export function EarSelector({
           tabIndex={0}
           aria-label="mode"
           aria-valuemin={1}
-          aria-valuemax={3}
+          aria-valuemax={MODES.length}
           aria-valuenow={MODES.indexOf(mode) + 1}
           aria-valuetext={mode}
           onPointerDown={(e) => {
@@ -248,11 +261,11 @@ export function EarSelector({
             const i = MODES.indexOf(mode);
             if (e.key === "ArrowRight" || e.key === "ArrowDown") {
               e.preventDefault();
-              commit(MODES[(i + 1) % 3]!);
+              commit(MODES[(i + 1) % MODES.length]!);
             }
             if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
               e.preventDefault();
-              commit(MODES[(i + 2) % 3]!);
+              commit(MODES[(i + MODES.length - 1) % MODES.length]!);
             }
           }}
         />

@@ -157,7 +157,27 @@
   --giver-trade: oklch(0.58 0.23 27); /* Red — Trade */
   --giver-community: oklch(0.58 0.19 250); /* Blue — Community */
   --giver-discovery: oklch(0.86 0.19 95); /* Yellow — discovery, maps, finding */
-  --giver-borrow: oklch(0.7 0.19 350); /* Pink — Borrow (and lending) */
+  --giver-borrow: oklch(0.7 0.19 350); /* Pink — legacy borrow role colour */
+
+  /* ---- THE FOUR LIVING G MODE COLOURS — SINGLE SOURCE OF TRUTH ----
+     These four tokens, and only these four, colour the persistent Living G in
+     its four modes. They never route through a legacy semantic alias, and the
+     mode worlds below reference nothing else.
+
+       give = green   wish = purple   trade = orange   borrow = blue
+
+     Each has ONE approved bright complementary in-loop type colour: THE G
+     CHOOSES THE TYPE COLOUR, and that colour is always energetic — never black,
+     white, grey or muddy. */
+  --mode-give: oklch(0.72 0.21 140); /* green */
+  --mode-wish: oklch(0.55 0.24 300); /* purple */
+  --mode-trade: oklch(0.72 0.2 48); /* orange */
+  --mode-borrow: oklch(0.58 0.19 250); /* blue */
+
+  --mode-give-complement: oklch(0.56 0.28 340); /* green G -> hot magenta */
+  --mode-wish-complement: oklch(0.68 0.18 92); /* purple G -> bright yellow */
+  --mode-trade-complement: oklch(0.52 0.27 265); /* orange G -> royal blue */
+  --mode-borrow-complement: oklch(0.68 0.17 70); /* blue G -> bright amber */
 
   /* ---- COMPLEMENTARY TYPOGRAPHY TOKENS ----
      THE G CHOOSES THE TYPE COLOUR. Every mode's in-loop typography colour is
@@ -171,6 +191,7 @@
   --giver-community-complement: oklch(0.68 0.17 70); /* blue G -> bright amber */
   --giver-discovery-complement: oklch(0.52 0.27 285); /* yellow G -> electric violet */
   --giver-borrow-complement: oklch(0.6 0.22 152); /* pink G -> bright green */
+
 
 
   /* Orange/green aliases, named by colour for convenience. */

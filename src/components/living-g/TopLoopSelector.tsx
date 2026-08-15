@@ -21,8 +21,8 @@ import { LOOP_TEXT_FILL } from "./type-scale";
 
 export type TopLoopPosition = 0 | 1 | 2;
 
-/** The three history states, in order. Lowercase, like all Giver copy. */
-export const HISTORY_STATES = ["past wishes", "past gives", "past trades"] as const;
+/** The three history states, in order. Minimal, lowercase — never "past x". */
+export const HISTORY_STATES = ["wishes", "gives", "trades"] as const;
 
 export type HistoryState = (typeof HISTORY_STATES)[number];
 

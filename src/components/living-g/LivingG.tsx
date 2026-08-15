@@ -284,6 +284,9 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
           />
         );
       })}
+
+      {overlay}
     </svg>
+
   );
 }

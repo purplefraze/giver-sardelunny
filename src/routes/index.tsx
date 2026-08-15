@@ -108,15 +108,8 @@ function Index() {
                 onPress: () => push("give"),
               },
             }}
-          >
-            <button
-              type="button"
-              onClick={() => push("community")}
-              className="absolute left-5 top-5 z-20 p-2 text-[11px] font-black uppercase tracking-[0.3em] opacity-55 active:scale-95"
-            >
-              Community
-            </button>
-          </World>
+          />
+
 
           <Screen open={top === "profile"}>
             <World

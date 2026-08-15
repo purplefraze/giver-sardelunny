@@ -219,7 +219,7 @@ function ForwardCue({
   );
 }
 
-/** Editorial, asymmetric, off-white. Green is the accent, never the flood. */
+/** One editorial column, one alignment axis. Green is the accent, never the flood. */
 function Celebration({ username, onDone }: { username: string; onDone: () => void }) {
   return (
     <div
@@ -229,7 +229,7 @@ function Celebration({ username, onDone }: { username: string; onDone: () => voi
       <h1 className="text-[19vw] font-black uppercase leading-[0.78] tracking-[-0.06em] animate-[fade-up_500ms_ease-out]">
         Yippee!
       </h1>
-      <p className="mt-8 ml-[12%] max-w-[15ch] text-[7.5vw] font-black uppercase leading-[0.92] tracking-[-0.04em] animate-[fade-up_600ms_250ms_ease-out_both]">
+      <p className="mt-8 max-w-[15ch] text-[7.5vw] font-black uppercase leading-[0.92] tracking-[-0.04em] animate-[fade-up_600ms_250ms_ease-out_both]">
         You just made your first act of generosity on Giver.
       </p>
       <p className="mt-7 max-w-[16ch] text-[5.5vw] font-black uppercase leading-[0.95] tracking-[-0.03em] opacity-70 animate-[fade-up_600ms_500ms_ease-out_both]">
@@ -241,7 +241,7 @@ function Celebration({ username, onDone }: { username: string; onDone: () => voi
           buzz();
           onDone();
         }}
-        className="mt-auto mb-10 self-start text-[8vw] font-black uppercase leading-none tracking-[-0.04em] underline decoration-[0.1em] underline-offset-[0.18em] transition-transform active:scale-95 animate-[fade-up_600ms_750ms_ease-out_both]"
+        className="mt-auto mb-10 self-center text-[8vw] font-black uppercase leading-none tracking-[-0.04em] underline decoration-[0.1em] underline-offset-[0.18em] transition-transform active:scale-95 animate-[fade-up_600ms_750ms_ease-out_both]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         Enter Giver →

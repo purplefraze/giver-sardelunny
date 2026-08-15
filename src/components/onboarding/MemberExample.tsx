@@ -55,6 +55,13 @@ export function MemberExample({
         label={first ? "Back" : `Back to the person before ${member.name}`}
       />
 
+      {/* Same identity position as GIVER on Home: quiet, centred, small. */}
+      <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex justify-center px-8">
+        <span className="text-[12px] font-black uppercase tracking-[0.42em] opacity-65">
+          {member.username}
+        </span>
+      </div>
+
       <GStage>
         <LivingG
           key={member.id}
@@ -82,16 +89,6 @@ export function MemberExample({
                       preserveAspectRatio="xMidYMid slice"
                       clipPath={`url(#${clipId})`}
                     />
-                    <text
-                      x={anchor.x}
-                      y={anchor.y + r + 26}
-                      textAnchor="middle"
-                      fill="var(--world-ink)"
-                      className="font-black uppercase"
-                      style={{ fontSize: 20, letterSpacing: "-0.02em", opacity: 0.85 }}
-                    >
-                      {member.username}
-                    </text>
                   </>
                 );
               },

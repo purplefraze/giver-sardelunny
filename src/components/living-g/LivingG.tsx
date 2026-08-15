@@ -30,7 +30,10 @@ type Props = {
   regions?: Partial<Record<RegionKey, GRegion>>;
   className?: string;
   showLabels?: boolean;
+  /** Interactive layer drawn above the artwork (e.g. the top-loop selector). */
+  overlay?: React.ReactNode;
 };
+
 
 const ORDER: RegionKey[] = ["top", "middle", "bottom"];
 

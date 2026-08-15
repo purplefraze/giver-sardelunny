@@ -52,13 +52,20 @@ const RIM_R = LOOP_RIM_RADIUS.middle;
 const HOME_ANGLE = Math.atan2(HOME.y - TRACK_C.y, HOME.x - TRACK_C.x);
 const LOWER_ANGLE = Math.abs(HOME_ANGLE);
 
-/** Four balanced seats on the rail (SVG space: negative y is up). */
+/**
+ * Four balanced seats on the rail (SVG space: negative y is up). The left pair
+ * is pulled a little in from a true mirror so the whole assembly — arm and
+ * circular end — stays inside the framed silhouette at rest.
+ */
+const LEFT_ANGLE = (126 * Math.PI) / 180;
+
 const SEAT_ANGLE: Record<Mode, number> = {
   give: HOME_ANGLE, // ~2 o'clock (canonical home)
-  wish: -(Math.PI - LOWER_ANGLE), // ~10 o'clock
+  wish: -LEFT_ANGLE, // ~10 o'clock
   trade: LOWER_ANGLE, // ~4-5 o'clock, raised out of the bottom
-  borrow: Math.PI - LOWER_ANGLE, // ~7-8 o'clock, raised out of the bottom
+  borrow: LEFT_ANGLE, // ~7-8 o'clock, raised out of the bottom
 };
+
 
 /** No free rotation: travel is bounded by the outermost pair of seats. */
 const ANGLE_MIN = SEAT_ANGLE.wish;

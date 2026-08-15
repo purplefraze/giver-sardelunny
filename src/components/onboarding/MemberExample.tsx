@@ -172,6 +172,11 @@ export function MemberExample({
                 <p className="mt-6 text-2xl font-medium leading-tight opacity-70">
                   {member.activity}
                 </p>
+                {member.alsoGiving?.map((item) => (
+                  <p key={item} className="mt-6 text-2xl font-medium leading-tight opacity-70">
+                    {item}
+                  </p>
+                ))}
               </>
             ) : null}
           </>

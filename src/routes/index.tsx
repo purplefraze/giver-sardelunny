@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { useCallback, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import {
+  HISTORY_STATES,
   TopLoopSelector,
   topLoopContent,
   type TopLoopPosition,
@@ -13,6 +14,13 @@ import { cn } from "@/lib/utils";
 type Screen = "profile" | "community" | "wish" | "give";
 
 const SCREENS: Screen[] = ["profile", "community", "wish", "give"];
+
+/** My own history, in the toggle's order: past wishes, gives, trades. */
+const MY_HISTORY: string[][] = [
+  ME.history.wishes,
+  ME.history.gives,
+  ME.history.trades,
+];
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): { w?: Screen } => {

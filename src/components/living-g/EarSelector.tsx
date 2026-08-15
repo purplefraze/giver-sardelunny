@@ -40,7 +40,7 @@ type P = { x: number; y: number };
  * nothing else — the middle loop is over 100 units away.
  */
 const HOME: P = { x: 502, y: 76 };
-const EAR_R = 95;
+const EAR_R = 140;
 
 /**
  * THE INVISIBLE TRACK — derived from the ACTUAL middle-loop geometry, never
@@ -62,7 +62,7 @@ const norm = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
  * The lower seats sit in the lower QUADRANTS of the middle loop — raised well
  * clear of the very bottom, and balanced against the upper pair.
  */
-const LOWER_ANGLE = 0.72;
+const LOWER_ANGLE = Math.abs(HOME_ANGLE);
 
 const SEAT_ANGLE: Record<Mode, number> = {
   give: HOME_ANGLE, // upper-right (canonical home)

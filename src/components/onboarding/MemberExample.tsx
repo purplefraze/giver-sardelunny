@@ -67,32 +67,22 @@ export function MemberExample({
           key={member.id}
           className={G_PRESENCE}
           showLabels
+          overlay={
+            <TopLoopSelector
+              position={topPos}
+              onChange={setTopPos}
+              states={[
+                topLoopContent.photo(member.photo, member.id),
+                topLoopContent.sparks(100),
+                topLoopContent.placeholder(),
+              ]}
+            />
+          }
           regions={{
             top: {
               onPress: open("profile"),
-              render: (anchor) => {
-                const clipId = `member-photo-${member.id}`;
-                const r = 45;
-                return (
-                  <>
-                    <defs>
-                      <clipPath id={clipId}>
-                        <circle cx={anchor.x} cy={anchor.y} r={r} />
-                      </clipPath>
-                    </defs>
-                    <image
-                      href={member.photo}
-                      x={anchor.x - r}
-                      y={anchor.y - r}
-                      width={r * 2}
-                      height={r * 2}
-                      preserveAspectRatio="xMidYMid slice"
-                      clipPath={`url(#${clipId})`}
-                    />
-                  </>
-                );
-              },
             },
+
             middle: {
               onPress: open("about"),
               render: (anchor) =>

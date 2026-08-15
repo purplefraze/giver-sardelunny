@@ -43,3 +43,15 @@ export const LOOP_CENTRE = {
   bottom: { x: 270, y: 840 },
 } as const;
 
+/**
+ * OUTER rim radius of each loop's stroke, measured off the canonical path by
+ * ray-casting from that loop's optical centre. READ-ONLY measurement: it lets
+ * the mode selector ride the middle loop's real circumference instead of
+ * arbitrary screen coordinates. Never used to move, scale or redraw the G.
+ */
+export const LOOP_RIM_RADIUS = {
+  top: 84,
+  middle: 196.5,
+  bottom: 246,
+} as const;
+

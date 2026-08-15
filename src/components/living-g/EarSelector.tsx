@@ -57,11 +57,6 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * Four seats on the one track. The upper-left / lower-left pair is pulled in
- * from a true mirror so the whole piece — ring and stem — stays inside the
- * framed silhouette at rest, never off the edge of the screen.
- */
-/**
  * Four seats on the one track, all inside the arc where the middle loop's rim
  * is actually FREE. Below about 4 o'clock the rim is occupied by the S-curve
  * and the bottom loop, so a seat there would bury the piece in the spine: the

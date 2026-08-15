@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buzz } from "@/lib/haptics";
 import { G_ANCHORS, LOOP_SAFE_RADIUS } from "./g-path";
 import { LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
@@ -52,7 +52,7 @@ function nearest(p: { x: number; y: number }): Mode {
   return best;
 }
 
-const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.62);
+const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.4);
 
 export function ModeHandle({
   mode,
@@ -215,7 +215,7 @@ export function ModeHandle({
         <circle
           cx={pos.x}
           cy={pos.y}
-          r={dragging ? 25 : 23}
+          r={dragging ? 30 : 28}
           fill="none"
           stroke="var(--world-g)"
           strokeWidth={7}

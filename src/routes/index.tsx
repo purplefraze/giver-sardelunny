@@ -7,7 +7,7 @@ import {
   topLoopContent,
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
-import { ModeHandle, type Mode } from "@/components/living-g/ModeHandle";
+import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
 import { World, ringPhoto } from "@/components/World";
 import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
@@ -255,9 +255,8 @@ function Index() {
             <World
               world="give"
               active={top === "give"}
-              identity={mode}
               onBack={pop}
-              overlay={<ModeHandle mode={mode} onChange={setMode} />}
+              overlay={<EarSelector mode={mode} onChange={setMode} />}
               regions={{
                 top: {
                   label: "search",

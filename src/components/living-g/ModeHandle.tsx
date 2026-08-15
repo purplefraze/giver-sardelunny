@@ -66,16 +66,57 @@ export function ModeHandle({
   const last = useRef<Mode>(mode);
 
   const rest = SEAT[mode];
-  let pos = rest;
+
+  /** Where the finger wants the head, with the seat's magnetic pull applied. */
+  let target = rest;
   if (drag) {
     const near = SEAT[nearest(drag)];
     const d = dist(drag, near);
     const pull = Math.max(0, 1 - d / MAGNET) * 0.55;
-    pos = {
+    target = {
       x: drag.x + (near.x - drag.x) * pull,
       y: drag.y + (near.y - drag.y) * pull,
     };
   }
+
+  /**
+   * The arm stays hinged on the loop, so its length changes as it travels —
+   * geometry attributes CSS can't transition. A tiny spring gives the snap its
+   * quick-but-soft settle while the drag itself stays immediate.
+   */
+  const [pos, setPos] = useState(rest);
+  const posRef = useRef(pos);
+  const targetRef = useRef(target);
+  targetRef.current = target;
+  const raf = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (dragging) {
+      posRef.current = targetRef.current;
+      setPos(targetRef.current);
+      return;
+    }
+    const step = () => {
+      const t = targetRef.current;
+      const p = posRef.current;
+      const next = { x: p.x + (t.x - p.x) * 0.28, y: p.y + (t.y - p.y) * 0.28 };
+      if (dist(next, t) < 0.4) {
+        posRef.current = t;
+        setPos(t);
+        raf.current = null;
+        return;
+      }
+      posRef.current = next;
+      setPos(next);
+      raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => {
+      if (raf.current) cancelAnimationFrame(raf.current);
+      raf.current = null;
+    };
+  }, [dragging, mode, target.x, target.y]);
+
 
   const pointFrom = (e: React.PointerEvent<SVGElement>) => {
     const svg = e.currentTarget.ownerSVGElement;

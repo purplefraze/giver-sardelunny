@@ -56,7 +56,7 @@ function nearest(p: { x: number; y: number }): Mode {
 const WORD_OFFSET: Record<Mode, { x: number; y: number }> = {
   give: { x: 0, y: 62 },
   trade: { x: 0, y: 64 },
-  borrow: { x: -4, y: 62 },
+  borrow: { x: -48, y: 60 },
 };
 
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.82);

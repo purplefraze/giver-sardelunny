@@ -219,23 +219,19 @@ export function EarSelector({
           <circle cx={HOME.x} cy={HOME.y} r={EAR_R} fill="#fff" />
           <circle cx={TRACK_C.x} cy={TRACK_C.y} r={RIM_R} fill="#000" />
         </mask>
-        <mask id={`${uid}-base`} maskUnits="userSpaceOnUse">
-          <rect x={0} y={0} width={576} height={1133} fill="#fff" />
-          <circle cx={HOME.x} cy={HOME.y} r={EAR_R} fill="#000" />
-          <circle cx={TRACK_C.x} cy={TRACK_C.y} r={RIM_R} fill="#fff" />
-        </mask>
       </defs>
 
       {/*
-        The base G, redrawn ONCE through the stencil, so the ear's home reads as
-        a perfectly smooth rim the instant the assembly leaves it. The canonical
-        path underneath is untouched.
+        The assembly's HOME, cleared through the very same stencil in the world
+        background, so the rim reads as a perfectly smooth curve the instant the
+        piece leaves it — and the canonical path underneath stays untouched.
       */}
-      <g mask={`url(#${uid}-base)`}>
+      <g mask={`url(#${uid}-piece)`}>
         <g transform={LIVING_G_TRANSFORM} fill="var(--world-bg)">
           <path d={LIVING_G_PATH} />
         </g>
       </g>
+
 
       {/* Subtle destination hints, seated on the rail itself. Never a drawn ring. */}
       {MODES.map((m) => {

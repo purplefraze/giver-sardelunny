@@ -7,6 +7,7 @@ import {
   topLoopContent,
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
+import { ModeHandle, type Mode } from "@/components/living-g/ModeHandle";
 import { World, ringPhoto } from "@/components/World";
 import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,8 @@ function Index() {
   const [gaveTo, setGaveTo] = useState<string | null>(null);
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
+  /** Which outward exchange mode the give side is working in. */
+  const [mode, setMode] = useState<Mode>("give");
 
   /**
    * ONE source of truth for which world is open: the router.
@@ -252,8 +255,9 @@ function Index() {
             <World
               world="give"
               active={top === "give"}
-              identity="give"
+              identity={mode}
               onBack={pop}
+              overlay={<ModeHandle mode={mode} onChange={setMode} />}
               regions={{
                 top: {
                   label: "search",
@@ -267,10 +271,19 @@ function Index() {
                 },
                 middle: {
                   label: "share",
-                  panelTitle: "what are you sharing?",
+                  panelTitle:
+                    mode === "give"
+                      ? "what are you sharing?"
+                      : mode === "trade"
+                        ? "what are you trading?"
+                        : "what do you need to borrow?",
                   panelBody: (
                     <p className="opacity-70">
-                      share something you have, know, or can do.
+                      {mode === "give"
+                        ? "share something you have, know, or can do."
+                        : mode === "trade"
+                          ? "offer something, ask for something back."
+                          : "ask to borrow something for a while."}
                     </p>
                   ),
                 },

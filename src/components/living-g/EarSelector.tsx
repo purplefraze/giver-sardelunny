@@ -349,7 +349,9 @@ export function EarSelector({
           // LOCKED: the seat only STATES the mode; it cannot be dragged.
           if (locked) return;
           (e.target as SVGElement).setPointerCapture?.(e.pointerId);
-          setDrag(grab?.angle ?? restAngle);
+          const a = grab?.angle ?? angleRef.current;
+          dragRef.current = a;
+          setDrag(a);
         }}
         onPointerMove={(e) => {
           if (locked || drag === null) return;
@@ -358,11 +360,13 @@ export function EarSelector({
           if (!move) return;
           const g = gesture.current;
           if (g && !g.moved && dist(move.point, g.start) > 14) g.moved = true;
+          dragRef.current = move.angle;
           setDrag(move.angle);
           if (!g?.moved) return;
           const near = nearestSeat(move.angle);
-          if (Math.abs(move.angle - SEAT_ANGLE[near]) < 0.2) commit(near);
+          if (Math.abs(shortest(move.angle, SEAT_ANGLE[near])) < 0.2) commit(near);
         }}
+
         onPointerUp={(e) => {
           e.stopPropagation();
           end();

@@ -49,7 +49,9 @@ const EAR_R = 140;
  * therefore keeps the SAME distance from the loop at every position, like a bead
  * on a wire, and the track scales with the G because it lives in viewBox space.
  */
-const TRACK_C: P = { x: LOOP_CENTRE.middle.x, y: LOOP_CENTRE.middle.y };
+// x sits on the G's own vertical axis (viewBox centre) so the mirrored left-hand
+// seats stay fully on canvas; y is the middle loop's measured centre.
+const TRACK_C: P = { x: 288, y: LOOP_CENTRE.middle.y };
 const TRACK_R = Math.hypot(HOME.x - TRACK_C.x, HOME.y - TRACK_C.y);
 
 /** Seat angles on the track (SVG space: negative y is up). */

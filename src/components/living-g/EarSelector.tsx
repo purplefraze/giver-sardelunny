@@ -154,8 +154,6 @@ export function EarSelector({
   }
 
 
-  const [angle, setAngle] = useState(restAngle);
-  const angleRef = useRef(angle);
   const targetRef = useRef(target);
   targetRef.current = target;
   const raf = useRef<number | null>(null);

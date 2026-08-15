@@ -110,8 +110,8 @@ export const MEMBERS: Member[] = [
     mode: "trading",
     world: "trading",
     action: "trading",
-    headline: "firewood for a Burning Man ticket",
-    activity: "trading a year's supply of firewood for a Burning Man ticket.",
+    headline: "firewood for a burning man ticket",
+    activity: "trading a year's supply of firewood for a burning man ticket.",
     about:
       "43, about 1.5 km away. music festivals, bonfires and boys. tall enough that he has never owned a ladder.",
     age: "43",
@@ -122,7 +122,7 @@ export const MEMBERS: Member[] = [
       { text: "trading", role: "secondary" },
       { text: "a year's supply of firewood", role: "primary" },
       { text: "for", role: "secondary", lead: true },
-      { text: "a Burning Man ticket", role: "primary" },
+      { text: "a burning man ticket", role: "primary" },
     ],
     history: {
       wishes: ["a trailer for one weekend"],

@@ -53,8 +53,8 @@ const MEET_INTRO: Beat[] = [{ world: "meet", bottom: ["meet four", "givers"] }];
 const HOLD = 3000;
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
-  giving: "var(--giver-give)",
-  wishing: "var(--giver-wish)",
+  giving: "var(--giver-discovery)",
+  wishing: "var(--giver-community)",
   trading: "var(--giver-trade)",
   borrowing: "var(--giver-borrow)",
 };

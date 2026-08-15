@@ -23,7 +23,7 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * Separate from the profile HISTORY toggle.
  */
 
-export const MODES = ["give", "trade", "borrow"] as const;
+export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
 type P = { x: number; y: number };
@@ -36,14 +36,17 @@ type P = { x: number; y: number };
 const HOME: P = { x: 502, y: 76 };
 const EAR_R = 84;
 
-/** The three resting configurations, in viewBox space. */
+/** The four resting configurations, in viewBox space. */
 const SEAT: Record<Mode, P> = {
+  // top centre, above the middle loop: asking
+  wish: { x: 296, y: 62 },
   give: HOME,
   // docked in the concave of the central S-curve: exchange, two sides meeting
   trade: { x: 490, y: 520 },
   // mirrored across the G
   borrow: { x: 88, y: 76 },
 };
+
 
 const MAGNET = 110;
 const SNAP_MS = 200;

@@ -40,10 +40,10 @@ type P = { x: number; y: number };
  * nothing else — the middle loop is over 100 units away.
  */
 const HOME: P = { x: 502, y: 76 };
-const EAR_R = 84;
+const EAR_R = 112;
 
 /** The invisible track: a circle around the middle loop, through the ear's home. */
-const TRACK_C: P = { x: LOOP_CENTRE.middle.x, y: LOOP_CENTRE.middle.y };
+const TRACK_C: P = { x: 288, y: LOOP_CENTRE.middle.y };
 const TRACK_R = Math.hypot(HOME.x - TRACK_C.x, HOME.y - TRACK_C.y);
 
 /** Seat angles on the track (SVG space: negative y is up). */

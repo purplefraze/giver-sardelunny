@@ -129,13 +129,13 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
       );
     }
 
-    const gap = base * 0.1;
-    const lead = base * 0.32;
+    const gap = base * 0.06;
+    const lead = base * 0.24;
     const total = rows.reduce(
       (sum, row, i) => sum + row.size * 1.02 + (i === 0 ? 0 : row.lead ? lead : gap),
       0,
     );
-    if (total > radius * 1.78) continue;
+    if (total > radius * 1.94) continue;
 
     let y = -total / 2;
     const placed: Row[] = [];
@@ -144,7 +144,7 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
       const row = rows[i]!;
       if (i > 0) y += row.lead ? lead : gap;
       const centre = y + (row.size * 1.02) / 2;
-      const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.54) * 2;
+      const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.46) * 2;
       if (widthOf(row.text, row.size, row.role) > allowed) {
         ok = false;
         break;

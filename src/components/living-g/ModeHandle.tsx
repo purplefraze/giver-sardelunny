@@ -24,12 +24,12 @@ const HINGE = G_ANCHORS.smallRing;
 
 /** Destinations, defined off the canonical geometry — they scale with the G. */
 const SEAT: Record<Mode, { x: number; y: number }> = {
-  // the arm's natural down-right ear
-  give: { x: HINGE.x + 58, y: HINGE.y + 74 },
-  // pulled down into the S-curve that connects the loops
-  trade: { x: HINGE.x - 74, y: HINGE.y + 126 },
-  // mirrored left ear
-  borrow: { x: HINGE.x - 58, y: HINGE.y + 74 },
+  // the arm's natural down-right ear — where it already sits
+  give: { x: HINGE.x + 50, y: HINGE.y + 72 },
+  // pulled down the spine, pointing into the connecting S-curve
+  trade: { x: HINGE.x, y: HINGE.y + 390 },
+  // the mirrored left ear
+  borrow: { x: HINGE.x - 56, y: HINGE.y + 80 },
 };
 
 /** How close a finger must come before the seat starts pulling. */

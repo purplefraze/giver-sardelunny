@@ -34,7 +34,7 @@ type P = { x: number; y: number };
  * nothing else — the middle loop is over 100 units away.
  */
 const HOME: P = { x: 502, y: 76 };
-const EAR_R = 100;
+const EAR_R = 84;
 
 /** The four resting configurations, in viewBox space. */
 const SEAT: Record<Mode, P> = {

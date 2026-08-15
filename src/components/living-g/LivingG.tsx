@@ -69,9 +69,9 @@ const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
  * equivalent weight — substantial next to a full-screen G, never tiny labels.
  */
 const LABEL_SIZE: Record<RegionKey, number> = {
-  top: Math.round(LOOP_SAFE_RADIUS.top * 0.52),
-  middle: Math.round(LOOP_SAFE_RADIUS.middle * 0.56),
-  bottom: Math.round(LOOP_SAFE_RADIUS.bottom * 0.42),
+  top: Math.round(LOOP_SAFE_RADIUS.top * LOOP_ACTION_RATIO),
+  middle: Math.round(LOOP_SAFE_RADIUS.middle * LOOP_ACTION_RATIO),
+  bottom: Math.round(LOOP_SAFE_RADIUS.bottom * LOOP_ACTION_RATIO),
 };
 
 /**

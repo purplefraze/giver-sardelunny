@@ -25,11 +25,11 @@ const HINGE = G_ANCHORS.smallRing;
 /** Destinations, defined off the canonical geometry — they scale with the G. */
 const SEAT: Record<Mode, { x: number; y: number }> = {
   // the arm's natural down-right ear — where it already sits
-  give: { x: HINGE.x + 40, y: HINGE.y + 84 },
+  give: { x: HINGE.x + 46, y: HINGE.y + 96 },
   // pulled down the spine, pointing into the connecting S-curve
-  trade: { x: HINGE.x, y: HINGE.y + 390 },
+  trade: { x: HINGE.x, y: HINGE.y + 400 },
   // the mirrored left ear
-  borrow: { x: HINGE.x - 56, y: HINGE.y + 88 },
+  borrow: { x: HINGE.x - 70, y: HINGE.y - 26 },
 };
 
 /** How close a finger must come before the seat starts pulling. */
@@ -51,6 +51,13 @@ function nearest(p: { x: number; y: number }): Mode {
   }
   return best;
 }
+
+/** Where a captured word sits relative to its seat: clear of the stroke. */
+const WORD_OFFSET: Record<Mode, { x: number; y: number }> = {
+  give: { x: 0, y: 46 },
+  trade: { x: 0, y: 48 },
+  borrow: { x: 0, y: -44 },
+};
 
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.45);
 
@@ -159,8 +166,8 @@ export function ModeHandle({
               }}
             />
             <text
-              x={seat.x}
-              y={seat.y}
+              x={seat.x + WORD_OFFSET[m].x}
+              y={seat.y + WORD_OFFSET[m].y}
               textAnchor="middle"
               dominantBaseline="middle"
               fill={active ? LOOP_TEXT_FILL : "var(--world-g)"}
@@ -171,7 +178,7 @@ export function ModeHandle({
                 letterSpacing: LOOP_ROLE_STYLE.action.tracking,
                 opacity: active ? 1 : 0,
                 transform: `scale(${active ? 1 : 0.4})`,
-                transformOrigin: `${seat.x}px ${seat.y}px`,
+                transformOrigin: `${seat.x + WORD_OFFSET[m].x}px ${seat.y + WORD_OFFSET[m].y}px`,
                 transition: `opacity 200ms ease-out, transform 220ms cubic-bezier(0.22,1,0.36,1)`,
               }}
             >
@@ -218,8 +225,8 @@ export function ModeHandle({
         <circle
           cx={pos.x}
           cy={pos.y}
-          r={dragging ? 30 : 28}
-          fill="none"
+          r={dragging ? 15 : 13}
+          fill="var(--world-bg)"
           stroke="var(--world-g)"
           strokeWidth={7}
           style={{ transition: `r ${SNAP}ms ease-out` }}

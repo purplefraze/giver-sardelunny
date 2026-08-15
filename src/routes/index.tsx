@@ -8,7 +8,7 @@ import {
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
 import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
-import { loopText } from "@/components/living-g/loop-text";
+
 
 import { World, ringPhoto } from "@/components/World";
 import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";

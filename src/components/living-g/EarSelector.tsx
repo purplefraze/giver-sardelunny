@@ -135,16 +135,24 @@ export function EarSelector({
   const last = useRef<Mode>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
+  /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
+  const dragRef = useRef<number | null>(null);
 
   /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
 
-  let target = restAngle;
+  const [angle, setAngle] = useState(restAngle);
+  const angleRef = useRef(angle);
+
+  // Rest and magnet targets are always the nearest equivalent angle AROUND the
+  // circle, so settling takes the short way and never spins the long way.
+  let target = unwrap(angleRef.current, restAngle);
   if (drag !== null) {
-    const seat = SEAT_ANGLE[nearestSeat(drag)];
-    const pull = Math.max(0, 1 - Math.abs(drag - seat) / CAPTURE) * 0.55;
-    target = clampAngle(drag + (seat - drag) * pull);
+    const seat = unwrap(drag, SEAT_ANGLE[nearestSeat(drag)]);
+    const pull = Math.max(0, 1 - Math.abs(seat - drag) / CAPTURE) * 0.55;
+    target = drag + (seat - drag) * pull;
   }
+
 
   const [angle, setAngle] = useState(restAngle);
   const angleRef = useRef(angle);

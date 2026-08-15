@@ -77,15 +77,21 @@ const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
 };
 
 /**
- * Primary loop ACTION words ("give", "wish", "grant", "discover"). One scale,
- * derived from each loop's safe radius so equivalent actions always carry
- * equivalent weight — substantial next to a full-screen G, never tiny labels.
+ * PRIMARY MODE ACTION COPY — ONE fixed token per loop, from type-scale.ts.
+ * Every middle-loop action ("make a wish", "propose a trade") renders at the
+ * same size, and so does every bottom-loop action. Copy that is too long WRAPS
+ * at the loop's own line width; the size NEVER changes with the words.
  */
-const LABEL_SIZE: Record<RegionKey, number> = {
-  top: Math.round(LOOP_SAFE_RADIUS.top * LOOP_ACTION_RATIO),
-  middle: Math.round(LOOP_SAFE_RADIUS.middle * LOOP_ACTION_RATIO),
-  bottom: Math.round(LOOP_SAFE_RADIUS.bottom * LOOP_ACTION_RATIO),
-};
+const LABEL_SIZE: Record<RegionKey, number> = ACTION_SIZE;
+
+/** Where an action's lines may run before wrapping, per loop. */
+const actionWrap = (key: RegionKey) => wrapWidth(key, ACTION_WRAP_FACTOR);
+
+/** Lines of an action, wrapped at the fixed token — never resized. */
+function actionLines(label: string, key: RegionKey) {
+  return wrapLines(label, LABEL_SIZE[key], actionWrap(key), "action");
+}
+
 
 /**
  * ONE interaction rhythm for every Living G, everywhere.

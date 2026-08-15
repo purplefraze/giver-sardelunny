@@ -356,8 +356,16 @@
   --world-accent: var(--giver-discovery);
 }
 
-/* Borrow — pink G, green complement. Temporary access, returned to its owner. */
-[data-world="borrow"],
+/* Borrow MODE — blue G, bright amber type. */
+[data-world="borrow"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--mode-borrow);
+  --world-ink: oklch(0.4 0.15 255);
+  --world-text: var(--mode-borrow-complement);
+  --world-accent: var(--giver-discovery);
+}
+
+/* Borrowing PERSON — unchanged supporting role colour (pink). */
 [data-world="borrowing"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-borrow);
@@ -365,6 +373,7 @@
   --world-text: var(--giver-borrow-complement);
   --world-accent: var(--giver-discovery);
 }
+
 
 @keyframes fade-up {
   from {

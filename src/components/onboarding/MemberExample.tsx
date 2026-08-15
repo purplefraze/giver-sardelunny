@@ -89,16 +89,6 @@ export function MemberExample({
                       preserveAspectRatio="xMidYMid slice"
                       clipPath={`url(#${clipId})`}
                     />
-                    <text
-                      x={anchor.x}
-                      y={anchor.y + r + 26}
-                      textAnchor="middle"
-                      fill="var(--world-ink)"
-                      className="font-black uppercase"
-                      style={{ fontSize: 20, letterSpacing: "-0.02em", opacity: 0.85 }}
-                    >
-                      {member.username}
-                    </text>
                   </>
                 );
               },

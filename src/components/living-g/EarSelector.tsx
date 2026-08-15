@@ -48,14 +48,17 @@ const TRACK_R = Math.hypot(HOME.x - TRACK_C.x, HOME.y - TRACK_C.y);
 
 /** Seat angles on the track (SVG space: negative y is up). */
 const HOME_ANGLE = Math.atan2(HOME.y - TRACK_C.y, HOME.x - TRACK_C.x);
-const LOWER_ANGLE = Math.PI + HOME_ANGLE; // mirrored through the centre, downward
+
+/** Wrap an angle into (-pi, pi] so comparisons never straddle the seam. */
+const norm = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 const SEAT_ANGLE: Record<Mode, number> = {
   give: HOME_ANGLE, // upper-right
-  wish: Math.PI - HOME_ANGLE, // upper-left
+  wish: norm(Math.PI - HOME_ANGLE), // upper-left
   trade: -HOME_ANGLE, // lower-right
-  borrow: LOWER_ANGLE, // lower-left
+  borrow: norm(Math.PI + HOME_ANGLE), // lower-left
 };
+
 
 const onTrack = (angle: number): P => ({
   x: TRACK_C.x + TRACK_R * Math.cos(angle),

@@ -265,6 +265,78 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   );
 }
 
+/** Giver, speaking. The colour follows the meaning, never the page. */
+function OpeningSequence({ onDone }: { onDone: () => void }) {
+  const { world, copy, last } = useBeats(OPENING);
+  const [arrow, setArrow] = useState(false);
+
+  useEffect(() => {
+    if (!last) return;
+    const t = setTimeout(() => setArrow(true), 1800);
+    return () => clearTimeout(t);
+  }, [last]);
+
+  return (
+    <IntroG
+      world={world}
+      top={copy("top")}
+      middle={copy("middle")}
+      bottom={copy("bottom")}
+    >
+      <ForwardCue show={last && arrow} label="yes — meet four givers" onClick={onDone} />
+    </IntroG>
+  );
+}
+
+/** One line, then straight into the people. */
+function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const { world, copy, last } = useBeats(MEET_INTRO);
+
+  useEffect(() => {
+    if (!last) return;
+    const t = setTimeout(onDone, HOLD);
+    return () => clearTimeout(t);
+  }, [last, onDone]);
+
+  return (
+    <IntroG world={world} middle={copy("middle")} bottom={copy("bottom")}>
+      <BackArrow onClick={onBack} />
+      <ForwardCue show label="meet them" onClick={onDone} />
+    </IntroG>
+  );
+}
+
+/** The only forward affordance in onboarding: one small arrow, safe area kept. */
+function ForwardCue({
+  show,
+  label,
+  onClick,
+}: {
+  show: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 z-20 flex justify-end px-7"
+      style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        aria-label={label}
+        className="flex h-10 w-10 items-center justify-center text-3xl font-bold leading-none transition-opacity duration-500 active:scale-90"
+        style={{ opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none" }}
+      >
+        <span aria-hidden="true">→</span>
+      </button>
+    </div>
+  );
+}
+
 /**
  * A sequence of lines that arrive one after another with the established fade
  * rhythm — no typewriter, no popping. Reports when the whole thought has

@@ -25,11 +25,11 @@ const HINGE = G_ANCHORS.smallRing;
 /** Destinations, defined off the canonical geometry — they scale with the G. */
 const SEAT: Record<Mode, { x: number; y: number }> = {
   // the arm's natural down-right ear — where it already sits
-  give: { x: HINGE.x + 50, y: HINGE.y + 72 },
+  give: { x: HINGE.x + 40, y: HINGE.y + 84 },
   // pulled down the spine, pointing into the connecting S-curve
   trade: { x: HINGE.x, y: HINGE.y + 390 },
   // the mirrored left ear
-  borrow: { x: HINGE.x - 56, y: HINGE.y + 80 },
+  borrow: { x: HINGE.x - 56, y: HINGE.y + 88 },
 };
 
 /** How close a finger must come before the seat starts pulling. */
@@ -52,7 +52,10 @@ function nearest(p: { x: number; y: number }): Mode {
   return best;
 }
 
-const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.4);
+const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.45);
+
+/** Outer radius of the small loop's stroke: the arm leaves the rim, not the centre. */
+const RIM = 64;
 
 export function ModeHandle({
   mode,
@@ -202,8 +205,8 @@ export function ModeHandle({
       {/* The arm itself: hinged on the small loop, following the finger. */}
       <g>
         <line
-          x1={HINGE.x}
-          y1={HINGE.y}
+          x1={HINGE.x + (RIM * (pos.x - HINGE.x)) / (dist(pos, HINGE) || 1)}
+          y1={HINGE.y + (RIM * (pos.y - HINGE.y)) / (dist(pos, HINGE) || 1)}
           x2={pos.x}
           y2={pos.y}
           stroke="var(--world-g)"

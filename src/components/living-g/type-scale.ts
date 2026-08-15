@@ -23,8 +23,8 @@ export type LoopRegion = "top" | "middle" | "bottom";
  */
 export const LOOP_PRIMARY_RATIO: Record<LoopRegion, number> = {
   top: 0.55,
-  middle: 0.4,
-  bottom: 0.62,
+  middle: 0.46,
+  bottom: 0.72,
 };
 
 /**

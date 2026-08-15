@@ -22,10 +22,10 @@ export { LOOP_TEXT_FILL, LOOP_ROLE_STYLE };
 
 /** Average glyph width of the bold display face, as a share of font size. */
 export const WIDTH_RATIO: Record<LoopTypeRole, number> = {
-  action: 0.58,
-  message: 0.58,
+  action: 0.55,
+  message: 0.55,
   label: 0.72, // tracked-out label
-  detail: 0.58,
+  detail: 0.55,
 };
 
 export function widthOf(text: string, size: number, role: LoopTypeRole) {
@@ -34,7 +34,7 @@ export function widthOf(text: string, size: number, role: LoopTypeRole) {
 
 /** Widest line a loop will accept before wrapping. */
 export function wrapWidth(region: LoopRegion) {
-  return LOOP_SAFE_RADIUS[region] * 1.7;
+  return LOOP_SAFE_RADIUS[region] * 1.75;
 }
 
 /** Half-chord of the safe circle at vertical distance `dy` from its centre. */

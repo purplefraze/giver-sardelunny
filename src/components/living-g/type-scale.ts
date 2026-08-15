@@ -32,7 +32,7 @@ export const LOOP_PRIMARY_RATIO: Record<LoopRegion, number> = {
  * the fixed token steps DOWN through these discrete stops (never per line,
  * never continuously, never up). Hero words keep step 1 and own the loop.
  */
-export const LOOP_SIZE_STEPS = [1, 0.92, 0.84, 0.76, 0.68, 0.6, 0.54] as const;
+export const LOOP_SIZE_STEPS = [1, 0.92, 0.84, 0.76, 0.68, 0.6, 0.54, 0.48, 0.42] as const;
 
 
 /** Kept for reference: the old "ideal" starting point of the removed fitter. */

@@ -3,6 +3,7 @@ import { buzz } from "@/lib/haptics";
 import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
+  LOOP_CENTRE,
   LOOP_SAFE_RADIUS,
 } from "./g-path";
 import { LOOP_ROLE_STYLE } from "./type-scale";
@@ -10,17 +11,22 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
 /**
  * MODE = WHERE THE EAR IS.
  *
- * No control is added to the Living G: the G's own small top ear IS the control.
- * The ear is the canonical path itself, clipped to a disc around its home and
- * moved as one piece. Its home is repainted in the world background at exactly
- * the same radius, so the resting GIVE state is pixel-identical to the
- * canonical G — nothing extra is ever drawn.
+ * No control is added to the Living G: the G's own small top ear — arm and
+ * circular end together, as ONE piece — IS the control. The piece is the
+ * canonical path itself, clipped to a disc around its home and translated as a
+ * unit, so nothing is ever redrawn and no ghost arm is left behind. Its home is
+ * repainted in the world background at the same radius, so the resting GIVE
+ * state is pixel-identical to the canonical G.
  *
- *   right                 -> give   (canonical home)
- *   down, at the S-curve  -> trade  (two sides meeting)
- *   left                  -> borrow (mirrored)
+ * FOUR seats sit on an INVISIBLE circular track around the middle loop:
  *
- * Separate from the profile HISTORY toggle.
+ *   upper-right -> give   (canonical home)
+ *   upper-left  -> wish   (mirror of give)
+ *   lower-right -> trade
+ *   lower-left  -> borrow (mirror of trade)
+ *
+ * The S-curve is never a mode destination. Separate from the profile HISTORY
+ * toggle.
  */
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
@@ -30,28 +36,63 @@ type P = { x: number; y: number };
 
 /**
  * The ear's canonical home and the disc that carries it, measured off the
- * canonical path so the disc contains the whole ear (and its neck tip) and
+ * canonical path so the disc contains the whole piece (circular end + arm) and
  * nothing else — the middle loop is over 100 units away.
  */
 const HOME: P = { x: 502, y: 76 };
 const EAR_R = 84;
 
-/** The four resting configurations, in viewBox space. */
-const SEAT: Record<Mode, P> = {
-  // top centre, above the middle loop: asking
-  wish: { x: 292, y: 44 },
-  give: HOME,
-  // docked in the concave of the central S-curve: exchange, two sides meeting
-  trade: { x: 490, y: 520 },
-  // mirrored across the G
-  borrow: { x: 88, y: 76 },
+/** The invisible track: a circle around the middle loop, through the ear's home. */
+const TRACK_C: P = { x: LOOP_CENTRE.middle.x, y: LOOP_CENTRE.middle.y };
+const TRACK_R = Math.hypot(HOME.x - TRACK_C.x, HOME.y - TRACK_C.y);
+
+/** Seat angles on the track (SVG space: negative y is up). */
+const HOME_ANGLE = Math.atan2(HOME.y - TRACK_C.y, HOME.x - TRACK_C.x);
+const LOWER_ANGLE = Math.PI + HOME_ANGLE; // mirrored through the centre, downward
+
+const SEAT_ANGLE: Record<Mode, number> = {
+  give: HOME_ANGLE, // upper-right
+  wish: Math.PI - HOME_ANGLE, // upper-left
+  trade: -HOME_ANGLE, // lower-right
+  borrow: LOWER_ANGLE, // lower-left
 };
 
+const onTrack = (angle: number): P => ({
+  x: TRACK_C.x + TRACK_R * Math.cos(angle),
+  y: TRACK_C.y + TRACK_R * Math.sin(angle),
+});
 
-const MAGNET = 110;
+const SEAT: Record<Mode, P> = {
+  wish: onTrack(SEAT_ANGLE.wish),
+  give: onTrack(SEAT_ANGLE.give),
+  trade: onTrack(SEAT_ANGLE.trade),
+  borrow: onTrack(SEAT_ANGLE.borrow),
+};
+
+/** Travel is bounded by the designed ends of the track: trade and borrow. */
+const ANGLE_MIN = SEAT_ANGLE.give; // upper-right (negative)
+const ANGLE_MAX = SEAT_ANGLE.trade; // lower-right (positive)
+
 const SNAP_MS = 200;
+/** How near a seat (in radians of travel) counts as captured. */
+const CAPTURE = 0.38;
 
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
+
+/**
+ * Project a free point onto the track: keep its angle, clamp it to the designed
+ * span of travel, and pin it to the circumference.
+ */
+function project(p: P): { angle: number; point: P } {
+  let a = Math.atan2(p.y - TRACK_C.y, p.x - TRACK_C.x);
+  // Work in the right half's frame, mirrored for the left half, so the piece
+  // travels the short way around the top and never behind the bottom loop.
+  const left = Math.cos(a) < 0;
+  const mirrored = left ? Math.PI - a : a;
+  const clamped = Math.min(ANGLE_MAX, Math.max(ANGLE_MIN, mirrored));
+  a = left ? Math.PI - clamped : clamped;
+  return { angle: a, point: onTrack(a) };
+}
 
 function nearest(p: P): Mode {
   let best: Mode = "give";
@@ -72,27 +113,38 @@ const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 export function EarSelector({
   mode,
   onChange,
+  onTap,
 }: {
   mode: Mode;
   onChange: (next: Mode) => void;
+  /** A simple tap on the piece opens the profile; a drag changes mode. */
+  onTap?: () => void;
 }) {
   const uid = useId().replace(/:/g, "");
   const [drag, setDrag] = useState<P | null>(null);
   const dragging = drag !== null;
   const last = useRef<Mode>(mode);
+  /** Tap vs drag: where the gesture started, and whether it ever travelled. */
+  const gesture = useRef<{ start: P; moved: boolean } | null>(null);
 
   const rest = SEAT[mode];
 
-  /** Finger position with the seats' gentle magnetic pull applied. */
+  /** Under the finger, but always ON the track, with a magnetic pull to seats. */
   let target = rest;
   if (drag) {
-    const near = SEAT[nearest(drag)];
-    const d = dist(drag, near);
-    const pull = Math.max(0, 1 - d / MAGNET) * 0.6;
-    target = {
-      x: drag.x + (near.x - drag.x) * pull,
-      y: drag.y + (near.y - drag.y) * pull,
-    };
+    const { angle, point } = project(drag);
+    let nearAngle = SEAT_ANGLE[mode];
+    let nearDelta = Infinity;
+    for (const m of MODES) {
+      const d = Math.abs(angle - SEAT_ANGLE[m]);
+      if (d < nearDelta) {
+        nearDelta = d;
+        nearAngle = SEAT_ANGLE[m];
+      }
+    }
+    const pull = Math.max(0, 1 - nearDelta / CAPTURE) * 0.6;
+    target = onTrack(angle + (nearAngle - angle) * pull);
+    void point;
   }
 
   /** Immediate under the finger, quick-but-soft settle on release. */
@@ -156,10 +208,13 @@ export function EarSelector({
     return () => clearTimeout(t);
   }, [mode]);
 
-
-
-
-
+  const end = () => {
+    const g = gesture.current;
+    if (drag && g?.moved) commit(nearest(project(drag).point));
+    else if (g && !g.moved) onTap?.();
+    gesture.current = null;
+    setDrag(null);
+  };
 
   return (
     <g>
@@ -169,37 +224,37 @@ export function EarSelector({
         </clipPath>
       </defs>
 
-      {/* Tiny destination hints, integrated with the geometry. */}
+      {/* Tiny destination hints on the invisible track. Never a drawn circle. */}
       {MODES.map((m) => {
         const seat = SEAT[m];
         const active = mode === m && !dragging;
         return (
-          <g key={m} pointerEvents="none">
-            <circle
-              cx={seat.x}
-              cy={seat.y}
-              r={5}
-              fill="var(--world-g)"
-              style={{
-                opacity: active || dist(pos, seat) < 60 ? 0 : 0.22,
-                transition: "opacity 200ms ease-out",
-              }}
-            />
-          </g>
+          <circle
+            key={m}
+            cx={seat.x}
+            cy={seat.y}
+            r={5}
+            fill="var(--world-g)"
+            pointerEvents="none"
+            style={{
+              opacity: active || dist(pos, seat) < 60 ? 0 : 0.22,
+              transition: "opacity 200ms ease-out",
+            }}
+          />
         );
       })}
 
-      {/* The ear's home, cleared at exactly the radius the ear occupies. */}
+      {/* The piece's home, cleared at exactly the radius it occupies. */}
       <circle cx={HOME.x} cy={HOME.y} r={EAR_R} fill="var(--world-bg)" />
 
-      {/* The one existing ear, travelling. */}
+      {/* THE ONE MOVABLE PIECE — arm and circular end together. */}
       <g transform={`translate(${pos.x - HOME.x},${pos.y - HOME.y})`}>
         <g clipPath={`url(#${uid}-ear)`}>
           <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
             <path d={LIVING_G_PATH} />
           </g>
         </g>
-        {/* dot -> word: the mode reads inside the ear that carries it */}
+        {/* dot -> word: the mode reads inside the piece that carries it */}
         <text
           x={HOME.x}
           y={HOME.y}
@@ -237,26 +292,28 @@ export function EarSelector({
           onPointerDown={(e) => {
             e.stopPropagation();
             (e.target as SVGElement).setPointerCapture?.(e.pointerId);
-            setDrag(pointFrom(e) ?? rest);
+            const p = pointFrom(e) ?? rest;
+            gesture.current = { start: p, moved: false };
+            setDrag(p);
           }}
           onPointerMove={(e) => {
             if (!drag) return;
             e.stopPropagation();
             const p = pointFrom(e);
             if (!p) return;
+            const g = gesture.current;
+            if (g && !g.moved && dist(p, g.start) > 14) g.moved = true;
             setDrag(p);
-            const near = nearest(p);
-            if (dist(p, SEAT[near]) < 44) commit(near);
+            if (!g?.moved) return;
+            const on = project(p).point;
+            const near = nearest(on);
+            if (dist(on, SEAT[near]) < 60) commit(near);
           }}
           onPointerUp={(e) => {
             e.stopPropagation();
-            if (drag) commit(nearest(drag));
-            setDrag(null);
+            end();
           }}
-          onPointerCancel={() => {
-            if (drag) commit(nearest(drag));
-            setDrag(null);
-          }}
+          onPointerCancel={end}
           onKeyDown={(e) => {
             const i = MODES.indexOf(mode);
             if (e.key === "ArrowRight" || e.key === "ArrowDown") {
@@ -266,6 +323,10 @@ export function EarSelector({
             if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
               e.preventDefault();
               commit(MODES[(i + MODES.length - 1) % MODES.length]!);
+            }
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onTap?.();
             }
           }}
         />

@@ -3,6 +3,11 @@ import { BackArrow } from "@/components/BackArrow";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { loopText } from "@/components/living-g/loop-text";
+import {
+  TopLoopSelector,
+  topLoopContent,
+  type TopLoopPosition,
+} from "@/components/living-g/TopLoopSelector";
 import type { Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -33,6 +38,8 @@ export function MemberExample({
   onDone: () => void;
 }) {
   const [deep, setDeep] = useState<Deep>(null);
+  /** Prototype top-loop selector state: stays where the user leaves it. */
+  const [topPos, setTopPos] = useState<TopLoopPosition>(0);
 
   useEffect(() => {
     setDeep(null);

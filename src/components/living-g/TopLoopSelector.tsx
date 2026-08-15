@@ -262,7 +262,7 @@ export const topLoopContent = {
   stateLabel: (label: string) => (
     <text
       x={CENTRE.x}
-      y={CENTRE.y + CONTENT_R + 34}
+      y={CENTRE.y + CONTENT_R + 58}
       textAnchor="middle"
       dominantBaseline="middle"
       fill={LOOP_TEXT_FILL}

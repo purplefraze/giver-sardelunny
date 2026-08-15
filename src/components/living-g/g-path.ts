@@ -27,6 +27,6 @@ export const G_REGION_BANDS = {
  */
 export const LOOP_SAFE_RADIUS = {
   top: 40,
-  middle: 104,
+  middle: 122,
   bottom: 172,
 } as const;

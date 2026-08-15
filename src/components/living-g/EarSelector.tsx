@@ -148,6 +148,16 @@ export function EarSelector({
     }
   };
 
+  /** On arrival the word speaks up, then settles back into a restrained state. */
+  const [reveal, setReveal] = useState(false);
+  useEffect(() => {
+    setReveal(true);
+    const t = setTimeout(() => setReveal(false), 1400);
+    return () => clearTimeout(t);
+  }, [mode]);
+
+
+
 
 
 

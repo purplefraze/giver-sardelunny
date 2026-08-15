@@ -72,22 +72,33 @@ export function MemberExample({
               onPress: open("profile"),
               render: (anchor) => {
                 const clipId = `member-photo-${member.id}`;
+                const r = 45;
                 return (
                   <>
                     <defs>
                       <clipPath id={clipId}>
-                        <circle cx={anchor.x} cy={anchor.y} r="38" />
+                        <circle cx={anchor.x} cy={anchor.y} r={r} />
                       </clipPath>
                     </defs>
                     <image
                       href={member.photo}
-                      x={anchor.x - 38}
-                      y={anchor.y - 38}
-                      width="76"
-                      height="76"
+                      x={anchor.x - r}
+                      y={anchor.y - r}
+                      width={r * 2}
+                      height={r * 2}
                       preserveAspectRatio="xMidYMid slice"
                       clipPath={`url(#${clipId})`}
                     />
+                    <text
+                      x={anchor.x}
+                      y={anchor.y + r + 26}
+                      textAnchor="middle"
+                      fill="var(--world-ink)"
+                      className="font-black uppercase"
+                      style={{ fontSize: 20, letterSpacing: "-0.02em", opacity: 0.85 }}
+                    >
+                      {member.username}
+                    </text>
                   </>
                 );
               },
@@ -116,17 +127,9 @@ export function MemberExample({
       </GStage>
 
       <div
-        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-7"
+        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-end px-7"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
       >
-        <span
-          className={cn(
-            "max-w-[55%] text-[11px] font-bold uppercase leading-tight tracking-[0.2em] transition-opacity duration-500",
-            cues ? "opacity-40" : "opacity-0",
-          )}
-        >
-          Tap {member.name}
-        </span>
         <button
           type="button"
           onClick={last ? onDone : onNext}
@@ -136,6 +139,7 @@ export function MemberExample({
           <span aria-hidden="true">→</span>
         </button>
       </div>
+
 
       {/* Deeper previews — always a way back to this exact person. */}
       <div

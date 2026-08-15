@@ -213,12 +213,12 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
                 y={label.y - ((words.length - 1) * LABEL_SIZE[key]) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fill="var(--world-ink)"
-                className="font-black uppercase"
+                fill={LOOP_TEXT_FILL}
+                className="font-black lowercase"
                 style={{
                   fontSize: LABEL_SIZE[key],
-                  letterSpacing: "-0.045em",
-                  opacity: showLabels || cue === key ? 0.78 : 0,
+                  letterSpacing: LOOP_ROLE_STYLE.action.tracking,
+                  opacity: showLabels || cue === key ? LOOP_ROLE_STYLE.action.opacity : 0,
                   transition: `opacity ${
                     cue === key ? RHYTHM.cueIn : RHYTHM.cueOut
                   }ms ease-out`,

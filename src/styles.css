@@ -269,15 +269,6 @@
   --world-accent: var(--giver-discovery);
 }
 
-/* Sparks that are the user's own — the Wish/self colour, purple. */
-[data-world="sparks"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--giver-wish);
-  --world-ink: oklch(0.4 0.2 300);
-  --world-text: var(--giver-wish-complement);
-  --world-accent: oklch(0.72 0.19 305);
-}
-
 /* Sparks to gift — the giving colour for this prototype state, green. */
 [data-world="gift"] {
   --world-bg: var(--giver-paper);

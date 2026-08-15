@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buzz } from "@/lib/haptics";
 import {
+  EAR_CUT_STEM,
+  EAR_GEOMETRY,
   G_ANCHORS,
   G_REGION_BANDS,
   LIVING_G_PATH,
@@ -9,6 +11,7 @@ import {
   LIVING_G_VIEWBOX,
   LOOP_SAFE_RADIUS,
 } from "./g-path";
+
 import { LOOP_ACTION_RATIO, LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
 
 /**
@@ -34,7 +37,14 @@ type Props = {
   showLabels?: boolean;
   /** Interactive layer drawn above the artwork (e.g. the top-loop selector). */
   overlay?: React.ReactNode;
+  /**
+   * THE SELECTOR'S HOME. When the mode selector owns the small top circle, the
+   * canonical ear + stem are removed ONCE by a tight static cut — applied to
+   * the base artwork and every swell copy, so no fragment can peek back.
+   */
+  earCut?: boolean;
 };
+
 
 
 const ORDER: RegionKey[] = ["top", "middle", "bottom"];
@@ -101,7 +111,13 @@ export const RHYTHM = {
  * Interaction lives in an invisible overlay of generous hit bands, so the G
  * looks identical whether or not a region is interactive.
  */
-export function LivingG({ regions, className, showLabels = true, overlay }: Props) {
+export function LivingG({
+  regions,
+  className,
+  showLabels = true,
+  overlay,
+  earCut = false,
+}: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
   /** The temporary word cue: revealed by a deliberate press-and-hold. */
   const [cue, setCue] = useState<RegionKey | null>(null);
@@ -180,32 +196,60 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
             <rect x="0" y="0" width="576" height="1133" fill={`url(#${uid}-fall-${key})`} />
           </mask>
         ))}
+        {/*
+          THE STATIC EAR CUT — a tight disc over the small top circle plus a
+          short band over its stem, stopping just outside the middle loop's rim
+          so the rim, the spine and every neighbouring stroke are untouched.
+          One cut, applied once, identical in every mode.
+        */}
+        {earCut ? (
+          <mask id={`${uid}-earcut`} maskUnits="userSpaceOnUse">
+            <rect x="0" y="0" width="576" height="1133" fill="#fff" />
+            <line
+              x1={EAR_CUT_STEM.x1}
+              y1={EAR_CUT_STEM.y1}
+              x2={EAR_CUT_STEM.x2}
+              y2={EAR_CUT_STEM.y2}
+              stroke="#000"
+              strokeWidth={EAR_GEOMETRY.cutStemWidth}
+            />
+            <circle
+              cx={EAR_GEOMETRY.home.x}
+              cy={EAR_GEOMETRY.home.y}
+              r={EAR_GEOMETRY.cutR}
+              fill="#000"
+            />
+          </mask>
+        ) : null}
       </defs>
 
+      <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
+        <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+          <path d={LIVING_G_PATH} />
+        </g>
 
-      <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-        <path d={LIVING_G_PATH} />
-      </g>
-
-      {ORDER.map((key) => {
-        const isPressed = pressed === key;
-        const ring = RING[key];
-        return (
-          <g key={`art-${key}`} mask={`url(#${uid}-mask-${key})`}>
-            <g
-              style={{
-                transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
-                transform: `scale(${isPressed ? 1.022 : 1})`,
-                transformOrigin: `${ring.x}px ${ring.y}px`,
-              }}
-            >
-              <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                <path d={LIVING_G_PATH} />
+        {ORDER.map((key) => {
+          const isPressed = pressed === key;
+          const ring = RING[key];
+          return (
+            <g key={`art-${key}`} mask={`url(#${uid}-mask-${key})`}>
+              <g
+                style={{
+                  transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
+                  transform: `scale(${isPressed ? 1.022 : 1})`,
+                  transformOrigin: `${ring.x}px ${ring.y}px`,
+                }}
+              >
+                <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+                  <path d={LIVING_G_PATH} />
+                </g>
               </g>
             </g>
-          </g>
-        );
-      })}
+          );
+        })}
+      </g>
+
+
 
 
 

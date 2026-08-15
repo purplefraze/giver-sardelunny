@@ -201,6 +201,7 @@ function Index() {
             world={mode}
             identity="giver"
             active={top === null}
+            earCut
             overlay={
               <EarSelector
                 mode={mode}

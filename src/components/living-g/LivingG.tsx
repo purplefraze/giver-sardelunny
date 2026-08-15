@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buzz } from "@/lib/haptics";
 import {
+  EAR_CUT_STEM,
+  EAR_GEOMETRY,
   G_ANCHORS,
   G_REGION_BANDS,
   LIVING_G_PATH,
@@ -9,6 +11,7 @@ import {
   LIVING_G_VIEWBOX,
   LOOP_SAFE_RADIUS,
 } from "./g-path";
+
 import { LOOP_ACTION_RATIO, LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
 
 /**

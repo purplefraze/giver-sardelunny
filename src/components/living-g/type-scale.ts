@@ -22,10 +22,18 @@ export type LoopRegion = "top" | "middle" | "bottom";
  * one or two short words, so it carries its own larger ratio.
  */
 export const LOOP_PRIMARY_RATIO: Record<LoopRegion, number> = {
-  top: 0.5,
-  middle: 0.28,
-  bottom: 0.28,
+  top: 0.55,
+  middle: 0.4,
+  bottom: 0.62,
 };
+
+/**
+ * The ONLY sizing freedom in the system: a phrase that cannot fit its loop at
+ * the fixed token steps DOWN through these discrete stops (never per line,
+ * never continuously, never up). Hero words keep step 1 and own the loop.
+ */
+export const LOOP_SIZE_STEPS = [1, 0.92, 0.84, 0.76, 0.68, 0.6, 0.54] as const;
+
 
 /** Kept for reference: the old "ideal" starting point of the removed fitter. */
 export const LOOP_IDEAL_RATIO = 0.66;

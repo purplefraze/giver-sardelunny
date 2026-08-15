@@ -49,6 +49,8 @@ export function World({
   onLocked,
   onBack,
   active = true,
+  teach = false,
+
   overlay,
   children,
 }: Props) {

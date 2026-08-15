@@ -91,7 +91,7 @@ export const RHYTHM = {
  * Interaction lives in an invisible overlay of generous hit bands, so the G
  * looks identical whether or not a region is interactive.
  */
-export function LivingG({ regions, className, showLabels = true }: Props) {
+export function LivingG({ regions, className, showLabels = true, overlay }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
   /** The temporary word cue: appears on press, fades away on its own. */
   const [cue, setCue] = useState<RegionKey | null>(null);

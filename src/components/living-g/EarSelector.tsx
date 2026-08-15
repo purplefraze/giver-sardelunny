@@ -42,7 +42,7 @@ type P = { x: number; y: number };
 const HOME: P = { x: 502, y: 76 };
 const EAR_R = 112;
 
-/** The invisible track: a circle around the middle loop, through the ear's home. */
+/** The invisible track: a circle on the G's axis, around the middle loop, through the piece's home. */
 const TRACK_C: P = { x: 288, y: LOOP_CENTRE.middle.y };
 const TRACK_R = Math.hypot(HOME.x - TRACK_C.x, HOME.y - TRACK_C.y);
 

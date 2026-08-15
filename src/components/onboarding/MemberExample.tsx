@@ -114,8 +114,8 @@ export function MemberExample({
                   anchor,
                   region: "middle",
                   blocks: [
-                    { text: member.age, role: "primary" },
-                    { text: "by day", role: "secondary", lead: true },
+                    { text: "by day", role: "secondary" },
+
                     { text: clampField(member.byDay), role: "primary" },
                     { text: "by night", role: "secondary", lead: true },
                     { text: clampField(member.byNight), role: "primary" },

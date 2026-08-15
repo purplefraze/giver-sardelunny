@@ -12,7 +12,7 @@ import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
   LIVING_G_VIEWBOX,
-  LOOP_SAFE_RADIUS,
+  
 } from "./g-path";
 
 import {

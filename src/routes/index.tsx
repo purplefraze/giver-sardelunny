@@ -150,7 +150,7 @@ function Index() {
                   panelTitle: HISTORY_STATES[myTopPos],
                   panelBody: (
                     <>
-                      {MY_HISTORY[myTopPos].map((line) => (
+                      {MY_HISTORY[myTopPos]!.map((line) => (
                         <p key={line}>{line}</p>
                       ))}
                       <p className="opacity-70">

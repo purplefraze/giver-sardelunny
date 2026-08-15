@@ -87,10 +87,8 @@ export function MemberExample({
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <BackArrow
-        onClick={first ? onBack : onPrev}
-        label={first ? "back" : `back to the person before ${member.name}`}
-      />
+      {/* Navigation lives together, at the bottom. Nothing sits up top. */}
+
 
       {/* Same identity position as giver on Home: quiet, centred, small. */}
       <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8">

@@ -196,12 +196,16 @@ export function EarSelector({
     p.x = e.clientX;
     p.y = e.clientY;
     const local = p.matrixTransform(ctm.inverse());
+    const raw = Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x);
     return {
       point: { x: local.x, y: local.y } as P,
-      // FINGER FREE, SELECTOR RAILED: only the angle is taken from the finger.
-      angle: clampAngle(Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x)),
+      // FINGER FREE, SELECTOR RAILED: only the angle is taken from the finger —
+      // and it is UNWRAPPED against the gesture's own continuous angle, so the
+      // ±180° seam is a 1° step, never a wall and never a 358° jump.
+      angle: unwrap(dragRef.current ?? angleRef.current, raw),
     };
   };
+
 
   const commit = (next: Mode) => {
     if (next !== last.current) {

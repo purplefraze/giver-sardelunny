@@ -9,7 +9,7 @@ function T() {
   const [mode, setMode] = useState<Mode>("give");
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
-      <World world="give" active overlay={<EarSelector mode={mode} onChange={setMode} />} regions={{}} />
+      <World world="give" active overlay={<EarSelector mode={mode} onChange={setMode} />} regions={{ top: { label: "search" }, middle: { label: "share" }, bottom: { label: "discover" } }} />
     </main>
   );
 }

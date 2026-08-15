@@ -63,9 +63,12 @@ export function MemberExample({
       />
 
       {/* Same identity position as GIVER on Home: quiet, centred, small. */}
-      <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex justify-center px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8">
         <span className="text-[12px] font-black uppercase tracking-[0.42em] opacity-65">
           {member.username}
+        </span>
+        <span className="text-[9px] font-black uppercase tracking-[0.34em] opacity-40">
+          {member.distance}
         </span>
       </div>
 
@@ -93,20 +96,27 @@ export function MemberExample({
             middle: {
               onPress: open("about"),
               render: (anchor) =>
-                loopText({
+                profileLoop({
                   anchor,
                   region: "middle",
-                  lines: member.aboutLines,
+                  blocks: [
+                    { text: member.age, role: "primary" },
+                    { text: "By day", role: "secondary", lead: true },
+                    { text: clampField(member.byDay), role: "primary" },
+                    { text: "By night", role: "secondary", lead: true },
+                    { text: clampField(member.byNight), role: "primary" },
+                    { text: "On the weekends", role: "secondary", lead: true },
+                    { text: clampField(member.weekend), role: "primary" },
+                  ],
                 }),
             },
             bottom: {
               onPress: open("activity"),
               render: (anchor) =>
-                loopText({
+                profileLoop({
                   anchor,
                   region: "bottom",
-                  kicker: member.bottomKicker,
-                  lines: member.bottomLines,
+                  blocks: member.bottom,
                 }),
             },
           }}

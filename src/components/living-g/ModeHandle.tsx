@@ -29,7 +29,7 @@ const SEAT: Record<Mode, { x: number; y: number }> = {
   // pulled down the spine, pointing into the connecting S-curve
   trade: { x: HINGE.x, y: HINGE.y + 400 },
   // the mirrored left ear
-  borrow: { x: HINGE.x - 70, y: HINGE.y - 26 },
+  borrow: { x: HINGE.x - 112, y: HINGE.y - 40 },
 };
 
 /** How close a finger must come before the seat starts pulling. */
@@ -54,12 +54,12 @@ function nearest(p: { x: number; y: number }): Mode {
 
 /** Where a captured word sits relative to its seat: clear of the stroke. */
 const WORD_OFFSET: Record<Mode, { x: number; y: number }> = {
-  give: { x: 0, y: 46 },
-  trade: { x: 0, y: 48 },
-  borrow: { x: 0, y: -44 },
+  give: { x: 0, y: 62 },
+  trade: { x: 0, y: 64 },
+  borrow: { x: -6, y: -56 },
 };
 
-const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.45);
+const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.82);
 
 /** Outer radius of the small loop's stroke: the arm leaves the rim, not the centre. */
 const RIM = 64;
@@ -158,7 +158,7 @@ export function ModeHandle({
             <circle
               cx={seat.x}
               cy={seat.y}
-              r={3}
+              r={7}
               fill="var(--world-g)"
               style={{
                 opacity: active ? 0 : 0.32,
@@ -217,7 +217,7 @@ export function ModeHandle({
           x2={pos.x}
           y2={pos.y}
           stroke="var(--world-g)"
-          strokeWidth={dragging ? 9 : 8}
+          strokeWidth={dragging ? 26 : 22}
           strokeLinecap="round"
           style={{ transition: `stroke-width ${SNAP}ms ease-out` }}
         />
@@ -225,10 +225,10 @@ export function ModeHandle({
         <circle
           cx={pos.x}
           cy={pos.y}
-          r={dragging ? 15 : 13}
+          r={dragging ? 26 : 23}
           fill="var(--world-bg)"
           stroke="var(--world-g)"
-          strokeWidth={7}
+          strokeWidth={16}
           style={{ transition: `r ${SNAP}ms ease-out` }}
         />
         <circle

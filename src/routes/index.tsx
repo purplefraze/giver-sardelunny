@@ -143,6 +143,17 @@ function Index() {
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
   /** Which mode the one persistent Living G is currently working in. */
   const [mode, setMode] = useState<Mode>("give");
+  /**
+   * TEACH THE G ONCE. On first entry the action labels show themselves, then
+   * the G goes quiet for good — a press-and-hold brings a label back.
+   */
+  const [teach, setTeach] = useState(true);
+
+  useEffect(() => {
+    if (!entered || !teach) return;
+    const t = setTimeout(() => setTeach(false), 5200);
+    return () => clearTimeout(t);
+  }, [entered, teach]);
 
   /**
    * ONE source of truth for the only depth that exists: the router.

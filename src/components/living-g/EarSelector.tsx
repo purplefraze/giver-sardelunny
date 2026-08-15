@@ -1,32 +1,22 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buzz } from "@/lib/haptics";
-import {
-  LIVING_G_PATH,
-  LIVING_G_TRANSFORM,
-  LOOP_CENTRE,
-  LOOP_RIM_RADIUS,
-  LOOP_SAFE_RADIUS,
-} from "./g-path";
+import { EAR_GEOMETRY, LOOP_CENTRE, LOOP_RIM_RADIUS, LOOP_SAFE_RADIUS } from "./g-path";
 import { LOOP_ROLE_STYLE } from "./type-scale";
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.
  *
- * A BEAD LOCKED TO A CIRCULAR RAIL. The rail is the middle loop's own measured
- * circumference; the bead is the G's small top ear — CIRCULAR END + ARM as ONE
- * RIGID ASSEMBLY, never two elements.
+ * ONE SMALL PHYSICAL PIECE CLIPPED TO THE RIM. The piece is AUTHORED geometry —
+ * one ring (the circular end) plus one stem — built in local coordinates on a
+ * single radial axis: the stem's root sits on the middle loop's measured rim,
+ * the stem runs outward, the ring sits just beyond it. The two can never drift
+ * apart, because they are defined relative to the same axis and placed by ONE
+ * rotation about ONE centre with ONE angle.
  *
- * The whole mechanism is ONE ANGLE. The assembly is the canonical path itself,
- * ROTATED about the middle loop's optical centre. Because the arm's root lies on
- * the loop's rim, a pure rotation about that centre keeps the root seated on the
- * rim at every angle and swings the arm naturally with the circular end. Nothing
- * is redrawn, nothing is translated, no geometry is left behind.
- *
- * The base G is drawn through a mask that removes ONLY the ear assembly outside
- * the rim (disc at the ear's home, minus everything inside the rim circle), so
- * the loop underneath is always a perfect smooth curve, and the canonical path
- * is never destructively altered. The travelling piece wears the same mask, so
- * the cut edge always lines up with the rim.
+ * The canonical Living G is NEVER rotated, copied, deformed or cut at the
+ * selector's live position. Its original ear is removed once by a tight static
+ * cut in <LivingG> (see EAR_GEOMETRY), so the rim underneath stays a perfectly
+ * smooth curve in every mode.
  *
  *   upper-right (~2 o'clock)  -> give   (canonical home)
  *   upper-left  (~10 o'clock) -> wish
@@ -41,31 +31,42 @@ export type Mode = (typeof MODES)[number];
 
 type P = { x: number; y: number };
 
-/** The assembly's canonical home (circular end centre) and the disc carrying it. */
-const HOME: P = { x: 502, y: 76 };
-const EAR_R = 150;
-
-/** THE RAIL — the middle loop's measured centre and outer rim, in viewBox space. */
+/** THE ONE TRACK — the middle loop's measured centre and outer rim. */
 const TRACK_C: P = LOOP_CENTRE.middle;
 const RIM_R = LOOP_RIM_RADIUS.middle;
 
-const HOME_ANGLE = Math.atan2(HOME.y - TRACK_C.y, HOME.x - TRACK_C.x);
-const LOWER_ANGLE = Math.abs(HOME_ANGLE);
+/**
+ * THE ONE RADIUS, derived from the rim — never from where the ear happens to
+ * live in the artwork: rim + gap + the ring's own radius.
+ */
+const TRACK_R = RIM_R + EAR_GEOMETRY.gap + EAR_GEOMETRY.outerR;
+
+/** The ring, in the assembly's local terms. */
+const RING_MID = (EAR_GEOMETRY.innerR + EAR_GEOMETRY.outerR) / 2;
+const RING_W = EAR_GEOMETRY.outerR - EAR_GEOMETRY.innerR;
 
 /**
- * Four balanced seats on the rail (SVG space: negative y is up). The left pair
- * is pulled a little in from a true mirror so the whole assembly — arm and
- * circular end — stays inside the framed silhouette at rest.
+ * The stem: root tucked just UNDER the rim so the join is seamless at every
+ * angle, tip buried in the ring's stroke so the two read as one solid piece.
  */
-const LEFT_ANGLE = (126 * Math.PI) / 180;
+const STEM_FROM = RIM_R - 8;
+const STEM_TO = TRACK_R - EAR_GEOMETRY.innerR - 6;
+const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 
+/** Angles are measured in SVG space (0 = 3 o'clock, negative = upward). */
+const rad = (deg: number) => (deg * Math.PI) / 180;
+
+/**
+ * Four seats on the one track. The upper-left / lower-left pair is pulled in
+ * from a true mirror so the whole piece — ring and stem — stays inside the
+ * framed silhouette at rest, never off the edge of the screen.
+ */
 const SEAT_ANGLE: Record<Mode, number> = {
-  give: HOME_ANGLE, // ~2 o'clock (canonical home)
-  wish: -LEFT_ANGLE, // ~10 o'clock
-  trade: LOWER_ANGLE, // ~4-5 o'clock, raised out of the bottom
-  borrow: LEFT_ANGLE, // ~7-8 o'clock, raised out of the bottom
+  give: rad(-44), // ~2 o'clock (canonical home)
+  wish: rad(-124), // ~10 o'clock
+  trade: rad(48), // ~4-4:30, raised out of the bottom
+  borrow: rad(124), // ~7:30-8, raised out of the bottom
 };
-
 
 /** No free rotation: travel is bounded by the outermost pair of seats. */
 const ANGLE_MIN = SEAT_ANGLE.wish;
@@ -76,19 +77,10 @@ const CAPTURE = 0.34;
 
 const clampAngle = (a: number) => Math.min(ANGLE_MAX, Math.max(ANGLE_MIN, a));
 
-/** Rotate a point about the rail centre. */
-function spin(p: P, delta: number): P {
-  const c = Math.cos(delta);
-  const s = Math.sin(delta);
-  const dx = p.x - TRACK_C.x;
-  const dy = p.y - TRACK_C.y;
-  return { x: TRACK_C.x + dx * c - dy * s, y: TRACK_C.y + dx * s + dy * c };
-}
-
-/** A point just outside the rim at a given rail angle — where hints live. */
-const onRim = (angle: number, out = 16): P => ({
-  x: TRACK_C.x + (RIM_R + out) * Math.cos(angle),
-  y: TRACK_C.y + (RIM_R + out) * Math.sin(angle),
+/** A point on the track at a given angle, at any radius. */
+const at = (angle: number, r: number): P => ({
+  x: TRACK_C.x + r * Math.cos(angle),
+  y: TRACK_C.y + r * Math.sin(angle),
 });
 
 function nearestSeat(angle: number): Mode {
@@ -106,7 +98,7 @@ function nearestSeat(angle: number): Mode {
 
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 
-/** The captured word lives in the assembly's own negative space. */
+/** The captured word lives in the piece's own negative space. */
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
 export function EarSelector({
@@ -119,14 +111,13 @@ export function EarSelector({
   /** A simple tap on the piece opens the profile; a drag changes mode. */
   onTap?: () => void;
 }) {
-  const uid = useId().replace(/:/g, "");
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
   const last = useRef<Mode>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
 
-  /** ONE SOURCE OF TRUTH: the assembly's angle on the rail. */
+  /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
 
   let target = restAngle;
@@ -168,10 +159,9 @@ export function EarSelector({
     };
   }, [dragging, mode, target]);
 
-  const delta = angle - HOME_ANGLE;
-  const deg = (delta * 180) / Math.PI;
-  /** Where the circular end actually is right now — text and hit area follow it. */
-  const ear = spin(HOME, delta);
+  const deg = (angle * 180) / Math.PI;
+  /** Where the ring actually is right now — text and hit area follow it. */
+  const ear = at(angle, TRACK_R);
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {
     const svg = e.currentTarget.ownerSVGElement;
@@ -214,36 +204,9 @@ export function EarSelector({
 
   return (
     <g>
-      <defs>
-        {/*
-          ONE STENCIL for both halves of the illusion: the disc that carries the
-          assembly, with everything inside the loop's rim cut back out so the rim
-          itself is never touched. Referenced from inside the rotating group, its
-          rim circle is invariant (it is centred on the axis of rotation) while
-          its ear disc travels with the piece.
-        */}
-        <mask id={`${uid}-piece`} maskUnits="userSpaceOnUse">
-          <circle cx={HOME.x} cy={HOME.y} r={EAR_R} fill="#fff" />
-          <circle cx={TRACK_C.x} cy={TRACK_C.y} r={RIM_R} fill="#000" />
-        </mask>
-      </defs>
-
-      {/*
-        The assembly's HOME, cleared through the very same stencil with a SOLID
-        disc of world background — not a second copy of the path, whose soft
-        edge could never fully cover the stacked artwork beneath and left a
-        faint outline behind. The rim is protected by the stencil, so the loop
-        reads as a perfectly smooth curve the instant the piece leaves home.
-      */}
-      <g mask={`url(#${uid}-piece)`}>
-        <circle cx={HOME.x} cy={HOME.y} r={EAR_R} fill="var(--world-bg)" />
-      </g>
-
-
-
-      {/* Subtle destination hints, seated on the rail itself. Never a drawn ring. */}
+      {/* Subtle destination hints, seated on the track itself. Never a drawn ring. */}
       {MODES.map((m) => {
-        const hint = onRim(SEAT_ANGLE[m]);
+        const hint = at(SEAT_ANGLE[m], RIM_R + 16);
         const active = mode === m && !dragging;
         return (
           <circle
@@ -262,13 +225,31 @@ export function EarSelector({
         );
       })}
 
-      {/* THE ONE RIGID ASSEMBLY — circular end and arm, rotated as one. */}
-      <g transform={`rotate(${deg} ${TRACK_C.x} ${TRACK_C.y})`}>
-        <g mask={`url(#${uid}-piece)`}>
-          <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-            <path d={LIVING_G_PATH} />
-          </g>
-        </g>
+      {/*
+        THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,
+        then placed by a single rotation about the track centre. Stem root under
+        the rim, ring beyond it, distance between them fixed by construction.
+      */}
+      <g
+        transform={`rotate(${deg} ${TRACK_C.x} ${TRACK_C.y})`}
+        pointerEvents="none"
+      >
+        <rect
+          x={TRACK_C.x + STEM_FROM}
+          y={TRACK_C.y - STEM_HALF}
+          width={STEM_TO - STEM_FROM}
+          height={STEM_HALF * 2}
+          rx={STEM_HALF * 0.5}
+          fill="var(--world-g)"
+        />
+        <circle
+          cx={TRACK_C.x + TRACK_R}
+          cy={TRACK_C.y}
+          r={RING_MID}
+          fill="none"
+          stroke="var(--world-g)"
+          strokeWidth={RING_W}
+        />
       </g>
 
       {/* dot -> word: the mode reads inside the piece that carries it */}
@@ -293,7 +274,7 @@ export function EarSelector({
         {mode}
       </text>
 
-      {/* Invisible grip, travelling with the circular end. */}
+      {/* Invisible grip, travelling with the ring. */}
       <circle
         cx={ear.x}
         cy={ear.y}
@@ -311,21 +292,21 @@ export function EarSelector({
         onPointerDown={(e) => {
           e.stopPropagation();
           (e.target as SVGElement).setPointerCapture?.(e.pointerId);
-          const at = angleFrom(e);
-          gesture.current = { start: at?.point ?? ear, moved: false };
-          setDrag(at?.angle ?? restAngle);
+          const grab = angleFrom(e);
+          gesture.current = { start: grab?.point ?? ear, moved: false };
+          setDrag(grab?.angle ?? restAngle);
         }}
         onPointerMove={(e) => {
           if (drag === null) return;
           e.stopPropagation();
-          const at = angleFrom(e);
-          if (!at) return;
+          const move = angleFrom(e);
+          if (!move) return;
           const g = gesture.current;
-          if (g && !g.moved && dist(at.point, g.start) > 14) g.moved = true;
-          setDrag(at.angle);
+          if (g && !g.moved && dist(move.point, g.start) > 14) g.moved = true;
+          setDrag(move.angle);
           if (!g?.moved) return;
-          const near = nearestSeat(at.angle);
-          if (Math.abs(at.angle - SEAT_ANGLE[near]) < 0.2) commit(near);
+          const near = nearestSeat(move.angle);
+          if (Math.abs(move.angle - SEAT_ANGLE[near]) < 0.2) commit(near);
         }}
         onPointerUp={(e) => {
           e.stopPropagation();

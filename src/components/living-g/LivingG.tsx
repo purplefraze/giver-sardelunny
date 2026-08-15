@@ -303,8 +303,11 @@ export function LivingG({
         if (!region) return null;
         const isPressed = pressed === key;
         const ring = RING[key];
-        const label = LABEL_ANCHORS[key];
-        const words = (region.label ?? "").split(" ");
+        // OPTICALLY CENTRED ON ITS OWN LOOP — never the page, the SVG or the
+        // selector frame. Lifted a little so a fingertip cannot cover it.
+        const origin = loopOrigin(key, LABEL_LIFT[key]);
+        const lines = region.label ? actionLines(region.label, key) : [];
+        const line = LABEL_SIZE[key] * ACTION_LINE_HEIGHT;
 
         return (
           <g key={`content-${key}`} pointerEvents="none">
@@ -317,10 +320,10 @@ export function LivingG({
             >
               {region.render?.(ring)}
             </g>
-            {region.label ? (
+            {lines.length ? (
               <text
-                x={label.x}
-                y={label.y - ((words.length - 1) * LABEL_SIZE[key]) / 2}
+                x={origin.x}
+                y={origin.y - ((lines.length - 1) * line) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={LOOP_TEXT_FILL}
@@ -334,17 +337,14 @@ export function LivingG({
                   }ms ease-out`,
                 }}
               >
-                {words.map((word, i) => (
-                  <tspan
-                    key={word + i}
-                    x={label.x}
-                    dy={i === 0 ? 0 : LABEL_SIZE[key]}
-                  >
-                    {word}
+                {lines.map((text, i) => (
+                  <tspan key={text + i} x={origin.x} dy={i === 0 ? 0 : line}>
+                    {text}
                   </tspan>
                 ))}
               </text>
             ) : null}
+
 
           </g>
         );

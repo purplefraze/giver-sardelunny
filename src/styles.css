@@ -252,6 +252,30 @@
   --world-accent: var(--giver-discovery);
 }
 
+/* Role colour coding for people: GIVING yellow, WISHING blue, TRADING trade. */
+[data-world="giving"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-discovery);
+  --world-ink: oklch(0.52 0.15 85);
+  --world-accent: var(--giver-give);
+}
+
+[data-world="wishing"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-community);
+  --world-ink: oklch(0.4 0.15 255);
+  --world-accent: var(--giver-discovery);
+}
+
+[data-world="trading"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-trade);
+  --world-ink: oklch(0.44 0.19 27);
+  --world-accent: var(--giver-discovery);
+}
+
+
+
 
 /* Profile / You — green. */
 [data-world="profile"] {

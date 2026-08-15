@@ -197,6 +197,7 @@ function Index() {
                 onTap={() => push("profile")}
               />
             }
+            teach={teach}
             regions={{
               top: {
                 label: "",
@@ -205,23 +206,21 @@ function Index() {
                 onPress: () => push("profile"),
               },
               middle: {
-                label: "",
+                // WHAT I INITIATE — taught once, then held to reveal again.
+                label: content.mine.title,
                 panelTitle: content.mine.title,
                 panelBody: content.mine.body,
-                // WHAT I INITIATE — always inside the middle loop.
-                render: () => loopText({ region: "middle", lines: content.mine.action }),
               },
               bottom: {
-                label: "",
+                // WHAT I CAN DO FOR SOMEONE ELSE — same teaching rhythm.
+                label: content.community.title,
                 panelTitle: content.community.title,
                 panelBody: content.community.body,
-                // WHAT I CAN DO FOR SOMEONE ELSE — inside the bottom loop.
-                render: () =>
-                  loopText({ region: "bottom", lines: content.community.action }),
               },
             }}
 
           />
+
 
           <Screen open={top === "profile"}>
             <World

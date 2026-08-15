@@ -182,25 +182,37 @@ function Index() {
             world={mode}
             identity="giver"
             active={top === null}
-            overlay={<EarSelector mode={mode} onChange={setMode} />}
+            overlay={
+              <EarSelector
+                mode={mode}
+                onChange={setMode}
+                onTap={() => push("profile")}
+              />
+            }
             regions={{
               top: {
-                label: "you",
+                label: "",
                 panelTitle: "you",
                 panelBody: null,
                 onPress: () => push("profile"),
               },
               middle: {
-                label: "mine",
+                label: "",
                 panelTitle: content.mine.title,
                 panelBody: content.mine.body,
+                // MINE, for this mode — always inside the middle loop.
+                render: () => loopText({ region: "middle", lines: ["my", content.noun] }),
               },
               bottom: {
-                label: "community",
+                label: "",
                 panelTitle: content.community.title,
                 panelBody: content.community.body,
+                // COMMUNITY, for this mode — always inside the bottom loop.
+                render: () =>
+                  loopText({ region: "bottom", lines: ["community", content.noun] }),
               },
             }}
+
           />
 
           <Screen open={top === "profile"}>

@@ -70,16 +70,17 @@ export const PROFILE_TYPE: Record<
   LoopRegion,
   { answer: number; label: number; detail: number }
 > = {
-  top: { answer: 20, label: 11, detail: 15 },
-  middle: { answer: 26, label: 13, detail: 19 },
-  bottom: { answer: 40, label: 17, detail: 27 },
+  top: { answer: 24, label: 13, detail: 18 },
+  middle: { answer: 35, label: 17, detail: 26 },
+  bottom: { answer: 54, label: 23, detail: 36 },
 };
 
 /**
  * The ONLY freedom left: if a profile still overflows its safe area, the WHOLE
  * stack steps down through these few stops together — never per line, never up.
  */
-export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82] as const;
+export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82, 0.76] as const;
+
 
 /** Kept for compatibility with earlier profile layout code. */
 export const LOOP_PROFILE_FLEX = { min: 0.82, max: 1 } as const;

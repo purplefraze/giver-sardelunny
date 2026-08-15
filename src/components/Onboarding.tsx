@@ -43,7 +43,7 @@ const OPENING: Beat[] = [
 ];
 
 /** Straight into the people. */
-const MEET_INTRO: Beat[] = [{ world: "meet", bottom: ["meet three", "givers"] }];
+const MEET_INTRO: Beat[] = [{ world: "meet", bottom: ["meet four", "givers"] }];
 
 const HOLD = 3000;
 const FADE = 600;
@@ -191,7 +191,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
       {...(beat.bottom ? { bottom: { lines: beat.bottom } } : {})}
       copyOpacity={opacity}
     >
-      <ForwardCue show={last && arrow} label="yes — meet three givers" onClick={onDone} />
+      <ForwardCue show={last && arrow} label="yes — meet four givers" onClick={onDone} />
     </IntroG>
   );
 }

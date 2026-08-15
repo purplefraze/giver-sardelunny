@@ -31,7 +31,7 @@ export function GStage({ children }: { children: React.ReactNode }) {
         className="pointer-events-auto"
         style={{
           // artwork width = min(96% of stage width, 94dvh * artwork aspect)
-          width: `min(${(96 * W).toFixed(3)}%, calc(94dvh * ${(ART_ASPECT * W * H).toFixed(5)}))`,
+          width: `min(${(96 * W).toFixed(3)}%, calc(94dvh * ${(ART_ASPECT * W).toFixed(5)}))`,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
         }}
       >

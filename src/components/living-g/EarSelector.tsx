@@ -40,7 +40,7 @@ type P = { x: number; y: number };
  * nothing else — the middle loop is over 100 units away.
  */
 const HOME: P = { x: 502, y: 76 };
-const EAR_R = 112;
+const EAR_R = 140;
 
 /** The invisible track: a circle on the G's axis, around the middle loop, through the piece's home. */
 const TRACK_C: P = { x: 288, y: LOOP_CENTRE.middle.y };

@@ -18,10 +18,9 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * cut in <LivingG> (see EAR_GEOMETRY), so the rim underneath stays a perfectly
  * smooth curve in every mode.
  *
- *   upper-right (~2 o'clock)  -> give   (canonical home)
- *   upper-left  (~10 o'clock) -> wish
- *   lower-right (~4-5)        -> trade
- *   lower-left  (~7-8)        -> borrow
+ * TWO MIRRORED PAIRS:
+ *   wish   ~10 o'clock  <->  give  ~2 o'clock  (canonical home)
+ *   borrow ~8 o'clock   <->  trade ~4 o'clock
  *
  * The S-curve is never a mode destination.
  */
@@ -64,15 +63,17 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * outermost pair, and every seat keeps the whole piece inside the framed G.
  */
 const SEAT_ANGLE: Record<Mode, number> = {
-  wish: rad(-126), // ~10 o'clock
-  borrow: rad(-88), // ~12 o'clock, raised clear of the spine
+  // UPPER PAIR — mirrored about the vertical axis through the loop's centre.
+  wish: rad(-136), // ~10 o'clock
   give: rad(-44), // ~2 o'clock (canonical home)
-  trade: rad(28), // ~3-4 o'clock, raised clear of the S-curve
+  // LOWER PAIR — the same mirror, below the centre line.
+  trade: rad(30), // ~4 o'clock
+  borrow: rad(150), // ~8 o'clock
 };
 
 /** No free rotation: travel is bounded by the outermost pair of seats. */
 const ANGLE_MIN = SEAT_ANGLE.wish;
-const ANGLE_MAX = SEAT_ANGLE.trade;
+const ANGLE_MAX = SEAT_ANGLE.borrow;
 
 
 /** How near a seat (in radians of travel) counts as captured. */
@@ -108,11 +109,17 @@ export function EarSelector({
   mode,
   onChange,
   onTap,
+  locked = false,
+  photo,
 }: {
   mode: Mode;
   onChange: (next: Mode) => void;
   /** A simple tap on the piece opens the profile; a drag changes mode. */
   onTap?: () => void;
+  /** True on a person's screen: the seat STATES their interaction type. */
+  locked?: boolean;
+  /** A face riding the selector, inside the ring's own negative space. */
+  photo?: string;
 }) {
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
@@ -255,6 +262,26 @@ export function EarSelector({
         />
       </g>
 
+      {photo ? (
+        <>
+          <defs>
+            <clipPath id={`ear-photo-${mode}`} clipPathUnits="userSpaceOnUse">
+              <circle cx={ear.x} cy={ear.y} r={EAR_GEOMETRY.innerR - 3} />
+            </clipPath>
+          </defs>
+          <image
+            href={photo}
+            x={ear.x - (EAR_GEOMETRY.innerR - 3)}
+            y={ear.y - (EAR_GEOMETRY.innerR - 3)}
+            width={(EAR_GEOMETRY.innerR - 3) * 2}
+            height={(EAR_GEOMETRY.innerR - 3) * 2}
+            clipPath={`url(#ear-photo-${mode})`}
+            preserveAspectRatio="xMidYMid slice"
+            pointerEvents="none"
+          />
+        </>
+      ) : null}
+
       {/* dot -> word: the mode reads inside the piece that carries it */}
       <text
         x={ear.x}
@@ -267,7 +294,7 @@ export function EarSelector({
         style={{
           fontSize: WORD_SIZE,
           letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-          opacity: dragging ? 0 : reveal ? 0.95 : 0.4,
+          opacity: photo ? 0 : dragging ? 0 : reveal ? 0.95 : 0.4,
           transform: `scale(${dragging ? 0.3 : 1})`,
           transformOrigin: `${ear.x}px ${ear.y}px`,
           transition:

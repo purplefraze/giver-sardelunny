@@ -30,26 +30,35 @@ type Beat = {
 };
 
 const OPENING: Beat[] = [
-  { world: "welcome", bottom: ["welcome to", "giver"] },
-  { world: "welcome", bottom: ["kindness", "as", "currency"] },
-  // Addressed to the user: the middle loop is me.
+  // middle = spoken to me, bottom = the name of the thing itself, large.
+  { world: "welcome", middle: ["welcome to"], bottom: ["giver"] },
+  {
+    world: "welcome",
+    middle: ["spark", "change"],
+    bottom: ["kindness", "as", "currency"],
+  },
   { world: "welcome", middle: ["to get you", "started..."] },
-
-  { world: "welcome", bottom: ["here's", "100 sparks", "from giver"] },
+  {
+    world: "welcome",
+    middle: ["here's", "100 sparks", "from"],
+    bottom: ["giver"],
+  },
   // ONE coordinated beat: the G turns green as the green words arrive.
   { world: "gift", middle: ["50 sparks", "for you", "to wish"] },
-  // The middle message HOLDS while the bottom half of the gift appears.
+  // The middle message HOLDS while the bottom half of the sparks appears.
   {
     world: "gift",
     middle: ["50 sparks", "for you", "to wish"],
-    bottom: ["50 sparks", "for you", "to gift"],
+    bottom: ["50 sparks", "for you", "to give"],
   },
-  { world: "gift", top: ["so..."] },
-  { world: "gift", bottom: ["are you", "a giver?"] },
+  { world: "gift", top: ["so..."], middle: ["are you a"], bottom: ["giver?"] },
 ];
 
 /** Straight into the people. */
-const MEET_INTRO: Beat[] = [{ world: "meet", bottom: ["meet four", "givers"] }];
+const MEET_INTRO: Beat[] = [
+  { world: "meet", middle: ["meet four"], bottom: ["givers"] },
+];
+
 
 const HOLD = 3000;
 
@@ -250,7 +259,8 @@ function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void 
   }, [last, onDone]);
 
   return (
-    <IntroG world={world} bottom={copy("bottom")}>
+    <IntroG world={world} middle={copy("middle")} bottom={copy("bottom")}>
+
       <BackArrow onClick={onBack} />
       <ForwardCue show label="meet them" onClick={onDone} />
     </IntroG>

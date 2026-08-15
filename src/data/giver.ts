@@ -60,10 +60,12 @@ export const MEMBERS: Member[] = [
     byNight: "cuddle bug",
     weekend: "cycling",
     bottom: [
-      { text: "giving", role: "secondary" },
-      { text: "science tutoring", role: "primary" },
+      { text: "currently offering", role: "secondary" },
+      { text: "science", role: "primary" },
+      { text: "tutoring", role: "primary" },
       { text: "+1 more", role: "tertiary", lead: true },
     ],
+
     alsoGiving: ["after-school dog walking"],
     history: {
       wishes: ["a lift to the coast", "someone to water the plants"],
@@ -90,10 +92,12 @@ export const MEMBERS: Member[] = [
     weekend: "who knows",
     bottom: [
       { text: "wish", role: "secondary" },
-      { text: "ride to the airport", role: "primary" },
+      { text: "ride to the", role: "primary" },
+      { text: "airport", role: "primary" },
       { text: "this tuesday", role: "tertiary", lead: true },
-      { text: "4 pm", role: "tertiary" },
+      { text: "at 4 pm", role: "tertiary" },
     ],
+
     history: {
       wishes: ["a desk lamp", "help moving a sofa"],
       gives: ["tarot readings, sundays"],
@@ -120,10 +124,13 @@ export const MEMBERS: Member[] = [
     weekend: "festy bestie",
     bottom: [
       { text: "trading", role: "secondary" },
-      { text: "a year's supply of firewood", role: "primary" },
+      { text: "a year's supply", role: "primary" },
+      { text: "of firewood", role: "primary" },
       { text: "for", role: "secondary", lead: true },
-      { text: "a burning man ticket", role: "primary" },
+      { text: "a burning", role: "primary" },
+      { text: "man ticket", role: "primary" },
     ],
+
     history: {
       wishes: ["a trailer for one weekend"],
       gives: ["stage lighting for the street party", "a wheelbarrow of kindling"],

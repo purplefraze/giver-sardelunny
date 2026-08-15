@@ -187,32 +187,60 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
             <rect x="0" y="0" width="576" height="1133" fill={`url(#${uid}-fall-${key})`} />
           </mask>
         ))}
+        {/*
+          THE STATIC EAR CUT — a tight disc over the small top circle plus a
+          short band over its stem, stopping just outside the middle loop's rim
+          so the rim, the spine and every neighbouring stroke are untouched.
+          One cut, applied once, identical in every mode.
+        */}
+        {earCut ? (
+          <mask id={`${uid}-earcut`} maskUnits="userSpaceOnUse">
+            <rect x="0" y="0" width="576" height="1133" fill="#fff" />
+            <line
+              x1={EAR_CUT_STEM.x1}
+              y1={EAR_CUT_STEM.y1}
+              x2={EAR_CUT_STEM.x2}
+              y2={EAR_CUT_STEM.y2}
+              stroke="#000"
+              strokeWidth={EAR_GEOMETRY.cutStemWidth}
+            />
+            <circle
+              cx={EAR_GEOMETRY.home.x}
+              cy={EAR_GEOMETRY.home.y}
+              r={EAR_GEOMETRY.cutR}
+              fill="#000"
+            />
+          </mask>
+        ) : null}
       </defs>
 
+      <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
+        <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+          <path d={LIVING_G_PATH} />
+        </g>
 
-      <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-        <path d={LIVING_G_PATH} />
-      </g>
-
-      {ORDER.map((key) => {
-        const isPressed = pressed === key;
-        const ring = RING[key];
-        return (
-          <g key={`art-${key}`} mask={`url(#${uid}-mask-${key})`}>
-            <g
-              style={{
-                transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
-                transform: `scale(${isPressed ? 1.022 : 1})`,
-                transformOrigin: `${ring.x}px ${ring.y}px`,
-              }}
-            >
-              <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                <path d={LIVING_G_PATH} />
+        {ORDER.map((key) => {
+          const isPressed = pressed === key;
+          const ring = RING[key];
+          return (
+            <g key={`art-${key}`} mask={`url(#${uid}-mask-${key})`}>
+              <g
+                style={{
+                  transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
+                  transform: `scale(${isPressed ? 1.022 : 1})`,
+                  transformOrigin: `${ring.x}px ${ring.y}px`,
+                }}
+              >
+                <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+                  <path d={LIVING_G_PATH} />
+                </g>
               </g>
             </g>
-          </g>
-        );
-      })}
+          );
+        })}
+      </g>
+
+
 
 
 

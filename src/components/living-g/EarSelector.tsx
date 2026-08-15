@@ -91,9 +91,10 @@ function project(p: P): { angle: number; point: P } {
   // Work in the right half's frame, mirrored for the left half, so the piece
   // travels the short way around the top and never behind the bottom loop.
   const left = Math.cos(a) < 0;
-  const mirrored = left ? Math.PI - a : a;
+  const mirrored = left ? norm(Math.PI - a) : a;
   const clamped = Math.min(ANGLE_MAX, Math.max(ANGLE_MIN, mirrored));
-  a = left ? Math.PI - clamped : clamped;
+  a = left ? norm(Math.PI - clamped) : clamped;
+
   return { angle: a, point: onTrack(a) };
 }
 

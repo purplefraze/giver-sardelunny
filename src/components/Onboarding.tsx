@@ -63,7 +63,7 @@ const OPENING: Beat[] = [
     hold: 2200,
   },
 
-  { world: "welcome", middle: ["to get you", "started..."], hold: COMPOSITION },
+  { world: "welcome", middle: ["to get", "you", "started..."], hold: COMPOSITION },
 
   { world: "welcome", middle: ["here's", "100 sparks", "from"], hold: PHRASE_BEAT },
   {

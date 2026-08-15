@@ -180,10 +180,7 @@ export function EarSelector({
       <circle cx={HOME.x} cy={HOME.y} r={EAR_R} fill="var(--world-bg)" />
 
       {/* The one existing ear, travelling. */}
-      <g
-        transform={`translate(${pos.x - HOME.x},${pos.y - HOME.y})${flip}`}
-        style={{ transition: mirrored ? `none` : undefined }}
-      >
+      <g transform={`translate(${pos.x - HOME.x},${pos.y - HOME.y})`}>
         <g clipPath={`url(#${uid}-ear)`}>
           <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
             <path d={LIVING_G_PATH} />

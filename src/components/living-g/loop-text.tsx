@@ -62,7 +62,7 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
         LOOP_MIN_SIZE,
         base * (block.role === "label" ? LOOP_ROLE_SIZE.label : LOOP_ROLE_SIZE.message),
       );
-      const max = radius * 1.62;
+      const max = radius * 1.78;
       // A given line is already a deliberate phrase: keep it on ONE line,
       // condensed a little if needed, before ever allowing it to break.
       let kept = false;
@@ -81,10 +81,11 @@ function fit(blocks: Block[], radius: number, ideal: number): Row[] {
     }
 
 
-    const gap = base * 0.14;
+    const gap = base * 0.1;
     const total =
       rows.reduce((sum, row) => sum + row.size * 1.02, 0) + gap * (rows.length - 1);
-    if (total > radius * 1.7) continue;
+    if (total > radius * 1.84) continue;
+
 
     let y = -total / 2;
     const placed: Row[] = [];

@@ -6,9 +6,9 @@ import { MEMBERS, type Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 
 /**
- * The opening of Giver. ONE orange Living G speaks: it never moves, never
- * resizes, never changes colour. Only the words in its bottom loop change.
- * Then the community colour arrives, and we meet three people.
+ * The opening of Giver. ONE orange Living G speaks on warm off-white paper:
+ * it never moves, never resizes, never changes colour. Only the words in its
+ * bottom loop change. Then we meet three people, each in their role colour.
  */
 type Stage = "opening" | "meet-intro" | "meet" | "choose" | "celebrate";
 
@@ -19,25 +19,20 @@ const OPENING: string[][] = [
   ["To start", "you off"],
   ["Here's", "100 Sparks"],
   ["50 Sparks", "are yours"],
-  ["50 Sparks", "are yours", "to give away"],
+  ["50 Sparks", "are yours", "to gift"],
   ["Are you", "a Giver?"],
 ];
 
-/** The blue chapter that hands over to the three people. */
-const MEET_INTRO: string[][] = [
-  ["Meet three", "Givers"],
-  ["Someone", "giving"],
-  ["Someone", "wishing"],
-  ["Someone", "trading"],
-];
+/** Straight into the people — no "someone giving / wishing / trading". */
+const MEET_INTRO: string[][] = [["Meet three", "Givers"]];
 
 const HOLD = 3000;
 const FADE = 600;
 
-const NAME_COLOUR: Record<Member["world"], string> = {
-  give: "var(--giver-give)",
-  wish: "var(--giver-wish)",
-  trade: "var(--giver-trade)",
+const ROLE_COLOUR: Record<Member["world"], string> = {
+  giving: "var(--giver-discovery)",
+  wishing: "var(--giver-community)",
+  trading: "var(--giver-trade)",
 };
 
 /** Plays a list of messages in one loop: fade in, hold, fade out. */
@@ -113,14 +108,14 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   }
 
   if (stage === "celebrate" && chosen) {
-    return <Celebration name={chosen.name} onDone={() => onDone(chosen.name)} />;
+    return <Celebration username={chosen.username} onDone={() => onDone(chosen.name)} />;
   }
 
   // Give your 50 — the first act of generosity. Not optional.
   return (
     <div
       className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
-      style={{ background: "var(--giver-ink)", color: "var(--giver-accent)" }}
+      style={{ background: "var(--giver-paper)" }}
     >
       <BackArrow
         onClick={() => {
@@ -128,12 +123,15 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
           setStage("meet");
         }}
       />
-      <h1 className="text-[13vw] font-black uppercase leading-[0.8] tracking-[-0.06em] animate-[fade-up_500ms_ease-out]">
+      <h1
+        className="text-[13vw] font-black uppercase leading-[0.82] tracking-[-0.05em] animate-[fade-up_500ms_ease-out]"
+        style={{ color: "var(--giver-profile)" }}
+      >
         Give your
         <br />
         50.
       </h1>
-      <div className="mt-10 flex flex-col items-start gap-5">
+      <div className="mt-10 flex flex-col items-start gap-4">
         {MEMBERS.map((m) => (
           <button
             key={m.id}
@@ -143,10 +141,10 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
               setChosen(m);
               setStage("celebrate");
             }}
-            className="text-[15vw] font-black uppercase leading-[0.88] tracking-[-0.05em] transition-transform active:scale-95"
-            style={{ color: NAME_COLOUR[m.world] }}
+            className="text-left text-[14vw] font-black uppercase leading-[0.9] tracking-[-0.05em] transition-transform active:scale-95"
+            style={{ color: ROLE_COLOUR[m.world] }}
           >
-            {m.name}
+            {m.username}
           </button>
         ))}
       </div>
@@ -167,12 +165,12 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
 
   return (
     <IntroG world="welcome" bottom={{ lines }} copyOpacity={opacity}>
-      <ForwardCue show={last && arrow} label="Yes — meet the community" onClick={onDone} />
+      <ForwardCue show={last && arrow} label="Yes — meet three Givers" onClick={onDone} />
     </IntroG>
   );
 }
 
-/** The blue chapter: the community arrives. */
+/** One line, then straight into the people. */
 function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
   const { lines, opacity, last } = useMessages(MEET_INTRO, onDone, true);
 
@@ -183,7 +181,7 @@ function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void 
   }, [last, onDone]);
 
   return (
-    <IntroG world="meet" bottom={{ lines }} copyOpacity={opacity}>
+    <IntroG world="welcome" bottom={{ lines }} copyOpacity={opacity}>
       <BackArrow onClick={onBack} />
       <ForwardCue show label="Meet them" onClick={onDone} />
     </IntroG>
@@ -221,20 +219,21 @@ function ForwardCue({
   );
 }
 
-function Celebration({ name, onDone }: { name: string; onDone: () => void }) {
+/** Editorial, asymmetric, off-white. Green is the accent, never the flood. */
+function Celebration({ username, onDone }: { username: string; onDone: () => void }) {
   return (
     <div
       className="relative flex h-full w-full flex-col overflow-hidden px-7 pt-20"
-      style={{ background: "var(--giver-accent)", color: "var(--giver-ink)" }}
+      style={{ background: "var(--giver-paper)", color: "var(--giver-profile)" }}
     >
       <h1 className="text-[19vw] font-black uppercase leading-[0.78] tracking-[-0.06em] animate-[fade-up_500ms_ease-out]">
         Yippee!
       </h1>
-      <p className="mt-8 max-w-[15ch] text-[7.5vw] font-black uppercase leading-[0.92] tracking-[-0.04em] animate-[fade-up_600ms_250ms_ease-out_both]">
+      <p className="mt-8 ml-[12%] max-w-[15ch] text-[7.5vw] font-black uppercase leading-[0.92] tracking-[-0.04em] animate-[fade-up_600ms_250ms_ease-out_both]">
         You just made your first act of generosity on Giver.
       </p>
-      <p className="mt-6 max-w-[16ch] text-[5.5vw] font-black uppercase leading-[0.95] tracking-[-0.03em] opacity-60 animate-[fade-up_600ms_500ms_ease-out_both]">
-        50 Sparks have been gifted to {name}.
+      <p className="mt-7 max-w-[16ch] text-[5.5vw] font-black uppercase leading-[0.95] tracking-[-0.03em] opacity-70 animate-[fade-up_600ms_500ms_ease-out_both]">
+        50 Sparks have been gifted to {username}.
       </p>
       <button
         type="button"
@@ -242,7 +241,7 @@ function Celebration({ name, onDone }: { name: string; onDone: () => void }) {
           buzz();
           onDone();
         }}
-        className="mt-auto mb-10 self-start text-[8vw] font-black uppercase leading-none tracking-[-0.04em] underline decoration-[0.12em] underline-offset-[0.18em] transition-transform active:scale-95 animate-[fade-up_600ms_750ms_ease-out_both]"
+        className="mt-auto mb-10 self-start text-[8vw] font-black uppercase leading-none tracking-[-0.04em] underline decoration-[0.1em] underline-offset-[0.18em] transition-transform active:scale-95 animate-[fade-up_600ms_750ms_ease-out_both]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         Enter Giver →

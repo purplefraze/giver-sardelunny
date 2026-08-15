@@ -9,8 +9,12 @@ export type LoopCopy = {
   opacity?: number;
 };
 
-/** One coordinated beat: colour and copy always move together. */
-export const BEAT_MS = 700;
+/**
+ * One coordinated beat: colour and copy always move together. This is also the
+ * FADE-OUT duration of a thought that is being replaced — slow enough to feel
+ * like a breath, never a cut.
+ */
+export const BEAT_MS = 680;
 
 /**
  * One onboarding chapter: the canonical full-screen Living G in a single bold

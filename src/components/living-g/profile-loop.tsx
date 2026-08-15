@@ -9,9 +9,10 @@ import {
   wrapWidth,
 } from "./loop-layout";
 import {
-  LOOP_FIXED_SIZE,
-  LOOP_PROFILE_FLEX,
-  LOOP_ROLE_SIZE,
+  PROFILE_SAFE_INSET,
+  PROFILE_STEPS,
+  PROFILE_TYPE,
+  PROFILE_WRAP_FACTOR,
   type LoopTypeRole,
 } from "./type-scale";
 
@@ -53,6 +54,13 @@ const AS_ROLE: Record<LoopRole, LoopTypeRole> = {
   tertiary: "detail",
 };
 
+/** Which fixed profile token each role reads from. */
+const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
+  primary: "answer",
+  secondary: "label",
+  tertiary: "detail",
+};
+
 export function profileLoop({
   region,
   blocks,
@@ -64,18 +72,20 @@ export function profileLoop({
   blocks: LoopBlock[];
   lift?: number;
 }) {
-  const token = LOOP_FIXED_SIZE[region];
-  const max = wrapWidth(region);
+  const token = PROFILE_TYPE[region];
+  const inset = PROFILE_SAFE_INSET[region];
   const origin = loopOrigin(region, lift);
 
-  const build = (scale: number) => {
-    const gap = token.message * scale * 0.06;
-    const lead = token.message * scale * 0.24;
+  const build = (step: number) => {
+    const max = wrapWidth(region, PROFILE_WRAP_FACTOR, inset);
+    const gap = token.answer * step * 0.1;
+    const lead = token.answer * step * 0.38;
     return blocks.flatMap((block, i) => {
-      const role = AS_ROLE[block.role ?? "primary"];
+      const key = block.role ?? "primary";
+      const role = AS_ROLE[key];
       const size = Math.max(
         LOOP_MIN_SIZE,
-        Math.round(token.message * scale * LOOP_ROLE_SIZE[role]),
+        Math.round(token[AS_TOKEN[key]] * step),
       );
       return wrapLines(block.text, size, max, role).map((text, j) => ({
         text,
@@ -87,13 +97,10 @@ export function profileLoop({
   };
 
   // ONE scale for the whole stack, stepped down only inside the allowed flex.
-  let placed = layoutStack(build(LOOP_PROFILE_FLEX.max), region);
-  if (!placed.fits) {
-    for (let s = LOOP_PROFILE_FLEX.max - 0.02; s >= LOOP_PROFILE_FLEX.min; s -= 0.02) {
-      const next = layoutStack(build(s), region);
-      placed = next;
-      if (next.fits) break;
-    }
+  let placed = layoutStack(build(1), region, inset);
+  for (const step of PROFILE_STEPS) {
+    placed = layoutStack(build(step), region, inset);
+    if (placed.fits) break;
   }
 
   return (

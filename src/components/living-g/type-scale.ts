@@ -45,10 +45,43 @@ export const LOOP_IDEAL_RATIO = 0.66;
 export const LOOP_ACTION_RATIO = 0.54;
 
 /**
- * Profiles carry variable, user-entered content, so a profile stack may step
- * DOWN from the fixed primary size inside this tightly controlled range — never
- * up, and never per line.
+ * PROFILE SAFE AREA — profile copy is variable and user-entered, so it lives
+ * inside an explicit INSET of the loop's safe circle. Generous padding from the
+ * coloured stroke; no profile line may ever cross it or the S-curve.
  */
+export const PROFILE_SAFE_INSET: Record<LoopRegion, number> = {
+  top: 0.8,
+  middle: 0.86,
+  bottom: 0.86,
+};
+
+/** How wide a profile line may run inside its safe area, as a share of radius. */
+export const PROFILE_WRAP_FACTOR = 1.3;
+
+/**
+ * THE fixed profile type scale, in px. EVERY profile uses these exact tokens —
+ * never a per-person size. Deliberate line breaks in the copy do the fitting.
+ *
+ *   answer  — the primary answer ("chemistry teacher", "science")
+ *   label   — the smaller label above it ("by day", "currently offering")
+ *   detail  — the medium supporting line ("+1 more", "this tuesday")
+ */
+export const PROFILE_TYPE: Record<
+  LoopRegion,
+  { answer: number; label: number; detail: number }
+> = {
+  top: { answer: 20, label: 11, detail: 15 },
+  middle: { answer: 26, label: 13, detail: 19 },
+  bottom: { answer: 40, label: 17, detail: 27 },
+};
+
+/**
+ * The ONLY freedom left: if a profile still overflows its safe area, the WHOLE
+ * stack steps down through these few stops together — never per line, never up.
+ */
+export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82] as const;
+
+/** Kept for compatibility with earlier profile layout code. */
 export const LOOP_PROFILE_FLEX = { min: 0.82, max: 1 } as const;
 
 /** Size of each role relative to the composed primary size. */

@@ -40,10 +40,16 @@ type P = { x: number; y: number };
  * nothing else — the middle loop is over 100 units away.
  */
 const HOME: P = { x: 502, y: 76 };
-const EAR_R = 140;
+const EAR_R = 95;
 
-/** The invisible track: a circle on the G's axis, around the middle loop, through the piece's home. */
-const TRACK_C: P = { x: 288, y: LOOP_CENTRE.middle.y };
+/**
+ * THE INVISIBLE TRACK — derived from the ACTUAL middle-loop geometry, never
+ * from screen coordinates: a circle centred on the middle loop's measured
+ * optical centre, passing exactly through the piece's canonical home. The piece
+ * therefore keeps the SAME distance from the loop at every position, like a bead
+ * on a wire, and the track scales with the G because it lives in viewBox space.
+ */
+const TRACK_C: P = { x: LOOP_CENTRE.middle.x, y: LOOP_CENTRE.middle.y };
 const TRACK_R = Math.hypot(HOME.x - TRACK_C.x, HOME.y - TRACK_C.y);
 
 /** Seat angles on the track (SVG space: negative y is up). */
@@ -52,11 +58,17 @@ const HOME_ANGLE = Math.atan2(HOME.y - TRACK_C.y, HOME.x - TRACK_C.x);
 /** Wrap an angle into (-pi, pi] so comparisons never straddle the seam. */
 const norm = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
+/**
+ * The lower seats sit in the lower QUADRANTS of the middle loop — raised well
+ * clear of the very bottom, and balanced against the upper pair.
+ */
+const LOWER_ANGLE = 0.72;
+
 const SEAT_ANGLE: Record<Mode, number> = {
-  give: HOME_ANGLE, // upper-right
+  give: HOME_ANGLE, // upper-right (canonical home)
   wish: norm(Math.PI - HOME_ANGLE), // upper-left
-  trade: -HOME_ANGLE, // lower-right
-  borrow: norm(Math.PI + HOME_ANGLE), // lower-left
+  trade: LOWER_ANGLE, // lower-right, raised
+  borrow: norm(Math.PI - LOWER_ANGLE), // lower-left, raised
 };
 
 
@@ -72,9 +84,9 @@ const SEAT: Record<Mode, P> = {
   borrow: onTrack(SEAT_ANGLE.borrow),
 };
 
-/** Travel is bounded by the designed ends of the track: trade and borrow. */
-const ANGLE_MIN = SEAT_ANGLE.give; // upper-right (negative)
-const ANGLE_MAX = SEAT_ANGLE.trade; // lower-right (positive)
+/** Travel is bounded by the designed ends of the track: give and trade. */
+const ANGLE_MIN = SEAT_ANGLE.give; // upper (negative)
+const ANGLE_MAX = SEAT_ANGLE.trade; // lower, raised (positive)
 
 const SNAP_MS = 200;
 /** How near a seat (in radians of travel) counts as captured. */

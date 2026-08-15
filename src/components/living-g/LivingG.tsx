@@ -125,7 +125,7 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
   return (
     <svg
       viewBox={LIVING_G_VIEWBOX}
-      className={cn("h-full w-full select-none", className)}
+      className={cn("h-full w-full select-none overflow-visible", className)}
     >
       {/*
         Canonical geometry, drawn once and never transformed, plus one

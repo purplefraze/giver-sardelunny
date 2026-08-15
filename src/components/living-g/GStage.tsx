@@ -15,6 +15,20 @@ import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
 const W = LIVING_G_FRAME.width / LIVING_G_BOX.width; // frame width per artwork width
 const ART_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 
+/**
+ * CENTRE THE ARTWORK, NEVER THE FRAME. The frame's selector overflow is
+ * asymmetric (more room on the left than the right), so flex-centring the frame
+ * would push the canonical G to the right. These offsets move the frame so the
+ * CANONICAL BOX's centre lands exactly on the stage centre — pure positioning,
+ * no effect on scale.
+ */
+const ART_CX = LIVING_G_BOX.x + LIVING_G_BOX.width / 2;
+const ART_CY = LIVING_G_BOX.y + LIVING_G_BOX.height / 2;
+const FRAME_CX = LIVING_G_FRAME.x + LIVING_G_FRAME.width / 2;
+const FRAME_CY = LIVING_G_FRAME.y + LIVING_G_FRAME.height / 2;
+const SHIFT_X = -((ART_CX - FRAME_CX) / LIVING_G_FRAME.width) * 100;
+const SHIFT_Y = -((ART_CY - FRAME_CY) / LIVING_G_FRAME.height) * 100;
+
 export function GStage({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -32,6 +46,7 @@ export function GStage({ children }: { children: React.ReactNode }) {
           // artwork width = min(96% of stage width, 94dvh * artwork aspect)
           width: `min(${(96 * W).toFixed(3)}%, calc(94dvh * ${(ART_ASPECT * W).toFixed(5)}))`,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
+          transform: `translate(${SHIFT_X.toFixed(4)}%, ${SHIFT_Y.toFixed(4)}%)`,
         }}
       >
         {children}
@@ -39,3 +54,4 @@ export function GStage({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

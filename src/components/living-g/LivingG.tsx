@@ -88,6 +88,9 @@ export const RHYTHM = {
   /** Cue lingers a beat after release, then dissolves. */
   cueOut: 420,
   hold: 1100,
+  /** How long a deliberate press-and-hold takes to reveal a loop's label. */
+  holdReveal: 1500,
+
 } as const;
 
 /**
@@ -100,27 +103,46 @@ export const RHYTHM = {
  */
 export function LivingG({ regions, className, showLabels = true, overlay }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
-  /** The temporary word cue: appears on press, fades away on its own. */
+  /** The temporary word cue: revealed by a deliberate press-and-hold. */
   const [cue, setCue] = useState<RegionKey | null>(null);
   const cueTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** True once a hold has revealed a label, so release does not navigate. */
+  const revealed = useRef(false);
   const down = useRef<{ x: number; y: number } | null>(null);
-  const release = () => setPressed(null);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const release = () => {
+    setPressed(null);
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    // The word lingers a beat after the finger lifts, then softly dissolves.
+    if (revealed.current) {
+      if (cueTimer.current) clearTimeout(cueTimer.current);
+      cueTimer.current = setTimeout(() => setCue(null), RHYTHM.cueOut);
+    }
+  };
 
   useEffect(
     () => () => {
       if (cueTimer.current) clearTimeout(cueTimer.current);
+      if (holdTimer.current) clearTimeout(holdTimer.current);
       if (navTimer.current) clearTimeout(navTimer.current);
     },
     [],
   );
   const uid = useId().replace(/:/g, "");
 
-  const showCue = (key: RegionKey) => {
-    setCue(key);
-    if (cueTimer.current) clearTimeout(cueTimer.current);
-    cueTimer.current = setTimeout(() => setCue(null), RHYTHM.hold);
+  /** PRESS AND HOLD teaches the loop again — a soft fade, never a tooltip. */
+  const holdCue = (key: RegionKey) => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => {
+      revealed.current = true;
+      buzz(10);
+      if (cueTimer.current) clearTimeout(cueTimer.current);
+      setCue(key);
+    }, RHYTHM.holdReveal);
   };
+
 
   return (
     <svg
@@ -259,11 +281,9 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
 
             onPointerDown={(e) => {
               down.current = { x: e.clientX, y: e.clientY };
+              revealed.current = false;
               setPressed(key);
-              showCue(key);
-            }}
-            onPointerEnter={(e) => {
-              if (e.pointerType === "mouse") showCue(key);
+              holdCue(key);
             }}
             onPointerUp={release}
             onPointerLeave={release}
@@ -278,12 +298,17 @@ export function LivingG({ regions, className, showLabels = true, overlay }: Prop
               ) {
                 return;
               }
-              // Rhythm: the cue stays readable for a beat, then we move.
+              // A hold TEACHES; only a tap travels.
+              if (revealed.current) {
+                revealed.current = false;
+                return;
+              }
               buzz();
               if (navTimer.current) clearTimeout(navTimer.current);
               const run = region.onPress;
               navTimer.current = setTimeout(() => run?.(), RHYTHM.read);
             }}
+
 
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") region.onPress?.();

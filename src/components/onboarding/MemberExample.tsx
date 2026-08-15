@@ -21,6 +21,18 @@ import { cn } from "@/lib/utils";
  */
 type Deep = "history" | "about" | "activity" | null;
 
+/**
+ * Where a person's history selector RESTS when you first meet them: the state
+ * they are an example of. Borrow has no history seat in the prototype, so a
+ * borrower simply rests on wishes.
+ */
+const HISTORY_START: Record<Member["world"], TopLoopPosition> = {
+  wishing: 0,
+  giving: 1,
+  trading: 2,
+  borrowing: 0,
+};
+
 export function MemberExample({
   member,
   first,
@@ -39,8 +51,13 @@ export function MemberExample({
   onDone: () => void;
 }) {
   const [deep, setDeep] = useState<Deep>(null);
-  /** Top-loop history selector: stays where the user leaves it. */
-  const [topPos, setTopPos] = useState<TopLoopPosition>(0);
+  /** Top-loop history selector: starts on this person's own state. */
+  const [topPos, setTopPos] = useState<TopLoopPosition>(HISTORY_START[member.world]);
+
+  useEffect(() => {
+    setTopPos(HISTORY_START[member.world]);
+  }, [member.world]);
+
 
   useEffect(() => {
     setDeep(null);
@@ -70,10 +87,8 @@ export function MemberExample({
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <BackArrow
-        onClick={first ? onBack : onPrev}
-        label={first ? "back" : `back to the person before ${member.name}`}
-      />
+      {/* Navigation lives together, at the bottom. Nothing sits up top. */}
+
 
       {/* Same identity position as giver on Home: quiet, centred, small. */}
       <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8">
@@ -137,19 +152,32 @@ export function MemberExample({
         />
       </GStage>
 
+      {/*
+        BOTH directions, together, in the thumb zone. Same placement for every
+        person, so nothing ever jumps from top to bottom between profiles.
+      */}
       <div
-        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-end px-7"
+        className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-9"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
       >
         <button
           type="button"
+          onClick={first ? onBack : onPrev}
+          aria-label={first ? "back" : `back to the person before ${member.name}`}
+          className="flex h-11 w-11 items-center justify-center text-3xl font-bold leading-none transition-transform active:scale-90"
+        >
+          <span aria-hidden="true">←</span>
+        </button>
+        <button
+          type="button"
           onClick={last ? onDone : onNext}
           aria-label={last ? "continue" : `meet the next person after ${member.name}`}
-          className="flex h-9 w-9 items-center justify-center text-3xl font-bold leading-none transition-transform active:scale-90"
+          className="flex h-11 w-11 items-center justify-center text-3xl font-bold leading-none transition-transform active:scale-90"
         >
           <span aria-hidden="true">→</span>
         </button>
       </div>
+
 
       {/* Deeper previews — always a way back to this exact person. */}
       <div

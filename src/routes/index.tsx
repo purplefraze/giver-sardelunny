@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import {
   HISTORY_STATES,
@@ -8,7 +8,7 @@ import {
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
 import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
-import { loopText } from "@/components/living-g/loop-text";
+
 
 import { World, ringPhoto } from "@/components/World";
 import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
@@ -143,6 +143,17 @@ function Index() {
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
   /** Which mode the one persistent Living G is currently working in. */
   const [mode, setMode] = useState<Mode>("give");
+  /**
+   * TEACH THE G ONCE. On first entry the action labels show themselves, then
+   * the G goes quiet for good — a press-and-hold brings a label back.
+   */
+  const [teach, setTeach] = useState(true);
+
+  useEffect(() => {
+    if (!entered || !teach) return;
+    const t = setTimeout(() => setTeach(false), 5200);
+    return () => clearTimeout(t);
+  }, [entered, teach]);
 
   /**
    * ONE source of truth for the only depth that exists: the router.
@@ -197,6 +208,7 @@ function Index() {
                 onTap={() => push("profile")}
               />
             }
+            teach={teach}
             regions={{
               top: {
                 label: "",
@@ -205,23 +217,21 @@ function Index() {
                 onPress: () => push("profile"),
               },
               middle: {
-                label: "",
+                // WHAT I INITIATE — taught once, then held to reveal again.
+                label: content.mine.title,
                 panelTitle: content.mine.title,
                 panelBody: content.mine.body,
-                // WHAT I INITIATE — always inside the middle loop.
-                render: () => loopText({ region: "middle", lines: content.mine.action }),
               },
               bottom: {
-                label: "",
+                // WHAT I CAN DO FOR SOMEONE ELSE — same teaching rhythm.
+                label: content.community.title,
                 panelTitle: content.community.title,
                 panelBody: content.community.body,
-                // WHAT I CAN DO FOR SOMEONE ELSE — inside the bottom loop.
-                render: () =>
-                  loopText({ region: "bottom", lines: content.community.action }),
               },
             }}
 
           />
+
 
           <Screen open={top === "profile"}>
             <World

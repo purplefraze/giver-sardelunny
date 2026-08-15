@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
-import { loopText } from "@/components/living-g/loop-text";
+import { clampField, profileLoop } from "@/components/living-g/profile-loop";
 import {
   TopLoopSelector,
   topLoopContent,
@@ -63,9 +63,12 @@ export function MemberExample({
       />
 
       {/* Same identity position as GIVER on Home: quiet, centred, small. */}
-      <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex justify-center px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8">
         <span className="text-[12px] font-black uppercase tracking-[0.42em] opacity-65">
           {member.username}
+        </span>
+        <span className="text-[9px] font-black uppercase tracking-[0.34em] opacity-40">
+          {member.distance}
         </span>
       </div>
 
@@ -93,20 +96,27 @@ export function MemberExample({
             middle: {
               onPress: open("about"),
               render: (anchor) =>
-                loopText({
+                profileLoop({
                   anchor,
                   region: "middle",
-                  lines: member.aboutLines,
+                  blocks: [
+                    { text: member.age, role: "primary" },
+                    { text: "By day", role: "secondary", lead: true },
+                    { text: clampField(member.byDay), role: "primary" },
+                    { text: "By night", role: "secondary", lead: true },
+                    { text: clampField(member.byNight), role: "primary" },
+                    { text: "On the weekends", role: "secondary", lead: true },
+                    { text: clampField(member.weekend), role: "primary" },
+                  ],
                 }),
             },
             bottom: {
               onPress: open("activity"),
               render: (anchor) =>
-                loopText({
+                profileLoop({
                   anchor,
                   region: "bottom",
-                  kicker: member.bottomKicker,
-                  lines: member.bottomLines,
+                  blocks: member.bottom,
                 }),
             },
           }}
@@ -141,7 +151,7 @@ export function MemberExample({
           <>
             <BackArrow onClick={() => setDeep(null)} label={`Back to ${member.name}`} />
             <h2 className="mt-6 text-[16vw] font-black uppercase leading-[0.82] tracking-[-0.05em]">
-              {deep === "activity" ? member.bottomKicker : member.username}
+              {deep === "activity" ? member.action : member.username}
             </h2>
             {deep === "profile" ? (
               <>
@@ -162,6 +172,11 @@ export function MemberExample({
                 <p className="mt-6 text-2xl font-medium leading-tight opacity-70">
                   {member.activity}
                 </p>
+                {member.alsoGiving?.map((item) => (
+                  <p key={item} className="mt-6 text-2xl font-medium leading-tight opacity-70">
+                    {item}
+                  </p>
+                ))}
               </>
             ) : null}
           </>

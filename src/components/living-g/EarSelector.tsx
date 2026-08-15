@@ -211,7 +211,7 @@ export function EarSelector({
           style={{
             fontSize: WORD_SIZE,
             letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-            opacity: dragging ? 0 : 0.9,
+            opacity: dragging ? 0 : reveal ? 0.95 : 0.4,
             transform: `scale(${dragging ? 0.3 : 1})`,
             transformOrigin: `${HOME.x}px ${HOME.y}px`,
             transition:
@@ -231,7 +231,7 @@ export function EarSelector({
           tabIndex={0}
           aria-label="mode"
           aria-valuemin={1}
-          aria-valuemax={3}
+          aria-valuemax={MODES.length}
           aria-valuenow={MODES.indexOf(mode) + 1}
           aria-valuetext={mode}
           onPointerDown={(e) => {
@@ -261,11 +261,11 @@ export function EarSelector({
             const i = MODES.indexOf(mode);
             if (e.key === "ArrowRight" || e.key === "ArrowDown") {
               e.preventDefault();
-              commit(MODES[(i + 1) % 3]!);
+              commit(MODES[(i + 1) % MODES.length]!);
             }
             if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
               e.preventDefault();
-              commit(MODES[(i + 2) % 3]!);
+              commit(MODES[(i + MODES.length - 1) % MODES.length]!);
             }
           }}
         />

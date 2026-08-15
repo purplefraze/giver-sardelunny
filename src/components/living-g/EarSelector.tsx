@@ -228,6 +228,7 @@ export function EarSelector({
     if (drag !== null && g?.moved) commit(nearestSeat(drag));
     else if (g && !g.moved) onTap?.();
     gesture.current = null;
+    dragRef.current = null;
     setDrag(null);
   };
 
@@ -247,7 +248,10 @@ export function EarSelector({
             pointerEvents="none"
             style={{
               opacity:
-                active || Math.abs(angle - SEAT_ANGLE[m]) < 0.22 ? 0 : 0.22,
+                active || Math.abs(shortest(angle, SEAT_ANGLE[m])) < 0.22
+                  ? 0
+                  : 0.22,
+
               transition: "opacity 200ms ease-out",
             }}
           />

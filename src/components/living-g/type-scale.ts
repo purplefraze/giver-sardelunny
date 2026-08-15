@@ -1,8 +1,10 @@
+import { LOOP_SAFE_RADIUS } from "./g-path";
+
 /**
  * ONE universal typography scale for everything that lives inside a Living G
- * loop. Sizes are expressed as ratios of the loop's safe inscribed radius, so
- * the same role reads with the same visual weight in every loop, on every
- * screen. Never hand-pick a font size on a page: pick a ROLE.
+ * loop. A role has ONE fixed size per loop — it is NEVER recalculated from the
+ * copy. Long copy wraps; it never shrinks. Never hand-pick a font size on a
+ * page: pick a ROLE.
  *
  *   action  — primary loop action word ("give", "wish", "grant", "borrow")
  *   message — primary loop message ("50 sparks are yours")
@@ -11,11 +13,21 @@
  */
 export type LoopTypeRole = "action" | "message" | "label" | "detail";
 
+export type LoopRegion = "top" | "middle" | "bottom";
+
 /**
- * Ideal starting size for the primary roles, as a share of the safe radius.
- * Deliberately confident: the loops are enormous, so primary copy should own
- * the negative space. The fitter only steps down when the chord demands it.
+ * Fixed primary size per loop, as a share of that loop's safe radius. The
+ * middle and bottom loops share ONE ratio, so a primary message reads with the
+ * same relationship to its loop everywhere. The small top loop only ever holds
+ * one or two short words, so it carries its own larger ratio.
  */
+export const LOOP_PRIMARY_RATIO: Record<LoopRegion, number> = {
+  top: 0.5,
+  middle: 0.28,
+  bottom: 0.28,
+};
+
+/** Kept for reference: the old "ideal" starting point of the removed fitter. */
 export const LOOP_IDEAL_RATIO = 0.66;
 
 /**
@@ -25,8 +37,9 @@ export const LOOP_IDEAL_RATIO = 0.66;
 export const LOOP_ACTION_RATIO = 0.54;
 
 /**
- * Profiles carry variable content, so they may flex — but only inside this
- * tightly controlled range of the ideal primary size.
+ * Profiles carry variable, user-entered content, so a profile stack may step
+ * DOWN from the fixed primary size inside this tightly controlled range — never
+ * up, and never per line.
  */
 export const LOOP_PROFILE_FLEX = { min: 0.82, max: 1 } as const;
 
@@ -54,3 +67,25 @@ export const LOOP_TEXT_FILL = "var(--world-text)";
 
 /** Minimum readable size before we wrap instead of shrinking further. */
 export const LOOP_MIN_SIZE = 13;
+
+/**
+ * THE fixed type token: one size per loop, per role. Computed once, at module
+ * load, from locked constants — never from the copy being rendered.
+ */
+export const LOOP_FIXED_SIZE: Record<LoopRegion, Record<LoopTypeRole, number>> = {
+  top: sizes("top"),
+  middle: sizes("middle"),
+  bottom: sizes("bottom"),
+};
+
+function sizes(region: LoopRegion): Record<LoopTypeRole, number> {
+  const primary = Math.round(LOOP_SAFE_RADIUS[region] * LOOP_PRIMARY_RATIO[region]);
+  const of = (role: LoopTypeRole) =>
+    Math.max(LOOP_MIN_SIZE, Math.round(primary * LOOP_ROLE_SIZE[role]));
+  return {
+    action: of("action"),
+    message: of("message"),
+    label: of("label"),
+    detail: of("detail"),
+  };
+}

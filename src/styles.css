@@ -256,32 +256,35 @@
   --world-accent: var(--giver-discovery);
 }
 
-/* Wish — purple G, green complement. */
+/* ---- THE FOUR MODE WORLDS. Each reads ONLY its own mode token. ---- */
+
+/* Wish — purple G, bright yellow type. */
 [data-world="wish"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-wish);
+  --world-g: var(--mode-wish);
   --world-ink: oklch(0.4 0.2 300);
-  --world-text: var(--giver-wish-complement);
+  --world-text: var(--mode-wish-complement);
   --world-accent: var(--giver-discovery);
 }
 
-/* Give — GREEN + WHITE ONLY for this pass. No black anywhere in give. */
+/* Give — green G on white, hot magenta type. */
 [data-world="give"] {
   --world-bg: oklch(1 0 0);
-  --world-g: var(--giver-profile);
+  --world-g: var(--mode-give);
   --world-ink: oklch(0.46 0.16 145);
-  --world-text: oklch(0.46 0.16 145);
-  --world-accent: var(--giver-profile);
+  --world-text: var(--mode-give-complement);
+  --world-accent: var(--mode-give);
 }
 
-/* Trade — red G, teal complement. */
+/* Trade — orange G, royal blue type. */
 [data-world="trade"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-trade);
-  --world-ink: oklch(0.44 0.19 27);
-  --world-text: var(--giver-trade-complement);
+  --world-g: var(--mode-trade);
+  --world-ink: oklch(0.44 0.16 48);
+  --world-text: var(--mode-trade-complement);
   --world-accent: var(--giver-discovery);
 }
+
 
 /* Onboarding — Giver speaking directly to a new user. Always the orange G. */
 [data-world="welcome"] {

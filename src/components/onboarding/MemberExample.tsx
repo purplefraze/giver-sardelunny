@@ -33,18 +33,11 @@ export function MemberExample({
   onDone: () => void;
 }) {
   const [deep, setDeep] = useState<Deep>(null);
-  const [cues, setCues] = useState(true);
 
   useEffect(() => {
     setDeep(null);
-    setCues(true);
   }, [member.id]);
 
-  useEffect(() => {
-    if (!cues) return;
-    const t = setTimeout(() => setCues(false), 4200);
-    return () => clearTimeout(t);
-  }, [cues]);
 
   const open = (d: Exclude<Deep, null>) => () => {
     buzz();

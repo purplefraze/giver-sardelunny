@@ -195,53 +195,77 @@
    Giver — world colour stories.
    One shape, one colour per area: GIVE orange, WISH purple,
    PROFILE/YOU green, TRADE red, COMMUNITY blue, DISCOVERY yellow.
+
+   Every world declares FOUR things and nothing else:
+     --world-bg    the paper
+     --world-g     the Living G colour
+     --world-ink   page furniture (identity, back arrow) — a deep tint of the G
+     --world-text  IN-LOOP TYPOGRAPHY = the G colour's complement, pulled to a
+                   readable lightness. This is the only colour text inside a
+                   loop may ever use.
    --------------------------------------------------------------- */
 
-/* Home / Giver — green, the same identity as You. */
+/* Home / Giver — green G, magenta complement. */
 [data-world="home"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-profile);
   --world-ink: oklch(0.42 0.14 145);
+  --world-text: oklch(0.44 0.19 330);
   --world-accent: var(--giver-discovery);
 }
 
-/* Wish — purple. */
+/* Wish — purple G, green complement. */
 [data-world="wish"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-wish);
   --world-ink: oklch(0.4 0.2 300);
+  --world-text: oklch(0.44 0.15 135);
   --world-accent: var(--giver-discovery);
 }
 
-/* Give — orange. */
+/* Give — orange G, blue complement. */
 [data-world="give"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-give);
   --world-ink: oklch(0.45 0.16 45);
+  --world-text: oklch(0.45 0.16 250);
   --world-accent: var(--giver-discovery);
 }
 
-/* Trade — red. */
+/* Trade — red G, teal complement. */
 [data-world="trade"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-trade);
   --world-ink: oklch(0.44 0.19 27);
+  --world-text: oklch(0.45 0.12 205);
   --world-accent: var(--giver-discovery);
 }
 
-/* Onboarding chapters — the same G, different expressions. */
+/* Onboarding — Giver speaking directly to a new user. Always the orange G. */
 [data-world="welcome"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-give);
   --world-ink: oklch(0.42 0.15 45);
+  --world-text: oklch(0.45 0.16 250);
   --world-accent: var(--giver-discovery);
 }
 
+/* Sparks that are the user's own — the Wish/self colour, purple. */
 [data-world="sparks"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-wish);
   --world-ink: oklch(0.4 0.2 300);
+  --world-text: oklch(0.44 0.15 135);
   --world-accent: oklch(0.72 0.19 305);
+}
+
+/* Sparks to gift — the giving colour for this prototype state, green. */
+[data-world="gift"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--giver-profile);
+  --world-ink: oklch(0.42 0.14 145);
+  --world-text: oklch(0.44 0.19 330);
+  --world-accent: var(--giver-discovery);
 }
 
 /* Meeting the community — blue, the Community colour. */
@@ -249,14 +273,16 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-community);
   --world-ink: oklch(0.4 0.15 255);
+  --world-text: oklch(0.46 0.11 75);
   --world-accent: var(--giver-discovery);
 }
 
-/* Role colour coding for people: GIVING yellow, WISHING blue, TRADING trade. */
+/* Role colour coding for people: GIVING yellow, WISHING blue, TRADING red. */
 [data-world="giving"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-discovery);
   --world-ink: oklch(0.52 0.15 85);
+  --world-text: oklch(0.44 0.16 285);
   --world-accent: var(--giver-give);
 }
 
@@ -264,6 +290,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-community);
   --world-ink: oklch(0.4 0.15 255);
+  --world-text: oklch(0.46 0.11 75);
   --world-accent: var(--giver-discovery);
 }
 
@@ -271,17 +298,16 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-trade);
   --world-ink: oklch(0.44 0.19 27);
+  --world-text: oklch(0.45 0.12 205);
   --world-accent: var(--giver-discovery);
 }
-
-
-
 
 /* Profile / You — green. */
 [data-world="profile"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-profile);
   --world-ink: oklch(0.4 0.14 145);
+  --world-text: oklch(0.44 0.19 330);
   --world-accent: var(--giver-discovery);
 }
 
@@ -290,6 +316,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-community);
   --world-ink: oklch(0.4 0.15 255);
+  --world-text: oklch(0.46 0.11 75);
   --world-accent: var(--giver-discovery);
 }
 

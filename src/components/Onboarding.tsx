@@ -4,6 +4,7 @@ import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
 import { MemberExample } from "@/components/onboarding/MemberExample";
 import { MEMBERS, type Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
+import { cn } from "@/lib/utils";
 
 /**
  * The opening of Giver. Giver speaks to the new user through the ORANGE Living

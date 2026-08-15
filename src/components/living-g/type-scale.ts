@@ -42,7 +42,7 @@ export const LOOP_IDEAL_RATIO = 0.66;
  * ONE scale for primary loop ACTION words, per loop, so "give" and "borrow"
  * always carry the same weight wherever they appear.
  */
-export const LOOP_ACTION_RATIO = 0.54;
+export const LOOP_ACTION_RATIO = 0.38;
 
 /**
  * PROFILE SAFE AREA — profile copy is variable and user-entered, so it lives
@@ -50,13 +50,13 @@ export const LOOP_ACTION_RATIO = 0.54;
  * coloured stroke; no profile line may ever cross it or the S-curve.
  */
 export const PROFILE_SAFE_INSET: Record<LoopRegion, number> = {
-  top: 0.8,
-  middle: 0.86,
-  bottom: 0.86,
+  top: 0.74,
+  middle: 0.74,
+  bottom: 0.72,
 };
 
 /** How wide a profile line may run inside its safe area, as a share of radius. */
-export const PROFILE_WRAP_FACTOR = 1.3;
+export const PROFILE_WRAP_FACTOR = 1.24;
 
 /**
  * THE fixed profile type scale, in px. EVERY profile uses these exact tokens —
@@ -70,9 +70,9 @@ export const PROFILE_TYPE: Record<
   LoopRegion,
   { answer: number; label: number; detail: number }
 > = {
-  top: { answer: 24, label: 13, detail: 18 },
-  middle: { answer: 35, label: 17, detail: 26 },
-  bottom: { answer: 54, label: 23, detail: 36 },
+  top: { answer: 20, label: 12, detail: 15 },
+  middle: { answer: 26, label: 14, detail: 19 },
+  bottom: { answer: 37, label: 18, detail: 26 },
 };
 
 /**

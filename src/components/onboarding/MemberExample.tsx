@@ -5,10 +5,9 @@ import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { clampField, profileLoop } from "@/components/living-g/profile-loop";
 import {
   HISTORY_STATES,
-  TopLoopSelector,
-  topLoopContent,
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
+import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
 import type { Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -26,6 +25,18 @@ type Deep = "history" | "about" | "activity" | null;
  * they are an example of. Borrow has no history seat in the prototype, so a
  * borrower simply rests on wishes.
  */
+/**
+ * THE SELECTOR STATES THE INTERACTION TYPE. A person's screen keeps the mode
+ * selector sitting at the seat that matches what they are doing, so the seat
+ * alone tells you: trade at ~4 o'clock, borrow at ~8 o'clock.
+ */
+const MEMBER_MODE: Record<Member["world"], Mode> = {
+  wishing: "wish",
+  giving: "give",
+  trading: "trade",
+  borrowing: "borrow",
+};
+
 const HISTORY_START: Record<Member["world"], TopLoopPosition> = {
   wishing: 0,
   giving: 1,
@@ -105,23 +116,17 @@ export function MemberExample({
           key={member.id}
           className={G_PRESENCE}
           showLabels
+          earCut
           overlay={
-            <TopLoopSelector
-              position={topPos}
-              onChange={setTopPos}
-              content={
-                <>
-                  {topLoopContent.photo(member.photo, member.id)}
-                  {topLoopContent.stateLabel(HISTORY_STATES[topPos])}
-                </>
-              }
+            <EarSelector
+              mode={MEMBER_MODE[member.world]}
+              onChange={() => {}}
+              locked
+              photo={member.photo}
+              onTap={open("history")}
             />
           }
           regions={{
-            top: {
-              onPress: open("history"),
-            },
-
             middle: {
               onPress: open("about"),
               render: (anchor) =>

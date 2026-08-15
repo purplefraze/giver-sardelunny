@@ -21,8 +21,8 @@ export function GStage({ children }: { children: React.ReactNode }) {
       <div
         className="pointer-events-auto"
         style={{
-          width: "min(96%, calc(94dvh * 576 / 1133))",
-          aspectRatio: "576 / 1133",
+          width: "min(96%, calc(94dvh * 756 / 1173))",
+          aspectRatio: "756 / 1173",
         }}
       >
         {children}

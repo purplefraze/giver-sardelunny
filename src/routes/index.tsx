@@ -149,11 +149,18 @@ function Index() {
    */
   const [teach, setTeach] = useState(true);
 
+  /**
+   * INSTRUCTIONAL COPY IS A CUE, NEVER FURNITURE. Entering, and every time the
+   * mode changes, the action words fade in, stay long enough to read
+   * comfortably, then fade away and leave the G clean again. Press and hold
+   * brings one back.
+   */
   useEffect(() => {
-    if (!entered || !teach) return;
-    const t = setTimeout(() => setTeach(false), 5200);
+    if (!entered) return;
+    setTeach(true);
+    const t = setTimeout(() => setTeach(false), 4200);
     return () => clearTimeout(t);
-  }, [entered, teach]);
+  }, [entered, mode]);
 
   /**
    * ONE source of truth for the only depth that exists: the router.
@@ -273,7 +280,7 @@ function Index() {
                   label: "",
                   panelTitle: "me",
                   panelBody: <p>{ME.name} — new to giver.</p>,
-                  render: ringPhoto(ME.photo, "me", 92),
+                  render: ringPhoto(ME.photo, "me", 66),
                 },
                 bottom: {
                   label: "about",

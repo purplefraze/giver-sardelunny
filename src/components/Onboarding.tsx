@@ -342,7 +342,7 @@ function ForwardCue({
  * rhythm — no typewriter, no popping. Reports when the whole thought has
  * settled, so what comes next can wait its turn.
  */
-function useSpeech(count: number, step = 620, settle = 700) {
+function useSpeech(count: number, step = 1100, settle = 1400) {
   const [shown, setShown] = useState(0);
   const [settled, setSettled] = useState(false);
 
@@ -397,7 +397,7 @@ function ChooseRecipient({
   onBack: () => void;
   onChoose: (m: Member) => void;
 }) {
-  const { shown, settled } = useSpeech(QUESTION.length);
+  const { shown, settled } = useSpeech(QUESTION.length, 1000, 1200);
 
   return (
     <div
@@ -454,13 +454,8 @@ function FirstGenerosity({
 }) {
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  const { shown, settled } = useSpeech(3, 1100, 900);
-
-  useEffect(() => {
-    if (!settled) return;
-    const t = setTimeout(() => setAsked(true), 1200);
-    return () => clearTimeout(t);
-  }, [settled]);
+  // MEANINGFUL BEAT: nothing advances on its own here. The user reads, then taps.
+  const { shown, settled } = useSpeech(3, 1500, 1600);
 
   if (asked) {
     return (
@@ -500,6 +495,7 @@ function FirstGenerosity({
       >
         50 sparks have now been given to {username}
       </Spoken>
+      <ForwardCue show={settled} label="continue" onClick={() => setAsked(true)} />
     </div>
   );
 }
@@ -516,7 +512,7 @@ function MessagingConsent({
   onAnswer: (yes: boolean) => void;
   onDone: () => void;
 }) {
-  const { shown } = useSpeech(2, 780, 500);
+  const { shown } = useSpeech(2, 1300, 900);
 
   return (
     <div

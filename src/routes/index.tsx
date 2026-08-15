@@ -29,33 +29,36 @@ const MY_HISTORY: string[][] = [
 /**
  * ONE LIVING G, FOUR MODES.
  * Mode never navigates: it only changes what the same persistent G holds.
- *   middle loop = mine in this mode
- *   bottom loop = the community in this mode
+ *
+ * ACTION GRAMMAR is the primary rule — the G reads as things you can DO, never
+ * as a filing system:
+ *   middle loop = what I initiate for myself   (make / offer / propose / borrow)
+ *   bottom loop = what I do for someone else   (grant / find / accept / lend)
  */
 const MODE_CONTENT: Record<
   Mode,
   {
-    /** What this mode is called in the plural: gives, wishes, trades, borrows. */
-    noun: string;
-    mine: { title: string; body: React.ReactNode };
-    community: { title: string; body: React.ReactNode };
+    /** The action lines that live inside each loop. */
+    mine: { action: string[]; title: string; body: React.ReactNode };
+    community: { action: string[]; title: string; body: React.ReactNode };
   }
 > = {
   wish: {
-    noun: "wishes",
     mine: {
-      title: "my wishes",
+      action: ["make", "a wish"],
+      title: "make a wish",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
     community: {
-      title: "community wishes",
+      action: ["grant", "a wish"],
+      title: "grant a wish",
       body: <>{COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>)}</>,
     },
   },
   give: {
-    noun: "gives",
     mine: {
-      title: "my gives",
+      action: ["offer", "something"],
+      title: "offer something",
       body: (
         <p className="opacity-70">
           share something you have, know, or can do.
@@ -63,20 +66,22 @@ const MODE_CONTENT: Record<
       ),
     },
     community: {
-      title: "community gives",
+      action: ["find", "something"],
+      title: "find something",
       body: <>{COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>)}</>,
     },
   },
   trade: {
-    noun: "trades",
     mine: {
-      title: "my trades",
+      action: ["propose", "a trade"],
+      title: "propose a trade",
       body: (
         <p className="opacity-70">offer something, ask for something back.</p>
       ),
     },
     community: {
-      title: "community trades",
+      action: ["accept", "a trade"],
+      title: "accept a trade",
       body: (
         <p className="opacity-70">
           open trades from the people nearby. coming next.
@@ -85,13 +90,14 @@ const MODE_CONTENT: Record<
     },
   },
   borrow: {
-    noun: "borrows",
     mine: {
-      title: "my borrows",
+      action: ["borrow", "something"],
+      title: "borrow something",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
     community: {
-      title: "community borrows",
+      action: ["lend", "something"],
+      title: "lend something",
       body: (
         <p className="opacity-70">
           what people nearby are happy to lend. coming next.
@@ -202,16 +208,16 @@ function Index() {
                 label: "",
                 panelTitle: content.mine.title,
                 panelBody: content.mine.body,
-                // MINE, for this mode — always inside the middle loop.
-                render: () => loopText({ region: "middle", lines: ["my", content.noun] }),
+                // WHAT I INITIATE — always inside the middle loop.
+                render: () => loopText({ region: "middle", lines: content.mine.action }),
               },
               bottom: {
                 label: "",
                 panelTitle: content.community.title,
                 panelBody: content.community.body,
-                // COMMUNITY, for this mode — always inside the bottom loop.
+                // WHAT I CAN DO FOR SOMEONE ELSE — inside the bottom loop.
                 render: () =>
-                  loopText({ region: "bottom", lines: ["community", content.noun] }),
+                  loopText({ region: "bottom", lines: content.community.action }),
               },
             }}
 

@@ -55,8 +55,8 @@ export function widthOf(text: string, size: number, role: LoopTypeRole) {
 
 
 /** Widest line a loop will accept before wrapping. */
-export function wrapWidth(region: LoopRegion) {
-  return LOOP_SAFE_RADIUS[region] * 1.75;
+export function wrapWidth(region: LoopRegion, factor = 1.75, inset = 1) {
+  return LOOP_SAFE_RADIUS[region] * inset * factor;
 }
 
 /** Half-chord of the safe circle at vertical distance `dy` from its centre. */
@@ -100,8 +100,10 @@ type StackRow = { text: string; size: number; role: LoopTypeRole; gap?: number }
 export function layoutStack(
   rows: StackRow[],
   region: LoopRegion,
+  /** Inset of the loop's safe circle this stack must stay inside. */
+  inset = 1,
 ): { rows: LaidOutRow[]; fits: boolean } {
-  const radius = LOOP_SAFE_RADIUS[region];
+  const radius = LOOP_SAFE_RADIUS[region] * inset;
   const total = rows.reduce(
     (sum, row, i) => sum + row.size * 1.02 + (i === 0 ? 0 : (row.gap ?? 0)),
     0,

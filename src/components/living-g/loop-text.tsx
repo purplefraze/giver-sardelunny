@@ -19,8 +19,14 @@ import { LOOP_FIXED_SIZE, LOOP_SIZE_STEPS } from "./type-scale";
 
 type Block = { text: string; role: "message" | "label" };
 
-/** Word fade: complete words, opacity only, G stationary. */
-export const LOOP_WORD_MS = 340;
+/**
+ * Word fade: complete words, opacity only, G stationary. Slow and soft — a word
+ * should feel like it is gently arriving, never popping in.
+ */
+export const LOOP_WORD_MS = 780;
+
+/** A gentle, almost linear-out curve. No overshoot, no snap. */
+export const LOOP_WORD_EASE = "cubic-bezier(0.32, 0, 0.24, 1)";
 
 export function loopText({
   region,
@@ -89,7 +95,7 @@ export function loopText({
             fontSize: row.size,
             letterSpacing: LOOP_ROLE_STYLE[row.role].tracking,
             opacity: LOOP_ROLE_STYLE[row.role].opacity,
-            animation: `g-fade ${LOOP_WORD_MS}ms var(--giver-ease) both`,
+            animation: `g-fade ${LOOP_WORD_MS}ms ${LOOP_WORD_EASE} both`,
           }}
         >
           {row.text}

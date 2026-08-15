@@ -31,10 +31,14 @@ type Beat = {
   hold?: number;
 };
 
-/** Calm rhythm: a word arrives, a beat passes, the next word arrives. */
-const WORD_BEAT = 480;
-const PHRASE_BEAT = 700;
-const COMPOSITION = 1900;
+/**
+ * Calm rhythm: a word gently arrives, it settles, and only then does the next
+ * word begin. Each value is a SETTLE time — the fade itself (LOOP_WORD_MS) runs
+ * underneath it, so consecutive words overlap softly rather than snapping.
+ */
+const WORD_BEAT = 900;
+const PHRASE_BEAT = 1150;
+const COMPOSITION = 2400;
 
 const OPENING: Beat[] = [
   // middle = spoken to me, bottom = the name of the thing itself, hero size.
@@ -60,7 +64,7 @@ const OPENING: Beat[] = [
     world: "welcome",
     middle: ["spark", "change"],
     bottom: ["kindness", "as", "currency"],
-    hold: 2200,
+    hold: 2800,
   },
 
   { world: "welcome", middle: ["to get", "you", "started..."], hold: COMPOSITION },
@@ -74,13 +78,13 @@ const OPENING: Beat[] = [
   },
 
   // ONE coordinated beat: the G turns green as the green words arrive.
-  { world: "gift", middle: ["50 sparks", "for you", "to wish"], hold: 1600 },
+  { world: "gift", middle: ["50 sparks", "for you", "to wish"], hold: 2100 },
   // The middle message HOLDS while the bottom half of the sparks appears.
   {
     world: "gift",
     middle: ["50 sparks", "for you", "to wish"],
     bottom: ["50 sparks", "for you", "to give"],
-    hold: 2300,
+    hold: 2900,
   },
   { world: "gift", top: ["so..."], middle: ["are you a"], hold: PHRASE_BEAT },
   {
@@ -285,7 +289,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     if (!last) return;
-    const t = setTimeout(() => setArrow(true), 1400);
+    const t = setTimeout(() => setArrow(true), 1800);
     return () => clearTimeout(t);
   }, [last]);
 

@@ -111,7 +111,7 @@ export function World({
       <GStage>
         <LivingG
           className={G_PRESENCE}
-          showLabels={false}
+          showLabels={teach}
           overlay={overlay}
           regions={{
             top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },

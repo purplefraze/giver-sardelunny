@@ -100,27 +100,46 @@ export const RHYTHM = {
  */
 export function LivingG({ regions, className, showLabels = true, overlay }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
-  /** The temporary word cue: appears on press, fades away on its own. */
+  /** The temporary word cue: revealed by a deliberate press-and-hold. */
   const [cue, setCue] = useState<RegionKey | null>(null);
   const cueTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** True once a hold has revealed a label, so release does not navigate. */
+  const revealed = useRef(false);
   const down = useRef<{ x: number; y: number } | null>(null);
-  const release = () => setPressed(null);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const release = () => {
+    setPressed(null);
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    // The word lingers a beat after the finger lifts, then softly dissolves.
+    if (revealed.current) {
+      if (cueTimer.current) clearTimeout(cueTimer.current);
+      cueTimer.current = setTimeout(() => setCue(null), RHYTHM.cueOut);
+    }
+  };
 
   useEffect(
     () => () => {
       if (cueTimer.current) clearTimeout(cueTimer.current);
+      if (holdTimer.current) clearTimeout(holdTimer.current);
       if (navTimer.current) clearTimeout(navTimer.current);
     },
     [],
   );
   const uid = useId().replace(/:/g, "");
 
-  const showCue = (key: RegionKey) => {
-    setCue(key);
-    if (cueTimer.current) clearTimeout(cueTimer.current);
-    cueTimer.current = setTimeout(() => setCue(null), RHYTHM.hold);
+  /** PRESS AND HOLD teaches the loop again — a soft fade, never a tooltip. */
+  const holdCue = (key: RegionKey) => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => {
+      revealed.current = true;
+      buzz(10);
+      if (cueTimer.current) clearTimeout(cueTimer.current);
+      setCue(key);
+    }, RHYTHM.holdReveal);
   };
+
 
   return (
     <svg

@@ -61,16 +61,24 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * from a true mirror so the whole piece — ring and stem — stays inside the
  * framed silhouette at rest, never off the edge of the screen.
  */
+/**
+ * Four seats on the one track, all inside the arc where the middle loop's rim
+ * is actually FREE. Below about 4 o'clock the rim is occupied by the S-curve
+ * and the bottom loop, so a seat there would bury the piece in the spine: the
+ * lower pair is raised into the clean arc instead. Travel is bounded by the
+ * outermost pair, and every seat keeps the whole piece inside the framed G.
+ */
 const SEAT_ANGLE: Record<Mode, number> = {
+  wish: rad(-126), // ~10 o'clock
+  borrow: rad(-88), // ~12 o'clock, raised clear of the spine
   give: rad(-44), // ~2 o'clock (canonical home)
-  wish: rad(-124), // ~10 o'clock
-  trade: rad(48), // ~4-4:30, raised out of the bottom
-  borrow: rad(124), // ~7:30-8, raised out of the bottom
+  trade: rad(28), // ~3-4 o'clock, raised clear of the S-curve
 };
 
 /** No free rotation: travel is bounded by the outermost pair of seats. */
 const ANGLE_MIN = SEAT_ANGLE.wish;
-const ANGLE_MAX = SEAT_ANGLE.borrow;
+const ANGLE_MAX = SEAT_ANGLE.trade;
+
 
 /** How near a seat (in radians of travel) counts as captured. */
 const CAPTURE = 0.34;

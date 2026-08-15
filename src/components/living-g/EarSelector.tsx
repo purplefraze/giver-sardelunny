@@ -229,15 +229,16 @@ export function EarSelector({
       </defs>
 
       {/*
-        The assembly's HOME, cleared through the very same stencil in the world
-        background, so the rim reads as a perfectly smooth curve the instant the
-        piece leaves it — and the canonical path underneath stays untouched.
+        The assembly's HOME, cleared through the very same stencil with a SOLID
+        disc of world background — not a second copy of the path, whose soft
+        edge could never fully cover the stacked artwork beneath and left a
+        faint outline behind. The rim is protected by the stencil, so the loop
+        reads as a perfectly smooth curve the instant the piece leaves home.
       */}
       <g mask={`url(#${uid}-piece)`}>
-        <g transform={LIVING_G_TRANSFORM} fill="var(--world-bg)">
-          <path d={LIVING_G_PATH} />
-        </g>
+        <circle cx={HOME.x} cy={HOME.y} r={EAR_R} fill="var(--world-bg)" />
       </g>
+
 
 
       {/* Subtle destination hints, seated on the rail itself. Never a drawn ring. */}

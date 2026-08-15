@@ -1,8 +1,16 @@
 import { GStage } from "@/components/living-g/GStage";
-import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
+import { G_PRESENCE, LivingG, type RegionKey } from "@/components/living-g/LivingG";
 import { loopText } from "@/components/living-g/loop-text";
 
-type LoopCopy = { kicker?: string; lines: string[] } | null;
+export type LoopCopy = {
+  kicker?: string;
+  lines: string[];
+  /** Per-loop presence, so one loop can hold while another changes. */
+  opacity?: number;
+};
+
+/** One coordinated beat: colour and copy always move together. */
+export const BEAT_MS = 700;
 
 /**
  * One onboarding chapter: the canonical full-screen Living G in a single bold
@@ -11,6 +19,7 @@ type LoopCopy = { kicker?: string; lines: string[] } | null;
  */
 export function IntroG({
   world,
+  top,
   middle,
   bottom,
   onAdvance,
@@ -18,17 +27,37 @@ export function IntroG({
   children,
 }: {
   world: string;
-  middle?: LoopCopy;
-  bottom?: LoopCopy;
+  top?: LoopCopy | undefined;
+  middle?: LoopCopy | undefined;
+  bottom?: LoopCopy | undefined;
   onAdvance?: (() => void) | undefined;
   /** Gentle fade of the words inside the loops. The G itself never moves. */
   copyOpacity?: number;
   children?: React.ReactNode;
 }) {
-  const fade = {
-    opacity: copyOpacity,
-    transition: "opacity 600ms var(--giver-ease)",
-  } as const;
+  const region = (key: RegionKey, copy: LoopCopy | undefined) => {
+    if (!copy) return {};
+    return {
+      [key]: {
+        render: (anchor: { x: number; y: number }) => (
+          <g
+            style={{
+              opacity: (copy.opacity ?? 1) * copyOpacity,
+              transition: `opacity ${BEAT_MS}ms var(--giver-ease)`,
+            }}
+          >
+            {loopText({
+              anchor,
+              region: key,
+              ...(copy.kicker ? { kicker: copy.kicker } : {}),
+              lines: copy.lines,
+            })}
+          </g>
+        ),
+      },
+    };
+  };
+
   return (
     <div
       data-world={world}
@@ -36,54 +65,29 @@ export function IntroG({
       style={{
         background: "var(--world-bg)",
         color: "var(--world-ink)",
-        transition: "background-color 700ms var(--giver-ease)",
+        transition: `background-color ${BEAT_MS}ms var(--giver-ease)`,
       }}
       onClick={onAdvance}
     >
       <GStage>
-        <div className="h-full w-full [&_path]:transition-[fill] [&_path]:duration-[700ms] [&_path]:ease-[cubic-bezier(0.22,1,0.36,1)]">
-          <LivingG
-            className={G_PRESENCE}
-            showLabels={false}
-            regions={{
-              ...(middle
-                ? {
-                    middle: {
-                      render: (anchor) => (
-                        <g style={fade}>
-                          {loopText({
-                            anchor,
-                            region: "middle",
-                            ...(middle.kicker ? { kicker: middle.kicker } : {}),
-                            lines: middle.lines,
-                          })}
-                        </g>
-                      ),
-                    },
-                  }
-                : {}),
-              ...(bottom
-                ? {
-                    bottom: {
-                      render: (anchor) => (
-                        <g style={fade}>
-                          {loopText({
-                            anchor,
-                            region: "bottom",
-                            ...(bottom.kicker ? { kicker: bottom.kicker } : {}),
-                            lines: bottom.lines,
-                          })}
-                        </g>
-                      ),
-                    },
-                  }
-                : {}),
-            }}
-          />
+        <div
+          className="h-full w-full [&_path]:ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ ["--beat" as string]: `${BEAT_MS}ms` }}
+        >
+          <div className="h-full w-full [&_path]:transition-[fill] [&_path]:duration-[700ms]">
+            <LivingG
+              className={G_PRESENCE}
+              showLabels={false}
+              regions={{
+                ...region("top", top),
+                ...region("middle", middle),
+                ...region("bottom", bottom),
+              }}
+            />
+          </div>
         </div>
       </GStage>
       {children}
     </div>
   );
 }
-

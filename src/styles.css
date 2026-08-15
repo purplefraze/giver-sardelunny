@@ -244,13 +244,13 @@
   --world-accent: var(--giver-discovery);
 }
 
-/* Give — orange G, blue complement. */
+/* Give — GREEN + WHITE ONLY for this pass. No black anywhere in give. */
 [data-world="give"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--giver-give);
-  --world-ink: oklch(0.45 0.16 45);
-  --world-text: var(--giver-give-complement);
-  --world-accent: var(--giver-discovery);
+  --world-bg: oklch(1 0 0);
+  --world-g: var(--giver-profile);
+  --world-ink: oklch(0.46 0.16 145);
+  --world-text: oklch(0.46 0.16 145);
+  --world-accent: var(--giver-profile);
 }
 
 /* Trade — red G, teal complement. */

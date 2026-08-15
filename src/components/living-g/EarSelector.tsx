@@ -321,13 +321,15 @@ export function EarSelector({
         aria-valuetext={mode}
         onPointerDown={(e) => {
           e.stopPropagation();
-          (e.target as SVGElement).setPointerCapture?.(e.pointerId);
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
+          // LOCKED: the seat only STATES the mode; it cannot be dragged.
+          if (locked) return;
+          (e.target as SVGElement).setPointerCapture?.(e.pointerId);
           setDrag(grab?.angle ?? restAngle);
         }}
         onPointerMove={(e) => {
-          if (drag === null) return;
+          if (locked || drag === null) return;
           e.stopPropagation();
           const move = angleFrom(e);
           if (!move) return;

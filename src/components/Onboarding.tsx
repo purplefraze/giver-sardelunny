@@ -21,46 +21,85 @@ type Stage = "opening" | "meet-intro" | "meet" | "choose" | "celebrate";
 
 type Loop = "top" | "middle" | "bottom";
 
-/** One beat of the opening: which G, and which loops speak. */
+/** One beat of the opening: which G, which loops speak, and how long it holds. */
 type Beat = {
   world: string;
   top?: string[];
   middle?: string[];
   bottom?: string[];
+  /** How long this composition holds before the next beat. */
+  hold?: number;
 };
 
+/** Calm rhythm: a word arrives, a beat passes, the next word arrives. */
+const WORD_BEAT = 480;
+const PHRASE_BEAT = 700;
+const COMPOSITION = 1900;
+
 const OPENING: Beat[] = [
-  // middle = spoken to me, bottom = the name of the thing itself, large.
-  { world: "welcome", middle: ["welcome to"], bottom: ["giver"] },
+  // middle = spoken to me, bottom = the name of the thing itself, hero size.
+  { world: "welcome", middle: ["welcome to"], hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["welcome to"], bottom: ["giver"], hold: COMPOSITION },
+
+  // "spark change", one word at a time — then the promise beneath it.
+  { world: "welcome", middle: ["spark"], hold: WORD_BEAT },
+  { world: "welcome", middle: ["spark", "change"], hold: PHRASE_BEAT },
+  {
+    world: "welcome",
+    middle: ["spark", "change"],
+    bottom: ["kindness"],
+    hold: WORD_BEAT,
+  },
+  {
+    world: "welcome",
+    middle: ["spark", "change"],
+    bottom: ["kindness", "as"],
+    hold: WORD_BEAT,
+  },
   {
     world: "welcome",
     middle: ["spark", "change"],
     bottom: ["kindness", "as", "currency"],
+    hold: 2200,
   },
-  { world: "welcome", middle: ["to get you", "started..."] },
+
+  { world: "welcome", middle: ["to get you", "started..."], hold: COMPOSITION },
+
+  { world: "welcome", middle: ["here's", "100 sparks", "from"], hold: PHRASE_BEAT },
   {
     world: "welcome",
     middle: ["here's", "100 sparks", "from"],
     bottom: ["giver"],
+    hold: COMPOSITION,
   },
+
   // ONE coordinated beat: the G turns green as the green words arrive.
-  { world: "gift", middle: ["50 sparks", "for you", "to wish"] },
+  { world: "gift", middle: ["50 sparks", "for you", "to wish"], hold: 1600 },
   // The middle message HOLDS while the bottom half of the sparks appears.
   {
     world: "gift",
     middle: ["50 sparks", "for you", "to wish"],
     bottom: ["50 sparks", "for you", "to give"],
+    hold: 2300,
   },
-  { world: "gift", top: ["so..."], middle: ["are you a"], bottom: ["giver?"] },
+  { world: "gift", top: ["so..."], middle: ["are you a"], hold: PHRASE_BEAT },
+  {
+    world: "gift",
+    top: ["so..."],
+    middle: ["are you a"],
+    bottom: ["giver?"],
+  },
 ];
 
-/** Straight into the people. */
+/** Straight into the people: the phrase builds, then the hero word lands. */
 const MEET_INTRO: Beat[] = [
+  { world: "meet", middle: ["meet four"], hold: PHRASE_BEAT },
   { world: "meet", middle: ["meet four"], bottom: ["givers"] },
 ];
 
 
-const HOLD = 3000;
+const HOLD = COMPOSITION;
+
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
   giving: "var(--giver-discovery)",

@@ -6,25 +6,46 @@ import { MEMBERS, type Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 
 /**
- * The opening of Giver. ONE orange Living G speaks on warm off-white paper:
- * it never moves, never resizes, never changes colour. Only the words in its
- * bottom loop change. Then we meet three people, each in their role colour.
+ * The opening of Giver. Giver speaks to the new user through the ORANGE Living
+ * G on warm off-white paper — orange IS the admin voice. The G never moves and
+ * never resizes; only the words inside its loops change, and the colour shifts
+ * only when the MEANING shifts:
+ *
+ *   orange  — Giver speaking
+ *   purple  — sparks that are yours (your own wishes / participation)
+ *   green   — sparks that are yours to gift (what you put into the community)
+ *
+ * Space carries meaning too: MIDDLE loop = me, BOTTOM loop = the community.
  */
 type Stage = "opening" | "meet-intro" | "meet" | "choose" | "celebrate";
 
-/** Each opening message: ~3s on screen, gentle fade between. */
-const OPENING: string[][] = [
-  ["Welcome to", "Giver"],
-  ["Kindness is", "currency"],
-  ["To start", "you off"],
-  ["Here's", "100 Sparks"],
-  ["50 Sparks", "are yours"],
-  ["50 Sparks", "are yours", "to gift"],
-  ["Are you", "a Giver?"],
+/** One beat of the opening: which G, and which loops speak. */
+type Beat = {
+  world: string;
+  middle?: string[];
+  bottom?: string[];
+};
+
+const OPENING: Beat[] = [
+  { world: "welcome", bottom: ["welcome to", "giver"] },
+  { world: "welcome", bottom: ["kindness is", "currency"] },
+  // "to start you off" is addressed to the user: the middle loop is me.
+  { world: "welcome", middle: ["to start", "you off"] },
+  // Sparks are introduced as a gift into the world: the bottom loop.
+  { world: "welcome", bottom: ["here's", "100 sparks"] },
+  // Mine to use — the wish/self colour.
+  { world: "sparks", middle: ["50 sparks", "are yours"] },
+  // Mine to give away — the giving colour, taught spatially.
+  {
+    world: "gift",
+    middle: ["50 sparks", "are yours"],
+    bottom: ["50 sparks", "are yours", "to gift"],
+  },
+  { world: "welcome", bottom: ["are you", "a giver?"] },
 ];
 
-/** Straight into the people — no "someone giving / wishing / trading". */
-const MEET_INTRO: string[][] = [["Meet three", "Givers"]];
+/** Straight into the people. */
+const MEET_INTRO: Beat[] = [{ world: "meet", bottom: ["meet three", "givers"] }];
 
 const HOLD = 3000;
 const FADE = 600;
@@ -35,8 +56,8 @@ const ROLE_COLOUR: Record<Member["world"], string> = {
   trading: "var(--giver-trade)",
 };
 
-/** Plays a list of messages in one loop: fade in, hold, fade out. */
-function useMessages(script: string[][], onEnd: () => void, active: boolean) {
+/** Plays a list of beats in one loop: fade in, hold, fade out. */
+function useBeats(script: Beat[], active: boolean) {
   const [i, setI] = useState(0);
   const [shown, setShown] = useState(true);
   const last = i === script.length - 1;
@@ -60,7 +81,7 @@ function useMessages(script: string[][], onEnd: () => void, active: boolean) {
     };
   }, [active, i, last, script]);
 
-  return { lines: script[i]!, opacity: shown ? 1 : 0, last, onEnd };
+  return { beat: script[i]!, opacity: shown ? 1 : 0, last };
 }
 
 export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {
@@ -124,10 +145,10 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         }}
       />
       <h1
-        className="text-[13vw] font-black uppercase leading-[0.82] tracking-[-0.05em] animate-[fade-up_500ms_ease-out]"
+        className="text-[13vw] font-black lowercase leading-[0.82] tracking-[-0.05em] animate-[fade-up_500ms_ease-out]"
         style={{ color: "var(--giver-profile)" }}
       >
-        Give your
+        give your
         <br />
         50.
       </h1>
@@ -141,7 +162,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
               setChosen(m);
               setStage("celebrate");
             }}
-            className="text-left text-[14vw] font-black uppercase leading-[0.9] tracking-[-0.05em] transition-transform active:scale-95"
+            className="text-left text-[14vw] font-black lowercase leading-[0.9] tracking-[-0.05em] transition-transform active:scale-95"
             style={{ color: ROLE_COLOUR[m.world] }}
           >
             {m.username}
@@ -152,9 +173,9 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   );
 }
 
-/** The orange G, speaking. Copy lives only in the bottom loop. */
+/** Giver, speaking. The colour follows the meaning, never the page. */
 function OpeningSequence({ onDone }: { onDone: () => void }) {
-  const { lines, opacity, last } = useMessages(OPENING, onDone, true);
+  const { beat, opacity, last } = useBeats(OPENING, true);
   const [arrow, setArrow] = useState(false);
 
   useEffect(() => {
@@ -164,15 +185,20 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   }, [last]);
 
   return (
-    <IntroG world="welcome" bottom={{ lines }} copyOpacity={opacity}>
-      <ForwardCue show={last && arrow} label="Yes — meet three Givers" onClick={onDone} />
+    <IntroG
+      world={beat.world}
+      {...(beat.middle ? { middle: { lines: beat.middle } } : {})}
+      {...(beat.bottom ? { bottom: { lines: beat.bottom } } : {})}
+      copyOpacity={opacity}
+    >
+      <ForwardCue show={last && arrow} label="yes — meet three givers" onClick={onDone} />
     </IntroG>
   );
 }
 
 /** One line, then straight into the people. */
 function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
-  const { lines, opacity, last } = useMessages(MEET_INTRO, onDone, true);
+  const { beat, opacity, last } = useBeats(MEET_INTRO, true);
 
   useEffect(() => {
     if (!last) return;
@@ -181,9 +207,13 @@ function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void 
   }, [last, onDone]);
 
   return (
-    <IntroG world="welcome" bottom={{ lines }} copyOpacity={opacity}>
+    <IntroG
+      world={beat.world}
+      {...(beat.bottom ? { bottom: { lines: beat.bottom } } : {})}
+      copyOpacity={opacity}
+    >
       <BackArrow onClick={onBack} />
-      <ForwardCue show label="Meet them" onClick={onDone} />
+      <ForwardCue show label="meet them" onClick={onDone} />
     </IntroG>
   );
 }
@@ -226,14 +256,14 @@ function Celebration({ username, onDone }: { username: string; onDone: () => voi
       className="relative flex h-full w-full flex-col overflow-hidden px-7 pt-20"
       style={{ background: "var(--giver-paper)", color: "var(--giver-profile)" }}
     >
-      <h1 className="text-[19vw] font-black uppercase leading-[0.78] tracking-[-0.06em] animate-[fade-up_500ms_ease-out]">
-        Yippee!
+      <h1 className="text-[19vw] font-black lowercase leading-[0.78] tracking-[-0.06em] animate-[fade-up_500ms_ease-out]">
+        yippee!
       </h1>
-      <p className="mt-8 max-w-[15ch] text-[7.5vw] font-black uppercase leading-[0.92] tracking-[-0.04em] animate-[fade-up_600ms_250ms_ease-out_both]">
-        You just made your first act of generosity on Giver.
+      <p className="mt-8 max-w-[15ch] text-[7.5vw] font-black lowercase leading-[0.92] tracking-[-0.04em] animate-[fade-up_600ms_250ms_ease-out_both]">
+        you just made your first act of generosity on giver.
       </p>
-      <p className="mt-7 max-w-[16ch] text-[5.5vw] font-black uppercase leading-[0.95] tracking-[-0.03em] opacity-70 animate-[fade-up_600ms_500ms_ease-out_both]">
-        50 Sparks have been gifted to {username}.
+      <p className="mt-7 max-w-[16ch] text-[5.5vw] font-black lowercase leading-[0.95] tracking-[-0.03em] opacity-70 animate-[fade-up_600ms_500ms_ease-out_both]">
+        50 sparks have been gifted to {username}.
       </p>
       <button
         type="button"
@@ -241,10 +271,10 @@ function Celebration({ username, onDone }: { username: string; onDone: () => voi
           buzz();
           onDone();
         }}
-        className="mt-auto mb-10 self-center text-[8vw] font-black uppercase leading-none tracking-[-0.04em] underline decoration-[0.1em] underline-offset-[0.18em] transition-transform active:scale-95 animate-[fade-up_600ms_750ms_ease-out_both]"
+        className="mt-auto mb-10 self-center text-[8vw] font-black lowercase leading-none tracking-[-0.04em] underline decoration-[0.1em] underline-offset-[0.18em] transition-transform active:scale-95 animate-[fade-up_600ms_750ms_ease-out_both]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        Enter Giver →
+        enter giver →
       </button>
     </div>
   );

@@ -56,11 +56,9 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * Four seats on the one track, all inside the arc where the middle loop's rim
- * is actually FREE. Below about 4 o'clock the rim is occupied by the S-curve
- * and the bottom loop, so a seat there would bury the piece in the spine: the
- * lower pair is raised into the clean arc instead. Travel is bounded by the
- * outermost pair, and every seat keeps the whole piece inside the framed G.
+ * Four seats on the one track. TWO MIRRORED PAIRS, and the track is CONTINUOUS:
+ * there is no forbidden arc, so every seat can be reached by dragging either
+ * way around the loop.
  */
 const SEAT_ANGLE: Record<Mode, number> = {
   // UPPER PAIR — mirrored about the vertical axis through the loop's centre.
@@ -71,15 +69,24 @@ const SEAT_ANGLE: Record<Mode, number> = {
   borrow: rad(150), // ~8 o'clock
 };
 
-/** No free rotation: travel is bounded by the outermost pair of seats. */
-const ANGLE_MIN = SEAT_ANGLE.wish;
-const ANGLE_MAX = SEAT_ANGLE.borrow;
+const TAU = Math.PI * 2;
 
+/** Shortest signed distance from `a` to `b` on the circle: never a 358° jump. */
+const shortest = (a: number, b: number) => {
+  let d = (b - a) % TAU;
+  if (d > Math.PI) d -= TAU;
+  if (d < -Math.PI) d += TAU;
+  return d;
+};
+
+/**
+ * WRAP-AWARE UNWRAP: express `next` as the value nearest `ref` on the
+ * continuous line, so crossing +179° -> -179° reads as a 2° move.
+ */
+const unwrap = (ref: number, next: number) => ref + shortest(ref, next);
 
 /** How near a seat (in radians of travel) counts as captured. */
 const CAPTURE = 0.34;
-
-const clampAngle = (a: number) => Math.min(ANGLE_MAX, Math.max(ANGLE_MIN, a));
 
 /** A point on the track at a given angle, at any radius. */
 const at = (angle: number, r: number): P => ({
@@ -87,11 +94,12 @@ const at = (angle: number, r: number): P => ({
   y: TRACK_C.y + r * Math.sin(angle),
 });
 
+/** Nearest seat measured AROUND the circle, so the ±180° seam is not a wall. */
 function nearestSeat(angle: number): Mode {
   let best: Mode = "give";
   let bestD = Infinity;
   for (const m of MODES) {
-    const d = Math.abs(angle - SEAT_ANGLE[m]);
+    const d = Math.abs(shortest(angle, SEAT_ANGLE[m]));
     if (d < bestD) {
       bestD = d;
       best = m;
@@ -99,6 +107,7 @@ function nearestSeat(angle: number): Mode {
   }
   return best;
 }
+
 
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -126,19 +135,25 @@ export function EarSelector({
   const last = useRef<Mode>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
+  /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
+  const dragRef = useRef<number | null>(null);
 
   /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
 
-  let target = restAngle;
-  if (drag !== null) {
-    const seat = SEAT_ANGLE[nearestSeat(drag)];
-    const pull = Math.max(0, 1 - Math.abs(drag - seat) / CAPTURE) * 0.55;
-    target = clampAngle(drag + (seat - drag) * pull);
-  }
-
   const [angle, setAngle] = useState(restAngle);
   const angleRef = useRef(angle);
+
+  // Rest and magnet targets are always the nearest equivalent angle AROUND the
+  // circle, so settling takes the short way and never spins the long way.
+  let target = unwrap(angleRef.current, restAngle);
+  if (drag !== null) {
+    const seat = unwrap(drag, SEAT_ANGLE[nearestSeat(drag)]);
+    const pull = Math.max(0, 1 - Math.abs(seat - drag) / CAPTURE) * 0.55;
+    target = drag + (seat - drag) * pull;
+  }
+
+
   const targetRef = useRef(target);
   targetRef.current = target;
   const raf = useRef<number | null>(null);
@@ -181,12 +196,16 @@ export function EarSelector({
     p.x = e.clientX;
     p.y = e.clientY;
     const local = p.matrixTransform(ctm.inverse());
+    const raw = Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x);
     return {
       point: { x: local.x, y: local.y } as P,
-      // FINGER FREE, SELECTOR RAILED: only the angle is taken from the finger.
-      angle: clampAngle(Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x)),
+      // FINGER FREE, SELECTOR RAILED: only the angle is taken from the finger —
+      // and it is UNWRAPPED against the gesture's own continuous angle, so the
+      // ±180° seam is a 1° step, never a wall and never a 358° jump.
+      angle: unwrap(dragRef.current ?? angleRef.current, raw),
     };
   };
+
 
   const commit = (next: Mode) => {
     if (next !== last.current) {
@@ -209,6 +228,7 @@ export function EarSelector({
     if (drag !== null && g?.moved) commit(nearestSeat(drag));
     else if (g && !g.moved) onTap?.();
     gesture.current = null;
+    dragRef.current = null;
     setDrag(null);
   };
 
@@ -228,7 +248,10 @@ export function EarSelector({
             pointerEvents="none"
             style={{
               opacity:
-                active || Math.abs(angle - SEAT_ANGLE[m]) < 0.22 ? 0 : 0.22,
+                active || Math.abs(shortest(angle, SEAT_ANGLE[m])) < 0.22
+                  ? 0
+                  : 0.22,
+
               transition: "opacity 200ms ease-out",
             }}
           />
@@ -326,7 +349,9 @@ export function EarSelector({
           // LOCKED: the seat only STATES the mode; it cannot be dragged.
           if (locked) return;
           (e.target as SVGElement).setPointerCapture?.(e.pointerId);
-          setDrag(grab?.angle ?? restAngle);
+          const a = grab?.angle ?? angleRef.current;
+          dragRef.current = a;
+          setDrag(a);
         }}
         onPointerMove={(e) => {
           if (locked || drag === null) return;
@@ -335,11 +360,13 @@ export function EarSelector({
           if (!move) return;
           const g = gesture.current;
           if (g && !g.moved && dist(move.point, g.start) > 14) g.moved = true;
+          dragRef.current = move.angle;
           setDrag(move.angle);
           if (!g?.moved) return;
           const near = nearestSeat(move.angle);
-          if (Math.abs(move.angle - SEAT_ANGLE[near]) < 0.2) commit(near);
+          if (Math.abs(shortest(move.angle, SEAT_ANGLE[near])) < 0.2) commit(near);
         }}
+
         onPointerUp={(e) => {
           e.stopPropagation();
           end();

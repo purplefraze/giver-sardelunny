@@ -12,10 +12,18 @@ import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
   LIVING_G_VIEWBOX,
-  LOOP_SAFE_RADIUS,
+  
 } from "./g-path";
 
-import { LOOP_ACTION_RATIO, LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
+import {
+  ACTION_LINE_HEIGHT,
+  ACTION_SIZE,
+  ACTION_WRAP_FACTOR,
+  LOOP_ROLE_STYLE,
+  LOOP_TEXT_FILL,
+} from "./type-scale";
+import { loopOrigin, wrapLines, wrapWidth } from "./loop-layout";
+
 
 /**
  * The one canonical presence of a full-size Living G on any screen.
@@ -67,25 +75,32 @@ const FALLOFF: Record<RegionKey, number> = {
 
 
 /**
- * Where a region's word cue sits: inside the negative space of its own loop,
- * lifted above the point of contact so a finger never covers it.
+ * How far a region's action copy is lifted inside its own loop, so a finger
+ * never covers it. The CENTRE always comes from the loop itself (loopOrigin).
  */
-const LABEL_ANCHORS: Record<RegionKey, Anchor> = {
-  top: G_ANCHORS.smallRing,
-  middle: { x: G_ANCHORS.upperRing.x, y: G_ANCHORS.upperRing.y - 32 },
-  bottom: { x: G_ANCHORS.lowerRing.x, y: G_ANCHORS.lowerRing.y - 46 },
+const LABEL_LIFT: Record<RegionKey, number> = {
+  top: 0,
+  middle: 32,
+  bottom: 46,
 };
 
+
 /**
- * Primary loop ACTION words ("give", "wish", "grant", "discover"). One scale,
- * derived from each loop's safe radius so equivalent actions always carry
- * equivalent weight — substantial next to a full-screen G, never tiny labels.
+ * PRIMARY MODE ACTION COPY — ONE fixed token per loop, from type-scale.ts.
+ * Every middle-loop action ("make a wish", "propose a trade") renders at the
+ * same size, and so does every bottom-loop action. Copy that is too long WRAPS
+ * at the loop's own line width; the size NEVER changes with the words.
  */
-const LABEL_SIZE: Record<RegionKey, number> = {
-  top: Math.round(LOOP_SAFE_RADIUS.top * LOOP_ACTION_RATIO),
-  middle: Math.round(LOOP_SAFE_RADIUS.middle * LOOP_ACTION_RATIO),
-  bottom: Math.round(LOOP_SAFE_RADIUS.bottom * LOOP_ACTION_RATIO),
-};
+const LABEL_SIZE: Record<RegionKey, number> = ACTION_SIZE;
+
+/** Where an action's lines may run before wrapping, per loop. */
+const actionWrap = (key: RegionKey) => wrapWidth(key, ACTION_WRAP_FACTOR);
+
+/** Lines of an action, wrapped at the fixed token — never resized. */
+function actionLines(label: string, key: RegionKey) {
+  return wrapLines(label, LABEL_SIZE[key], actionWrap(key), "action");
+}
+
 
 /**
  * ONE interaction rhythm for every Living G, everywhere.
@@ -289,8 +304,11 @@ export function LivingG({
         if (!region) return null;
         const isPressed = pressed === key;
         const ring = RING[key];
-        const label = LABEL_ANCHORS[key];
-        const words = (region.label ?? "").split(" ");
+        // OPTICALLY CENTRED ON ITS OWN LOOP — never the page, the SVG or the
+        // selector frame. Lifted a little so a fingertip cannot cover it.
+        const origin = loopOrigin(key, LABEL_LIFT[key]);
+        const lines = region.label ? actionLines(region.label, key) : [];
+        const line = LABEL_SIZE[key] * ACTION_LINE_HEIGHT;
 
         return (
           <g key={`content-${key}`} pointerEvents="none">
@@ -303,10 +321,10 @@ export function LivingG({
             >
               {region.render?.(ring)}
             </g>
-            {region.label ? (
+            {lines.length ? (
               <text
-                x={label.x}
-                y={label.y - ((words.length - 1) * LABEL_SIZE[key]) / 2}
+                x={origin.x}
+                y={origin.y - ((lines.length - 1) * line) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={LOOP_TEXT_FILL}
@@ -320,17 +338,14 @@ export function LivingG({
                   }ms ease-out`,
                 }}
               >
-                {words.map((word, i) => (
-                  <tspan
-                    key={word + i}
-                    x={label.x}
-                    dy={i === 0 ? 0 : LABEL_SIZE[key]}
-                  >
-                    {word}
+                {lines.map((text, i) => (
+                  <tspan key={text + i} x={origin.x} dy={i === 0 ? 0 : line}>
+                    {text}
                   </tspan>
                 ))}
               </text>
             ) : null}
+
 
           </g>
         );

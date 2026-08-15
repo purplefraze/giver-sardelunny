@@ -45,6 +45,26 @@ export const LOOP_IDEAL_RATIO = 0.66;
 export const LOOP_ACTION_RATIO = 0.38;
 
 /**
+ * THE PRIMARY MODE ACTION TOKENS — the single sizing source for the persistent
+ * workspace's action copy ("make a wish", "grant a wish", "propose a trade"…).
+ *
+ * FIXED per loop, measured as a share of that loop's safe radius so it scales
+ * with the G and never with the words: every middle-loop action renders at the
+ * same size, and every bottom-loop action renders at the same size. Long copy
+ * WRAPS at ACTION_WRAP; it is never shrunk to fit.
+ */
+export const ACTION_SIZE: Record<LoopRegion, number> = {
+  top: Math.round(LOOP_SAFE_RADIUS.top * 0.5),
+  middle: Math.round(LOOP_SAFE_RADIUS.middle * 0.4),
+  bottom: Math.round(LOOP_SAFE_RADIUS.bottom * 0.44),
+};
+
+/** Line box of an action line, and how wide a line may run before wrapping. */
+export const ACTION_LINE_HEIGHT = 1.06;
+export const ACTION_WRAP_FACTOR = 1.68;
+
+
+/**
  * PROFILE SAFE AREA — profile copy is variable and user-entered, so it lives
  * inside an explicit INSET of the loop's safe circle. Generous padding from the
  * coloured stroke; no profile line may ever cross it or the S-curve.

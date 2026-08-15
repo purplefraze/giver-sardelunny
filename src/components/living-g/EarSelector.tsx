@@ -145,11 +145,8 @@ export function EarSelector({
     }
   };
 
-  /** Mirror the ear once it lives on the left, so the G reads as reconfigured. */
-  const mirrored = mode === "borrow" && !dragging;
-  const flip = mirrored
-    ? ` translate(${HOME.x},${HOME.y}) scale(-1,1) translate(${-HOME.x},${-HOME.y})`
-    : "";
+
+
 
   return (
     <g>

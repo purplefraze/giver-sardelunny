@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
-import { loopText } from "@/components/living-g/loop-text";
+import { clampField, profileLoop } from "@/components/living-g/profile-loop";
 import {
   TopLoopSelector,
   topLoopContent,

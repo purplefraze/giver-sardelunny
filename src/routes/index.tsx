@@ -117,6 +117,17 @@ function Index() {
               active={top === "profile"}
               identity="You"
               onBack={pop}
+              overlay={
+                <TopLoopSelector
+                  position={myTopPos}
+                  onChange={setMyTopPos}
+                  states={[
+                    topLoopContent.photo(ME.photo, "me-top"),
+                    topLoopContent.sparks(gaveTo ? 50 : 100),
+                    topLoopContent.placeholder(),
+                  ]}
+                />
+              }
               regions={{
                 top: {
                   label: "Activity",

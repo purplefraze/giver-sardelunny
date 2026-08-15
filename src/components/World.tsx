@@ -27,6 +27,8 @@ type Props = {
   onBack?: () => void;
   /** False while this world is not the top of the navigation stack. */
   active?: boolean;
+  /** Interactive layer drawn above the Living G (e.g. top-loop selector). */
+  overlay?: React.ReactNode;
   children?: React.ReactNode;
 };
 
@@ -40,6 +42,7 @@ export function World({
   onLocked,
   onBack,
   active = true,
+  overlay,
   children,
 }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
@@ -100,6 +103,7 @@ export function World({
         <LivingG
           className={G_PRESENCE}
           showLabels={false}
+          overlay={overlay}
           regions={{
             top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },
             middle: {

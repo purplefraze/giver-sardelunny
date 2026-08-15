@@ -28,13 +28,35 @@ export const WIDTH_RATIO: Record<LoopTypeRole, number> = {
   detail: 0.58,
 };
 
+/** Narrow glyphs, so a phrase like "started..." is not measured as if it were all o's. */
+const NARROW: Record<string, number> = {
+  " ": 0.28,
+  ".": 0.3,
+  ",": 0.3,
+  "'": 0.24,
+  "!": 0.3,
+  "?": 0.5,
+  i: 0.3,
+  j: 0.3,
+  l: 0.3,
+  t: 0.4,
+  f: 0.36,
+  r: 0.42,
+  s: 0.52,
+  1: 0.4,
+};
+
 export function widthOf(text: string, size: number, role: LoopTypeRole) {
-  return text.length * size * WIDTH_RATIO[role];
+  const base = WIDTH_RATIO[role];
+  let ratio = 0;
+  for (const ch of text) ratio += NARROW[ch] ?? base;
+  return ratio * size;
 }
+
 
 /** Widest line a loop will accept before wrapping. */
 export function wrapWidth(region: LoopRegion) {
-  return LOOP_SAFE_RADIUS[region] * 1.7;
+  return LOOP_SAFE_RADIUS[region] * 1.75;
 }
 
 /** Half-chord of the safe circle at vertical distance `dy` from its centre. */

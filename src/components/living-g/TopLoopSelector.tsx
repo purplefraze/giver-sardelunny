@@ -18,8 +18,8 @@ export type TopLoopPosition = 0 | 1 | 2;
 const CENTRE = G_ANCHORS.smallRing;
 /** Orbit radius — just outside the top loop's stroke, still inside the frame. */
 const ORBIT = 64;
-/** Evenly spaced (120deg apart), starting above the loop. */
-const ANGLES = [-90, 30, 150] as const;
+/** Evenly spaced (120deg apart), arranged to stay inside the frame. */
+const ANGLES = [-60, 60, 180] as const;
 /** Content radius inside the loop's negative space. */
 const CONTENT_R = 45;
 
@@ -144,8 +144,8 @@ export function TopLoopSelector({
               cy={p.y}
               r={22}
               fill="transparent"
-              className="[-webkit-tap-highlight-color:transparent]"
-              style={{ cursor: "pointer" }}
+              className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+              style={{ cursor: "pointer", outline: "none" }}
               role="button"
               tabIndex={0}
               aria-label={`Top loop position ${i + 1}`}
@@ -192,8 +192,8 @@ export function TopLoopSelector({
           cy={CENTRE.y}
           r={30}
           fill="transparent"
-          className="[-webkit-tap-highlight-color:transparent] touch-none"
-          style={{ cursor: "grab" }}
+          className="touch-none outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+          style={{ cursor: "grab", outline: "none" }}
           role="slider"
           tabIndex={0}
           aria-label="Top loop selector"

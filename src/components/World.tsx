@@ -27,6 +27,13 @@ type Props = {
   onBack?: () => void;
   /** False while this world is not the top of the navigation stack. */
   active?: boolean;
+  /**
+   * FIRST-TIME TEACHING STATE: the loop action labels show themselves once, so
+   * a new user learns the G. Afterwards the G goes quiet and a press-and-hold
+   * brings a label back.
+   */
+  teach?: boolean;
+
   /** Interactive layer drawn above the Living G (e.g. top-loop selector). */
   overlay?: React.ReactNode;
   children?: React.ReactNode;

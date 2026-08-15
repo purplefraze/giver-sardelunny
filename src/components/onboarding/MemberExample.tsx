@@ -21,6 +21,18 @@ import { cn } from "@/lib/utils";
  */
 type Deep = "history" | "about" | "activity" | null;
 
+/**
+ * Where a person's history selector RESTS when you first meet them: the state
+ * they are an example of. Borrow has no history seat in the prototype, so a
+ * borrower simply rests on wishes.
+ */
+const HISTORY_START: Record<Member["world"], TopLoopPosition> = {
+  wishing: 0,
+  giving: 1,
+  trading: 2,
+  borrowing: 0,
+};
+
 export function MemberExample({
   member,
   first,
@@ -39,8 +51,13 @@ export function MemberExample({
   onDone: () => void;
 }) {
   const [deep, setDeep] = useState<Deep>(null);
-  /** Top-loop history selector: stays where the user leaves it. */
-  const [topPos, setTopPos] = useState<TopLoopPosition>(0);
+  /** Top-loop history selector: starts on this person's own state. */
+  const [topPos, setTopPos] = useState<TopLoopPosition>(HISTORY_START[member.world]);
+
+  useEffect(() => {
+    setTopPos(HISTORY_START[member.world]);
+  }, [member.world]);
+
 
   useEffect(() => {
     setDeep(null);

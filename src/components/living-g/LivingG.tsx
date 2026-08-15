@@ -2,8 +2,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buzz } from "@/lib/haptics";
 import {
-  EAR_CUT_STEM,
-  EAR_GEOMETRY,
+  EAR_CUT,
+  RIM_PATCH,
+  LOOP_CENTRE,
+  arcPath,
+  wedgePath,
   G_ANCHORS,
   G_REGION_BANDS,
   LIVING_G_PATH,
@@ -91,17 +94,34 @@ const LABEL_SIZE: Record<RegionKey, number> = {
 export const RHYTHM = {
   /** Loop swell in/out. */
   swell: 220,
-  /** Cue fade in — fast enough to feel instant. */
-  cueIn: 120,
+  /** Cue fade in — soft and human-paced, never a flash. */
+  cueIn: 620,
   /** How long the cue stays readable before navigation begins. */
   read: 300,
-  /** Cue lingers a beat after release, then dissolves. */
-  cueOut: 420,
+  /** Cue lingers, comfortably readable, then dissolves slowly. */
+  cueOut: 900,
   hold: 1100,
   /** How long a deliberate press-and-hold takes to reveal a loop's label. */
   holdReveal: 1500,
 
 } as const;
+
+/**
+ * THE SMOOTH RIM. After the static ear cut, the middle loop's own stroke is
+ * redrawn as one perfect arc across that span, so the 2 o'clock section of the
+ * G is a single continuous curve — no bump, kink or flat spot, in any mode.
+ */
+function rimPatch() {
+  return (
+    <path
+      d={arcPath(LOOP_CENTRE.middle, RIM_PATCH.a0, RIM_PATCH.a1, RIM_PATCH.rMid)}
+      fill="none"
+      stroke="var(--world-g)"
+      strokeWidth={RIM_PATCH.width}
+      strokeLinecap="butt"
+    />
+  );
+}
 
 /**
  * The Living G.
@@ -193,7 +213,13 @@ export function LivingG({
         ))}
         {ORDER.map((key) => (
           <mask key={key} id={`${uid}-mask-${key}`}>
-            <rect x="0" y="0" width="576" height="1133" fill={`url(#${uid}-fall-${key})`} />
+            <rect
+              x="-200"
+              y="-200"
+              width="1200"
+              height="1600"
+              fill={`url(#${uid}-fall-${key})`}
+            />
           </mask>
         ))}
         {/*
@@ -204,19 +230,15 @@ export function LivingG({
         */}
         {earCut ? (
           <mask id={`${uid}-earcut`} maskUnits="userSpaceOnUse">
-            <rect x="0" y="0" width="576" height="1133" fill="#fff" />
-            <line
-              x1={EAR_CUT_STEM.x1}
-              y1={EAR_CUT_STEM.y1}
-              x2={EAR_CUT_STEM.x2}
-              y2={EAR_CUT_STEM.y2}
-              stroke="#000"
-              strokeWidth={EAR_GEOMETRY.cutStemWidth}
-            />
-            <circle
-              cx={EAR_GEOMETRY.home.x}
-              cy={EAR_GEOMETRY.home.y}
-              r={EAR_GEOMETRY.cutR}
+            <rect x="-200" y="-200" width="1200" height="1600" fill="#fff" />
+            <path
+              d={wedgePath(
+                LOOP_CENTRE.middle,
+                EAR_CUT.a0,
+                EAR_CUT.a1,
+                EAR_CUT.r0,
+                EAR_CUT.r1,
+              )}
               fill="#000"
             />
           </mask>
@@ -227,6 +249,7 @@ export function LivingG({
         <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
           <path d={LIVING_G_PATH} />
         </g>
+        {earCut ? rimPatch() : null}
 
         {ORDER.map((key) => {
           const isPressed = pressed === key;
@@ -243,6 +266,7 @@ export function LivingG({
                 <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
                   <path d={LIVING_G_PATH} />
                 </g>
+                {earCut ? rimPatch() : null}
               </g>
             </g>
           );

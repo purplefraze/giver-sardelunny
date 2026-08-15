@@ -91,8 +91,21 @@ function compose(blocks: LoopBlock[], radius: number, ideal: number): Row[] {
         }
       }
       if (!single) {
+        // Otherwise keep the break count as low as possible: shrink until the
+        // phrase reads on two lines rather than stacking word by word.
         size = full;
         lines = wrap(block.text, full, max, role);
+        if (lines.length > 2) {
+          for (let f = 0.96; f >= 0.5; f -= 0.03) {
+            const s = Math.max(8, full * f);
+            const candidate = wrap(block.text, s, max, role);
+            if (candidate.length <= 2) {
+              size = s;
+              lines = candidate;
+              break;
+            }
+          }
+        }
       }
       lines.forEach((text, i) =>
         rows.push({ text, size, role, lead: i === 0 && !!block.lead }),

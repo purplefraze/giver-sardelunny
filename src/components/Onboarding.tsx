@@ -152,22 +152,36 @@ function useBeats(script: Beat[]) {
 
     if (!next) return;
 
-    // Fade only what is about to change; everything else holds.
+    const hold = beat.hold ?? HOLD;
+
+    // A loop only fades when its thought is REPLACED. When the next beat simply
+    // adds a word to what is already there, the existing words hold perfectly
+    // still and only the new word fades in.
+    const grows = (key: Loop) => {
+      const a = beat[key] ?? [];
+      const b = next[key] ?? [];
+      return b.length >= a.length && same(a, b.slice(0, a.length));
+    };
+    const replaced = LOOPS.filter((key) => !grows(key));
+
+    if (replaced.length === 0) {
+      const advance = setTimeout(() => setI((v) => v + 1), hold);
+      timers.current = [advance];
+      return () => timers.current.forEach(clearTimeout);
+    }
+
     const fade = setTimeout(() => {
       setLoops((prev) => {
         const out = { ...prev };
-        for (const key of LOOPS) {
-          if (!same(prev[key].lines, next[key])) {
-            out[key] = { ...prev[key], opacity: 0 };
-          }
-        }
+        for (const key of replaced) out[key] = { ...prev[key], opacity: 0 };
         return out;
       });
-    }, HOLD);
-    const advance = setTimeout(() => setI((v) => v + 1), HOLD + BEAT_MS);
+    }, hold);
+    const advance = setTimeout(() => setI((v) => v + 1), hold + BEAT_MS);
     timers.current = [fade, advance];
     return () => timers.current.forEach(clearTimeout);
   }, [i, script]);
+
 
   const copy = (key: Loop): LoopCopy | undefined =>
     loops[key].lines.length

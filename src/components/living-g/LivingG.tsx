@@ -9,7 +9,7 @@ import {
   LIVING_G_VIEWBOX,
   LOOP_SAFE_RADIUS,
 } from "./g-path";
-import { LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
+import { LOOP_ACTION_RATIO, LOOP_ROLE_STYLE, LOOP_TEXT_FILL } from "./type-scale";
 
 /**
  * The one canonical presence of a full-size Living G on any screen.

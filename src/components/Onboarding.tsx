@@ -28,6 +28,8 @@ type Beat = {
   top?: string[];
   middle?: string[];
   bottom?: string[];
+  /** Deliberate emphasis for a single transitional beat ("so..."). */
+  scale?: Partial<Record<Loop, number>>;
   /** How long this composition holds before the next beat. */
   hold?: number;
 };
@@ -40,6 +42,8 @@ type Beat = {
 const WORD_BEAT = 900;
 const PHRASE_BEAT = 1150;
 const COMPOSITION = 2400;
+/** The thoughtful beat after "so..." — twice a normal pause. */
+const THINKING_BEAT = 2600;
 
 const OPENING: Beat[] = [
   // middle = spoken to me, bottom = the name of the thing itself, hero size.
@@ -87,20 +91,27 @@ const OPENING: Beat[] = [
     bottom: ["50 sparks", "for you", "to give"],
     hold: 2900,
   },
-  { world: "gift", top: ["so..."], middle: ["are you a"], hold: PHRASE_BEAT },
+
+  // THE PAUSE. "so..." alone, with real presence, held twice as long.
+  { world: "gift", middle: ["so..."], scale: { middle: 0.6 }, hold: THINKING_BEAT },
+
+  { world: "gift", middle: ["are"], hold: WORD_BEAT },
+  { world: "gift", middle: ["are", "you"], hold: WORD_BEAT },
+  { world: "gift", middle: ["are", "you", "a"], hold: PHRASE_BEAT },
   {
     world: "gift",
-    top: ["so..."],
-    middle: ["are you a"],
+    middle: ["are", "you", "a"],
     bottom: ["giver?"],
   },
 ];
 
-/** Straight into the people: the phrase builds, then the hero word lands. */
+/** Straight into the people: meet — 4 — givers, one at a time. */
 const MEET_INTRO: Beat[] = [
-  { world: "meet", middle: ["meet four"], hold: PHRASE_BEAT },
-  { world: "meet", middle: ["meet four"], bottom: ["givers"] },
+  { world: "meet", top: ["meet"], hold: PHRASE_BEAT },
+  { world: "meet", top: ["meet"], middle: ["4"], hold: PHRASE_BEAT },
+  { world: "meet", top: ["meet"], middle: ["4"], bottom: ["givers"] },
 ];
+
 
 
 const HOLD = COMPOSITION;

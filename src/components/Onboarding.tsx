@@ -291,18 +291,6 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
       <OpeningSequence
         onDone={() => {
           buzz();
-          setStage("meet-intro");
-        }}
-      />
-    );
-  }
-
-  if (stage === "meet-intro") {
-    return (
-      <MeetIntro
-        onBack={() => setStage("opening")}
-        onDone={() => {
-          buzz();
           setWho(0);
           setStage("meet");
         }}
@@ -317,13 +305,14 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         member={member}
         first={who === 0}
         last={who === MEMBERS.length - 1}
-        onBack={() => setStage("meet-intro")}
+        onBack={() => setStage("opening")}
         onPrev={() => setWho((w) => Math.max(0, w - 1))}
         onNext={() => setWho((w) => Math.min(MEMBERS.length - 1, w + 1))}
         onDone={() => setStage("choose")}
       />
     );
   }
+
 
   if (stage === "celebrate" && chosen) {
     return (

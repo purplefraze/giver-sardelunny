@@ -86,13 +86,24 @@ export const ACTION_WRAP_FACTOR = 1.68;
  * coloured stroke; no profile line may ever cross it or the S-curve.
  */
 export const PROFILE_SAFE_INSET: Record<LoopRegion, number> = {
-  top: 0.74,
-  middle: 0.74,
-  bottom: 0.72,
+  top: 0.78,
+  middle: 0.88,
+  bottom: 0.86,
 };
 
 /** How wide a profile line may run inside its safe area, as a share of radius. */
-export const PROFILE_WRAP_FACTOR = 1.3;
+export const PROFILE_WRAP_FACTOR = 1.78;
+
+/**
+ * PROFILE FILL — profile copy is allowed the loop's TRUE width, not just the
+ * conservative safe circle, so a long phrase like "wouldn't you like to know"
+ * takes the WIDE middle of the circle instead of shrinking the whole stack.
+ */
+export const PROFILE_FILL: Record<LoopRegion, number> = {
+  top: 1.06,
+  middle: 1.16,
+  bottom: 1.18,
+};
 
 /**
  * THE fixed profile type scale, in px. EVERY profile uses these exact tokens —
@@ -106,9 +117,9 @@ export const PROFILE_TYPE: Record<
   LoopRegion,
   { answer: number; label: number; detail: number }
 > = {
-  top: { answer: 28, label: 16, detail: 21 },
-  middle: { answer: 46, label: 23, detail: 32 },
-  bottom: { answer: 66, label: 31, detail: 45 },
+  top: { answer: 30, label: 17, detail: 22 },
+  middle: { answer: 62, label: 29, detail: 40 },
+  bottom: { answer: 88, label: 38, detail: 56 },
 };
 
 

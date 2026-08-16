@@ -9,6 +9,7 @@ import {
   wrapWidth,
 } from "./loop-layout";
 import {
+  PROFILE_FILL,
   PROFILE_SAFE_INSET,
   PROFILE_STEPS,
   PROFILE_TYPE,
@@ -76,8 +77,10 @@ export function profileLoop({
   const inset = PROFILE_SAFE_INSET[region];
   const origin = loopOrigin(region, lift);
 
+  const fill = PROFILE_FILL[region];
+
   const build = (step: number) => {
-    const max = wrapWidth(region, PROFILE_WRAP_FACTOR, inset);
+    const max = wrapWidth(region, PROFILE_WRAP_FACTOR, inset) * fill;
     const gap = token.answer * step * 0.1;
     const lead = token.answer * step * 0.38;
     return blocks.flatMap((block, i) => {
@@ -97,9 +100,12 @@ export function profileLoop({
   };
 
   // ONE scale for the whole stack, stepped down only inside the allowed flex.
-  let placed = layoutStack(build(1), region, inset);
+  // The stack is measured against the loop's TRUE negative space (fill), so a
+  // long phrase uses the wide middle of the circle instead of shrinking
+  // everything around it.
+  let placed = layoutStack(build(1), region, inset, fill);
   for (const step of PROFILE_STEPS) {
-    placed = layoutStack(build(step), region, inset);
+    placed = layoutStack(build(step), region, inset, fill);
     if (placed.fits) break;
   }
 

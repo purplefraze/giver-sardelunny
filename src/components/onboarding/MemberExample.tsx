@@ -8,6 +8,7 @@ import {
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
 import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
+import type { LoopBlock } from "@/components/living-g/profile-loop";
 import type { Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,14 @@ const MEMBER_MODE: Record<Member["world"], Mode> = {
   borrowing: "borrow",
 };
 
+/** How each category reads when the toggle rests on it. */
+const PLURAL: Record<Mode, string> = {
+  wish: "wishes",
+  give: "gives",
+  trade: "trades",
+  borrow: "borrows",
+};
+
 const HISTORY_START: Record<Member["world"], TopLoopPosition> = {
   wishing: 0,
   giving: 1,
@@ -62,6 +71,12 @@ export function MemberExample({
   onDone: () => void;
 }) {
   const [deep, setDeep] = useState<Deep>(null);
+  /**
+   * THE PROFILE TOGGLE. It rests on the seat that states what this person is
+   * doing, but it MOVES: dragging it shows what else they have going on right
+   * now. Same selector, same interaction, on every sample profile.
+   */
+  const [seat, setSeat] = useState<Mode>(MEMBER_MODE[member.world]);
   /** Top-loop history selector: starts on this person's own state. */
   const [topPos, setTopPos] = useState<TopLoopPosition>(HISTORY_START[member.world]);
 
@@ -72,7 +87,8 @@ export function MemberExample({
 
   useEffect(() => {
     setDeep(null);
-  }, [member.id]);
+    setSeat(MEMBER_MODE[member.world]);
+  }, [member.id, member.world]);
 
   // Fail loudly in dev if a profile has no words for its loops, instead of
   // silently rendering an empty Living G.
@@ -86,6 +102,36 @@ export function MemberExample({
     member.history.gives,
     member.history.trades,
   ][topPos]!;
+
+  /**
+   * What this person has active in the seat's category, composed for the bottom
+   * loop. Their OWN seat keeps its authored preview; other seats are built from
+   * their live items, with a small realistic count. Zero items stays quiet — no
+   * "0", no empty count.
+   */
+  const activity: LoopBlock[] = (() => {
+    if (seat === MEMBER_MODE[member.world]) return member.bottom;
+    const items = member.active[seat];
+    const plural = PLURAL[seat];
+    if (!items.length) {
+      return [
+        { text: plural, role: "secondary" as const },
+        { text: "nothing right now", role: "tertiary" as const },
+      ];
+    }
+    const blocks: LoopBlock[] = [
+      { text: `${plural} ${items.length}`, role: "secondary" },
+      { text: items[0]!, role: "primary" },
+    ];
+    if (items.length > 1) {
+      blocks.push({
+        text: `+${items.length - 1} more`,
+        role: "tertiary",
+        lead: true,
+      });
+    }
+    return blocks;
+  })();
 
   const open = (d: Exclude<Deep, null>) => () => {
     buzz();
@@ -119,9 +165,8 @@ export function MemberExample({
           earCut
           overlay={
             <EarSelector
-              mode={MEMBER_MODE[member.world]}
-              onChange={() => {}}
-              locked
+              mode={seat}
+              onChange={setSeat}
               photo={member.photo}
               onTap={open("history")}
               // The three history seats — wishes, gives, trades — shown on
@@ -143,7 +188,7 @@ export function MemberExample({
                     { text: clampField(member.byDay), role: "primary" },
                     { text: "by night", role: "secondary", lead: true },
                     { text: clampField(member.byNight), role: "primary" },
-                    { text: "on the weekends", role: "secondary", lead: true },
+                    { text: "by weekend", role: "secondary", lead: true },
                     { text: clampField(member.weekend), role: "primary" },
                   ],
                 }),
@@ -154,7 +199,7 @@ export function MemberExample({
                 profileLoop({
                   anchor,
                   region: "bottom",
-                  blocks: member.bottom,
+                  blocks: activity,
                 }),
             },
           }}

@@ -76,7 +76,7 @@ export const PROFILE_SAFE_INSET: Record<LoopRegion, number> = {
 };
 
 /** How wide a profile line may run inside its safe area, as a share of radius. */
-export const PROFILE_WRAP_FACTOR = 1.24;
+export const PROFILE_WRAP_FACTOR = 1.3;
 
 /**
  * THE fixed profile type scale, in px. EVERY profile uses these exact tokens —

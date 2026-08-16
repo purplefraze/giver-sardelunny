@@ -399,36 +399,6 @@ function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
 }
 
 
-/** The only forward affordance in onboarding: one small arrow, safe area kept. */
-function ForwardCue({
-  show,
-  label,
-  onClick,
-}: {
-  show: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      className="absolute inset-x-0 bottom-0 z-20 flex justify-end px-7"
-      style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
-    >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        aria-label={label}
-        className="flex h-10 w-10 items-center justify-center text-3xl font-bold leading-none transition-opacity duration-500 active:scale-90"
-        style={{ opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none" }}
-      >
-        <span aria-hidden="true">→</span>
-      </button>
-    </div>
-  );
-}
 
 /**
  * A sequence of lines that arrive one after another with the established fade

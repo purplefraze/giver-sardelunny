@@ -142,15 +142,9 @@ function LoopRow({
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const q = row.text.endsWith("?") && row.text.length > 1;
-  // Clean optical separation before the mark — and the WHOLE unit stays centred:
-  // the added advance is compensated for, so the word never drifts left of the
-  // loop's optical centre.
-  const gap = q ? row.size * 0.16 : 0;
-
   return (
     <text
-      x={x + gap / 2}
+      x={x}
       y={y}
       textAnchor="middle"
       dominantBaseline="middle"
@@ -163,14 +157,9 @@ function LoopRow({
         transition: `opacity ${LOOP_WORD_MS}ms ${LOOP_WORD_EASE}`,
       }}
     >
-      {q ? (
-        <>
-          {row.text.slice(0, -1)}
-          <tspan dx={gap}>?</tspan>
-        </>
-      ) : (
-        row.text
-      )}
+      {/* One unbroken word. A question mark is part of the word — never a
+          separately positioned tspan, which is what used to detach it. */}
+      {row.text}
     </text>
   );
 }

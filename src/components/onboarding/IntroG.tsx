@@ -11,6 +11,8 @@ export type LoopCopy = {
   scale?: number;
   /** Per-loop presence, so one loop can hold while another changes. */
   opacity?: number;
+  /** First line is the hero number/word; the rest support it. */
+  hero?: boolean;
 };
 
 
@@ -65,6 +67,7 @@ export function IntroG({
               lines: copy.lines,
               ...(copy.plan ? { plan: copy.plan } : {}),
               ...(copy.scale ? { scale: copy.scale } : {}),
+              ...(copy.hero ? { hero: true } : {}),
             })}
 
           </g>

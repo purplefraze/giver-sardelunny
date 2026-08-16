@@ -32,6 +32,8 @@ type Beat = {
   bottom?: string[];
   /** Deliberate emphasis for a single transitional beat ("so..."). */
   scale?: Partial<Record<Loop, number>>;
+  /** First line of a loop is the hero ("50"); the rest support it. */
+  hero?: Partial<Record<Loop, boolean>>;
   /** How long this composition holds before the next beat. */
   hold?: number;
 };
@@ -86,49 +88,54 @@ const OPENING: Beat[] = [
   { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
 
   // 7 — the gift BUILDS: nothing already revealed moves.
-  { world: "welcome", middle: ["here's"], bottom: ["spark", "change"], hold: WORD_BEAT },
+  { world: "welcome", middle: ["here's 100"], bottom: ["spark", "change"], hold: WORD_BEAT },
   {
     world: "welcome",
-    middle: ["here's", "100 sparks"],
+    middle: ["here's 100", "sparks"],
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
 
-  // 8 — what the sparks are for. Same middle loop, clean beats.
+  // 8 — the 50 / 50 split. Each half is ONE composition, not a set of screens.
   {
     world: "welcome",
-    middle: ["50", "for you"],
+    middle: ["50", "for you", "to wish with"],
+    hero: { middle: true },
     bottom: ["spark", "change"],
-    hold: PHRASE_BEAT,
+    hold: COMPOSITION,
   },
+  { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
   {
     world: "welcome",
-    middle: ["50", "to wish with"],
+    middle: ["and 50", "for you", "to gift"],
+    hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
   {
     world: "welcome",
-    middle: ["50", "to gift", "and make", "someone's day"],
+    middle: ["and make", "someone's", "day"],
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
 
-  // 9 — the orange G empties completely BEFORE the colour changes.
+  // 9 — spark change alone, then the orange G empties completely.
+  { world: "welcome", bottom: ["spark", "change"], hold: PHRASE_BEAT },
   { world: "welcome", hold: BREATH },
 
   // 10 — only now does the G turn green, and think.
   { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", middle: ["so..."], scale: { middle: 1.7 }, hold: THINKING_BEAT },
+  { world: "gift", middle: ["so..."], hold: THINKING_BEAT },
   { world: "gift", hold: SHORT_BEAT },
 
-  // 11 — the question, one word at a time, then the hero.
-  { world: "gift", middle: ["are"], scale: { middle: 1.7 }, hold: WORD_BEAT },
-  { world: "gift", middle: ["you"], scale: { middle: 1.7 }, hold: WORD_BEAT },
-  { world: "gift", middle: ["a"], scale: { middle: 1.7 }, hold: WORD_BEAT },
+  // 11 — the question, one word at a time, then the hero payoff.
+  { world: "gift", middle: ["are"], hold: WORD_BEAT },
+  { world: "gift", middle: ["you"], hold: WORD_BEAT },
+  { world: "gift", middle: ["a"], hold: WORD_BEAT },
   { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", bottom: ["giver?"], scale: { bottom: 1.18 } },
+  { world: "gift", bottom: ["giver?"] },
 ];
+
 
 
 /** Straight into the people: meet — 4 — givers, one at a time. */
@@ -239,6 +246,10 @@ function useBeats(script: Beat[]) {
    * plan, so a revealed word never moves when the next one arrives.
    */
   const plan = (key: Loop): string[] => {
+    // A loop that is FADING OUT (or merely holding a previous thought) must
+    // never adopt a future beat's composition: doing so swapped the words in
+    // while the group was still visible — the "100 sparks" pre-flash.
+    if (!script[i]![key]) return loops[key].lines;
     let j = i;
     while (j + 1 < script.length) {
       const a = script[j]![key] ?? [];
@@ -249,17 +260,31 @@ function useBeats(script: Beat[]) {
     return script[j]![key] ?? [];
   };
 
+  /** The last beat that actually spoke through this loop owns its treatment. */
+  const owner = (key: Loop): Beat => {
+    for (let j = i; j >= 0; j -= 1) if (script[j]![key]) return script[j]!;
+    return script[i]!;
+  };
+
   const copy = (key: Loop): LoopCopy | undefined => {
     if (!loops[key].lines.length) return undefined;
     const full = plan(key);
-    const scale = script[i]!.scale?.[key];
+    const own = owner(key);
+    const scale = own.scale?.[key];
+    const hero = own.hero?.[key];
     return {
       lines: loops[key].lines,
-      plan: full.length >= loops[key].lines.length ? full : loops[key].lines,
+      plan:
+        full.length >= loops[key].lines.length &&
+        same(loops[key].lines, full.slice(0, loops[key].lines.length))
+          ? full
+          : loops[key].lines,
       opacity: loops[key].opacity,
       ...(scale ? { scale } : {}),
+      ...(hero ? { hero } : {}),
     };
   };
+
 
   return { world: script[i]!.world, copy, last };
 }

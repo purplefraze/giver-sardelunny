@@ -9,7 +9,7 @@ import {
   wrapLines,
   wrapWidth,
 } from "./loop-layout";
-import { LOOP_FIXED_SIZE, LOOP_SIZE_STEPS } from "./type-scale";
+import { LOOP_FILL, LOOP_FIXED_SIZE, LOOP_SIZE_STEPS } from "./type-scale";
 
 /**
  * Words that live ENTIRELY inside a loop's negative space, at the loop's FIXED
@@ -42,6 +42,7 @@ export function loopText({
   plan,
   scale = 1,
   lift = 0,
+  hero = false,
 }: {
   /** Accepted for API compatibility; centring always uses the loop centre. */
   anchor?: Anchor;
@@ -55,30 +56,53 @@ export function loopText({
   scale?: number;
   /** Optional upward nudge so a fingertip never covers the words. */
   lift?: number;
+  /** First line is the hero ("50"); the rest support it at detail size. */
+  hero?: boolean;
 }) {
   const token = LOOP_FIXED_SIZE[region];
   const full = plan && plan.length >= lines.length ? plan : lines;
   const blocks: Block[] = [
     ...(kicker ? [{ text: kicker, role: "label" as const }] : []),
-    ...full.map((text) => ({ text, role: "message" as const })),
+    ...full.map((text, i) => ({
+      text,
+      role: (hero && i > 0 ? "detail" : "message") as Block["role"],
+    })),
   ];
   const kickerRows = kicker ? 1 : 0;
 
   const build = (step: number) => {
-    const max = wrapWidth(region) * 1;
-    const rows = blocks.flatMap((block, i) =>
-      wrapLines(block.text, token[block.role] * step * scale, max, block.role).map(
-        (text, j) => ({
-          text,
-          size: token[block.role] * step * scale,
-          role: block.role,
-          gap: i === 0 && j === 0 ? 0 : token.message * step * scale * 0.06,
-          // Which line of the composition this row belongs to.
-          src: i,
-        }),
-      ),
-    );
-    return { laid: layoutStack(rows, region), src: rows.map((r) => r.src) };
+    const max = wrapWidth(region, 2.02 * LOOP_FILL[region]);
+    // A hero composition ("50" / "for you" / "to wish with") gives its lead line
+    // real graphic weight: the numeral dominates, the support reads under it. A
+    // longer lead ("and 50") takes a smaller lead so the support lines are not
+    // starved when the whole stack steps down.
+    const lead = blocks[kickerRows]?.text.length ?? 0;
+    const HERO_LEAD = lead <= 3 ? 1.6 : 1.22;
+
+    const rows = blocks.flatMap((block, i) => {
+      const isLead = hero && i === kickerRows;
+      // Support lines never fall below a readable floor when the stack steps
+      // down for a wide lead — the hero shrinks, the support holds.
+      const size = isLead
+        ? token[block.role] * step * scale * HERO_LEAD
+        : hero
+          ? Math.max(token[block.role] * step * scale, token[block.role] * 0.78)
+          : token[block.role] * step * scale;
+
+      return wrapLines(block.text, size, max, block.role).map((text, j) => ({
+        text,
+        size,
+        role: block.role,
+        gap: i === 0 && j === 0 ? 0 : token.message * step * scale * 0.06,
+        // Which line of the composition this row belongs to.
+        src: i,
+      }));
+    });
+
+    return {
+      laid: layoutStack(rows, region, 1, LOOP_FILL[region]),
+      src: rows.map((r) => r.src),
+    };
   };
 
   let built = build(1);
@@ -103,7 +127,7 @@ export function loopText({
         <LoopRow
           // Keyed by position, so nothing remounts (and so nothing jumps)
           // when the next word of the same composition arrives.
-          key={`${region}-${i}-${row.text}`}
+          key={`${region}-${full.join("|")}-${i}-${row.text}`}
           row={row}
           x={origin.x}
           y={origin.y + row.y}
@@ -136,15 +160,9 @@ function LoopRow({
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const q = row.text.endsWith("?") && row.text.length > 1;
-  // Clean optical separation before the mark — and the WHOLE unit stays centred:
-  // the added advance is compensated for, so the word never drifts left of the
-  // loop's optical centre.
-  const gap = q ? row.size * 0.16 : 0;
-
   return (
     <text
-      x={x + gap / 2}
+      x={x}
       y={y}
       textAnchor="middle"
       dominantBaseline="middle"
@@ -157,14 +175,9 @@ function LoopRow({
         transition: `opacity ${LOOP_WORD_MS}ms ${LOOP_WORD_EASE}`,
       }}
     >
-      {q ? (
-        <>
-          {row.text.slice(0, -1)}
-          <tspan dx={gap}>?</tspan>
-        </>
-      ) : (
-        row.text
-      )}
+      {/* One unbroken word. A question mark is part of the word — never a
+          separately positioned tspan, which is what used to detach it. */}
+      {row.text}
     </text>
   );
 }

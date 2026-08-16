@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import type { Anchor, RegionKey } from "./LivingG";
 import {
   LOOP_ROLE_STYLE,
   LOOP_TEXT_FILL,
   layoutStack,
   loopOrigin,
+  type LaidOutRow,
   wrapLines,
   wrapWidth,
 } from "./loop-layout";
@@ -123,7 +125,7 @@ function LoopRow({
   y,
   shown,
 }: {
-  row: { text: string; size: number; role: "message" | "label" };
+  row: LaidOutRow;
   x: number;
   y: number;
   shown: boolean;

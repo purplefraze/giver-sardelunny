@@ -156,30 +156,20 @@ export function MemberExample({
               mode={seat}
               onChange={setSeat}
               photo={member.photo}
-              onTap={open("history")}
-              // The three history seats — wishes, gives, trades — shown on
-              // every profile. There is no borrow history in the prototype.
+              // THE PHOTO IS THE GATEWAY: a tap opens their full profile.
+              onTap={() => {
+                buzz();
+                setProfile(member.id);
+              }}
+              // The seats a person has taken part in, told in their colours.
               history={["wish", "give", "trade"]}
-
             />
           }
           regions={{
             middle: {
-              onPress: open("about"),
+              onPress: open("wish"),
               render: (anchor) =>
-                profileLoop({
-                  anchor,
-                  region: "middle",
-                  blocks: [
-                    { text: "by day", role: "secondary" },
-
-                    { text: clampField(member.byDay), role: "primary" },
-                    { text: "by night", role: "secondary", lead: true },
-                    { text: clampField(member.byNight), role: "primary" },
-                    { text: "by weekend", role: "secondary", lead: true },
-                    { text: clampField(member.weekend), role: "primary" },
-                  ],
-                }),
+                profileLoop({ anchor, region: "middle", blocks: wish }),
             },
             bottom: {
               onPress: open("activity"),
@@ -192,6 +182,7 @@ export function MemberExample({
             },
           }}
         />
+
       </GStage>
 
       {/*

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
  * Space carries meaning too: MIDDLE loop = me, BOTTOM loop = the community.
  * Colour and copy always arrive together, as one beat.
  */
-type Stage = "opening" | "meet-intro" | "meet" | "choose" | "celebrate";
+type Stage = "opening" | "meet" | "choose" | "celebrate";
 
 type Loop = "top" | "middle" | "bottom";
 

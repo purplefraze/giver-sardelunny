@@ -313,11 +313,11 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
 /** Giver, speaking. The colour follows the meaning, never the page. */
 function OpeningSequence({ onDone }: { onDone: () => void }) {
   const { world, copy, last } = useBeats(OPENING);
-  const [arrow, setArrow] = useState(false);
+  const [cue, setCue] = useState(false);
 
   useEffect(() => {
     if (!last) return;
-    const t = setTimeout(() => setArrow(true), 1800);
+    const t = setTimeout(() => setCue(true), 2000);
     return () => clearTimeout(t);
   }, [last]);
 
@@ -328,8 +328,33 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
       middle={copy("middle")}
       bottom={copy("bottom")}
     >
-      <ForwardCue show={last && arrow} label="yes — meet four givers" onClick={onDone} />
+      <LetsGiver show={last && cue} onClick={onDone} />
     </IntroG>
+  );
+}
+
+/**
+ * THE GIVER CALL TO ACTION. Not a button, not a pill, not an arrow — just the
+ * words, in Giver's own language: let's giver.
+ */
+function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 z-20 flex justify-center"
+      style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className="px-6 py-2 text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+        style={{ opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none" }}
+      >
+        let&apos;s giver
+      </button>
+    </div>
   );
 }
 

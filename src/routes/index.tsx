@@ -130,7 +130,10 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [entered, setEntered] = useState(false);
+  /** First run only: set up your own profile before the workspace opens. */
+  const [setup, setSetup] = useState(false);
   const [gaveTo, setGaveTo] = useState<string | null>(null);
+
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
   /** Which mode the one persistent Living G is currently working in. */
@@ -191,9 +194,14 @@ function Index() {
           onDone={(name) => {
             setGaveTo(name);
             setEntered(true);
+            setSetup(true);
           }}
         />
+      ) : setup ? (
+        /* FIRST-TIME PROFILE SETUP — one photo, three short answers. */
+        <ProfileSetup onDone={() => setSetup(false)} />
       ) : (
+
         <>
           {/* THE WORKSPACE — one Living G, always yours. Mode is a state of it. */}
           <World

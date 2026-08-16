@@ -717,15 +717,19 @@ function MessagingConsent({
           buzz();
           onDone();
         }}
-        className="absolute inset-x-0 bottom-0 mx-auto w-fit text-[8vw] font-black lowercase leading-none tracking-[-0.04em] transition-transform active:scale-95"
+        className="absolute inset-x-0 bottom-0 mx-auto w-fit text-center text-[10vw] font-black lowercase leading-[0.88] tracking-[-0.05em] transition-transform active:scale-95"
         style={{
           paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))",
+          /* GIVER'S OWN GUIDANCE = PARTICIPATION = ORANGE. */
+          color: "var(--giver-participation)",
           opacity: allowed === null ? 0 : 1,
           transition: "opacity 800ms cubic-bezier(0.32,0,0.24,1)",
           pointerEvents: allowed === null ? "none" : "auto",
         }}
       >
-        enter giver
+        let's build
+        <br />
+        your profile
       </button>
     </div>
   );

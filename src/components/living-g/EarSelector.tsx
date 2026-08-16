@@ -114,12 +114,21 @@ const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 /** The captured word lives in the piece's own negative space. */
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
+/** The locked four-mode colours, for seats that state a person's history. */
+const MODE_COLOUR: Record<Mode, string> = {
+  wish: "var(--mode-wish)",
+  give: "var(--mode-give)",
+  trade: "var(--mode-trade)",
+  borrow: "var(--mode-borrow)",
+};
+
 export function EarSelector({
   mode,
   onChange,
   onTap,
   locked = false,
   photo,
+  history,
 }: {
   mode: Mode;
   onChange: (next: Mode) => void;
@@ -129,7 +138,10 @@ export function EarSelector({
   locked?: boolean;
   /** A face riding the selector, inside the ring's own negative space. */
   photo?: string;
+  /** The modes this person has taken part in, told by the seats themselves. */
+  history?: Mode[];
 }) {
+
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
   const last = useRef<Mode>(mode);

@@ -7,6 +7,7 @@ import { SparklesReward } from "@/components/SparklesReward";
 import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import type { MyProfile } from "@/data/my-profile";
 import { myProfileStore, myAsMember, myPhoto, primaryAsk, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
 import {
@@ -28,6 +29,13 @@ type Screen = "profile";
 const SCREENS: Screen[] = ["profile"];
 
 /** My own history, in the toggle's order: past wishes, gives, trades. */
+/** My REAL completed items, same order as the toggle: wishes, gives, trades. */
+const MY_COMPLETED: ((p: MyProfile) => string[])[] = [
+  (p) => p.completed.wish.map((i) => i.text),
+  (p) => p.completed.give.map((i) => i.text),
+  (p) => p.completed.trade.map((i) => i.text),
+];
+
 const MY_HISTORY: string[][] = [
   ME.history.wishes,
   ME.history.gives,

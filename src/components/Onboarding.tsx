@@ -55,6 +55,17 @@ const SHORT_BEAT = 620;
 /** The thoughtful beat after "so..." — twice a normal pause. */
 const THINKING_BEAT = 3200;
 
+/**
+ * OPENING TYPE HIERARCHY, as three shared tokens — never per-word guesses.
+ *   WELCOME — the greeting: present, but not the loudest thing on the screen
+ *   HERO    — the brand word: still the hero, no longer oversized
+ *   SECOND  — supporting language ("kindness as currency")
+ */
+const WELCOME = { middle: 0.82 } as const;
+const HERO = { bottom: 0.88 } as const;
+const SECOND = { middle: 0.72 } as const;
+
+
 const OPENING: Beat[] = [
   // 1 — START EMPTY. The orange G, alone, breathing.
   { world: "welcome", hold: BREATH },

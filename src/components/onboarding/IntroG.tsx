@@ -60,7 +60,10 @@ export function IntroG({
               region: key,
               ...(copy.kicker ? { kicker: copy.kicker } : {}),
               lines: copy.lines,
+              ...(copy.plan ? { plan: copy.plan } : {}),
+              ...(copy.scale ? { scale: copy.scale } : {}),
             })}
+
           </g>
         ),
       },

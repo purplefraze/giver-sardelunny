@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { FullProfile } from "@/components/FullProfile";
 import { ProfileBuilder } from "@/components/ProfileBuilder";
+import { SparklesReward } from "@/components/SparklesReward";
+import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { myProfileStore, myAsMember, myPhoto, primaryAsk, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
@@ -17,7 +19,7 @@ import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
 
 
 import { World, ringPhoto } from "@/components/World";
-import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
+import { ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
 
 /** The only place you ever go: your own profile. Everything else is a mode. */
@@ -55,7 +57,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what can you help with?",
-      body: <>{COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>)}</>,
+      body: <CommunityList type="wish" />,
     },
   },
   give: {
@@ -69,7 +71,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what are you looking for?",
-      body: <>{COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>)}</>,
+      body: <CommunityList type="give" />,
     },
   },
   trade: {
@@ -81,11 +83,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what trades are out there?",
-      body: (
-        <p className="opacity-70">
-          open trades from the people nearby. coming next.
-        </p>
-      ),
+      body: <CommunityList type="trade" />,
     },
   },
   borrow: {
@@ -95,11 +93,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what can you lend?",
-      body: (
-        <p className="opacity-70">
-          what people nearby are happy to lend. coming next.
-        </p>
-      ),
+      body: <CommunityList type="borrow" />,
     },
   },
 };

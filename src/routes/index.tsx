@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
+import { ProfileSetup } from "@/components/ProfileSetup";
+
 import {
   HISTORY_STATES,
   TopLoopSelector,

@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import type { Anchor, RegionKey } from "./LivingG";
 import {
   LOOP_ROLE_STYLE,
   LOOP_TEXT_FILL,
   layoutStack,
   loopOrigin,
+  type LaidOutRow,
   wrapLines,
   wrapWidth,
 } from "./loop-layout";
@@ -97,40 +99,73 @@ export function loopText({
 
   return (
     <>
-      {built.laid.rows.map((row, i) => {
-        const shown = (built.src[i] ?? 0) < revealed;
-        const q = row.text.endsWith("?") && row.text.length > 1;
-        return (
-          <text
-            // Keyed by position, so nothing remounts (and so nothing jumps)
-            // when the next word of the same composition arrives.
-            key={`${region}-${i}-${row.text}`}
-            x={origin.x}
-            y={origin.y + row.y}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill={LOOP_TEXT_FILL}
-            className="font-black lowercase"
-            style={{
-              fontSize: row.size,
-              letterSpacing: LOOP_ROLE_STYLE[row.role].tracking,
-              opacity: shown ? LOOP_ROLE_STYLE[row.role].opacity : 0,
-              transition: `opacity ${LOOP_WORD_MS}ms ${LOOP_WORD_EASE}`,
-            }}
-          >
-            {q ? (
-              <>
-                {row.text.slice(0, -1)}
-                {/* Clean optical separation: punctuation never touches the word. */}
-                <tspan dx={row.size * 0.42}>?</tspan>
-              </>
-
-            ) : (
-              row.text
-            )}
-          </text>
-        );
-      })}
+      {built.laid.rows.map((row, i) => (
+        <LoopRow
+          // Keyed by position, so nothing remounts (and so nothing jumps)
+          // when the next word of the same composition arrives.
+          key={`${region}-${i}-${row.text}`}
+          row={row}
+          x={origin.x}
+          y={origin.y + row.y}
+          shown={(built.src[i] ?? 0) < revealed}
+        />
+      ))}
     </>
   );
 }
+
+/**
+ * ONE line of in-loop copy. It always MOUNTS invisible and is raised on the next
+ * frame, so a phrase can never appear before its fade — the mount frame itself
+ * used to be the flash.
+ */
+function LoopRow({
+  row,
+  x,
+  y,
+  shown,
+}: {
+  row: LaidOutRow;
+  x: number;
+  y: number;
+  shown: boolean;
+}) {
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setLive(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const q = row.text.endsWith("?") && row.text.length > 1;
+  // Clean optical separation before the mark — and the WHOLE unit stays centred:
+  // the added advance is compensated for, so the word never drifts left of the
+  // loop's optical centre.
+  const gap = q ? row.size * 0.16 : 0;
+
+  return (
+    <text
+      x={x + gap / 2}
+      y={y}
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fill={LOOP_TEXT_FILL}
+      className="font-black lowercase"
+      style={{
+        fontSize: row.size,
+        letterSpacing: LOOP_ROLE_STYLE[row.role].tracking,
+        opacity: live && shown ? LOOP_ROLE_STYLE[row.role].opacity : 0,
+        transition: `opacity ${LOOP_WORD_MS}ms ${LOOP_WORD_EASE}`,
+      }}
+    >
+      {q ? (
+        <>
+          {row.text.slice(0, -1)}
+          <tspan dx={gap}>?</tspan>
+        </>
+      ) : (
+        row.text
+      )}
+    </text>
+  );
+}
+

@@ -26,6 +26,13 @@ export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
 const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
 
+/**
+ * THE CLEAN BOTTOM BAND. The one strip of paper the artwork never enters, so a
+ * bottom text action ("let's giver") can sit centred, outside the G's stroke.
+ */
+export const CTA_BAND = "2.6rem";
+
+
 export function GStage({
   children,
   /**
@@ -40,12 +47,20 @@ export function GStage({
 }) {
   if (dominant) {
     return (
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-end justify-center">
+      <div
+        className="pointer-events-none absolute inset-0 z-0 flex items-end justify-center"
+        style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
+      >
         <div
-          className="pointer-events-auto"
+          className="pointer-events-auto shrink-0"
           style={{
-            // Artwork target: 94% of viewport height, 96% of viewport width.
-            width: `min(${(96 * BOX_W).toFixed(3)}vw, calc(100dvh * 0.94 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`,
+            // Artwork target: 94% of the usable height (viewport minus the clean
+            // CTA band), 96% of viewport width. shrink-0 is LOAD-BEARING: the
+            // frame is WIDER than the artwork on purpose so the selector can
+            // never clip, and a flex child would otherwise be shrunk to the
+            // container width — silently reducing the canonical G every time the
+            // frame grew.
+            width: `min(${(96 * BOX_W).toFixed(3)}vw, calc((100dvh - ${CTA_BAND}) * 0.99 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`,
             aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
           }}
         >
@@ -54,6 +69,7 @@ export function GStage({
       </div>
     );
   }
+
 
   return (
     <div

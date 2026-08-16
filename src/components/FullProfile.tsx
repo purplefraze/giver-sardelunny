@@ -51,6 +51,7 @@ export function FullProfile({
   /** Profile-to-profile discovery through completed acts. */
   onOpen?: (id: string) => void;
 }) {
+  const state = useItems();
   const connections = connectionsOf(member.id);
   const done: [string, number][] = [
     ["gifts shared", member.done.gifts],
@@ -58,9 +59,13 @@ export function FullProfile({
     ["trades completed", member.done.trades],
     ["borrows completed", member.done.borrows],
   ];
-  const activeGroups = (["wish", "give", "trade", "borrow"] as const)
-    .map((key) => ({ key, items: member.active[key] }))
-    .filter((group) => group.items.length > 0);
+  const sparkles = useMyProfile().sparkles;
+  /* SAME ITEMS AS EVERY OTHER VIEW — read live, never copied into the page. */
+  const activeGroups = ITEM_TYPES.map((key) => ({
+    key,
+    items: myItems(state, key, member.id),
+  })).filter((group) => group.items.length > 0);
+
 
   return (
     <div

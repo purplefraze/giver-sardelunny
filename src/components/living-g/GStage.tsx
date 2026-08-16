@@ -26,6 +26,13 @@ export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
 const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
 
+/**
+ * THE CLEAN BOTTOM BAND. The one strip of paper the artwork never enters, so a
+ * bottom text action ("let's giver") can sit centred, outside the G's stroke.
+ */
+export const CTA_BAND = "2.6rem";
+
+
 export function GStage({
   children,
   /**

@@ -109,7 +109,7 @@ export function loopText({
         <LoopRow
           // Keyed by position, so nothing remounts (and so nothing jumps)
           // when the next word of the same composition arrives.
-          key={`${region}-${i}-${row.text}`}
+          key={`${region}-${full.join("|")}-${i}-${row.text}`}
           row={row}
           x={origin.x}
           y={origin.y + row.y}

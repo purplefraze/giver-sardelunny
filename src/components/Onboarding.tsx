@@ -88,10 +88,10 @@ const OPENING: Beat[] = [
   { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
 
   // 7 — the gift BUILDS: nothing already revealed moves.
-  { world: "welcome", middle: ["here's"], bottom: ["spark", "change"], hold: WORD_BEAT },
+  { world: "welcome", middle: ["here's 100"], bottom: ["spark", "change"], hold: WORD_BEAT },
   {
     world: "welcome",
-    middle: ["here's", "100 sparks"],
+    middle: ["here's 100", "sparks"],
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
@@ -114,7 +114,7 @@ const OPENING: Beat[] = [
   },
   {
     world: "welcome",
-    middle: ["and make", "someone's day"],
+    middle: ["and make", "someone's", "day"],
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },

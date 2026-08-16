@@ -36,11 +36,14 @@ const CANONICAL_WIDTH = `min(${(96 * BOX_W).toFixed(3)}vw, calc((100dvh - ${CTA_
 export function GStage({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-0 flex items-end justify-center"
-      style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
+      className="pointer-events-none absolute inset-0 z-0"
     >
       <div
-        className="pointer-events-auto shrink-0 grow-0 basis-auto"
+        className="absolute inset-x-0 bottom-0 top-0"
+        style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
+    >
+      <div
+        className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto -translate-x-1/2"
         style={{
           // shrink-0 / min-width are LOAD-BEARING: the frame is WIDER than the
           // artwork on purpose so the selector can never clip, and a flex child

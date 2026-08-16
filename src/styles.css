@@ -205,12 +205,8 @@
   --giver-yellow: var(--giver-community);
 
 
-  /* Brand accent — NOT locked. Candidates kept side by side; swap the
-     one line below to evaluate lime / orange / purple app-wide. */
-  --giver-accent-lime: oklch(0.85 0.22 128);
-  --giver-accent-orange: var(--giver-give);
-  --giver-accent-purple: var(--giver-wish);
-  --giver-accent: var(--giver-profile);
+  /* Brand accent — Giver itself is generosity: green. */
+  --giver-accent: var(--giver-generosity);
 
   /* Geometry + motion. */
   --giver-radius: 999px;
@@ -225,14 +221,20 @@
   --color-giver-paper: var(--giver-paper);
   --color-giver-ink: var(--giver-ink);
   --color-giver-accent: var(--giver-accent);
-  --color-wish: var(--giver-wish);
-  --color-give: var(--giver-give);
-  --color-trade: var(--giver-trade);
+  --color-me: var(--giver-me);
+  --color-others: var(--giver-others);
   --color-community: var(--giver-community);
-  --color-discovery: var(--giver-discovery);
-  --color-borrow: var(--giver-borrow);
-  --color-giver: var(--giver-profile);
+  --color-connection: var(--giver-connection);
+  --color-participation: var(--giver-participation);
+  --color-generosity: var(--giver-generosity);
+  --color-giver: var(--giver-generosity);
+  --color-wish: var(--giver-connection);
+  --color-give: var(--giver-generosity);
+  --color-trade: var(--giver-participation);
+  --color-discovery: var(--giver-community);
+  --color-borrow: var(--giver-community);
 }
+
 
 /* ---------------------------------------------------------------
    Giver — world colour stories, driven by MEANING:

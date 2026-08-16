@@ -536,6 +536,14 @@ function FirstGenerosity({
       >
         50 sparks have now been given to {username}
       </Spoken>
+      {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
+      <Spoken
+        show={shown >= 4}
+        className="mt-5 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
+      >
+        50 sparks have now been added to your profile
+      </Spoken>
+
       <ForwardCue show={settled} label="continue" onClick={() => setAsked(true)} />
     </div>
   );

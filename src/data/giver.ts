@@ -44,6 +44,16 @@ export type Member = {
   active: { wish: string[]; give: string[]; trade: string[]; borrow: string[] };
   /** Prototype history, one short line per state. */
   history: { wishes: string[]; gives: string[]; trades: string[] };
+  /** FULL PROFILE ONLY — the person, not their current activity. */
+  since: string;
+  aboutMe: string;
+  /** Completed activity. Plain counts, never leaderboard stats. */
+  done: { gifts: number; wishes: number; trades: number; borrows: number };
+  /**
+   * CONNECTIONS ARE EARNED: member ids they have completed a give, a granted
+   * wish or a trade with. Mutual by construction (see connectionsOf).
+   */
+  connections: string[];
 };
 
 export const MEMBERS: Member[] = [
@@ -84,6 +94,11 @@ export const MEMBERS: Member[] = [
       gives: ["chemistry revision, 6 evenings", "two boxes of jam jars"],
       trades: ["bike inner tubes for tomatoes"],
     },
+    since: "march 2026",
+    aboutMe:
+      "hi, i'm giulia. i'm a chemistry teacher and always happy to help with science stuff. even if you've just got a quick question, send me a message — happy to help.",
+    done: { gifts: 5, wishes: 2, trades: 1, borrows: 1 },
+    connections: ["sofia", "robin"],
   },
   {
     id: "sofia",
@@ -121,6 +136,11 @@ export const MEMBERS: Member[] = [
       gives: ["tarot readings, sundays"],
       trades: ["a tarot reading for a haircut"],
     },
+    since: "january 2026",
+    aboutMe:
+      "hi, i'm sofia. i read cards on sundays and the kettle is always on. if you're curious, come sit down — no experience needed.",
+    done: { gifts: 3, wishes: 4, trades: 1, borrows: 0 },
+    connections: ["giulia", "marcus"],
   },
   {
     id: "robin",
@@ -160,6 +180,11 @@ export const MEMBERS: Member[] = [
       gives: ["stage lighting for the street party", "a wheelbarrow of kindling"],
       trades: ["tool sharpening for a car wash", "firewood for festival tickets"],
     },
+    since: "november 2025",
+    aboutMe:
+      "i'm robin. shed full of tools, too much firewood, and a van that mostly starts. if you need something lifted, lit or sharpened, ask.",
+    done: { gifts: 6, wishes: 1, trades: 4, borrows: 2 },
+    connections: ["giulia", "marcus"],
   },
   {
     // The fourth mode: BORROW.
@@ -185,7 +210,7 @@ export const MEMBERS: Member[] = [
     ],
     active: {
       wish: ["a lighter, any kind"],
-      give: [],
+      give: ["an hour of listening"],
       trade: ["snus for coffee"],
       borrow: ["a cigarette"],
     },
@@ -194,8 +219,28 @@ export const MEMBERS: Member[] = [
       gives: ["an hour of listening"],
       trades: ["nothing yet"],
     },
+    since: "february 2026",
+    aboutMe:
+      "marcus. psychologist by day, snus by night. if you need someone to just listen for an hour, that's the thing i'm best at.",
+    done: { gifts: 2, wishes: 1, trades: 1, borrows: 3 },
+    connections: ["sofia", "robin"],
   },
 ];
+
+export const memberById = (id: string) => MEMBERS.find((m) => m.id === id);
+
+/**
+ * CONNECTIONS ARE MUTUAL. The completed act creates the link both ways, so a
+ * person's connections are their own list PLUS anyone who lists them — no
+ * acceptance step, no friend request.
+ */
+export function connectionsOf(id: string): Member[] {
+  const self = memberById(id);
+  const ids = new Set(self?.connections ?? []);
+  for (const m of MEMBERS) if (m.connections.includes(id)) ids.add(m.id);
+  ids.delete(id);
+  return MEMBERS.filter((m) => ids.has(m.id));
+}
 
 export const ME = {
   name: "you",

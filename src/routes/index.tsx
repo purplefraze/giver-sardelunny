@@ -30,35 +30,31 @@ const MY_HISTORY: string[][] = [
  * ONE LIVING G, FOUR MODES.
  * Mode never navigates: it only changes what the same persistent G holds.
  *
- * ACTION GRAMMAR is the primary rule — the G reads as things you can DO, never
- * as a filing system:
- *   middle loop = what I initiate for myself   (make / offer / propose / borrow)
- *   bottom loop = what I do for someone else   (grant / find / accept / lend)
+ * The prompts are QUESTIONS, always — the G asks you something, it never files
+ * anything away:
+ *   middle loop = what I am putting into the world
+ *   bottom loop = what the community is asking of me
  */
 const MODE_CONTENT: Record<
   Mode,
   {
-    /** The action lines that live inside each loop. */
-    mine: { action: string[]; title: string; body: React.ReactNode };
-    community: { action: string[]; title: string; body: React.ReactNode };
+    mine: { title: string; body: React.ReactNode };
+    community: { title: string; body: React.ReactNode };
   }
 > = {
   wish: {
     mine: {
-      action: ["make", "a wish"],
-      title: "make a wish",
+      title: "what are you wishing for?",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
     community: {
-      action: ["grant", "a wish"],
-      title: "grant a wish",
+      title: "what can you help with?",
       body: <>{COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>)}</>,
     },
   },
   give: {
     mine: {
-      action: ["offer", "something"],
-      title: "offer something",
+      title: "what are you offering?",
       body: (
         <p className="opacity-70">
           share something you have, know, or can do.
@@ -66,22 +62,19 @@ const MODE_CONTENT: Record<
       ),
     },
     community: {
-      action: ["find", "something"],
-      title: "find something",
+      title: "what are you looking for?",
       body: <>{COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>)}</>,
     },
   },
   trade: {
     mine: {
-      action: ["propose", "a trade"],
-      title: "propose a trade",
+      title: "what are you trading?",
       body: (
         <p className="opacity-70">offer something, ask for something back.</p>
       ),
     },
     community: {
-      action: ["accept", "a trade"],
-      title: "accept a trade",
+      title: "what trades are out there?",
       body: (
         <p className="opacity-70">
           open trades from the people nearby. coming next.
@@ -91,13 +84,11 @@ const MODE_CONTENT: Record<
   },
   borrow: {
     mine: {
-      action: ["borrow", "something"],
-      title: "borrow something",
+      title: "what would you like to borrow?",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
     community: {
-      action: ["lend", "something"],
-      title: "lend something",
+      title: "what can you lend?",
       body: (
         <p className="opacity-70">
           what people nearby are happy to lend. coming next.
@@ -106,6 +97,7 @@ const MODE_CONTENT: Record<
     },
   },
 };
+
 
 
 export const Route = createFileRoute("/")({

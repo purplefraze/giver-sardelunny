@@ -138,9 +138,12 @@ function Index() {
   const [entered, setEntered] = useState(false);
   /** First run only: set up your own profile before the workspace opens. */
   const [setup, setSetup] = useState(false);
+  /** Profile complete — the one-time sparkle reward. */
+  const [reward, setReward] = useState(false);
   const [gaveTo, setGaveTo] = useState<string | null>(null);
   /** My deeper, conventional profile page — same data, browsable form. */
   const [fullMe, setFullMe] = useState(false);
+
 
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);

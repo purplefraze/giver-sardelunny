@@ -81,7 +81,7 @@ export function loopText({
 
     const rows = blocks.flatMap((block, i) => {
       const size =
-        token[block.role] * step * scale * (hero && i === 0 ? HERO_LEAD : 1);
+        token[block.role] * step * scale * (hero && i === kickerRows ? HERO_LEAD : 1);
       return wrapLines(block.text, size, max, block.role).map((text, j) => ({
         text,
         size,

@@ -335,7 +335,12 @@ function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void 
   }, [last, onDone]);
 
   return (
-    <IntroG world={world} middle={copy("middle")} bottom={copy("bottom")}>
+    <IntroG
+      world={world}
+      top={copy("top")}
+      middle={copy("middle")}
+      bottom={copy("bottom")}
+    >
       <BackArrow onClick={onBack} />
       <ForwardCue show label="meet them" onClick={onDone} />
     </IntroG>

@@ -138,11 +138,11 @@ const OPENING: Beat[] = [
 
 
 
-/** Straight into the people: meet — 4 — givers, one at a time. */
+/** Straight into the people: meet — four — givers, one at a time. */
 const MEET_INTRO: Beat[] = [
-  { world: "meet", top: ["meet"], hold: PHRASE_BEAT },
-  { world: "meet", top: ["meet"], middle: ["4"], hold: PHRASE_BEAT },
-  { world: "meet", top: ["meet"], middle: ["4"], bottom: ["givers"] },
+  { world: "meet", middle: ["meet"], hold: PHRASE_BEAT },
+  { world: "meet", middle: ["meet", "four"], hold: PHRASE_BEAT },
+  { world: "meet", middle: ["meet", "four"], bottom: ["givers"] },
 ];
 
 

@@ -36,6 +36,12 @@ export type Member = {
   bottom: LoopBlock[];
   /** Extra active items hidden behind the "+N more" cue. */
   alsoGiving?: string[];
+  /**
+   * WHAT THEY HAVE GOING ON RIGHT NOW, per category — not a lifetime history.
+   * The profile toggle reads this: move a seat, see that person's live items.
+   * Prototype range 0-5; an empty category simply stays quiet.
+   */
+  active: { wish: string[]; give: string[]; trade: string[]; borrow: string[] };
   /** Prototype history, one short line per state. */
   history: { wishes: string[]; gives: string[]; trades: string[] };
 };
@@ -56,17 +62,23 @@ export const MEMBERS: Member[] = [
     about:
       "29, about 0.7 km away. high-school chemistry teacher. out on her bike most weekends.",
     age: "29",
-    byDay: "chemistry teacher",
+    byDay: "teacher",
     byNight: "cuddle bug",
     weekend: "cycling",
     bottom: [
       { text: "currently offering", role: "secondary" },
       { text: "science", role: "primary" },
       { text: "tutoring", role: "primary" },
-      { text: "+1 more", role: "tertiary", lead: true },
+      { text: "+2 more", role: "tertiary", lead: true },
     ],
 
-    alsoGiving: ["after-school dog walking"],
+    alsoGiving: ["dog walking", "italian lessons"],
+    active: {
+      wish: ["a lift to the coast"],
+      give: ["science tutoring", "dog walking", "italian lessons"],
+      trade: [],
+      borrow: [],
+    },
     history: {
       wishes: ["a lift to the coast", "someone to water the plants"],
       gives: ["chemistry revision, 6 evenings", "two boxes of jam jars"],
@@ -87,16 +99,22 @@ export const MEMBERS: Member[] = [
     activity: "wishing for a ride to the airport this tuesday, 4 pm.",
     about: "26, less than a kilometre away. business grad. deep into tarot and spirituality.",
     age: "26",
-    byDay: "business grad",
+    byDay: "who knows",
     byNight: "wouldn't you like to know",
     weekend: "who knows",
     bottom: [
       { text: "wish", role: "secondary" },
-      { text: "ride to the", role: "primary" },
-      { text: "airport", role: "primary" },
+      { text: "need ride", role: "primary" },
+      { text: "to airport", role: "primary" },
       { text: "this tuesday", role: "tertiary", lead: true },
       { text: "at 4 pm", role: "tertiary" },
     ],
+    active: {
+      wish: ["need ride to airport", "a desk lamp"],
+      give: ["tarot readings"],
+      trade: [],
+      borrow: [],
+    },
 
     history: {
       wishes: ["a desk lamp", "help moving a sofa"],
@@ -130,6 +148,12 @@ export const MEMBERS: Member[] = [
       { text: "a burning", role: "primary" },
       { text: "man ticket", role: "primary" },
     ],
+    active: {
+      wish: ["a trailer for a weekend"],
+      give: ["stage lighting"],
+      trade: ["firewood for a ticket", "sharpening for a car wash"],
+      borrow: [],
+    },
 
     history: {
       wishes: ["a trailer for one weekend"],
@@ -159,6 +183,12 @@ export const MEMBERS: Member[] = [
       { text: "wants to borrow", role: "secondary" },
       { text: "a cigarette", role: "primary" },
     ],
+    active: {
+      wish: ["a lighter, any kind"],
+      give: [],
+      trade: ["snus for coffee"],
+      borrow: ["a cigarette"],
+    },
     history: {
       wishes: ["a lighter, any kind"],
       gives: ["an hour of listening"],

@@ -84,9 +84,11 @@ export function GStage({
       <div
         className="pointer-events-auto"
         style={{
-          // 97%: the minimum trim that guarantees the selector's full travel
-          // stays inside the usable viewport. The G stays viewport-dominant.
-          width: `min(97%, calc(100dvh * ${FRAME_ASPECT.toFixed(5)} * 0.97))`,
+          // The frame already CONTAINS the selector's full travel, so it may use
+          // the whole usable width: this is the canonical G at the largest size
+          // that still guarantees nothing clips. Every full-size Living G —
+          // workspace, profile setup, sample profiles — is measured here.
+          width: `min(100%, calc(100dvh * ${FRAME_ASPECT.toFixed(5)} * 0.995))`,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
         }}
       >

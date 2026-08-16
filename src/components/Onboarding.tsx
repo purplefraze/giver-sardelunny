@@ -39,71 +39,79 @@ type Beat = {
  * word begin. Each value is a SETTLE time — the fade itself (LOOP_WORD_MS) runs
  * underneath it, so consecutive words overlap softly rather than snapping.
  */
-const WORD_BEAT = 900;
-const PHRASE_BEAT = 1150;
-const COMPOSITION = 2400;
+const WORD_BEAT = 1250;
+const PHRASE_BEAT = 1500;
+const COMPOSITION = 2900;
+/** A brand name needs room: it lands, and then it is allowed to sit there. */
+const HERO_BEAT = 2500;
+/** The empty G, breathing — before anything is said, and between thoughts. */
+const BREATH = 1100;
+const DRAMATIC_BREATH = 1700;
 /** The thoughtful beat after "so..." — twice a normal pause. */
-const THINKING_BEAT = 2600;
+const THINKING_BEAT = 3200;
 
 const OPENING: Beat[] = [
-  // middle = spoken to me, bottom = the name of the thing itself, hero size.
-  { world: "welcome", middle: ["welcome to"], hold: PHRASE_BEAT },
-  { world: "welcome", middle: ["welcome to"], bottom: ["giver"], hold: COMPOSITION },
+  // 1 — START EMPTY. The orange G, alone, breathing.
+  { world: "welcome", hold: BREATH },
 
-  // "spark change", one word at a time — then the promise beneath it.
+  // 2 — WELCOME / TO / (pause) / GIVER. One word at a time, each fading fully.
+  { world: "welcome", middle: ["welcome"], hold: WORD_BEAT },
+  { world: "welcome", middle: ["to"], hold: WORD_BEAT },
+  { world: "welcome", hold: DRAMATIC_BREATH },
+  { world: "welcome", bottom: ["giver"], hold: HERO_BEAT },
+  { world: "welcome", hold: BREATH },
+
+  // 3 — SPARK, then CHANGE. Never together.
   { world: "welcome", middle: ["spark"], hold: WORD_BEAT },
-  { world: "welcome", middle: ["spark", "change"], hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["change"], hold: WORD_BEAT },
+  { world: "welcome", hold: BREATH },
+
+  // 4 — KINDNESS / AS / CURRENCY, in the bottom loop, each its own moment.
+  { world: "welcome", bottom: ["kindness"], hold: WORD_BEAT },
+  { world: "welcome", bottom: ["as"], hold: WORD_BEAT },
+  { world: "welcome", bottom: ["currency"], hold: PHRASE_BEAT },
+  { world: "welcome", hold: BREATH },
+
+  // 5 — the phrase BUILDS: nothing already visible moves.
+  { world: "welcome", middle: ["to get you"], hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["to get you", "started..."], hold: COMPOSITION },
+
+  // 6 — and the gift builds beneath it, while the middle holds.
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["kindness"],
+    middle: ["to get you", "started..."],
+    bottom: ["here's a"],
     hold: WORD_BEAT,
   },
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["kindness", "as"],
+    middle: ["to get you", "started..."],
+    bottom: ["here's a", "100 sparks"],
     hold: WORD_BEAT,
   },
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["kindness", "as", "currency"],
-    hold: 2800,
-  },
-
-  { world: "welcome", middle: ["to get", "you", "started..."], hold: COMPOSITION },
-
-  { world: "welcome", middle: ["here's", "100 sparks", "from"], hold: PHRASE_BEAT },
-  {
-    world: "welcome",
-    middle: ["here's", "100 sparks", "from"],
-    bottom: ["giver"],
+    middle: ["to get you", "started..."],
+    bottom: ["here's a", "100 sparks", "from"],
     hold: COMPOSITION,
   },
+  { world: "welcome", hold: DRAMATIC_BREATH },
 
-  // ONE coordinated beat: the G turns green as the green words arrive.
-  { world: "gift", middle: ["50 sparks", "for you", "to wish"], hold: 2100 },
-  // The middle message HOLDS while the bottom half of the sparks appears.
-  {
-    world: "gift",
-    middle: ["50 sparks", "for you", "to wish"],
-    bottom: ["50 sparks", "for you", "to give"],
-    hold: 2900,
-  },
+  // 7 — THE SECOND BRAND BEAT. "giver", alone, large.
+  { world: "welcome", bottom: ["giver"], hold: HERO_BEAT },
+  { world: "welcome", hold: BREATH },
 
-  // THE PAUSE. "so..." alone, much larger, held twice as long.
+  // 8 + 9 — only now does the G turn green, and think.
+  { world: "gift", hold: BREATH },
   { world: "gift", middle: ["so..."], scale: { middle: 1.7 }, hold: THINKING_BEAT },
+  { world: "gift", hold: BREATH },
 
-
+  // 10 — the question, one word at a time, then the hero.
   { world: "gift", middle: ["are"], hold: WORD_BEAT },
-  { world: "gift", middle: ["are", "you"], hold: WORD_BEAT },
-  { world: "gift", middle: ["are", "you", "a"], hold: PHRASE_BEAT },
-  {
-    world: "gift",
-    middle: ["are", "you", "a"],
-    bottom: ["giver?"],
-  },
+  { world: "gift", middle: ["you"], hold: WORD_BEAT },
+  { world: "gift", middle: ["a"], hold: WORD_BEAT },
+  { world: "gift", hold: BREATH },
+  { world: "gift", bottom: ["giver?"] },
 ];
 
 /** Straight into the people: meet — 4 — givers, one at a time. */

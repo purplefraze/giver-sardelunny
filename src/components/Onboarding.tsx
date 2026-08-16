@@ -109,10 +109,10 @@ const OPENING: Beat[] = [
     hold: COMPOSITION,
   },
 
-  // 8 — the split, said as simply as it can be said. Two compositions, no essay.
+  // 8 — the split, in parallel language: 50 to wish, 50 to give.
   {
     world: "welcome",
-    middle: ["50", "for your wishes"],
+    middle: ["50", "to wish"],
     hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
@@ -120,38 +120,20 @@ const OPENING: Beat[] = [
   { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
   {
     world: "welcome",
-    middle: ["50", "to gift"],
+    middle: ["50", "to give"],
     hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
 
+  // 9 — THE EMOTIONAL PAYOFF. "spark change" gives way to the invitation.
+  { world: "welcome", middle: ["50", "to give"], hero: { middle: true }, hold: SHORT_BEAT },
+  { world: "welcome", bottom: ["make someone's day!"], scale: HERO, hold: HERO_BEAT },
 
-  // 9 — spark change alone, then the orange G empties completely.
-  { world: "welcome", bottom: ["spark", "change"], hold: PHRASE_BEAT },
-  { world: "welcome", hold: BREATH },
-
-  // 10 — only now does the G turn green, and think.
-  { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", middle: ["so..."], hold: THINKING_BEAT },
-  { world: "gift", hold: SHORT_BEAT },
-
-  // 11 — the question, one word at a time, then the hero payoff.
-  { world: "gift", middle: ["are"], hold: WORD_BEAT },
-  { world: "gift", middle: ["you"], hold: WORD_BEAT },
-  { world: "gift", middle: ["a"], hold: WORD_BEAT },
-  { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", bottom: ["giver?"] },
+  // 10 — the G turns green, holding the invitation. Then: let's giver.
+  { world: "gift", bottom: ["make someone's day!"], scale: HERO },
 ];
 
-
-
-/** Straight into the people: meet — four — givers, one at a time. */
-const MEET_INTRO: Beat[] = [
-  { world: "meet", middle: ["meet"], hold: PHRASE_BEAT },
-  { world: "meet", middle: ["meet", "four"], hold: PHRASE_BEAT },
-  { world: "meet", middle: ["meet", "four"], bottom: ["givers"] },
-];
 
 
 

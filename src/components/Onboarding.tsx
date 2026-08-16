@@ -177,10 +177,11 @@ const HOLD = COMPOSITION;
 
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
-  giving: "var(--giver-discovery)",
-  wishing: "var(--giver-community)",
-  trading: "var(--giver-trade)",
-  borrowing: "var(--giver-borrow)",
+  // Every sample person is ANOTHER PERSON from my perspective: BLUE.
+  giving: "var(--giver-others)",
+  wishing: "var(--giver-others)",
+  trading: "var(--giver-others)",
+  borrowing: "var(--giver-others)",
 };
 
 const LOOPS: Loop[] = ["top", "middle", "bottom"];
@@ -506,7 +507,7 @@ function ChooseRecipient({
       <BackArrow onClick={onBack} />
       <h1
         className="text-[13vw] font-black lowercase leading-[0.92] tracking-[-0.05em]"
-        style={{ color: "var(--giver-profile)" }}
+        style={{ color: "var(--giver-generosity)" }}
       >
         {QUESTION.map((phrase, i) => (
           <Spoken key={phrase} show={i < shown}>
@@ -578,7 +579,7 @@ function FirstGenerosity({
       <Spoken
         show={shown >= 1}
         className="text-[16vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
-        style={{ color: "var(--giver-profile)" }}
+        style={{ color: "var(--giver-generosity)" }}
       >
         congrats
       </Spoken>
@@ -627,7 +628,7 @@ function FirstGenerosity({
           }}
           className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
           style={{
-            color: "var(--giver-profile)",
+            color: "var(--giver-generosity)",
             opacity: settled ? 1 : 0,
             pointerEvents: settled ? "auto" : "none",
           }}
@@ -670,7 +671,7 @@ function MessagingConsent({
         <Spoken
           show={shown >= 2}
           className="mt-8 max-w-[13ch] text-[10.5vw] font-black lowercase leading-[0.9] tracking-[-0.05em]"
-          style={{ color: "var(--giver-profile)" }}
+          style={{ color: "var(--giver-generosity)" }}
         >
           okay if they message you?
         </Spoken>
@@ -697,7 +698,7 @@ function MessagingConsent({
           type="button"
           onClick={() => onAnswer(true)}
           className="text-[9vw] font-black lowercase leading-none tracking-[-0.05em] transition-transform active:scale-95"
-          style={{ color: "var(--giver-profile)" }}
+          style={{ color: "var(--giver-generosity)" }}
         >
           yes
         </button>

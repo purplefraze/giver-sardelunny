@@ -61,7 +61,7 @@ export function FullProfile({
 
   return (
     <div
-      data-world={member.world}
+      data-world="others"
       className="relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >

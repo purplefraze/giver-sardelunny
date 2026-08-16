@@ -58,92 +58,76 @@ const OPENING: Beat[] = [
   // 2 — WELCOME, then TO underneath it. "welcome" never moves.
   { world: "welcome", middle: ["welcome"], hold: WORD_BEAT },
   { world: "welcome", middle: ["welcome", "to"], hold: PHRASE_BEAT },
-  // A small beat only — the opening keeps moving.
   { world: "welcome", hold: SHORT_BEAT },
+
+  // 3 — the first brand moment. It lands, and it is allowed to sit there.
   { world: "welcome", bottom: ["giver"], hold: HERO_BEAT },
   { world: "welcome", hold: SHORT_BEAT },
 
-  // 3 — SPARK, then CHANGE underneath it. It then STAYS.
-  { world: "welcome", middle: ["spark"], hold: WORD_BEAT },
-  { world: "welcome", middle: ["spark", "change"], hold: PHRASE_BEAT },
+  // 4 — KINDNESS · AS · CURRENCY. One word at a time, never together.
+  { world: "welcome", middle: ["kindness"], hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["as"], scale: { middle: 0.7 }, hold: WORD_BEAT },
+  { world: "welcome", middle: ["currency"], hold: PHRASE_BEAT },
+  { world: "welcome", hold: SHORT_BEAT },
 
-  // 4 — KINDNESS / as / CURRENCY beneath it. "spark change" holds throughout.
+  // 5 — SPARK / CHANGE, big, in the bottom loop. It then STAYS.
+  { world: "welcome", bottom: ["spark"], hold: WORD_BEAT },
+  { world: "welcome", bottom: ["spark", "change"], hold: HERO_BEAT },
+
+  // 6 — TO GET YOU STARTED, in the middle loop. "spark change" holds.
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["kindness"],
-    scale: { bottom: 1.08 },
+    middle: ["to get you", "started..."],
+    bottom: ["spark", "change"],
+    hold: COMPOSITION,
+  },
+  { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
+
+  // 7 — the gift BUILDS: nothing already revealed moves.
+  { world: "welcome", middle: ["here's"], bottom: ["spark", "change"], hold: WORD_BEAT },
+  {
+    world: "welcome",
+    middle: ["here's", "100 sparks"],
+    bottom: ["spark", "change"],
+    hold: COMPOSITION,
+  },
+
+  // 8 — what the sparks are for. Same middle loop, clean beats.
+  {
+    world: "welcome",
+    middle: ["50", "for you"],
+    bottom: ["spark", "change"],
     hold: PHRASE_BEAT,
   },
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["as"],
-    scale: { bottom: 0.58 },
-    hold: WORD_BEAT,
+    middle: ["50", "to wish with"],
+    bottom: ["spark", "change"],
+    hold: COMPOSITION,
   },
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["currency"],
-    scale: { bottom: 1.08 },
-    hold: PHRASE_BEAT,
+    middle: ["50", "to gift", "and make", "someone's day"],
+    bottom: ["spark", "change"],
+    hold: COMPOSITION,
   },
-  { world: "welcome", middle: ["spark", "change"], hold: SHORT_BEAT },
 
-  // 5 — TO GET YOU STARTED, in the bottom loop, then gone again.
-  {
-    world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["to get you", "started..."],
-    hold: COMPOSITION,
-  },
-  { world: "welcome", middle: ["spark", "change"], hold: SHORT_BEAT },
-
-  // 6 — the gift BUILDS: nothing already revealed moves.
-  { world: "welcome", middle: ["spark", "change"], bottom: ["here's"], hold: WORD_BEAT },
-  {
-    world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["here's", "100 sparks"],
-    hold: WORD_BEAT,
-  },
-  {
-    world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["here's", "100 sparks", "from giver"],
-    hold: COMPOSITION,
-  },
-  { world: "welcome", middle: ["spark", "change"], hold: SHORT_BEAT },
-
-  // 7 — WHAT THE SPARKS ARE FOR. Half to wish with, half to give away.
-  {
-    world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["50", "to make", "5 wishes"],
-    hold: COMPOSITION,
-  },
-  { world: "welcome", middle: ["spark", "change"], hold: SHORT_BEAT },
-  {
-    world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["50", "to gift", "and make", "someone's day"],
-    hold: COMPOSITION,
-  },
+  // 9 — the orange G empties completely BEFORE the colour changes.
   { world: "welcome", hold: BREATH },
 
-  // 8 — only now does the G turn green, and think.
+  // 10 — only now does the G turn green, and think.
   { world: "gift", hold: SHORT_BEAT },
   { world: "gift", middle: ["so..."], scale: { middle: 1.7 }, hold: THINKING_BEAT },
   { world: "gift", hold: SHORT_BEAT },
 
-  // 9 — the question, one word at a time, at the "so..." scale, then the hero.
+  // 11 — the question, one word at a time, then the hero.
   { world: "gift", middle: ["are"], scale: { middle: 1.7 }, hold: WORD_BEAT },
   { world: "gift", middle: ["you"], scale: { middle: 1.7 }, hold: WORD_BEAT },
   { world: "gift", middle: ["a"], scale: { middle: 1.7 }, hold: WORD_BEAT },
   { world: "gift", hold: SHORT_BEAT },
   { world: "gift", bottom: ["giver?"], scale: { bottom: 1.18 } },
 ];
+
 
 /** Straight into the people: meet — 4 — givers, one at a time. */
 const MEET_INTRO: Beat[] = [

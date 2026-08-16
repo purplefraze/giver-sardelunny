@@ -35,7 +35,6 @@ export function IntroG({
   bottom,
   onAdvance,
   copyOpacity = 1,
-  dominant = false,
   children,
 }: {
   world: string;
@@ -45,8 +44,6 @@ export function IntroG({
   onAdvance?: (() => void) | undefined;
   /** Gentle fade of the words inside the loops. The G itself never moves. */
   copyOpacity?: number;
-  /** The opening onboarding: the canonical huge, viewport-dominant G. */
-  dominant?: boolean;
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
@@ -87,7 +84,7 @@ export function IntroG({
       }}
       onClick={onAdvance}
     >
-      <GStage dominant={dominant}>
+      <GStage>
         <div
           className="h-full w-full [&_path]:ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{ ["--beat" as string]: `${BEAT_MS}ms` }}

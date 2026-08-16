@@ -369,6 +369,17 @@ function CategoryBlock({
             </button>
             <button
               type="button"
+              aria-label={`mark ${item} completed`}
+              onClick={() => {
+                buzz();
+                myProfileStore.completeItem(category, i);
+              }}
+              className="px-2 text-xl font-black opacity-45"
+            >
+              ✓
+            </button>
+            <button
+              type="button"
               aria-label={`remove ${item}`}
               onClick={() => {
                 buzz();
@@ -381,6 +392,7 @@ function CategoryBlock({
           </li>
         ))}
       </ul>
+
 
       {items.length ? (
         <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-40">

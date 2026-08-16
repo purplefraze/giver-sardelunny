@@ -55,7 +55,7 @@ export function widthOf(text: string, size: number, role: LoopTypeRole) {
 
 
 /** Widest line a loop will accept before wrapping. */
-export function wrapWidth(region: LoopRegion, factor = 1.75, inset = 1) {
+export function wrapWidth(region: LoopRegion, factor = 2.02, inset = 1) {
   return LOOP_SAFE_RADIUS[region] * inset * factor;
 }
 

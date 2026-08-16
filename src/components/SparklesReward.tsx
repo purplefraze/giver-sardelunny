@@ -15,7 +15,7 @@ export function SparklesReward({ onDone }: { onDone: () => void }) {
   return (
     <button
       type="button"
-      data-world="participation"
+      data-world="gift"
       onClick={() => {
         buzz();
         onDone();

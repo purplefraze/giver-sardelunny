@@ -25,10 +25,10 @@ export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 export function GStage({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+      className="pointer-events-none absolute inset-0 z-0 flex items-end justify-center"
       style={{
         paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.35rem)",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
       }}
@@ -36,7 +36,9 @@ export function GStage({ children }: { children: React.ReactNode }) {
       <div
         className="pointer-events-auto"
         style={{
-          width: `min(100%, calc(100dvh * ${FRAME_ASPECT.toFixed(5)}))`,
+          // 97%: the minimum trim that guarantees the selector's full travel
+          // stays inside the usable viewport. The G stays viewport-dominant.
+          width: `min(97%, calc(100dvh * ${FRAME_ASPECT.toFixed(5)} * 0.97))`,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
         }}
       >
@@ -45,3 +47,4 @@ export function GStage({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

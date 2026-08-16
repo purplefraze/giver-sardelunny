@@ -52,8 +52,6 @@ const HERO_BEAT = 2500;
 const BREATH = 1100;
 /** A small beat between thoughts: enough air, never a dramatic wait. */
 const SHORT_BEAT = 620;
-/** The thoughtful beat after "so..." — twice a normal pause. */
-const THINKING_BEAT = 3200;
 
 /**
  * OPENING TYPE HIERARCHY, as three shared tokens — never per-word guesses.

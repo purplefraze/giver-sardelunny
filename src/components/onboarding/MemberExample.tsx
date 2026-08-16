@@ -225,41 +225,20 @@ export function MemberExample({
           <>
             <BackArrow onClick={() => setDeep(null)} label={`back to ${member.name}`} />
             <h2 className="mt-6 text-[16vw] font-black lowercase leading-[0.82] tracking-[-0.05em]">
-              {deep === "activity"
-                ? member.action
-                : deep === "history"
-                  ? HISTORY_STATES[topPos]
-                  : member.username}
+              {deep === "wish" ? "wish" : member.action}
             </h2>
-            {deep === "history" ? (
-              <div className="mt-8 space-y-5">
-                {historyLines.map((line) => (
+            <div className="mt-8 space-y-5">
+              {(deep === "wish" ? member.active.wish : member.active[seat]).map(
+                (line) => (
                   <p key={line} className="text-2xl font-medium lowercase leading-tight">
                     {line}
                   </p>
-                ))}
-              </div>
-            ) : null}
-            {deep === "about" ? (
-              <p className="mt-8 text-2xl font-medium leading-tight">{member.about}</p>
-            ) : null}
-            {deep === "activity" ? (
-              <>
-                <p className="mt-8 text-2xl font-medium leading-tight">
-                  {member.headline}
-                </p>
-                <p className="mt-6 text-2xl font-medium leading-tight opacity-70">
-                  {member.activity}
-                </p>
-                {member.alsoGiving?.map((item) => (
-                  <p key={item} className="mt-6 text-2xl font-medium leading-tight opacity-70">
-                    {item}
-                  </p>
-                ))}
-              </>
-            ) : null}
+                ),
+              )}
+            </div>
           </>
         ) : null}
+
       </div>
     </div>
   );

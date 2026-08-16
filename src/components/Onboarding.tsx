@@ -162,9 +162,19 @@ const OPENING: Beat[] = [
     hold: COMPOSITION,
   },
 
-  // 9 — THE EMOTIONAL PAYOFF. "spark change" gives way to the invitation.
+  // 9 — THE EMOTIONAL PAYOFF. "spark change" leaves, then the invitation arrives
+  // WHILE "50 to give" is still on the paper — the G is never empty between
+  // phrases — and only then does the split hand over.
   { world: "welcome", middle: ["50", "to give"], hero: { middle: true }, hold: SHORT_BEAT },
-  { world: "welcome", bottom: ["make someone's day!"], scale: HERO, hold: HERO_BEAT },
+  {
+    world: "welcome",
+    middle: ["50", "to give"],
+    hero: { middle: true },
+    bottom: ["make someone's day!"],
+    scale: HERO,
+    hold: HERO_BEAT,
+  },
+  { world: "welcome", bottom: ["make someone's day!"], scale: HERO, hold: SHORT_BEAT },
 
   // 10 — the G turns green, holding the invitation. Then: let's giver.
   { world: "gift", bottom: ["make someone's day!"], scale: HERO },

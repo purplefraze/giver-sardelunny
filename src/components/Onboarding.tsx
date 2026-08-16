@@ -398,28 +398,6 @@ function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
   );
 }
 
-/** One line, then straight into the people. */
-function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
-  const { world, copy, last } = useBeats(MEET_INTRO);
-
-  useEffect(() => {
-    if (!last) return;
-    const t = setTimeout(onDone, HOLD);
-    return () => clearTimeout(t);
-  }, [last, onDone]);
-
-  return (
-    <IntroG
-      world={world}
-      top={copy("top")}
-      middle={copy("middle")}
-      bottom={copy("bottom")}
-    >
-      <BackArrow onClick={onBack} />
-      <ForwardCue show label="meet them" onClick={onDone} />
-    </IntroG>
-  );
-}
 
 /** The only forward affordance in onboarding: one small arrow, safe area kept. */
 function ForwardCue({

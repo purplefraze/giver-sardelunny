@@ -100,7 +100,7 @@ export const PROFILE_TYPE: Record<
  * The ONLY freedom left: if a profile still overflows its safe area, the WHOLE
  * stack steps down through these few stops together — never per line, never up.
  */
-export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82, 0.76] as const;
+export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64, 0.58] as const;
 
 
 /** Kept for compatibility with earlier profile layout code. */

@@ -382,7 +382,6 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   return (
     <IntroG
       world={world}
-      dominant
       top={copy("top")}
       middle={copy("middle")}
       bottom={copy("bottom")}

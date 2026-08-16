@@ -42,6 +42,7 @@ export function loopText({
   plan,
   scale = 1,
   lift = 0,
+  hero = false,
 }: {
   /** Accepted for API compatibility; centring always uses the loop centre. */
   anchor?: Anchor;
@@ -55,12 +56,17 @@ export function loopText({
   scale?: number;
   /** Optional upward nudge so a fingertip never covers the words. */
   lift?: number;
+  /** First line is the hero ("50"); the rest support it at detail size. */
+  hero?: boolean;
 }) {
   const token = LOOP_FIXED_SIZE[region];
   const full = plan && plan.length >= lines.length ? plan : lines;
   const blocks: Block[] = [
     ...(kicker ? [{ text: kicker, role: "label" as const }] : []),
-    ...full.map((text) => ({ text, role: "message" as const })),
+    ...full.map((text, i) => ({
+      text,
+      role: (hero && i > 0 ? "detail" : "message") as Block["role"],
+    })),
   ];
   const kickerRows = kicker ? 1 : 0;
 

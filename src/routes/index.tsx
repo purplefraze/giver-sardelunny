@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
-import { ProfileSetup } from "@/components/ProfileSetup";
+import { FullProfile } from "@/components/FullProfile";
+import { ProfileBuilder } from "@/components/ProfileBuilder";
+import { profileLoop, clampField } from "@/components/living-g/profile-loop";
+import { useMyProfile } from "@/hooks/use-my-profile";
+import { myProfileStore, myAsMember, myPhoto, primaryAsk, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
 import {
   HISTORY_STATES,
@@ -135,6 +139,8 @@ function Index() {
   /** First run only: set up your own profile before the workspace opens. */
   const [setup, setSetup] = useState(false);
   const [gaveTo, setGaveTo] = useState<string | null>(null);
+  /** My deeper, conventional profile page — same data, browsable form. */
+  const [fullMe, setFullMe] = useState(false);
 
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
@@ -189,6 +195,11 @@ function Index() {
 
   const content = MODE_CONTENT[mode];
 
+  /** ONE source of truth for who I am and what I have going on. */
+  const me = useMyProfile();
+  const myAsk = primaryAsk(me);
+  const myGive = primaryGive(me);
+
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
       {!entered ? (
@@ -196,12 +207,13 @@ function Index() {
           onDone={(name) => {
             setGaveTo(name);
             setEntered(true);
-            setSetup(true);
+            /* Already built once? Never show the first-time builder again. */
+            setSetup(!myProfileStore.get().built);
           }}
         />
       ) : setup ? (
-        /* FIRST-TIME PROFILE SETUP — one photo, three short answers. */
-        <ProfileSetup onDone={() => setSetup(false)} />
+        /* THE PROFILE BUILDER — writes straight to the real profile. */
+        <ProfileBuilder onDone={() => setSetup(false)} firstTime={!me.built} />
       ) : (
 
         <>
@@ -227,16 +239,42 @@ function Index() {
                 onPress: () => push("profile"),
               },
               middle: {
-                // WHAT I INITIATE — taught once, then held to reveal again.
+                // MY PRIORITY ASK — wish, trade or borrow, whichever is #1.
                 label: content.mine.title,
                 panelTitle: content.mine.title,
                 panelBody: content.mine.body,
+                ...(myAsk
+                  ? {
+                      render: (anchor) =>
+                        profileLoop({
+                          anchor,
+                          region: "middle",
+                          blocks: [
+                            { text: myAsk.category, role: "secondary" as const },
+                            { text: clampField(myAsk.text), role: "primary" as const },
+                          ],
+                        }),
+                    }
+                  : {}),
               },
               bottom: {
-                // WHAT I CAN DO FOR SOMEONE ELSE — same teaching rhythm.
+                // MY PRIORITY GIVE — always what I decided matters most.
                 label: content.community.title,
                 panelTitle: content.community.title,
                 panelBody: content.community.body,
+                ...(myGive
+                  ? {
+                      render: (anchor) =>
+                        profileLoop({
+                          anchor,
+                          region: "bottom",
+                          blocks: [
+                            { text: "give", role: "secondary" as const },
+                            { text: clampField(myGive), role: "primary" as const },
+                          ],
+                        }),
+                    }
+                  : {}),
               },
             }}
 
@@ -255,7 +293,7 @@ function Index() {
                   onChange={setMyTopPos}
                   content={
                     <>
-                      {topLoopContent.photo(ME.photo, "me-top")}
+                      {topLoopContent.photo(myPhoto(me), "me-top")}
                       {topLoopContent.stateLabel(HISTORY_STATES[myTopPos])}
                     </>
                   }
@@ -281,15 +319,34 @@ function Index() {
                 middle: {
                   label: "",
                   panelTitle: "me",
-                  panelBody: <p>{ME.name} — new to giver.</p>,
-                  render: ringPhoto(ME.photo, "me", 66),
+                  panelBody: (
+                    <>
+                      {CATEGORIES.filter((c) => me.items[c].length).map((c) => (
+                        <p key={c}>
+                          {CATEGORY_PLURAL[c]}: {me.items[c].join(", ")}
+                        </p>
+                      ))}
+                      <p className="opacity-70">{me.aboutMe || ME.about}</p>
+                    </>
+                  ),
+                  render: ringPhoto(myPhoto(me), "me", 66),
+                  onPress: () => setFullMe(true),
                 },
                 bottom: {
-                  label: "about",
+                  label: "edit profile",
                   panelTitle: "about me",
-                  panelBody: <p>{ME.about}</p>,
+                  panelBody: null,
+                  onPress: () => setSetup(true),
                 },
               }}
+            />
+          </Screen>
+
+          <Screen open={fullMe}>
+            <FullProfile
+              member={myAsMember(me)}
+              world="me"
+              onBack={() => setFullMe(false)}
             />
           </Screen>
         </>

@@ -42,9 +42,12 @@ export function FullProfile({
   member,
   onBack,
   onOpen,
+  /** RED when this is me, BLUE when this is somebody else. */
+  world = "others",
 }: {
   member: Member;
   onBack: () => void;
+  world?: "others" | "me";
   /** Profile-to-profile discovery through completed acts. */
   onOpen?: (id: string) => void;
 }) {
@@ -61,7 +64,7 @@ export function FullProfile({
 
   return (
     <div
-      data-world="others"
+      data-world={world}
       className="relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
@@ -86,7 +89,7 @@ export function FullProfile({
           </p>
         </header>
 
-        <Section title="about them">
+        <Section title={world === "me" ? "about me" : "about them"}>
           <ul className="space-y-2">
             <li className="text-2xl font-medium lowercase leading-tight">
               {member.byDay} by day

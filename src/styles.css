@@ -349,6 +349,19 @@
   --world-accent: var(--giver-community);
 }
 
+/* ---- MY OWN RED FAMILY ----
+   NOT four new semantics: four shades of RED = ME, used only inside my own
+   profile management so I can scan my wishes, gives, trades and borrows at a
+   glance. All four stay unmistakably red. */
+[data-world="me"],
+[data-world="profile"] {
+  --me-give: var(--giver-me); /* classic vivid giver red */
+  --me-wish: oklch(0.72 0.15 22); /* softer, lighter red */
+  --me-trade: oklch(0.64 0.27 30); /* bright, electric red */
+  --me-borrow: oklch(0.44 0.16 30); /* deep auburn red */
+}
+
+
 /* Community — the shared space: yellow. */
 [data-world="community"] {
   --world-bg: var(--giver-paper);

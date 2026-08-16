@@ -1,56 +1,31 @@
 import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
+import { FullProfile } from "@/components/FullProfile";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
-import { clampField, profileLoop } from "@/components/living-g/profile-loop";
-import {
-  HISTORY_STATES,
-  type TopLoopPosition,
-} from "@/components/living-g/TopLoopSelector";
+import { profileLoop } from "@/components/living-g/profile-loop";
 import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
-import type { Member } from "@/data/giver";
+import { memberById, type Member } from "@/data/giver";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 /**
  * One community member, shown through the approved full-size Living G.
- * The G is identical to Home/Wish/Give: same geometry, scale and anchor.
- * Their words are fitted INSIDE the loops — the G never adapts to the content.
- * Each loop opens a deeper preview, and every deeper page comes back here.
+ *
+ * THE LIVING G SHOWS WHAT'S HAPPENING — never who the person is. The middle
+ * loop carries their current WISH (what they need), the bottom loop carries
+ * what they are currently OFFERING. Biography lives on the full profile page,
+ * reached by tapping their photo. Those two jobs never mix again.
  */
-type Deep = "history" | "about" | "activity" | null;
+type Deep = "wish" | "activity" | null;
 
-/**
- * Where a person's history selector RESTS when you first meet them: the state
- * they are an example of. Borrow has no history seat in the prototype, so a
- * borrower simply rests on wishes.
- */
-/**
- * THE SELECTOR STATES THE INTERACTION TYPE. A person's screen keeps the mode
- * selector sitting at the seat that matches what they are doing, so the seat
- * alone tells you: trade at ~4 o'clock, borrow at ~8 o'clock.
- */
-const MEMBER_MODE: Record<Member["world"], Mode> = {
-  wishing: "wish",
-  giving: "give",
-  trading: "trade",
-  borrowing: "borrow",
-};
-
-/** How each category reads when the toggle rests on it. */
-const PLURAL: Record<Mode, string> = {
-  wish: "wishes",
-  give: "gives",
-  trade: "trades",
-  borrow: "borrows",
-};
-
-const HISTORY_START: Record<Member["world"], TopLoopPosition> = {
-  wishing: 0,
-  giving: 1,
-  trading: 2,
-  borrowing: 0,
+/** How each category reads when the selector rests on it. */
+const OFFER_LABEL: Record<Mode, string> = {
+  wish: "wish",
+  give: "currently offering",
+  trade: "trading",
+  borrow: "wants to borrow",
 };
 
 export function MemberExample({
@@ -72,55 +47,56 @@ export function MemberExample({
 }) {
   const [deep, setDeep] = useState<Deep>(null);
   /**
-   * THE PROFILE TOGGLE. It rests on the seat that states what this person is
-   * doing, but it MOVES: dragging it shows what else they have going on right
-   * now. Same selector, same interaction, on every sample profile.
+   * THE PROFILE TOGGLE. It rests on give — what this person is offering — but
+   * it MOVES: dragging it shows what else they have going on right now.
    */
-  const [seat, setSeat] = useState<Mode>(MEMBER_MODE[member.world]);
-  /** Top-loop history selector: starts on this person's own state. */
-  const [topPos, setTopPos] = useState<TopLoopPosition>(HISTORY_START[member.world]);
-
-  useEffect(() => {
-    setTopPos(HISTORY_START[member.world]);
-  }, [member.world]);
-
+  const [seat, setSeat] = useState<Mode>("give");
+  /** Tapping the photo opens a real, scrollable profile page. */
+  const [profile, setProfile] = useState<string | null>(null);
 
   useEffect(() => {
     setDeep(null);
-    setSeat(MEMBER_MODE[member.world]);
-  }, [member.id, member.world]);
+    setProfile(null);
+    setSeat("give");
+  }, [member.id]);
 
-  // Fail loudly in dev if a profile has no words for its loops, instead of
-  // silently rendering an empty Living G.
-  if (import.meta.env.DEV && (!member.bottom?.length || !member.byDay)) {
-    console.error(`[giver] profile "${member.id}" is missing loop content`, member);
-  }
-
-
-  const historyLines = [
-    member.history.wishes,
-    member.history.gives,
-    member.history.trades,
-  ][topPos]!;
+  /** THE MIDDLE LOOP: what do they need right now? */
+  const wishes = member.active.wish;
+  const wish: LoopBlock[] = wishes.length
+    ? [
+        { text: "wish", role: "secondary" },
+        { text: wishes[0]!, role: "primary" },
+        ...(wishes.length > 1
+          ? [
+              {
+                text: `+${wishes.length - 1} more`,
+                role: "tertiary" as const,
+                lead: true,
+              },
+            ]
+          : []),
+      ]
+    : [
+        { text: "wish", role: "secondary" },
+        { text: "nothing right now", role: "tertiary" },
+      ];
 
   /**
-   * What this person has active in the seat's category, composed for the bottom
-   * loop. Their OWN seat keeps its authored preview; other seats are built from
-   * their live items, with a small realistic count. Zero items stays quiet — no
-   * "0", no empty count.
+   * THE BOTTOM LOOP: what are they offering? The selector's seat picks the
+   * category; the loop shows the primary item plus a quiet count. Zero items
+   * stays quiet — no "0", no empty count.
    */
   const activity: LoopBlock[] = (() => {
-    if (seat === MEMBER_MODE[member.world]) return member.bottom;
     const items = member.active[seat];
-    const plural = PLURAL[seat];
+    const label = OFFER_LABEL[seat];
     if (!items.length) {
       return [
-        { text: plural, role: "secondary" as const },
+        { text: label, role: "secondary" as const },
         { text: "nothing right now", role: "tertiary" as const },
       ];
     }
     const blocks: LoopBlock[] = [
-      { text: `${plural} ${items.length}`, role: "secondary" },
+      { text: label, role: "secondary" },
       { text: items[0]!, role: "primary" },
     ];
     if (items.length > 1) {
@@ -137,6 +113,18 @@ export function MemberExample({
     buzz();
     setDeep(d);
   };
+
+  const shown = profile ? memberById(profile) : null;
+  if (shown) {
+    return (
+      <FullProfile
+        member={shown}
+        onBack={() => setProfile(shown.id === member.id ? null : member.id)}
+        onOpen={(id) => setProfile(id)}
+      />
+    );
+  }
+
 
   return (
     <div

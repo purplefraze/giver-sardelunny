@@ -1,6 +1,11 @@
 import { BackArrow } from "@/components/BackArrow";
 import { connectionsOf, type Member } from "@/data/giver";
+import { ITEM_TYPES, ME_ID, boostWeight, myItems } from "@/data/items";
+import { myProfileStore } from "@/data/my-profile";
+import { useItems } from "@/hooks/use-items";
+import { useMyProfile } from "@/hooks/use-my-profile";
 import { buzz } from "@/lib/haptics";
+
 
 /**
  * THE FULL PROFILE — the person, not their current activity.

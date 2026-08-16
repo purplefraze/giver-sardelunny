@@ -59,19 +59,21 @@ const OPENING: Beat[] = [
   // 1 — START EMPTY. The orange G, alone, breathing.
   { world: "welcome", hold: BREATH },
 
-  // 2 — WELCOME, then TO underneath it. "welcome" never moves.
-  { world: "welcome", middle: ["welcome"], hold: WORD_BEAT },
-  { world: "welcome", middle: ["welcome", "to"], hold: PHRASE_BEAT },
+  // 2 — WELCOME, then TO underneath it. "welcome" never moves, and the beat
+  // keeps moving: this is a greeting, not a ceremony.
+  { world: "welcome", middle: ["welcome"], scale: WELCOME, hold: SHORT_BEAT },
+  { world: "welcome", middle: ["welcome", "to"], scale: WELCOME, hold: PHRASE_BEAT },
   { world: "welcome", hold: SHORT_BEAT },
 
-  // 3 — the first brand moment. It lands, and it is allowed to sit there.
-  { world: "welcome", bottom: ["giver"], hold: HERO_BEAT },
+  // 3 — the first brand moment. Still the hero word, just no longer shouting.
+  { world: "welcome", bottom: ["giver"], scale: HERO, hold: HERO_BEAT },
   { world: "welcome", hold: SHORT_BEAT },
 
-  // 4 — KINDNESS · AS · CURRENCY. One word at a time, never together.
-  { world: "welcome", middle: ["kindness"], hold: PHRASE_BEAT },
-  { world: "welcome", middle: ["as"], scale: { middle: 0.7 }, hold: WORD_BEAT },
-  { world: "welcome", middle: ["currency"], hold: PHRASE_BEAT },
+  // 4 — KINDNESS · AS · CURRENCY. One word at a time, deliberately SECONDARY:
+  // the phrase with authority in this chapter is "spark change".
+  { world: "welcome", middle: ["kindness"], scale: SECOND, hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["as"], scale: { middle: 0.52 }, hold: WORD_BEAT },
+  { world: "welcome", middle: ["currency"], scale: SECOND, hold: PHRASE_BEAT },
   { world: "welcome", hold: SHORT_BEAT },
 
   // 5 — SPARK / CHANGE, big, in the bottom loop. It then STAYS.

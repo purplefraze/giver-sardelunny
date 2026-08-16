@@ -37,18 +37,18 @@ export function GStage({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="pointer-events-none absolute inset-0 z-0"
+      // The clean bottom band is reserved on EVERY screen, so the canonical
+      // artwork lands at the identical size and position everywhere.
+      style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
     >
       <div
-        className="absolute inset-x-0 bottom-0 top-0"
-        style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
-    >
-      <div
+        // EXPLICIT centring, not flex alignment: the frame is intentionally
+        // wider than the viewport (selector clearance), and a centred flex item
+        // that overflows can be nudged or shrunk by the browser. left/translate
+        // pins the artwork's own centre line to the screen's centre line, and
+        // shrink-0 + min-width make shrinking impossible.
         className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto -translate-x-1/2"
         style={{
-          // shrink-0 / min-width are LOAD-BEARING: the frame is WIDER than the
-          // artwork on purpose so the selector can never clip, and a flex child
-          // would otherwise be shrunk to the container width — silently
-          // reducing the canonical G every time the frame grew.
           width: CANONICAL_WIDTH,
           minWidth: CANONICAL_WIDTH,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,

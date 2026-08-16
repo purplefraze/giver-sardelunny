@@ -246,6 +246,10 @@ function useBeats(script: Beat[]) {
    * plan, so a revealed word never moves when the next one arrives.
    */
   const plan = (key: Loop): string[] => {
+    // A loop that is FADING OUT (or merely holding a previous thought) must
+    // never adopt a future beat's composition: doing so swapped the words in
+    // while the group was still visible — the "100 sparks" pre-flash.
+    if (!script[i]![key]) return loops[key].lines;
     let j = i;
     while (j + 1 < script.length) {
       const a = script[j]![key] ?? [];
@@ -256,17 +260,31 @@ function useBeats(script: Beat[]) {
     return script[j]![key] ?? [];
   };
 
+  /** The last beat that actually spoke through this loop owns its treatment. */
+  const owner = (key: Loop): Beat => {
+    for (let j = i; j >= 0; j -= 1) if (script[j]![key]) return script[j]!;
+    return script[i]!;
+  };
+
   const copy = (key: Loop): LoopCopy | undefined => {
     if (!loops[key].lines.length) return undefined;
     const full = plan(key);
-    const scale = script[i]!.scale?.[key];
+    const own = owner(key);
+    const scale = own.scale?.[key];
+    const hero = own.hero?.[key];
     return {
       lines: loops[key].lines,
-      plan: full.length >= loops[key].lines.length ? full : loops[key].lines,
+      plan:
+        full.length >= loops[key].lines.length &&
+        same(loops[key].lines, full.slice(0, loops[key].lines.length))
+          ? full
+          : loops[key].lines,
       opacity: loops[key].opacity,
       ...(scale ? { scale } : {}),
+      ...(hero ? { hero } : {}),
     };
   };
+
 
   return { world: script[i]!.world, copy, last };
 }

@@ -142,16 +142,39 @@ export function FullProfile({
                   >
                     {CATEGORY_LABEL[key]}
                   </p>
-                  <ul className="mt-2 space-y-2">
+                  <ul className="mt-2 space-y-4">
                     {items.map((item) => (
-                      <li
-                        key={item}
-                        className="text-2xl font-medium lowercase leading-tight"
-                      >
-                        {item}
+                      <li key={item.id} className="flex items-start gap-4">
+                        <span className="flex-1 text-2xl font-medium lowercase leading-tight">
+                          {item.text}
+                        </span>
+                        {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
+                        {member.id === ME_ID ? (
+                          boostWeight(state, item.id) ? (
+                            <span className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.24em] opacity-50">
+                              {boostWeight(state, item.id)} sparkled
+                            </span>
+                          ) : null
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={sparkles < 1}
+                            onClick={() => {
+                              buzz();
+                              myProfileStore.useSparkle(item.id);
+                            }}
+                            className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
+                            style={{ color: "var(--giver-participation)" }}
+                          >
+                            {boostWeight(state, item.id)
+                              ? `sparkled ×${boostWeight(state, item.id)}`
+                              : "use a sparkle"}
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
+
                 </div>
               ))}
             </div>

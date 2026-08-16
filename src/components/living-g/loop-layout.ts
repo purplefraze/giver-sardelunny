@@ -116,7 +116,10 @@ export function layoutStack(
     const row = rows[i]!;
     if (i > 0) y += row.gap ?? 0;
     const centre = y + (row.size * 1.02) / 2;
-    const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.5) * 2;
+    // Lowercase display type only reaches ~0.36 of its font size above and
+    // below the optical centre line, so the chord is measured at the real ink
+    // height — not the full line box. This is what lets a word FILL its loop.
+    const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.36) * 2;
     if (widthOf(row.text, row.size, row.role) > allowed) fits = false;
     placed.push({ text: row.text, size: row.size, role: row.role, y: centre });
     y += row.size * 1.02;

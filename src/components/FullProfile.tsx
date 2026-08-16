@@ -145,8 +145,12 @@ export function FullProfile({
           </Section>
         ) : null}
 
+        {/* CONNECTION = me + them = purple. */}
         <Section title="connections">
-          <p className="text-sm font-medium lowercase opacity-55">
+          <p
+            className="text-sm font-medium lowercase"
+            style={{ color: "var(--giver-connection)" }}
+          >
             earned through completed gives, granted wishes and trades.
           </p>
           <div className="mt-5 flex flex-wrap gap-6">

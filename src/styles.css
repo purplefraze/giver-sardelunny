@@ -148,61 +148,62 @@
   --giver-paper: oklch(0.985 0.008 100);
   --giver-ink: oklch(0.16 0.01 100);
 
-  /* ---- CANONICAL COLOUR IDENTITY — one colour per product area ----
-     GIVE = orange, WISH = purple, PROFILE/YOU = green, TRADE = red,
-     COMMUNITY = blue, DISCOVERY = yellow (supporting only). */
-  --giver-give: oklch(0.72 0.2 48); /* Orange — Give */
-  --giver-wish: oklch(0.55 0.24 300); /* Purple — Wish */
-  --giver-profile: oklch(0.72 0.21 140); /* Green — Profile / You / Giver */
-  --giver-trade: oklch(0.58 0.23 27); /* Red — Trade */
-  --giver-community: oklch(0.58 0.19 250); /* Blue — Community */
-  --giver-discovery: oklch(0.86 0.19 95); /* Yellow — discovery, maps, finding */
-  --giver-borrow: oklch(0.7 0.19 350); /* Pink — legacy borrow role colour */
+  /* ---- THE GIVER COLOUR SYSTEM — PRIMARIES AND WHAT THEY MIX INTO ----
+     PRIMARY:   red = me, blue = others, yellow = community
+     SECONDARY: red+blue = purple = connection
+                red+yellow = orange = participation
+                blue+yellow = green = generosity / giver
+     These six tokens are the ONLY source of colour meaning in Giver. */
+  --giver-me: oklch(0.58 0.23 27); /* RED — me, my identity, my profile */
+  --giver-others: oklch(0.58 0.19 250); /* BLUE — another person */
+  --giver-community: oklch(0.86 0.19 95); /* YELLOW — the collective */
+  --giver-connection: oklch(0.55 0.24 300); /* PURPLE — me + others */
+  --giver-participation: oklch(0.72 0.2 48); /* ORANGE — me + community */
+  --giver-generosity: oklch(0.72 0.21 140); /* GREEN — others + community */
 
-  /* ---- THE FOUR LIVING G MODE COLOURS — SINGLE SOURCE OF TRUTH ----
-     These four tokens, and only these four, colour the persistent Living G in
-     its four modes. They never route through a legacy semantic alias, and the
-     mode worlds below reference nothing else.
+  /* One approved bright complementary in-loop type colour per semantic. */
+  --giver-me-complement: oklch(0.62 0.15 195); /* red -> electric turquoise */
+  --giver-others-complement: oklch(0.68 0.17 70); /* blue -> bright amber */
+  --giver-community-complement: oklch(0.52 0.27 285); /* yellow -> electric violet */
+  --giver-connection-complement: oklch(0.68 0.18 92); /* purple -> bright yellow */
+  --giver-participation-complement: oklch(0.52 0.27 265); /* orange -> royal blue */
+  --giver-generosity-complement: oklch(0.56 0.28 340); /* green -> hot magenta */
 
-       give = green   wish = purple   trade = orange   borrow = blue
+  /* ---- LIVING G MODE COLOURS — meaning, not arbitrary section colour ----
+       give   = generosity happening (green)
+       wish   = me reaching another person (purple, connection)
+       trade  = me participating with the community (orange)
+       borrow = leaning on the community (yellow) */
+  --mode-give: var(--giver-generosity);
+  --mode-wish: var(--giver-connection);
+  --mode-trade: var(--giver-participation);
+  --mode-borrow: var(--giver-community);
 
-     Each has ONE approved bright complementary in-loop type colour: THE G
-     CHOOSES THE TYPE COLOUR, and that colour is always energetic — never black,
-     white, grey or muddy. */
-  --mode-give: oklch(0.72 0.21 140); /* green */
-  --mode-wish: oklch(0.55 0.24 300); /* purple */
-  --mode-trade: oklch(0.72 0.2 48); /* orange */
-  --mode-borrow: oklch(0.58 0.19 250); /* blue */
+  --mode-give-complement: var(--giver-generosity-complement);
+  --mode-wish-complement: var(--giver-connection-complement);
+  --mode-trade-complement: var(--giver-participation-complement);
+  --mode-borrow-complement: var(--giver-community-complement);
 
-  --mode-give-complement: oklch(0.56 0.28 340); /* green G -> hot magenta */
-  --mode-wish-complement: oklch(0.68 0.18 92); /* purple G -> bright yellow */
-  --mode-trade-complement: oklch(0.52 0.27 265); /* orange G -> royal blue */
-  --mode-borrow-complement: oklch(0.68 0.17 70); /* blue G -> bright amber */
+  /* Compatibility aliases — every one resolves to a semantic token above. */
+  --giver-give: var(--giver-generosity);
+  --giver-give-complement: var(--giver-generosity-complement);
+  --giver-wish: var(--giver-connection);
+  --giver-wish-complement: var(--giver-connection-complement);
+  --giver-profile: var(--giver-me);
+  --giver-profile-complement: var(--giver-me-complement);
+  --giver-trade: var(--giver-participation);
+  --giver-trade-complement: var(--giver-participation-complement);
+  --giver-borrow: var(--giver-others);
+  --giver-borrow-complement: var(--giver-others-complement);
+  --giver-discovery: var(--giver-community);
+  --giver-discovery-complement: var(--giver-community-complement);
+  --giver-orange: var(--giver-participation);
+  --giver-orange-complement: var(--giver-participation-complement);
+  --giver-green: var(--giver-generosity);
+  --giver-green-complement: var(--giver-generosity-complement);
+  --giver-blue: var(--giver-others);
+  --giver-yellow: var(--giver-community);
 
-  /* ---- COMPLEMENTARY TYPOGRAPHY TOKENS ----
-     THE G CHOOSES THE TYPE COLOUR. Every mode's in-loop typography colour is
-     its G colour's complementary hue, kept BRIGHT, ELECTRIC and ALIVE — never
-     dark, muddy, navy, forest or grey, and never black or white. Lightness is
-     tuned only far enough to stay readable on warm paper. */
-  --giver-give-complement: oklch(0.52 0.27 265); /* orange G -> vivid royal blue */
-  --giver-wish-complement: oklch(0.68 0.18 92); /* purple G -> bright yellow */
-  --giver-profile-complement: oklch(0.56 0.28 340); /* green G -> hot magenta */
-  --giver-trade-complement: oklch(0.62 0.15 195); /* red G -> electric turquoise */
-  --giver-community-complement: oklch(0.68 0.17 70); /* blue G -> bright amber */
-  --giver-discovery-complement: oklch(0.52 0.27 285); /* yellow G -> electric violet */
-  --giver-borrow-complement: oklch(0.6 0.22 152); /* pink G -> bright green */
-
-
-
-  /* Orange/green aliases, named by colour for convenience. */
-  --giver-orange: var(--giver-give);
-  --giver-orange-complement: var(--giver-give-complement);
-
-  /* Legacy aliases kept pointing at the canonical spectrum. */
-  --giver-green: var(--giver-profile);
-  --giver-green-complement: var(--giver-profile-complement);
-  --giver-blue: var(--giver-community);
-  --giver-yellow: var(--giver-discovery);
 
   /* Brand accent — NOT locked. Candidates kept side by side; swap the
      one line below to evaluate lime / orange / purple app-wide. */

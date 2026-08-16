@@ -193,6 +193,16 @@ export function MemberExample({
         className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-9"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
       >
+        {/*
+          THE INTRODUCTION. One reusable, quiet line centred in the clean bottom
+          band the artwork never enters — identical relative placement for every
+          person, so it can never touch the stroke, photo, loops or toggle path.
+        */}
+        <span className="pointer-events-none absolute inset-x-0 text-center text-[12px] font-black lowercase tracking-[0.3em] opacity-55">
+          meet {member.name.toLowerCase()}
+        </span>
+
+
         <button
           type="button"
           onClick={first ? onBack : onPrev}

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
  * Space carries meaning too: MIDDLE loop = me, BOTTOM loop = the community.
  * Colour and copy always arrive together, as one beat.
  */
-type Stage = "opening" | "meet-intro" | "meet" | "choose" | "celebrate";
+type Stage = "opening" | "meet" | "choose" | "celebrate";
 
 type Loop = "top" | "middle" | "bottom";
 
@@ -109,10 +109,10 @@ const OPENING: Beat[] = [
     hold: COMPOSITION,
   },
 
-  // 8 — the split, said as simply as it can be said. Two compositions, no essay.
+  // 8 — the split, in parallel language: 50 to wish, 50 to give.
   {
     world: "welcome",
-    middle: ["50", "for your wishes"],
+    middle: ["50", "to wish"],
     hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
@@ -120,38 +120,20 @@ const OPENING: Beat[] = [
   { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
   {
     world: "welcome",
-    middle: ["50", "to gift"],
+    middle: ["50", "to give"],
     hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
 
+  // 9 — THE EMOTIONAL PAYOFF. "spark change" gives way to the invitation.
+  { world: "welcome", middle: ["50", "to give"], hero: { middle: true }, hold: SHORT_BEAT },
+  { world: "welcome", bottom: ["make someone's day!"], scale: HERO, hold: HERO_BEAT },
 
-  // 9 — spark change alone, then the orange G empties completely.
-  { world: "welcome", bottom: ["spark", "change"], hold: PHRASE_BEAT },
-  { world: "welcome", hold: BREATH },
-
-  // 10 — only now does the G turn green, and think.
-  { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", middle: ["so..."], hold: THINKING_BEAT },
-  { world: "gift", hold: SHORT_BEAT },
-
-  // 11 — the question, one word at a time, then the hero payoff.
-  { world: "gift", middle: ["are"], hold: WORD_BEAT },
-  { world: "gift", middle: ["you"], hold: WORD_BEAT },
-  { world: "gift", middle: ["a"], hold: WORD_BEAT },
-  { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", bottom: ["giver?"] },
+  // 10 — the G turns green, holding the invitation. Then: let's giver.
+  { world: "gift", bottom: ["make someone's day!"], scale: HERO },
 ];
 
-
-
-/** Straight into the people: meet — four — givers, one at a time. */
-const MEET_INTRO: Beat[] = [
-  { world: "meet", middle: ["meet"], hold: PHRASE_BEAT },
-  { world: "meet", middle: ["meet", "four"], hold: PHRASE_BEAT },
-  { world: "meet", middle: ["meet", "four"], bottom: ["givers"] },
-];
 
 
 
@@ -309,18 +291,6 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
       <OpeningSequence
         onDone={() => {
           buzz();
-          setStage("meet-intro");
-        }}
-      />
-    );
-  }
-
-  if (stage === "meet-intro") {
-    return (
-      <MeetIntro
-        onBack={() => setStage("opening")}
-        onDone={() => {
-          buzz();
           setWho(0);
           setStage("meet");
         }}
@@ -335,13 +305,14 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         member={member}
         first={who === 0}
         last={who === MEMBERS.length - 1}
-        onBack={() => setStage("meet-intro")}
+        onBack={() => setStage("opening")}
         onPrev={() => setWho((w) => Math.max(0, w - 1))}
         onNext={() => setWho((w) => Math.min(MEMBERS.length - 1, w + 1))}
         onDone={() => setStage("choose")}
       />
     );
   }
+
 
   if (stage === "celebrate" && chosen) {
     return (
@@ -427,59 +398,7 @@ function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
   );
 }
 
-/** One line, then straight into the people. */
-function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
-  const { world, copy, last } = useBeats(MEET_INTRO);
 
-  useEffect(() => {
-    if (!last) return;
-    const t = setTimeout(onDone, HOLD);
-    return () => clearTimeout(t);
-  }, [last, onDone]);
-
-  return (
-    <IntroG
-      world={world}
-      top={copy("top")}
-      middle={copy("middle")}
-      bottom={copy("bottom")}
-    >
-      <BackArrow onClick={onBack} />
-      <ForwardCue show label="meet them" onClick={onDone} />
-    </IntroG>
-  );
-}
-
-/** The only forward affordance in onboarding: one small arrow, safe area kept. */
-function ForwardCue({
-  show,
-  label,
-  onClick,
-}: {
-  show: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      className="absolute inset-x-0 bottom-0 z-20 flex justify-end px-7"
-      style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
-    >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        aria-label={label}
-        className="flex h-10 w-10 items-center justify-center text-3xl font-bold leading-none transition-opacity duration-500 active:scale-90"
-        style={{ opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none" }}
-      >
-        <span aria-hidden="true">→</span>
-      </button>
-    </div>
-  );
-}
 
 /**
  * A sequence of lines that arrive one after another with the established fade
@@ -599,7 +518,7 @@ function FirstGenerosity({
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   // MEANINGFUL BEAT: nothing advances on its own here. The user reads, then taps.
-  const { shown, settled } = useSpeech(4, 1500, 1600);
+  const { shown, settled } = useSpeech(6, 1500, 1600);
 
   if (asked) {
     return (
@@ -622,35 +541,68 @@ function FirstGenerosity({
     >
       <Spoken
         show={shown >= 1}
-        className="max-w-[11ch] text-[13vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
+        className="text-[16vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
         style={{ color: "var(--giver-profile)" }}
+      >
+        congrats
+      </Spoken>
+      <Spoken
+        show={shown >= 2}
+        className="mt-7 max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.92] tracking-[-0.045em]"
+      >
+        you just made your first act of generosity on giver
+      </Spoken>
+      <Spoken
+        show={shown >= 3}
+        className="mt-7 max-w-[14ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em]"
       >
         give yourself a pat on the back
       </Spoken>
       <Spoken
-        show={shown >= 2}
-        className="mt-8 max-w-[15ch] text-[7.5vw] font-black lowercase leading-[0.94] tracking-[-0.04em]"
-      >
-        you&apos;ve already made your first act of generosity on giver
-      </Spoken>
-      <Spoken
-        show={shown >= 3}
+        show={shown >= 4}
         className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
       >
         50 sparks have now been given to {username}
       </Spoken>
       {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
       <Spoken
-        show={shown >= 4}
-        className="mt-5 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
+        show={shown >= 5}
+        className="mt-5 text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
       >
-        50 sparks have now been added to your profile
+        and
+      </Spoken>
+      <Spoken
+        show={shown >= 6}
+        className="mt-2 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
+      >
+        50 sparks have now been added to your account
       </Spoken>
 
-      <ForwardCue show={settled} label="continue" onClick={() => setAsked(true)} />
+      {/* The Giver call to action, in Giver's own language. */}
+      <div
+        className="absolute inset-x-0 bottom-0 flex justify-end px-7"
+        style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            buzz();
+            setAsked(true);
+          }}
+          className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+          style={{
+            color: "var(--giver-profile)",
+            opacity: settled ? 1 : 0,
+            pointerEvents: settled ? "auto" : "none",
+          }}
+        >
+          let&apos;s giver
+        </button>
+      </div>
     </div>
   );
 }
+
 
 /** Messaging is a permission, so Giver asks. "not now" costs nothing. */
 function MessagingConsent({

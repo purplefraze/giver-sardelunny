@@ -73,8 +73,12 @@ export function loopText({
   const build = (step: number) => {
     const max = wrapWidth(region, 2.02 * LOOP_FILL[region]);
     // A hero composition ("50" / "for you" / "to wish with") gives its lead line
-    // real graphic weight: the numeral dominates, the support reads under it.
-    const HERO_LEAD = 1.6;
+    // real graphic weight: the numeral dominates, the support reads under it. A
+    // longer lead ("and 50") takes a smaller lead so the support lines are not
+    // starved when the whole stack steps down.
+    const lead = blocks[kickerRows]?.text.length ?? 0;
+    const HERO_LEAD = lead <= 3 ? 1.6 : 1.22;
+
     const rows = blocks.flatMap((block, i) => {
       const size =
         token[block.role] * step * scale * (hero && i === 0 ? HERO_LEAD : 1);

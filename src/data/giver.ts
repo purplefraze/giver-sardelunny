@@ -19,7 +19,7 @@ export type Member = {
   photo: string;
   blurb: string;
   mode: "wishing" | "giving" | "trading" | "borrowing";
-  /** Role colour world: giving, wishing, trading, borrowing (pink). */
+  /** Activity world. Colour-wise every sample person is ANOTHER PERSON: blue. */
   world: "giving" | "wishing" | "trading" | "borrowing";
   /** Word for what they are doing on Giver. */
   action: string;

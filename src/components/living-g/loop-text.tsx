@@ -122,7 +122,8 @@ export function loopText({
               <>
                 {row.text.slice(0, -1)}
                 {/* Clean optical separation: punctuation never touches the word. */}
-                <tspan dx={row.size * 0.08}>?</tspan>
+                <tspan dx={row.size * 0.18}>?</tspan>
+
               </>
             ) : (
               row.text

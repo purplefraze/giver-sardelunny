@@ -92,8 +92,9 @@ const OPENING: Beat[] = [
     hold: 2900,
   },
 
-  // THE PAUSE. "so..." alone, with real presence, held twice as long.
-  { world: "gift", middle: ["so..."], hold: THINKING_BEAT },
+  // THE PAUSE. "so..." alone, much larger, held twice as long.
+  { world: "gift", middle: ["so..."], scale: { middle: 1.7 }, hold: THINKING_BEAT },
+
 
   { world: "gift", middle: ["are"], hold: WORD_BEAT },
   { world: "gift", middle: ["are", "you"], hold: WORD_BEAT },

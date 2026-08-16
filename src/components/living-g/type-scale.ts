@@ -90,10 +90,11 @@ export const PROFILE_TYPE: Record<
   LoopRegion,
   { answer: number; label: number; detail: number }
 > = {
-  top: { answer: 24, label: 14, detail: 18 },
-  middle: { answer: 36, label: 19, detail: 26 },
-  bottom: { answer: 52, label: 25, detail: 36 },
+  top: { answer: 28, label: 16, detail: 21 },
+  middle: { answer: 46, label: 23, detail: 32 },
+  bottom: { answer: 66, label: 31, detail: 45 },
 };
+
 
 
 /**

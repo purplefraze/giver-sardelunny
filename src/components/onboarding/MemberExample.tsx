@@ -189,10 +189,16 @@ export function MemberExample({
         BOTH directions, together, in the thumb zone. Same placement for every
         person, so nothing ever jumps from top to bottom between profiles.
       */}
+      {/*
+        THE INTRODUCTION. One reusable, quiet line in the clean bottom band the
+        artwork never enters — identical relative placement for every person, so
+        it can never collide with the stroke, the photo, the loops or the toggle.
+      */}
       <div
         className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-9"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
       >
+
         <button
           type="button"
           onClick={first ? onBack : onPrev}

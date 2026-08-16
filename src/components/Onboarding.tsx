@@ -70,26 +70,63 @@ const OPENING: Beat[] = [
   // 1 — START EMPTY. The orange G, alone, breathing.
   { world: "welcome", hold: BREATH },
 
-  // 2 — WELCOME, then TO underneath it. "welcome" never moves, and the beat
-  // keeps moving: this is a greeting, not a ceremony.
+  // 2 — WELCOME, then TO underneath it. "welcome" never moves; quick, confident.
   { world: "welcome", middle: ["welcome"], scale: WELCOME, hold: SHORT_BEAT },
-  { world: "welcome", middle: ["welcome", "to"], scale: WELCOME, hold: PHRASE_BEAT },
-  { world: "welcome", hold: SHORT_BEAT },
+  { world: "welcome", middle: ["welcome", "to"], scale: WELCOME, hold: SHORT_BEAT },
 
-  // 3 — the first brand moment. Still the hero word, just no longer shouting.
-  { world: "welcome", bottom: ["giver"], scale: HERO, hold: HERO_BEAT },
-  { world: "welcome", hold: SHORT_BEAT },
+  // 3 — GIVER arrives while "welcome to" is still on the paper. One thought
+  // hands off to the next: the G is never empty between phrases.
+  {
+    world: "welcome",
+    middle: ["welcome", "to"],
+    scale: WELCOME,
+    bottom: ["giver"],
+    hold: HERO_BEAT,
+  },
 
-  // 4 — KINDNESS · AS · CURRENCY. One word at a time, deliberately SECONDARY:
-  // the phrase with authority in this chapter is "spark change".
-  { world: "welcome", middle: ["kindness"], scale: SECOND, hold: PHRASE_BEAT },
-  { world: "welcome", middle: ["as"], scale: { middle: 0.52 }, hold: WORD_BEAT },
-  { world: "welcome", middle: ["currency"], scale: SECOND, hold: PHRASE_BEAT },
-  { world: "welcome", hold: SHORT_BEAT },
+  // 4 — KINDNESS · AS · CURRENCY builds in the middle loop while "giver" holds.
+  { world: "welcome", middle: ["kindness"], scale: SECOND, bottom: ["giver"], hold: WORD_BEAT },
+  {
+    world: "welcome",
+    middle: ["kindness", "as"],
+    scale: SECOND,
+    bottom: ["giver"],
+    hold: WORD_BEAT,
+  },
+  {
+    world: "welcome",
+    middle: ["kindness", "as", "currency"],
+    scale: SECOND,
+    bottom: ["giver"],
+    hold: PHRASE_BEAT,
+  },
 
-  // 5 — SPARK / CHANGE, big, in the bottom loop. It then STAYS.
-  { world: "welcome", bottom: ["spark"], hold: WORD_BEAT },
-  { world: "welcome", bottom: ["spark", "change"], hold: HERO_BEAT },
+  // …and only once it is fully there does "giver" quietly leave.
+  {
+    world: "welcome",
+    middle: ["kindness", "as", "currency"],
+    scale: SECOND,
+    hold: SHORT_BEAT,
+  },
+
+  // 5 — SPARK / CHANGE arrives underneath the phrase that is still visible.
+  {
+    world: "welcome",
+    middle: ["kindness", "as", "currency"],
+    scale: SECOND,
+    bottom: ["spark"],
+    hold: WORD_BEAT,
+  },
+  {
+    world: "welcome",
+    middle: ["kindness", "as", "currency"],
+    scale: SECOND,
+    bottom: ["spark", "change"],
+    hold: PHRASE_BEAT,
+  },
+
+  // …then "kindness as currency" hands the screen over. "spark change" STAYS.
+  { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
 
   // 6 — TO GET YOU STARTED, in the middle loop. "spark change" holds.
   {
@@ -99,6 +136,7 @@ const OPENING: Beat[] = [
     hold: COMPOSITION,
   },
   { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
+
 
   // 7 — the gift BUILDS: nothing already revealed moves.
   { world: "welcome", middle: ["here's"], bottom: ["spark", "change"], hold: WORD_BEAT },

@@ -22,7 +22,39 @@ const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
 /** Kept as the record of what the frame is built around. */
 export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 
-export function GStage({ children }: { children: React.ReactNode }) {
+/** How much of the FRAME the artwork itself occupies. */
+const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
+const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
+
+export function GStage({
+  children,
+  /**
+   * DOMINANT: no mode selector on screen (the opening onboarding), so the frame
+   * is allowed to bleed past the viewport and the ARTWORK — not the frame — is
+   * measured. This is the canonical huge G: ~94% of the viewport height.
+   */
+  dominant = false,
+}: {
+  children: React.ReactNode;
+  dominant?: boolean;
+}) {
+  if (dominant) {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-0 flex items-end justify-center">
+        <div
+          className="pointer-events-auto"
+          style={{
+            // Artwork target: 94% of viewport height, 96% of viewport width.
+            width: `min(${(96 * BOX_W).toFixed(3)}vw, calc(100dvh * 0.94 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`,
+            aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="pointer-events-none absolute inset-0 z-0 flex items-end justify-center"

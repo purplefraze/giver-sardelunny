@@ -161,35 +161,38 @@ const EMPTY: LoopState = {
   bottom: { lines: [], opacity: 0 },
 };
 
+/** Commit a beat's composition. Pure, so index and copy always agree. */
+function commit(prev: LoopState, beat: Beat): LoopState {
+  const out = { ...prev };
+  for (const key of LOOPS) {
+    const lines = beat[key];
+    if (lines) out[key] = { lines, opacity: 1 };
+    else out[key] = { ...prev[key], opacity: 0 };
+  }
+  return out;
+}
+
 /**
  * Plays a list of beats. Each loop is treated independently: a loop only fades
  * when its own words change, so a message can hold while another arrives.
+ *
+ * THE INDEX AND THE COPY ARE ONE STATE. A beat's composition is committed in the
+ * SAME update that advances the index, so no frame can ever pair a new phrase
+ * with the previous beat's reveal count — that mismatch was the flash of a
+ * finished phrase before its animation began.
  */
 function useBeats(script: Beat[]) {
-  const [i, setI] = useState(0);
-  const [loops, setLoops] = useState<LoopState>(EMPTY);
+  const [state, setState] = useState<{ i: number; loops: LoopState }>(() => ({
+    i: 0,
+    loops: commit(EMPTY, script[0]!),
+  }));
+  const { i, loops } = state;
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const last = i === script.length - 1;
 
   useEffect(() => {
     const beat = script[i]!;
     const next = script[i + 1];
-
-    setLoops((prev) => {
-      const out = { ...prev };
-      for (const key of LOOPS) {
-        const lines = beat[key];
-        if (lines && !same(prev[key].lines, lines)) {
-          out[key] = { lines, opacity: 1 };
-        } else if (lines) {
-          out[key] = { lines, opacity: 1 };
-        } else {
-          out[key] = { ...prev[key], opacity: 0 };
-        }
-      }
-      return out;
-    });
-
     if (!next) return;
 
     const hold = beat.hold ?? HOLD;
@@ -204,21 +207,25 @@ function useBeats(script: Beat[]) {
     };
     const replaced = LOOPS.filter((key) => !grows(key));
 
+    const advance = (delay: number) =>
+      setTimeout(
+        () => setState((s) => ({ i: s.i + 1, loops: commit(s.loops, script[s.i + 1]!) })),
+        delay,
+      );
+
     if (replaced.length === 0) {
-      const advance = setTimeout(() => setI((v) => v + 1), hold);
-      timers.current = [advance];
+      timers.current = [advance(hold)];
       return () => timers.current.forEach(clearTimeout);
     }
 
     const fade = setTimeout(() => {
-      setLoops((prev) => {
-        const out = { ...prev };
-        for (const key of replaced) out[key] = { ...prev[key], opacity: 0 };
-        return out;
+      setState((s) => {
+        const out = { ...s.loops };
+        for (const key of replaced) out[key] = { ...s.loops[key], opacity: 0 };
+        return { i: s.i, loops: out };
       });
     }, hold);
-    const advance = setTimeout(() => setI((v) => v + 1), hold + BEAT_MS);
-    timers.current = [fade, advance];
+    timers.current = [fade, advance(hold + BEAT_MS)];
     return () => timers.current.forEach(clearTimeout);
   }, [i, script]);
 
@@ -254,6 +261,7 @@ function useBeats(script: Beat[]) {
 
   return { world: script[i]!.world, copy, last };
 }
+
 
 
 export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {

@@ -313,7 +313,10 @@ function Index() {
                   panelTitle: HISTORY_STATES[myTopPos],
                   panelBody: (
                     <>
-                      {MY_HISTORY[myTopPos]!.map((line) => (
+                      {(MY_COMPLETED[myTopPos]!(me).length
+                        ? MY_COMPLETED[myTopPos]!(me)
+                        : MY_HISTORY[myTopPos]!
+                      ).map((line) => (
                         <p key={line}>{line}</p>
                       ))}
                       <p className="opacity-70">
@@ -321,8 +324,12 @@ function Index() {
                           ? `you gave 50 sparks to ${gaveTo}.`
                           : "you still have 50 sparks to give away."}
                       </p>
+                      <p style={{ color: "var(--giver-participation)" }}>
+                        {me.sparkles} sparkles to help someone get seen.
+                      </p>
                     </>
                   ),
+
                 },
                 middle: {
                   label: "",

@@ -216,8 +216,19 @@ function Index() {
         />
       ) : setup ? (
         /* THE PROFILE BUILDER — writes straight to the real profile. */
-        <ProfileBuilder onDone={() => setSetup(false)} firstTime={!me.built} />
+        <ProfileBuilder
+          onDone={() => {
+            /* Awarded exactly once, however often the profile is edited. */
+            const awarded = myProfileStore.awardProfileSparkles();
+            setSetup(false);
+            if (awarded) setReward(true);
+          }}
+          firstTime={!me.built}
+        />
+      ) : reward ? (
+        <SparklesReward onDone={() => setReward(false)} />
       ) : (
+
 
         <>
           {/* THE WORKSPACE — one Living G, always yours. Mode is a state of it. */}

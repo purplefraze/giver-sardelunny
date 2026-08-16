@@ -3,8 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { FullProfile } from "@/components/FullProfile";
 import { ProfileBuilder } from "@/components/ProfileBuilder";
+import { SparklesReward } from "@/components/SparklesReward";
+import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import type { MyProfile } from "@/data/my-profile";
 import { myProfileStore, myAsMember, myPhoto, primaryAsk, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
 import {
@@ -17,7 +20,7 @@ import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
 
 
 import { World, ringPhoto } from "@/components/World";
-import { COMMUNITY_GIVES, COMMUNITY_WISHES, ME } from "@/data/giver";
+import { ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
 
 /** The only place you ever go: your own profile. Everything else is a mode. */
@@ -26,6 +29,13 @@ type Screen = "profile";
 const SCREENS: Screen[] = ["profile"];
 
 /** My own history, in the toggle's order: past wishes, gives, trades. */
+/** My REAL completed items, same order as the toggle: wishes, gives, trades. */
+const MY_COMPLETED: ((p: MyProfile) => string[])[] = [
+  (p) => p.completed.wish.map((i) => i.text),
+  (p) => p.completed.give.map((i) => i.text),
+  (p) => p.completed.trade.map((i) => i.text),
+];
+
 const MY_HISTORY: string[][] = [
   ME.history.wishes,
   ME.history.gives,
@@ -55,7 +65,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what can you help with?",
-      body: <>{COMMUNITY_WISHES.map((w) => <p key={w}>{w}</p>)}</>,
+      body: <CommunityList type="wish" />,
     },
   },
   give: {
@@ -69,7 +79,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what are you looking for?",
-      body: <>{COMMUNITY_GIVES.map((g) => <p key={g}>{g}</p>)}</>,
+      body: <CommunityList type="give" />,
     },
   },
   trade: {
@@ -81,11 +91,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what trades are out there?",
-      body: (
-        <p className="opacity-70">
-          open trades from the people nearby. coming next.
-        </p>
-      ),
+      body: <CommunityList type="trade" />,
     },
   },
   borrow: {
@@ -95,11 +101,7 @@ const MODE_CONTENT: Record<
     },
     community: {
       title: "what can you lend?",
-      body: (
-        <p className="opacity-70">
-          what people nearby are happy to lend. coming next.
-        </p>
-      ),
+      body: <CommunityList type="borrow" />,
     },
   },
 };
@@ -138,9 +140,12 @@ function Index() {
   const [entered, setEntered] = useState(false);
   /** First run only: set up your own profile before the workspace opens. */
   const [setup, setSetup] = useState(false);
+  /** Profile complete — the one-time sparkle reward. */
+  const [reward, setReward] = useState(false);
   const [gaveTo, setGaveTo] = useState<string | null>(null);
   /** My deeper, conventional profile page — same data, browsable form. */
   const [fullMe, setFullMe] = useState(false);
+
 
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
@@ -213,8 +218,19 @@ function Index() {
         />
       ) : setup ? (
         /* THE PROFILE BUILDER — writes straight to the real profile. */
-        <ProfileBuilder onDone={() => setSetup(false)} firstTime={!me.built} />
+        <ProfileBuilder
+          onDone={() => {
+            /* Awarded exactly once, however often the profile is edited. */
+            const awarded = myProfileStore.awardProfileSparkles();
+            setSetup(false);
+            if (awarded) setReward(true);
+          }}
+          firstTime={!me.built}
+        />
+      ) : reward ? (
+        <SparklesReward onDone={() => setReward(false)} />
       ) : (
+
 
         <>
           {/* THE WORKSPACE — one Living G, always yours. Mode is a state of it. */}
@@ -305,7 +321,10 @@ function Index() {
                   panelTitle: HISTORY_STATES[myTopPos],
                   panelBody: (
                     <>
-                      {MY_HISTORY[myTopPos]!.map((line) => (
+                      {(MY_COMPLETED[myTopPos]!(me).length
+                        ? MY_COMPLETED[myTopPos]!(me)
+                        : MY_HISTORY[myTopPos]!
+                      ).map((line) => (
                         <p key={line}>{line}</p>
                       ))}
                       <p className="opacity-70">
@@ -313,8 +332,12 @@ function Index() {
                           ? `you gave 50 sparks to ${gaveTo}.`
                           : "you still have 50 sparks to give away."}
                       </p>
+                      <p style={{ color: "var(--giver-participation)" }}>
+                        {me.sparkles} sparkles to help someone get seen.
+                      </p>
                     </>
                   ),
+
                 },
                 middle: {
                   label: "",

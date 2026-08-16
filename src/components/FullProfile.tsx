@@ -1,6 +1,11 @@
 import { BackArrow } from "@/components/BackArrow";
 import { connectionsOf, type Member } from "@/data/giver";
+import { ITEM_TYPES, ME_ID, boostWeight, myItems } from "@/data/items";
+import { myProfileStore } from "@/data/my-profile";
+import { useItems } from "@/hooks/use-items";
+import { useMyProfile } from "@/hooks/use-my-profile";
 import { buzz } from "@/lib/haptics";
+
 
 /**
  * THE FULL PROFILE — the person, not their current activity.
@@ -51,6 +56,7 @@ export function FullProfile({
   /** Profile-to-profile discovery through completed acts. */
   onOpen?: (id: string) => void;
 }) {
+  const state = useItems();
   const connections = connectionsOf(member.id);
   const done: [string, number][] = [
     ["gifts shared", member.done.gifts],
@@ -58,9 +64,13 @@ export function FullProfile({
     ["trades completed", member.done.trades],
     ["borrows completed", member.done.borrows],
   ];
-  const activeGroups = (["wish", "give", "trade", "borrow"] as const)
-    .map((key) => ({ key, items: member.active[key] }))
-    .filter((group) => group.items.length > 0);
+  const sparkles = useMyProfile().sparkles;
+  /* SAME ITEMS AS EVERY OTHER VIEW — read live, never copied into the page. */
+  const activeGroups = ITEM_TYPES.map((key) => ({
+    key,
+    items: myItems(state, key, member.id),
+  })).filter((group) => group.items.length > 0);
+
 
   return (
     <div
@@ -132,16 +142,39 @@ export function FullProfile({
                   >
                     {CATEGORY_LABEL[key]}
                   </p>
-                  <ul className="mt-2 space-y-2">
+                  <ul className="mt-2 space-y-4">
                     {items.map((item) => (
-                      <li
-                        key={item}
-                        className="text-2xl font-medium lowercase leading-tight"
-                      >
-                        {item}
+                      <li key={item.id} className="flex items-start gap-4">
+                        <span className="flex-1 text-2xl font-medium lowercase leading-tight">
+                          {item.text}
+                        </span>
+                        {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
+                        {member.id === ME_ID ? (
+                          boostWeight(state, item.id) ? (
+                            <span className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.24em] opacity-50">
+                              {boostWeight(state, item.id)} sparkled
+                            </span>
+                          ) : null
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={sparkles < 1}
+                            onClick={() => {
+                              buzz();
+                              myProfileStore.useSparkle(item.id);
+                            }}
+                            className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
+                            style={{ color: "var(--giver-participation)" }}
+                          >
+                            {boostWeight(state, item.id)
+                              ? `sparkled ×${boostWeight(state, item.id)}`
+                              : "use a sparkle"}
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
+
                 </div>
               ))}
             </div>

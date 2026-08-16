@@ -124,6 +124,11 @@ export function MemberExample({
               locked
               photo={member.photo}
               onTap={open("history")}
+              history={[
+                ...(member.history.wishes.length ? (["wish"] as const) : []),
+                ...(member.history.gives.length ? (["give"] as const) : []),
+                ...(member.history.trades.length ? (["trade"] as const) : []),
+              ]}
             />
           }
           regions={{

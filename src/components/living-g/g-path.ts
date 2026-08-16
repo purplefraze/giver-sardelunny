@@ -7,12 +7,15 @@ export const LIVING_G_PATH = "M4846 11320 c-66 -12 -173 -49 -218 -77 -21 -13 -42
 export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
 
 /**
- * The FRAME: the artwork's box plus the minimum overflow the mode selector's
- * outermost seat needs (left ~ -67, top ~ 11, right ~ 567). Nothing decorative
- * lives here — every extra unit here would shrink the G on screen, so it is
- * kept as tight as the geometry allows.
+ * The FRAME: the artwork's box plus the room the mode selector's assembly needs
+ * across its ENTIRE travel around the middle loop (ring centre orbit radius 300
+ * about (272,298), ring outer radius 79 → x -107..651, y -81..). The frame is
+ * kept SYMMETRIC about the artwork's own centre line (x = 288) so centring the
+ * frame also centres the canonical G horizontally. Nothing decorative lives
+ * here: every extra unit shrinks the G on screen.
  */
-export const LIVING_G_FRAME = { x: -76, y: -14, width: 664, height: 1160 } as const;
+export const LIVING_G_FRAME = { x: -107, y: -81, width: 790, height: 1214 } as const;
+
 
 /** Path space (after the flip transform) */
 export const LIVING_G_VIEWBOX = `${LIVING_G_FRAME.x} ${LIVING_G_FRAME.y} ${LIVING_G_FRAME.width} ${LIVING_G_FRAME.height}`;

@@ -28,6 +28,8 @@ type Beat = {
   top?: string[];
   middle?: string[];
   bottom?: string[];
+  /** Deliberate emphasis for a single transitional beat ("so..."). */
+  scale?: Partial<Record<Loop, number>>;
   /** How long this composition holds before the next beat. */
   hold?: number;
 };
@@ -40,6 +42,8 @@ type Beat = {
 const WORD_BEAT = 900;
 const PHRASE_BEAT = 1150;
 const COMPOSITION = 2400;
+/** The thoughtful beat after "so..." — twice a normal pause. */
+const THINKING_BEAT = 2600;
 
 const OPENING: Beat[] = [
   // middle = spoken to me, bottom = the name of the thing itself, hero size.
@@ -87,20 +91,27 @@ const OPENING: Beat[] = [
     bottom: ["50 sparks", "for you", "to give"],
     hold: 2900,
   },
-  { world: "gift", top: ["so..."], middle: ["are you a"], hold: PHRASE_BEAT },
+
+  // THE PAUSE. "so..." alone, with real presence, held twice as long.
+  { world: "gift", middle: ["so..."], hold: THINKING_BEAT },
+
+  { world: "gift", middle: ["are"], hold: WORD_BEAT },
+  { world: "gift", middle: ["are", "you"], hold: WORD_BEAT },
+  { world: "gift", middle: ["are", "you", "a"], hold: PHRASE_BEAT },
   {
     world: "gift",
-    top: ["so..."],
-    middle: ["are you a"],
+    middle: ["are", "you", "a"],
     bottom: ["giver?"],
   },
 ];
 
-/** Straight into the people: the phrase builds, then the hero word lands. */
+/** Straight into the people: meet — 4 — givers, one at a time. */
 const MEET_INTRO: Beat[] = [
-  { world: "meet", middle: ["meet four"], hold: PHRASE_BEAT },
-  { world: "meet", middle: ["meet four"], bottom: ["givers"] },
+  { world: "meet", top: ["meet"], hold: PHRASE_BEAT },
+  { world: "meet", top: ["meet"], middle: ["4"], hold: PHRASE_BEAT },
+  { world: "meet", top: ["meet"], middle: ["4"], bottom: ["givers"] },
 ];
+
 
 
 const HOLD = COMPOSITION;
@@ -188,13 +199,38 @@ function useBeats(script: Beat[]) {
   }, [i, script]);
 
 
-  const copy = (key: Loop): LoopCopy | undefined =>
-    loops[key].lines.length
-      ? { lines: loops[key].lines, opacity: loops[key].opacity }
-      : undefined;
+  /**
+   * THE FINAL COMPOSITION, KNOWN IN ADVANCE. A loop's plan is the fullest form
+   * of the phrase it is currently building — found by walking forward while the
+   * next beat only ADDS to what is already there. Layout is computed from that
+   * plan, so a revealed word never moves when the next one arrives.
+   */
+  const plan = (key: Loop): string[] => {
+    let j = i;
+    while (j + 1 < script.length) {
+      const a = script[j]![key] ?? [];
+      const b = script[j + 1]![key] ?? [];
+      if (!(b.length >= a.length && same(a, b.slice(0, a.length)))) break;
+      j += 1;
+    }
+    return script[j]![key] ?? [];
+  };
+
+  const copy = (key: Loop): LoopCopy | undefined => {
+    if (!loops[key].lines.length) return undefined;
+    const full = plan(key);
+    const scale = script[i]!.scale?.[key];
+    return {
+      lines: loops[key].lines,
+      plan: full.length >= loops[key].lines.length ? full : loops[key].lines,
+      opacity: loops[key].opacity,
+      ...(scale ? { scale } : {}),
+    };
+  };
 
   return { world: script[i]!.world, copy, last };
 }
+
 
 export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {
   const [stage, setStage] = useState<Stage>("opening");
@@ -299,7 +335,12 @@ function MeetIntro({ onBack, onDone }: { onBack: () => void; onDone: () => void 
   }, [last, onDone]);
 
   return (
-    <IntroG world={world} middle={copy("middle")} bottom={copy("bottom")}>
+    <IntroG
+      world={world}
+      top={copy("top")}
+      middle={copy("middle")}
+      bottom={copy("bottom")}
+    >
       <BackArrow onClick={onBack} />
       <ForwardCue show label="meet them" onClick={onDone} />
     </IntroG>
@@ -455,7 +496,7 @@ function FirstGenerosity({
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   // MEANINGFUL BEAT: nothing advances on its own here. The user reads, then taps.
-  const { shown, settled } = useSpeech(3, 1500, 1600);
+  const { shown, settled } = useSpeech(4, 1500, 1600);
 
   if (asked) {
     return (
@@ -495,6 +536,14 @@ function FirstGenerosity({
       >
         50 sparks have now been given to {username}
       </Spoken>
+      {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
+      <Spoken
+        show={shown >= 4}
+        className="mt-5 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
+      >
+        50 sparks have now been added to your profile
+      </Spoken>
+
       <ForwardCue show={settled} label="continue" onClick={() => setAsked(true)} />
     </div>
   );

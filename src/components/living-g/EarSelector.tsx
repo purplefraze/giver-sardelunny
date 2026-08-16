@@ -114,12 +114,21 @@ const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 /** The captured word lives in the piece's own negative space. */
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
+/** The locked four-mode colours, for seats that state a person's history. */
+const MODE_COLOUR: Record<Mode, string> = {
+  wish: "var(--mode-wish)",
+  give: "var(--mode-give)",
+  trade: "var(--mode-trade)",
+  borrow: "var(--mode-borrow)",
+};
+
 export function EarSelector({
   mode,
   onChange,
   onTap,
   locked = false,
   photo,
+  history,
 }: {
   mode: Mode;
   onChange: (next: Mode) => void;
@@ -129,7 +138,10 @@ export function EarSelector({
   locked?: boolean;
   /** A face riding the selector, inside the ring's own negative space. */
   photo?: string;
+  /** The modes this person has taken part in, told by the seats themselves. */
+  history?: Mode[];
 }) {
+
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
   const last = useRef<Mode>(mode);
@@ -238,25 +250,31 @@ export function EarSelector({
       {MODES.map((m) => {
         const hint = at(SEAT_ANGLE[m], RIM_R + 16);
         const active = mode === m && !dragging;
+        // On a person's screen the seats TELL THEIR STORY: a seat they have
+        // taken part in reads in that mode's own colour, a little stronger.
+        const told = history?.includes(m) ?? false;
         return (
           <circle
             key={m}
             cx={hint.x}
             cy={hint.y}
-            r={5}
-            fill="var(--world-g)"
+            r={told ? 8 : 5}
+            fill={told ? MODE_COLOUR[m] : "var(--world-g)"}
             pointerEvents="none"
             style={{
               opacity:
                 active || Math.abs(shortest(angle, SEAT_ANGLE[m])) < 0.22
                   ? 0
-                  : 0.22,
+                  : told
+                    ? 0.85
+                    : 0.22,
 
               transition: "opacity 200ms ease-out",
             }}
           />
         );
       })}
+
 
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,

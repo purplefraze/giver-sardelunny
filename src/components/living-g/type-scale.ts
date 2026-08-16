@@ -76,7 +76,7 @@ export const PROFILE_SAFE_INSET: Record<LoopRegion, number> = {
 };
 
 /** How wide a profile line may run inside its safe area, as a share of radius. */
-export const PROFILE_WRAP_FACTOR = 1.24;
+export const PROFILE_WRAP_FACTOR = 1.3;
 
 /**
  * THE fixed profile type scale, in px. EVERY profile uses these exact tokens —
@@ -90,16 +90,17 @@ export const PROFILE_TYPE: Record<
   LoopRegion,
   { answer: number; label: number; detail: number }
 > = {
-  top: { answer: 20, label: 12, detail: 15 },
-  middle: { answer: 26, label: 14, detail: 19 },
-  bottom: { answer: 37, label: 18, detail: 26 },
+  top: { answer: 24, label: 14, detail: 18 },
+  middle: { answer: 36, label: 19, detail: 26 },
+  bottom: { answer: 52, label: 25, detail: 36 },
 };
+
 
 /**
  * The ONLY freedom left: if a profile still overflows its safe area, the WHOLE
  * stack steps down through these few stops together — never per line, never up.
  */
-export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82, 0.76] as const;
+export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64, 0.58] as const;
 
 
 /** Kept for compatibility with earlier profile layout code. */

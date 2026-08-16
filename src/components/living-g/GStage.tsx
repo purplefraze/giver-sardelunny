@@ -60,7 +60,7 @@ export function GStage({
             // never clip, and a flex child would otherwise be shrunk to the
             // container width — silently reducing the canonical G every time the
             // frame grew.
-            width: `min(${(96 * BOX_W).toFixed(3)}vw, calc((100dvh - ${CTA_BAND}) * 0.94 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`,
+            width: `min(${(96 * BOX_W).toFixed(3)}vw, calc((100dvh - ${CTA_BAND}) * 0.99 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`,
             aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
           }}
         >

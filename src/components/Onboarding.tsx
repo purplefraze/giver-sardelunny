@@ -46,7 +46,6 @@ const COMPOSITION = 2900;
 const HERO_BEAT = 2500;
 /** The empty G, breathing — before anything is said, and between thoughts. */
 const BREATH = 1100;
-const DRAMATIC_BREATH = 1700;
 /** A small beat between thoughts: enough air, never a dramatic wait. */
 const SHORT_BEAT = 620;
 /** The thoughtful beat after "so..." — twice a normal pause. */

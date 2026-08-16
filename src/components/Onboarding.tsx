@@ -399,7 +399,8 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
 function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
   return (
     <div
-      className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-center"
+      // A quiet next step in the BOTTOM-RIGHT corner, outside the artwork.
+      className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-end pr-7"
       // The stage reserves this exact strip, so the words never cross the stroke.
       style={{
         height: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})`,

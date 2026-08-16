@@ -39,6 +39,18 @@ export const LOOP_SIZE_STEPS = [
 
 
 
+/**
+ * THE LOOP FILL FACTOR. Each loop's safe circle is deliberately conservative,
+ * but the real negative space is WIDER than tall — so display type is allowed
+ * this much more width than the circle alone would give. This is what lets a
+ * word occupy its loop instead of floating inside it.
+ */
+export const LOOP_FILL: Record<LoopRegion, number> = {
+  top: 1.1,
+  middle: 1.2,
+  bottom: 1.24,
+};
+
 /** Kept for reference: the old "ideal" starting point of the removed fitter. */
 export const LOOP_IDEAL_RATIO = 0.66;
 

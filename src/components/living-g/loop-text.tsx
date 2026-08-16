@@ -9,7 +9,7 @@ import {
   wrapLines,
   wrapWidth,
 } from "./loop-layout";
-import { LOOP_FIXED_SIZE, LOOP_SIZE_STEPS } from "./type-scale";
+import { LOOP_FILL, LOOP_FIXED_SIZE, LOOP_SIZE_STEPS } from "./type-scale";
 
 /**
  * Words that live ENTIRELY inside a loop's negative space, at the loop's FIXED
@@ -71,7 +71,7 @@ export function loopText({
   const kickerRows = kicker ? 1 : 0;
 
   const build = (step: number) => {
-    const max = wrapWidth(region) * 1;
+    const max = wrapWidth(region, 2.02 * LOOP_FILL[region]);
     const rows = blocks.flatMap((block, i) =>
       wrapLines(block.text, token[block.role] * step * scale, max, block.role).map(
         (text, j) => ({
@@ -84,7 +84,10 @@ export function loopText({
         }),
       ),
     );
-    return { laid: layoutStack(rows, region), src: rows.map((r) => r.src) };
+    return {
+      laid: layoutStack(rows, region, 1, LOOP_FILL[region]),
+      src: rows.map((r) => r.src),
+    };
   };
 
   let built = build(1);

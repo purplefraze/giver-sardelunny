@@ -5,9 +5,14 @@ import { loopText } from "@/components/living-g/loop-text";
 export type LoopCopy = {
   kicker?: string;
   lines: string[];
+  /** The COMPLETE composition this loop is building toward — layout is fixed. */
+  plan?: string[];
+  /** Deliberate emphasis for a transitional beat. */
+  scale?: number;
   /** Per-loop presence, so one loop can hold while another changes. */
   opacity?: number;
 };
+
 
 /**
  * One coordinated beat: colour and copy always move together. This is also the

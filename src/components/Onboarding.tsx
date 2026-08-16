@@ -364,8 +364,12 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
 function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
   return (
     <div
-      className="absolute inset-x-0 bottom-0 z-20 flex justify-start pl-6"
-      style={{ paddingBottom: "max(1.1rem, env(safe-area-inset-bottom))" }}
+      className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-center"
+      // The stage reserves this exact strip, so the words never cross the stroke.
+      style={{
+        height: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})`,
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
     >
       <button
         type="button"
@@ -373,9 +377,15 @@ function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
           e.stopPropagation();
           onClick();
         }}
-        className="px-1 py-1 text-[5.6vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
-        style={{ opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none" }}
+        className="px-1 text-[5.2vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+        style={{
+          // The bright G green, never the deep furniture tint.
+          color: "var(--world-g)",
+          opacity: show ? 1 : 0,
+          pointerEvents: show ? "auto" : "none",
+        }}
       >
+
         let&apos;s giver
       </button>
     </div>

@@ -39,71 +39,79 @@ type Beat = {
  * word begin. Each value is a SETTLE time — the fade itself (LOOP_WORD_MS) runs
  * underneath it, so consecutive words overlap softly rather than snapping.
  */
-const WORD_BEAT = 900;
-const PHRASE_BEAT = 1150;
-const COMPOSITION = 2400;
+const WORD_BEAT = 1250;
+const PHRASE_BEAT = 1500;
+const COMPOSITION = 2900;
+/** A brand name needs room: it lands, and then it is allowed to sit there. */
+const HERO_BEAT = 2500;
+/** The empty G, breathing — before anything is said, and between thoughts. */
+const BREATH = 1100;
+const DRAMATIC_BREATH = 1700;
 /** The thoughtful beat after "so..." — twice a normal pause. */
-const THINKING_BEAT = 2600;
+const THINKING_BEAT = 3200;
 
 const OPENING: Beat[] = [
-  // middle = spoken to me, bottom = the name of the thing itself, hero size.
-  { world: "welcome", middle: ["welcome to"], hold: PHRASE_BEAT },
-  { world: "welcome", middle: ["welcome to"], bottom: ["giver"], hold: COMPOSITION },
+  // 1 — START EMPTY. The orange G, alone, breathing.
+  { world: "welcome", hold: BREATH },
 
-  // "spark change", one word at a time — then the promise beneath it.
+  // 2 — WELCOME / TO / (pause) / GIVER. One word at a time, each fading fully.
+  { world: "welcome", middle: ["welcome"], hold: WORD_BEAT },
+  { world: "welcome", middle: ["to"], hold: WORD_BEAT },
+  { world: "welcome", hold: DRAMATIC_BREATH },
+  { world: "welcome", bottom: ["giver"], hold: HERO_BEAT },
+  { world: "welcome", hold: BREATH },
+
+  // 3 — SPARK, then CHANGE. Never together.
   { world: "welcome", middle: ["spark"], hold: WORD_BEAT },
-  { world: "welcome", middle: ["spark", "change"], hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["change"], hold: WORD_BEAT },
+  { world: "welcome", hold: BREATH },
+
+  // 4 — KINDNESS / AS / CURRENCY, in the bottom loop, each its own moment.
+  { world: "welcome", bottom: ["kindness"], hold: WORD_BEAT },
+  { world: "welcome", bottom: ["as"], hold: WORD_BEAT },
+  { world: "welcome", bottom: ["currency"], hold: PHRASE_BEAT },
+  { world: "welcome", hold: BREATH },
+
+  // 5 — the phrase BUILDS: nothing already visible moves.
+  { world: "welcome", middle: ["to get you"], hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["to get you", "started..."], hold: COMPOSITION },
+
+  // 6 — and the gift builds beneath it, while the middle holds.
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["kindness"],
+    middle: ["to get you", "started..."],
+    bottom: ["here's a"],
     hold: WORD_BEAT,
   },
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["kindness", "as"],
+    middle: ["to get you", "started..."],
+    bottom: ["here's a", "100 sparks"],
     hold: WORD_BEAT,
   },
   {
     world: "welcome",
-    middle: ["spark", "change"],
-    bottom: ["kindness", "as", "currency"],
-    hold: 2800,
-  },
-
-  { world: "welcome", middle: ["to get", "you", "started..."], hold: COMPOSITION },
-
-  { world: "welcome", middle: ["here's", "100 sparks", "from"], hold: PHRASE_BEAT },
-  {
-    world: "welcome",
-    middle: ["here's", "100 sparks", "from"],
-    bottom: ["giver"],
+    middle: ["to get you", "started..."],
+    bottom: ["here's a", "100 sparks", "from"],
     hold: COMPOSITION,
   },
+  { world: "welcome", hold: DRAMATIC_BREATH },
 
-  // ONE coordinated beat: the G turns green as the green words arrive.
-  { world: "gift", middle: ["50 sparks", "for you", "to wish"], hold: 2100 },
-  // The middle message HOLDS while the bottom half of the sparks appears.
-  {
-    world: "gift",
-    middle: ["50 sparks", "for you", "to wish"],
-    bottom: ["50 sparks", "for you", "to give"],
-    hold: 2900,
-  },
+  // 7 — THE SECOND BRAND BEAT. "giver", alone, large.
+  { world: "welcome", bottom: ["giver"], hold: HERO_BEAT },
+  { world: "welcome", hold: BREATH },
 
-  // THE PAUSE. "so..." alone, much larger, held twice as long.
+  // 8 + 9 — only now does the G turn green, and think.
+  { world: "gift", hold: BREATH },
   { world: "gift", middle: ["so..."], scale: { middle: 1.7 }, hold: THINKING_BEAT },
+  { world: "gift", hold: BREATH },
 
-
+  // 10 — the question, one word at a time, then the hero.
   { world: "gift", middle: ["are"], hold: WORD_BEAT },
-  { world: "gift", middle: ["are", "you"], hold: WORD_BEAT },
-  { world: "gift", middle: ["are", "you", "a"], hold: PHRASE_BEAT },
-  {
-    world: "gift",
-    middle: ["are", "you", "a"],
-    bottom: ["giver?"],
-  },
+  { world: "gift", middle: ["you"], hold: WORD_BEAT },
+  { world: "gift", middle: ["a"], hold: WORD_BEAT },
+  { world: "gift", hold: BREATH },
+  { world: "gift", bottom: ["giver?"] },
 ];
 
 /** Straight into the people: meet — 4 — givers, one at a time. */
@@ -305,11 +313,11 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
 /** Giver, speaking. The colour follows the meaning, never the page. */
 function OpeningSequence({ onDone }: { onDone: () => void }) {
   const { world, copy, last } = useBeats(OPENING);
-  const [arrow, setArrow] = useState(false);
+  const [cue, setCue] = useState(false);
 
   useEffect(() => {
     if (!last) return;
-    const t = setTimeout(() => setArrow(true), 1800);
+    const t = setTimeout(() => setCue(true), 2000);
     return () => clearTimeout(t);
   }, [last]);
 
@@ -320,8 +328,33 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
       middle={copy("middle")}
       bottom={copy("bottom")}
     >
-      <ForwardCue show={last && arrow} label="yes — meet four givers" onClick={onDone} />
+      <LetsGiver show={last && cue} onClick={onDone} />
     </IntroG>
+  );
+}
+
+/**
+ * THE GIVER CALL TO ACTION. Not a button, not a pill, not an arrow — just the
+ * words, in Giver's own language: let's giver.
+ */
+function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 z-20 flex justify-center"
+      style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className="px-6 py-2 text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+        style={{ opacity: show ? 1 : 0, pointerEvents: show ? "auto" : "none" }}
+      >
+        let&apos;s giver
+      </button>
+    </div>
   );
 }
 

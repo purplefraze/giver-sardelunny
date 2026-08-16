@@ -32,6 +32,8 @@ type Beat = {
   bottom?: string[];
   /** Deliberate emphasis for a single transitional beat ("so..."). */
   scale?: Partial<Record<Loop, number>>;
+  /** First line of a loop is the hero ("50"); the rest support it. */
+  hero?: Partial<Record<Loop, boolean>>;
   /** How long this composition holds before the next beat. */
   hold?: number;
 };

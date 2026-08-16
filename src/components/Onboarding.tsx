@@ -199,13 +199,38 @@ function useBeats(script: Beat[]) {
   }, [i, script]);
 
 
-  const copy = (key: Loop): LoopCopy | undefined =>
-    loops[key].lines.length
-      ? { lines: loops[key].lines, opacity: loops[key].opacity }
-      : undefined;
+  /**
+   * THE FINAL COMPOSITION, KNOWN IN ADVANCE. A loop's plan is the fullest form
+   * of the phrase it is currently building — found by walking forward while the
+   * next beat only ADDS to what is already there. Layout is computed from that
+   * plan, so a revealed word never moves when the next one arrives.
+   */
+  const plan = (key: Loop): string[] => {
+    let j = i;
+    while (j + 1 < script.length) {
+      const a = script[j]![key] ?? [];
+      const b = script[j + 1]![key] ?? [];
+      if (!(b.length >= a.length && same(a, b.slice(0, a.length)))) break;
+      j += 1;
+    }
+    return script[j]![key] ?? [];
+  };
+
+  const copy = (key: Loop): LoopCopy | undefined => {
+    if (!loops[key].lines.length) return undefined;
+    const full = plan(key);
+    const scale = script[i]!.scale?.[key];
+    return {
+      lines: loops[key].lines,
+      plan: full.length >= loops[key].lines.length ? full : loops[key].lines,
+      opacity: loops[key].opacity,
+      ...(scale ? { scale } : {}),
+    };
+  };
 
   return { world: script[i]!.world, copy, last };
 }
+
 
 export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {
   const [stage, setStage] = useState<Stage>("opening");

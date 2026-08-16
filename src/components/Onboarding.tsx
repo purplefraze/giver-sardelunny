@@ -55,23 +55,36 @@ const SHORT_BEAT = 620;
 /** The thoughtful beat after "so..." — twice a normal pause. */
 const THINKING_BEAT = 3200;
 
+/**
+ * OPENING TYPE HIERARCHY, as three shared tokens — never per-word guesses.
+ *   WELCOME — the greeting: present, but not the loudest thing on the screen
+ *   HERO    — the brand word: still the hero, no longer oversized
+ *   SECOND  — supporting language ("kindness as currency")
+ */
+const WELCOME = { middle: 0.82 } as const;
+const HERO = { bottom: 0.88 } as const;
+const SECOND = { middle: 0.72 } as const;
+
+
 const OPENING: Beat[] = [
   // 1 — START EMPTY. The orange G, alone, breathing.
   { world: "welcome", hold: BREATH },
 
-  // 2 — WELCOME, then TO underneath it. "welcome" never moves.
-  { world: "welcome", middle: ["welcome"], hold: WORD_BEAT },
-  { world: "welcome", middle: ["welcome", "to"], hold: PHRASE_BEAT },
+  // 2 — WELCOME, then TO underneath it. "welcome" never moves, and the beat
+  // keeps moving: this is a greeting, not a ceremony.
+  { world: "welcome", middle: ["welcome"], scale: WELCOME, hold: SHORT_BEAT },
+  { world: "welcome", middle: ["welcome", "to"], scale: WELCOME, hold: PHRASE_BEAT },
   { world: "welcome", hold: SHORT_BEAT },
 
-  // 3 — the first brand moment. It lands, and it is allowed to sit there.
-  { world: "welcome", bottom: ["giver"], hold: HERO_BEAT },
+  // 3 — the first brand moment. Still the hero word, just no longer shouting.
+  { world: "welcome", bottom: ["giver"], scale: HERO, hold: HERO_BEAT },
   { world: "welcome", hold: SHORT_BEAT },
 
-  // 4 — KINDNESS · AS · CURRENCY. One word at a time, never together.
-  { world: "welcome", middle: ["kindness"], hold: PHRASE_BEAT },
-  { world: "welcome", middle: ["as"], scale: { middle: 0.7 }, hold: WORD_BEAT },
-  { world: "welcome", middle: ["currency"], hold: PHRASE_BEAT },
+  // 4 — KINDNESS · AS · CURRENCY. One word at a time, deliberately SECONDARY:
+  // the phrase with authority in this chapter is "spark change".
+  { world: "welcome", middle: ["kindness"], scale: SECOND, hold: PHRASE_BEAT },
+  { world: "welcome", middle: ["as"], scale: { middle: 0.52 }, hold: WORD_BEAT },
+  { world: "welcome", middle: ["currency"], scale: SECOND, hold: PHRASE_BEAT },
   { world: "welcome", hold: SHORT_BEAT },
 
   // 5 — SPARK / CHANGE, big, in the bottom loop. It then STAYS.
@@ -88,18 +101,18 @@ const OPENING: Beat[] = [
   { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
 
   // 7 — the gift BUILDS: nothing already revealed moves.
-  { world: "welcome", middle: ["here's 100"], bottom: ["spark", "change"], hold: WORD_BEAT },
+  { world: "welcome", middle: ["here's"], bottom: ["spark", "change"], hold: WORD_BEAT },
   {
     world: "welcome",
-    middle: ["here's 100", "sparks"],
+    middle: ["here's", "100 sparks"],
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
 
-  // 8 — the 50 / 50 split. Each half is ONE composition, not a set of screens.
+  // 8 — the split, said as simply as it can be said. Two compositions, no essay.
   {
     world: "welcome",
-    middle: ["50", "for you", "to wish with"],
+    middle: ["50", "for your wishes"],
     hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
@@ -107,17 +120,12 @@ const OPENING: Beat[] = [
   { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
   {
     world: "welcome",
-    middle: ["and 50", "for you", "to gift"],
+    middle: ["50", "to gift"],
     hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
-  {
-    world: "welcome",
-    middle: ["and make", "someone's", "day"],
-    bottom: ["spark", "change"],
-    hold: COMPOSITION,
-  },
+
 
   // 9 — spark change alone, then the orange G empties completely.
   { world: "welcome", bottom: ["spark", "change"], hold: PHRASE_BEAT },
@@ -391,7 +399,8 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
 function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
   return (
     <div
-      className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-center"
+      // A quiet next step in the BOTTOM-RIGHT corner, outside the artwork.
+      className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-end pr-7"
       // The stage reserves this exact strip, so the words never cross the stroke.
       style={{
         height: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})`,

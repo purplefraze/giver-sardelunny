@@ -72,18 +72,22 @@ export function loopText({
 
   const build = (step: number) => {
     const max = wrapWidth(region, 2.02 * LOOP_FILL[region]);
-    const rows = blocks.flatMap((block, i) =>
-      wrapLines(block.text, token[block.role] * step * scale, max, block.role).map(
-        (text, j) => ({
-          text,
-          size: token[block.role] * step * scale,
-          role: block.role,
-          gap: i === 0 && j === 0 ? 0 : token.message * step * scale * 0.06,
-          // Which line of the composition this row belongs to.
-          src: i,
-        }),
-      ),
-    );
+    // A hero composition ("50" / "for you" / "to wish with") gives its lead line
+    // real graphic weight: the numeral dominates, the support reads under it.
+    const HERO_LEAD = 1.6;
+    const rows = blocks.flatMap((block, i) => {
+      const size =
+        token[block.role] * step * scale * (hero && i === 0 ? HERO_LEAD : 1);
+      return wrapLines(block.text, size, max, block.role).map((text, j) => ({
+        text,
+        size,
+        role: block.role,
+        gap: i === 0 && j === 0 ? 0 : token.message * step * scale * 0.06,
+        // Which line of the composition this row belongs to.
+        src: i,
+      }));
+    });
+
     return {
       laid: layoutStack(rows, region, 1, LOOP_FILL[region]),
       src: rows.map((r) => r.src),

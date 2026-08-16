@@ -90,10 +90,11 @@ export const PROFILE_TYPE: Record<
   LoopRegion,
   { answer: number; label: number; detail: number }
 > = {
-  top: { answer: 20, label: 12, detail: 15 },
-  middle: { answer: 26, label: 14, detail: 19 },
-  bottom: { answer: 37, label: 18, detail: 26 },
+  top: { answer: 24, label: 14, detail: 18 },
+  middle: { answer: 36, label: 19, detail: 26 },
+  bottom: { answer: 52, label: 25, detail: 36 },
 };
+
 
 /**
  * The ONLY freedom left: if a profile still overflows its safe area, the WHOLE

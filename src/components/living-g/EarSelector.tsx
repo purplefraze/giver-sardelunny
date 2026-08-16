@@ -238,25 +238,31 @@ export function EarSelector({
       {MODES.map((m) => {
         const hint = at(SEAT_ANGLE[m], RIM_R + 16);
         const active = mode === m && !dragging;
+        // On a person's screen the seats TELL THEIR STORY: a seat they have
+        // taken part in reads in that mode's own colour, a little stronger.
+        const told = history?.includes(m) ?? false;
         return (
           <circle
             key={m}
             cx={hint.x}
             cy={hint.y}
-            r={5}
-            fill="var(--world-g)"
+            r={told ? 8 : 5}
+            fill={told ? MODE_COLOUR[m] : "var(--world-g)"}
             pointerEvents="none"
             style={{
               opacity:
                 active || Math.abs(shortest(angle, SEAT_ANGLE[m])) < 0.22
                   ? 0
-                  : 0.22,
+                  : told
+                    ? 0.85
+                    : 0.22,
 
               transition: "opacity 200ms ease-out",
             }}
           />
         );
       })}
+
 
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,

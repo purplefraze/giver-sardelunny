@@ -80,8 +80,15 @@ export function loopText({
     const HERO_LEAD = lead <= 3 ? 1.6 : 1.22;
 
     const rows = blocks.flatMap((block, i) => {
-      const size =
-        token[block.role] * step * scale * (hero && i === kickerRows ? HERO_LEAD : 1);
+      const isLead = hero && i === kickerRows;
+      // Support lines never fall below a readable floor when the stack steps
+      // down for a wide lead — the hero shrinks, the support holds.
+      const size = isLead
+        ? token[block.role] * step * scale * HERO_LEAD
+        : hero
+          ? Math.max(token[block.role] * step * scale, token[block.role] * 0.78)
+          : token[block.role] * step * scale;
+
       return wrapLines(block.text, size, max, block.role).map((text, j) => ({
         text,
         size,

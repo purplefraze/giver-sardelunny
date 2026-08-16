@@ -67,6 +67,7 @@ export function IntroG({
               lines: copy.lines,
               ...(copy.plan ? { plan: copy.plan } : {}),
               ...(copy.scale ? { scale: copy.scale } : {}),
+              ...(copy.hero ? { hero: true } : {}),
             })}
 
           </g>

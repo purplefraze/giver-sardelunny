@@ -94,41 +94,46 @@ const OPENING: Beat[] = [
     hold: COMPOSITION,
   },
 
-  // 8 — what the sparks are for. Same middle loop, clean beats.
+  // 8 — the 50 / 50 split. Each half is ONE composition, not a set of screens.
   {
     world: "welcome",
-    middle: ["50", "for you"],
+    middle: ["50", "for you", "to wish with"],
+    hero: { middle: true },
     bottom: ["spark", "change"],
-    hold: PHRASE_BEAT,
+    hold: COMPOSITION,
   },
+  { world: "welcome", bottom: ["spark", "change"], hold: SHORT_BEAT },
   {
     world: "welcome",
-    middle: ["50", "to wish with"],
+    middle: ["and 50", "for you", "to gift"],
+    hero: { middle: true },
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
   {
     world: "welcome",
-    middle: ["50", "to gift", "and make", "someone's day"],
+    middle: ["and make", "someone's day"],
     bottom: ["spark", "change"],
     hold: COMPOSITION,
   },
 
-  // 9 — the orange G empties completely BEFORE the colour changes.
+  // 9 — spark change alone, then the orange G empties completely.
+  { world: "welcome", bottom: ["spark", "change"], hold: PHRASE_BEAT },
   { world: "welcome", hold: BREATH },
 
   // 10 — only now does the G turn green, and think.
   { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", middle: ["so..."], scale: { middle: 1.7 }, hold: THINKING_BEAT },
+  { world: "gift", middle: ["so..."], hold: THINKING_BEAT },
   { world: "gift", hold: SHORT_BEAT },
 
-  // 11 — the question, one word at a time, then the hero.
-  { world: "gift", middle: ["are"], scale: { middle: 1.7 }, hold: WORD_BEAT },
-  { world: "gift", middle: ["you"], scale: { middle: 1.7 }, hold: WORD_BEAT },
-  { world: "gift", middle: ["a"], scale: { middle: 1.7 }, hold: WORD_BEAT },
+  // 11 — the question, one word at a time, then the hero payoff.
+  { world: "gift", middle: ["are"], hold: WORD_BEAT },
+  { world: "gift", middle: ["you"], hold: WORD_BEAT },
+  { world: "gift", middle: ["a"], hold: WORD_BEAT },
   { world: "gift", hold: SHORT_BEAT },
-  { world: "gift", bottom: ["giver?"], scale: { bottom: 1.18 } },
+  { world: "gift", bottom: ["giver?"] },
 ];
+
 
 
 /** Straight into the people: meet — 4 — givers, one at a time. */

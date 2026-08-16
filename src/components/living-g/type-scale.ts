@@ -118,8 +118,8 @@ export const PROFILE_TYPE: Record<
   { answer: number; label: number; detail: number }
 > = {
   top: { answer: 30, label: 17, detail: 22 },
-  middle: { answer: 62, label: 29, detail: 40 },
-  bottom: { answer: 88, label: 38, detail: 56 },
+  middle: { answer: 74, label: 32, detail: 44 },
+  bottom: { answer: 106, label: 42, detail: 62 },
 };
 
 

@@ -548,7 +548,7 @@ function FirstGenerosity({
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   // MEANINGFUL BEAT: nothing advances on its own here. The user reads, then taps.
-  const { shown, settled } = useSpeech(4, 1500, 1600);
+  const { shown, settled } = useSpeech(6, 1500, 1600);
 
   if (asked) {
     return (
@@ -571,35 +571,68 @@ function FirstGenerosity({
     >
       <Spoken
         show={shown >= 1}
-        className="max-w-[11ch] text-[13vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
+        className="text-[16vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
         style={{ color: "var(--giver-profile)" }}
+      >
+        congrats
+      </Spoken>
+      <Spoken
+        show={shown >= 2}
+        className="mt-7 max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.92] tracking-[-0.045em]"
+      >
+        you just made your first act of generosity on giver
+      </Spoken>
+      <Spoken
+        show={shown >= 3}
+        className="mt-7 max-w-[14ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em]"
       >
         give yourself a pat on the back
       </Spoken>
       <Spoken
-        show={shown >= 2}
-        className="mt-8 max-w-[15ch] text-[7.5vw] font-black lowercase leading-[0.94] tracking-[-0.04em]"
-      >
-        you&apos;ve already made your first act of generosity on giver
-      </Spoken>
-      <Spoken
-        show={shown >= 3}
+        show={shown >= 4}
         className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
       >
         50 sparks have now been given to {username}
       </Spoken>
       {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
       <Spoken
-        show={shown >= 4}
-        className="mt-5 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
+        show={shown >= 5}
+        className="mt-5 text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
       >
-        50 sparks have now been added to your profile
+        and
+      </Spoken>
+      <Spoken
+        show={shown >= 6}
+        className="mt-2 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
+      >
+        50 sparks have now been added to your account
       </Spoken>
 
-      <ForwardCue show={settled} label="continue" onClick={() => setAsked(true)} />
+      {/* The Giver call to action, in Giver's own language. */}
+      <div
+        className="absolute inset-x-0 bottom-0 flex justify-end px-7"
+        style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            buzz();
+            setAsked(true);
+          }}
+          className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+          style={{
+            color: "var(--giver-profile)",
+            opacity: settled ? 1 : 0,
+            pointerEvents: settled ? "auto" : "none",
+          }}
+        >
+          let&apos;s giver
+        </button>
+      </div>
     </div>
   );
 }
+
 
 /** Messaging is a permission, so Giver asks. "not now" costs nothing. */
 function MessagingConsent({

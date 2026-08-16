@@ -496,7 +496,7 @@ function FirstGenerosity({
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   // MEANINGFUL BEAT: nothing advances on its own here. The user reads, then taps.
-  const { shown, settled } = useSpeech(3, 1500, 1600);
+  const { shown, settled } = useSpeech(4, 1500, 1600);
 
   if (asked) {
     return (

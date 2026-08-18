@@ -45,7 +45,6 @@ type Beat = {
  * underneath it, so consecutive words overlap softly rather than snapping.
  */
 const WORD_BEAT = 1250;
-const PHRASE_BEAT = 1500;
 const COMPOSITION = 2900;
 /** A brand name needs room: it lands, and then it is allowed to sit there. */
 const HERO_BEAT = 2500;

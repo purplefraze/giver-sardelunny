@@ -83,26 +83,9 @@ export function SparkJourney({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The journey itself: it plays on its own, and a finger simply takes over.
-  useEffect(() => {
-    if (arrived || dragging) return;
-    let raf = 0;
-    const from = u;
-    const span = Math.max(1, TRAVEL_MS * (1 - from));
-    const start = performance.now() + (from === 0 ? HINT_MS : 260);
+  // No auto-travel: the journey is the user's to make. The bead simply waits on
+  // the rail, at the bowl's lower right, until a finger takes it.
 
-    const step = (now: number) => {
-      if (now >= start) {
-        const k = Math.min(1, (now - start) / span);
-        put(from + (1 - from) * ease(k));
-        if (k >= 1) return;
-      }
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dragging, arrived]);
 
   // Landing: the haptic, then the green travelling outward from the bead.
   useEffect(() => {

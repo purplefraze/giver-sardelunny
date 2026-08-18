@@ -96,6 +96,7 @@ export function IntroG({
             <LivingG
               className={G_PRESENCE}
               showLabels={false}
+              {...(overlay ? { overlay } : {})}
               regions={{
                 ...region("top", top),
                 ...region("middle", middle),

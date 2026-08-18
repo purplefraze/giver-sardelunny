@@ -17,12 +17,9 @@ import { buzz } from "@/lib/haptics";
  * action causes the colour, never the other way round.
  */
 
-/** The whole journey, if nobody touches it. Graceful, never hurried. */
-const TRAVEL_MS = 5200;
-/** How long the bead waits, quietly inviting a finger, before it sets off. */
-const HINT_MS = 2200;
 /** The green resolving through the G from the landing point. */
 const WASH_MS = 1400;
+
 
 /** Ease-in-out: it sets off gently and settles gently. No bounce. */
 const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
@@ -43,6 +40,8 @@ export function SparkJourney({
   const samples = useRef<Sample[]>([]);
   const grabbed = useRef(false);
   const marks = useRef(0);
+  /** Live progress, so the drag can stay local without a stale closure. */
+  const uRef = useRef(0);
 
   const [at, setAt] = useState({ x: 0, y: 0, ready: false });
   const [u, setU] = useState(0);
@@ -56,8 +55,10 @@ export function SparkJourney({
     if (!path) return;
     const clamped = Math.min(1, Math.max(0, next));
     const p = path.getPointAtLength(clamped * path.getTotalLength());
+    uRef.current = clamped;
     setU(clamped);
     setAt({ x: p.x, y: p.y, ready: true });
+
 
     // A quiet tick at each quarter of the journey — abacus, not applause.
     const mark = Math.floor(clamped * 4);
@@ -83,26 +84,9 @@ export function SparkJourney({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The journey itself: it plays on its own, and a finger simply takes over.
-  useEffect(() => {
-    if (arrived || dragging) return;
-    let raf = 0;
-    const from = u;
-    const span = Math.max(1, TRAVEL_MS * (1 - from));
-    const start = performance.now() + (from === 0 ? HINT_MS : 260);
+  // No auto-travel: the journey is the user's to make. The bead simply waits on
+  // the rail, at the bowl's lower right, until a finger takes it.
 
-    const step = (now: number) => {
-      if (now >= start) {
-        const k = Math.min(1, (now - start) / span);
-        put(from + (1 - from) * ease(k));
-        if (k >= 1) return;
-      }
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dragging, arrived]);
 
   // Landing: the haptic, then the green travelling outward from the bead.
   useEffect(() => {
@@ -140,13 +124,20 @@ export function SparkJourney({
     return p.matrixTransform(m.inverse());
   };
 
-  /** MAGNETIC: the nearest point ON THE RAIL. The spark cannot leave it. */
+  /**
+   * MAGNETIC, AND LOCAL. The nearest point ON THE RAIL, searched only within a
+   * short stretch either side of where the bead already is. The bead therefore
+   * slides along the wire continuously and can never jump across a gap to a
+   * geometrically-near part of the rail — no shortcut to the destination.
+   */
   const project = (e: React.PointerEvent) => {
     const p = local(e);
     if (!p) return;
-    let best = samples.current[0];
+    const here = uRef.current;
+    let best: Sample | undefined;
     let d = Infinity;
     for (const s of samples.current) {
+      if (Math.abs(s.u - here) > 0.045) continue;
       const k = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
       if (k < d) {
         d = k;
@@ -155,6 +146,7 @@ export function SparkJourney({
     }
     if (best) put(best.u);
   };
+
 
   const grab = (e: React.PointerEvent) => {
     if (arrived) return;
@@ -173,7 +165,10 @@ export function SparkJourney({
   const release = () => {
     grabbed.current = false;
     setDragging(false);
+    // A gentle lock-in: within a hair of the destination, it settles there.
+    if (uRef.current > 0.97) put(1);
   };
+
 
   const R = 34;
 

@@ -123,13 +123,20 @@ export function SparkJourney({
     return p.matrixTransform(m.inverse());
   };
 
-  /** MAGNETIC: the nearest point ON THE RAIL. The spark cannot leave it. */
+  /**
+   * MAGNETIC, AND LOCAL. The nearest point ON THE RAIL, searched only within a
+   * short stretch either side of where the bead already is. The bead therefore
+   * slides along the wire continuously and can never jump across a gap to a
+   * geometrically-near part of the rail — no shortcut to the destination.
+   */
   const project = (e: React.PointerEvent) => {
     const p = local(e);
     if (!p) return;
-    let best = samples.current[0];
+    const here = uRef.current;
+    let best: Sample | undefined;
     let d = Infinity;
     for (const s of samples.current) {
+      if (Math.abs(s.u - here) > 0.045) continue;
       const k = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
       if (k < d) {
         d = k;
@@ -138,6 +145,7 @@ export function SparkJourney({
     }
     if (best) put(best.u);
   };
+
 
   const grab = (e: React.PointerEvent) => {
     if (arrived) return;

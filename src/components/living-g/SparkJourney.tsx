@@ -40,6 +40,8 @@ export function SparkJourney({
   const samples = useRef<Sample[]>([]);
   const grabbed = useRef(false);
   const marks = useRef(0);
+  /** Live progress, so the drag can stay local without a stale closure. */
+  const uRef = useRef(0);
 
   const [at, setAt] = useState({ x: 0, y: 0, ready: false });
   const [u, setU] = useState(0);
@@ -53,8 +55,10 @@ export function SparkJourney({
     if (!path) return;
     const clamped = Math.min(1, Math.max(0, next));
     const p = path.getPointAtLength(clamped * path.getTotalLength());
+    uRef.current = clamped;
     setU(clamped);
     setAt({ x: p.x, y: p.y, ready: true });
+
 
     // A quiet tick at each quarter of the journey — abacus, not applause.
     const mark = Math.floor(clamped * 4);

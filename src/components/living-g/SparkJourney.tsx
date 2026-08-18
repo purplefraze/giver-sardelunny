@@ -110,7 +110,12 @@ export function SparkJourney({
     setArrived(true);
     buzz([12, 60, 22]);
     onArrive?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [u, arrived]);
 
+  // THE CHANGE. Kept in its OWN effect so nothing can cancel it mid-flight.
+  useEffect(() => {
+    if (!arrived) return;
     let raf = 0;
     const start = performance.now();
     const step = (now: number) => {
@@ -122,7 +127,7 @@ export function SparkJourney({
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [u, arrived]);
+  }, [arrived]);
 
   /** Client point -> the G's own coordinates. */
   const local = (e: React.PointerEvent) => {

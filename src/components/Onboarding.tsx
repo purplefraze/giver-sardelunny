@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { CTA_BAND } from "@/components/living-g/GStage";
+import { SparkJourney } from "@/components/living-g/SparkJourney";
 
 import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
 import { MemberExample } from "@/components/onboarding/MemberExample";

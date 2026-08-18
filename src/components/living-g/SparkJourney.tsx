@@ -165,7 +165,10 @@ export function SparkJourney({
   const release = () => {
     grabbed.current = false;
     setDragging(false);
+    // A gentle lock-in: within a hair of the destination, it settles there.
+    if (uRef.current > 0.97) put(1);
   };
+
 
   const R = 34;
 

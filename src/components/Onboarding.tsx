@@ -357,25 +357,67 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   );
 }
 
-/** Giver, speaking. The colour follows the meaning, never the page. */
+/**
+ * Giver, speaking — and then handing over. The scripted words end holding "spark
+ * change"; from that moment the lesson becomes PHYSICAL: a spark is released at
+ * the middle loop's opening and travels the G's own path (it can be dragged, or
+ * it will travel on its own). When it lands, the green resolves outward from
+ * where it landed, and only then does Giver make the invitation.
+ */
 function OpeningSequence({ onDone }: { onDone: () => void }) {
   const { world, copy, last } = useBeats(OPENING);
+  const [phase, setPhase] = useState<"script" | "travel" | "arriving" | "landed">("script");
+  const [green, setGreen] = useState(false);
   const [cue, setCue] = useState(false);
 
+  // The spark is released the moment "50 to give" has left the middle loop.
   useEffect(() => {
-    if (!last) return;
-    const t = setTimeout(() => setCue(true), 2000);
+    if (!last || phase !== "script") return;
+    const t = setTimeout(() => setPhase("travel"), 320);
     return () => clearTimeout(t);
-  }, [last]);
+  }, [last, phase]);
+
+  useEffect(() => {
+    if (phase !== "landed") return;
+    const t = setTimeout(() => setCue(true), 1600);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  const scripted = copy("bottom");
+  const bottom: LoopCopy | undefined =
+    phase === "landed"
+      ? {
+          lines: ["and make", "someone's day!"],
+          plan: ["and make", "someone's day!"],
+          scale: PAYOFF.bottom,
+          opacity: 1,
+        }
+      : phase === "arriving" && scripted
+        ? { ...scripted, opacity: 0 }
+        : scripted;
 
   return (
     <IntroG
-      world={world}
+      world={green ? "gift" : world}
       top={copy("top")}
       middle={copy("middle")}
-      bottom={copy("bottom")}
+      bottom={bottom}
+      {...(phase !== "script"
+        ? {
+            overlay: (
+              <SparkJourney
+                onArrive={() => {
+                  setPhase("arriving");
+                  // The phrase it replaces is allowed to leave first.
+                  setTimeout(() => setPhase("landed"), BEAT_MS);
+                }}
+                onGreen={() => setGreen(true)}
+              />
+            ),
+          }
+        : {})}
     >
-      <LetsGiver show={last && cue} onClick={onDone} />
+      <LetsGiver show={cue} onClick={onDone} />
     </IntroG>
   );
 }

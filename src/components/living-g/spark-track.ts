@@ -89,10 +89,12 @@ function build() {
   const enter = ride(LOOP_CENTRE.bottom, BOT_R, BOT_FROM, 240, 266);
   parts.push(`C374 486 383 545 ${f(enter.x)} ${f(enter.y)}`);
 
-  for (let a = BOT_FROM - 2; a >= BOT_TO; a -= 2) {
+  const dir = BOT_TO >= BOT_FROM ? 2 : -2;
+  for (let a = BOT_FROM + dir; dir > 0 ? a <= BOT_TO : a >= BOT_TO; a += dir) {
     const p = ride(LOOP_CENTRE.bottom, BOT_R, a, 240, 266);
     parts.push(`L${f(p.x)} ${f(p.y)}`);
   }
+
 
   return parts.join(" ");
 }

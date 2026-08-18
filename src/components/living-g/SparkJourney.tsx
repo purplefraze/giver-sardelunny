@@ -17,12 +17,9 @@ import { buzz } from "@/lib/haptics";
  * action causes the colour, never the other way round.
  */
 
-/** The whole journey, if nobody touches it. Graceful, never hurried. */
-const TRAVEL_MS = 5200;
-/** How long the bead waits, quietly inviting a finger, before it sets off. */
-const HINT_MS = 2200;
 /** The green resolving through the G from the landing point. */
 const WASH_MS = 1400;
+
 
 /** Ease-in-out: it sets off gently and settles gently. No bounce. */
 const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);

@@ -60,15 +60,18 @@ function ride(
 /**
  * THE JOURNEY, in the G's own coordinates.
  *
- *   start  the middle loop's opening at 2 o'clock (where the ear/stem leaves)
- *   then   COUNTERCLOCKWISE around the middle loop (decreasing angle, y-down)
- *   then   down the connecting spine
- *   then   COUNTERCLOCKWISE around the lower loop, ending at its lowest point
+ *   start  the middle loop's lower-right edge (~4-5 o'clock), where the bowl
+ *          begins narrowing toward the S-curve
+ *   then   COUNTERCLOCKWISE around the middle loop (decreasing angle, y-down):
+ *          right side, top, left side, back down to the lower right
+ *   then   through the connecting S-curve
+ *   then   into the lower loop, stopping at its upper-right edge (~1-2 o'clock)
  */
-const MID_FROM = -44;
-const MID_TO = -298; // = 62°, the spine junction on the bowl's lower right
-const BOT_FROM = -68; // where the spine meets the lower loop
-const BOT_TO = -270; // the bottom of the G: the end of the journey
+const MID_FROM = 52; // lower-right of the bowl: where the journey begins
+const MID_TO = -298; // = 62°, the spine junction, one full turn later
+const BOT_FROM = -84; // where the spine meets the lower loop
+const BOT_TO = -48; // upper-right of the lower loop: the destination
+
 
 function build() {
   const parts: string[] = [];

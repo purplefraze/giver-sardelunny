@@ -35,6 +35,7 @@ export function IntroG({
   bottom,
   onAdvance,
   copyOpacity = 1,
+  overlay,
   children,
 }: {
   world: string;
@@ -44,6 +45,8 @@ export function IntroG({
   onAdvance?: (() => void) | undefined;
   /** Gentle fade of the words inside the loops. The G itself never moves. */
   copyOpacity?: number;
+  /** Interactive layer drawn above the artwork (e.g. the travelling spark). */
+  overlay?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {

@@ -92,6 +92,12 @@ export function CategoryForm({
       buzz();
       return;
     }
+    /* ONE ITEM, MANY VIEWS: photos and the borrow/lend side are stored on the
+       real record, so every screen that reads it shows the same truth. */
+    const extra = {
+      ...(photos.length ? { photos } : {}),
+      ...(category === "borrow" ? { side } : {}),
+    };
     const result =
       category === "trade"
         ? myProfileStore.addItem(
@@ -99,8 +105,9 @@ export function CategoryForm({
             tradeText(draft, want),
             { offer: draft, want },
             note,
+            extra,
           )
-        : myProfileStore.addItem(category, draft, undefined, note);
+        : myProfileStore.addItem(category, draft, undefined, note, extra);
     if (!result.ok) {
       setProblem(
         result.reason === "sparks"
@@ -114,7 +121,9 @@ export function CategoryForm({
     setDraft("");
     setWant("");
     setNote("");
+    setPhotos([]);
     buzz();
+
   };
 
   const leave = () => {

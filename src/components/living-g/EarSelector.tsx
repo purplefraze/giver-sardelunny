@@ -28,6 +28,15 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
+/**
+ * THE FIFTH SEAT: GIVER = ME. It sits at 12 o'clock, dead above the middle
+ * loop's centre — the profile state, not another activity category. Screens
+ * that only speak activity (other people's Gs) keep the four-seat track.
+ */
+export const SEATS = ["giver", "wish", "give", "trade", "borrow"] as const;
+export type Seat = (typeof SEATS)[number];
+
+
 type P = { x: number; y: number };
 
 /** THE ONE TRACK — the middle loop's measured centre and outer rim. */

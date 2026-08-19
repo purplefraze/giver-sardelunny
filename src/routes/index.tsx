@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
-import { WorldIntro } from "@/components/WorldIntro";
+import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
+import { ChooseWorld } from "@/components/ChooseWorld";
+import { HelpIndex } from "@/components/HelpIndex";
+
 import { introSeenStore } from "@/data/intro-seen";
 import { useIntroSeen } from "@/hooks/use-intro-seen";
 
@@ -139,14 +142,34 @@ function Index() {
    * FIRST-TIME WORLD EXPLANATION. Giver explains wish / give / trade / borrow
    * once each, from four PERSISTED flags — never component state — then gets
    * out of the way. It is UI only: it creates no items and touches no profile.
+   *
+   * `help` marks an explanation the user asked for on purpose: it sets no flag
+   * and leads nowhere — it explains, then hands the G straight back.
    */
-  const [intro, setIntro] = useState<Category | null>(null);
+  const [intro, setIntro] = useState<{ topic: IntroTopic; help: boolean } | null>(
+    null,
+  );
   const introSeen = useIntroSeen();
+
+  /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
+  const [choose, setChoose] = useState(false);
+  /** The voluntary help area — every explanation, on demand. */
+  const [help, setHelp] = useState(false);
+
+  /**
+   * ONE DOOR INTO A WORLD. First time: explain, then the form. Every time after:
+   * straight to the form. The flag decides, never the caller.
+   */
+  const openWorld = (category: Category) => {
+    setChoose(false);
+    if (introSeen[category]) setEditor({ kind: "category", category });
+    else setIntro({ topic: category, help: false });
+  };
 
   useEffect(() => {
     if (!entered || seat === "giver") return;
     if (introSeen[seat]) return;
-    setIntro(seat);
+    setIntro({ topic: seat, help: false });
   }, [entered, seat, introSeen]);
 
   /**
@@ -167,6 +190,7 @@ function Index() {
     const t = setTimeout(() => setTeach(false), 4200);
     return () => clearTimeout(t);
   }, [entered]);
+
 
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
@@ -214,7 +238,7 @@ function Index() {
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             identity="giver"
-            active={editor === null && intro === null}
+            active={editor === null && intro === null && !choose && !help}
             earCut
             overlay={
               <EarSelector
@@ -222,9 +246,11 @@ function Index() {
                 onChange={setSeat}
                 seats={SEATS}
                 {...(isProfile && me.photo ? { photo: me.photo } : {})}
+                {...(isProfile ? { word: "my g" } : {})}
                 onTap={() => setEditor({ kind: "about" })}
               />
             }
+
             teach={teach}
             regions={{
               top: {
@@ -245,11 +271,22 @@ function Index() {
                 label: "",
                 panelTitle: isProfile ? "latest activity" : content.mine.title,
                 panelBody: null,
-                onPress: () =>
-                  setEditor({
-                    kind: "category",
-                    category: isProfile ? (latest?.type ?? "wish") : mode,
-                  }),
+                /*
+                  AN EMPTY MIDDLE LOOP NEVER ASSUMES A WISH. With no activity
+                  yet, it asks the question and offers the four worlds.
+                */
+                onPress: () => {
+                  if (isProfile && !latest) {
+                    setChoose(true);
+                    return;
+                  }
+                  if (isProfile) {
+                    openWorld(latest!.type);
+                    return;
+                  }
+                  setEditor({ kind: "category", category: mode });
+                },
+
                 render: (anchor) =>
                   profileLoop({
                     anchor,
@@ -284,10 +321,11 @@ function Index() {
                 panelBody: isProfile ? null : content.community.body,
                 ...(isProfile
                   ? {
-                      onPress: () =>
-                        setEditor({ kind: "category", category: "give" }),
+                      /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
+                      onPress: () => openWorld("give"),
                     }
                   : {}),
+
                 render: (anchor) =>
                   profileLoop({
                     anchor,
@@ -318,32 +356,58 @@ function Index() {
           <SparkFlash />
 
           {/*
-            THE QUIET WAY BACK TO THE EXPLANATION. Nothing shouts; one small
-            word in the corner replays the world's intro on demand.
+            THE QUIET WAY BACK TO EVERY EXPLANATION. Nothing shouts; one small
+            word in the corner. Opening it sets NO first-time flag.
           */}
-          {!isProfile && intro === null && editor === null ? (
+          {intro === null && editor === null && !choose && !help ? (
             <button
               type="button"
-              onClick={() => setIntro(mode)}
+              onClick={() =>
+                isProfile ? setHelp(true) : setIntro({ topic: mode, help: true })
+              }
               className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
             >
-              what’s {mode}?
+              {isProfile ? "how giver works" : `what’s ${mode}?`}
             </button>
           ) : null}
+
+          {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
+          <Screen open={choose}>
+            {choose ? (
+              <ChooseWorld
+                onChoose={openWorld}
+                onCancel={() => setChoose(false)}
+              />
+            ) : null}
+          </Screen>
+
+          {/* THE VOLUNTARY HELP AREA — explanations only, no flags, no forms. */}
+          <Screen open={help}>
+            {help ? (
+              <HelpIndex
+                onOpen={(topic) => setIntro({ topic, help: true })}
+                onClose={() => setHelp(false)}
+              />
+            ) : null}
+          </Screen>
 
           {/* FIRST-TIME EXPLANATION -> straight into my <type>. */}
           <Screen open={intro !== null}>
             {intro ? (
               <WorldIntro
-                category={intro}
+                category={intro.topic}
+                help={intro.help}
                 onDone={() => {
-                  introSeenStore.markSeen(intro);
+                  const { topic, help: voluntary } = intro;
                   setIntro(null);
-                  setEditor({ kind: "category", category: intro });
+                  if (voluntary || topic === "sparks") return;
+                  introSeenStore.markSeen(topic);
+                  setEditor({ kind: "category", category: topic });
                 }}
               />
             ) : null}
           </Screen>
+
 
 
           {/*

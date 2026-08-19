@@ -144,6 +144,7 @@ export function EarSelector({
   photo,
   history,
   seats = MODES,
+  word,
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;
@@ -157,6 +158,9 @@ export function EarSelector({
   history?: Seat[];
   /** Which seats this track offers. My own G offers all five (giver = me). */
   seats?: readonly Seat[];
+  /** What the piece SAYS at rest, when the seat's own name is not the word. */
+  word?: string;
+
 }) {
 
   const [drag, setDrag] = useState<number | null>(null);
@@ -364,7 +368,8 @@ export function EarSelector({
             "opacity 200ms ease-out, transform 220ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >
-        {mode}
+        {word ?? mode}
+
       </text>
 
       {/* Invisible grip, travelling with the ring. */}

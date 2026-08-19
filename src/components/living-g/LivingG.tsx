@@ -181,7 +181,7 @@ export function LivingG({
    * LOGO WEIGHT ONLY: a same-colour outer stroke drawn before the fill, so the
    * canonical silhouette gains visual heft without redrawing its geometry.
    */
-  const heavy = weight === "heavy" ? ({ stroke: "var(--world-g)", strokeWidth: 100, paintOrder: "stroke fill", strokeLinejoin: "round" } as const) : undefined;
+  const heavy = weight === "heavy" ? ({ stroke: "var(--world-g)", strokeWidth: 220, paintOrder: "stroke fill", strokeLinejoin: "round" } as const) : undefined;
 
   /**
    * ONE ACTIVE STATE AT A TIME. The instant the loops start holding a new state,

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
-import { CTA_BAND } from "@/components/living-g/GStage";
 import { SparkJourney } from "@/components/living-g/SparkJourney";
 
 import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
@@ -23,139 +22,26 @@ import { cn } from "@/lib/utils";
  */
 type Stage = "opening" | "meet" | "choose" | "celebrate";
 
-type Loop = "top" | "middle" | "bottom";
-
-/** One beat of the opening: which G, which loops speak, and how long it holds. */
-type Beat = {
-  world: string;
-  top?: string[];
-  middle?: string[];
-  bottom?: string[];
-  /** Deliberate emphasis for a single transitional beat ("so..."). */
-  scale?: Partial<Record<Loop, number>>;
-  /** First line of a loop is the hero ("50"); the rest support it. */
-  hero?: Partial<Record<Loop, boolean>>;
-  /** How long this composition holds before the next beat. */
-  hold?: number;
-};
-
-/**
- * Calm rhythm: a word gently arrives, it settles, and only then does the next
- * word begin. Each value is a SETTLE time — the fade itself (LOOP_WORD_MS) runs
- * underneath it, so consecutive words overlap softly rather than snapping.
- */
-const WORD_BEAT = 720;
-const COMPOSITION = 1350;
-/** A brand name needs room: it lands, and then it is allowed to sit there. */
-const HERO_BEAT = 1150;
-/** The empty G, breathing — before anything is said, and between thoughts. */
-const BREATH = 480;
-/** A small beat between thoughts: enough air, never a dramatic wait. */
-const SHORT_BEAT = 360;
-
 /**
  * OPENING TYPE HIERARCHY, as shared tokens — never per-word guesses.
- *   BRAND  — the brand word, alone in the middle loop
+ *   BRAND  — a word alone in the middle loop
  *   PHRASE — supporting language in the bottom loop
- *   PAYOFF — the invitation, once the spark has created change
  */
-const BRAND = { middle: 0.9 } as const;
-const PHRASE = { middle: 0.9, bottom: 0.8 } as const;
-const BOTTOM_ONLY = { bottom: 0.8 } as const;
-const PAYOFF = { bottom: 0.78 } as const;
+const BRAND = 0.9;
+const PHRASE = 0.8;
 
 /**
- * THE OPENING. No greeting, no "welcome to": the brand word simply arrives, and
- * every phrase after it hands over while the previous one is still on the paper.
- * It ends holding "spark change" — the moment the spark itself is released.
+ * THE OPENING, AS ONE CONTINUOUS STORY. Each slide is a COMPLETE thought that
+ * arrives whole — never word by word — and hands straight over to the next.
  */
-const OPENING: Beat[] = [
-  // 1 — the orange G, alone, breathing.
-  { world: "welcome", hold: BREATH },
+type Slide = { middle?: string[]; bottom?: string[]; hold: number };
 
-  // 1 — GIVER, in the middle loop. It stays for the whole first movement.
-  { world: "welcome", middle: ["giver"], scale: BRAND, hold: HERO_BEAT },
-
-  // 2 — KINDNESS · AS · CURRENCY builds underneath, while "giver" holds.
-  { world: "welcome", middle: ["giver"], bottom: ["kindness"], scale: PHRASE, hold: WORD_BEAT },
-  {
-    world: "welcome",
-    middle: ["giver"],
-    bottom: ["kindness", "as"],
-    scale: PHRASE,
-    hold: WORD_BEAT,
-  },
-  {
-    world: "welcome",
-    middle: ["giver"],
-    bottom: ["kindness", "as", "currency"],
-    scale: PHRASE,
-    hold: COMPOSITION,
-  },
-
-  // …then ONLY the phrase leaves. "giver" stays exactly where it is.
-  { world: "welcome", middle: ["giver"], scale: BRAND, hold: SHORT_BEAT },
-
-  // 3 — SPARK · CHANGE, still under "giver".
-  { world: "welcome", middle: ["giver"], bottom: ["spark"], scale: PHRASE, hold: WORD_BEAT },
-  {
-    world: "welcome",
-    middle: ["giver"],
-    bottom: ["spark", "change"],
-    scale: PHRASE,
-    hold: COMPOSITION,
-  },
-
-  // …and now ONLY "giver" leaves. "spark change" holds for the rest of the way.
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY, hold: SHORT_BEAT },
-
-  // 4 — HERE'S · 100 SPARKS, in the middle loop.
-  {
-    world: "welcome",
-    middle: ["here's"],
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: WORD_BEAT,
-  },
-  {
-    world: "welcome",
-    middle: ["here's", "100 sparks"],
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: COMPOSITION,
-  },
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY, hold: SHORT_BEAT },
-
-  // 5 — 50 TO WISH.
-  {
-    world: "welcome",
-    middle: ["50", "to wish"],
-    hero: { middle: true },
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: COMPOSITION,
-  },
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY, hold: SHORT_BEAT },
-
-  // 6 — 50 TO GIVE. This is the phrase that BECOMES the spark.
-  {
-    world: "welcome",
-    middle: ["50", "to give"],
-    hero: { middle: true },
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: COMPOSITION,
-  },
-
-  // 7 — the middle loop empties as the spark is released at its opening.
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY },
+const WORDS: Slide[] = [
+  { middle: ["giver"], hold: 900 },
+  { bottom: ["kindness is", "currency."], hold: 1250 },
+  { middle: ["here's", "100 sparks."], hold: 1250 },
+  { bottom: ["50 to wish.", "50 to give."], hold: 1400 },
 ];
-
-
-
-
-const HOLD = COMPOSITION;
-
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
   // Every sample person is ANOTHER PERSON from my perspective: BLUE.
@@ -164,140 +50,6 @@ const ROLE_COLOUR: Record<Member["world"], string> = {
   trading: "var(--giver-others)",
   borrowing: "var(--giver-others)",
 };
-
-const LOOPS: Loop[] = ["top", "middle", "bottom"];
-
-const same = (a?: string[], b?: string[]) =>
-  (a ?? []).join("|") === (b ?? []).join("|");
-
-type LoopState = Record<Loop, { lines: string[]; opacity: number }>;
-
-const EMPTY: LoopState = {
-  top: { lines: [], opacity: 0 },
-  middle: { lines: [], opacity: 0 },
-  bottom: { lines: [], opacity: 0 },
-};
-
-/** Commit a beat's composition. Pure, so index and copy always agree. */
-function commit(prev: LoopState, beat: Beat): LoopState {
-  const out = { ...prev };
-  for (const key of LOOPS) {
-    const lines = beat[key];
-    if (lines) out[key] = { lines, opacity: 1 };
-    else out[key] = { ...prev[key], opacity: 0 };
-  }
-  return out;
-}
-
-/**
- * Plays a list of beats. Each loop is treated independently: a loop only fades
- * when its own words change, so a message can hold while another arrives.
- *
- * THE INDEX AND THE COPY ARE ONE STATE. A beat's composition is committed in the
- * SAME update that advances the index, so no frame can ever pair a new phrase
- * with the previous beat's reveal count — that mismatch was the flash of a
- * finished phrase before its animation began.
- */
-function useBeats(script: Beat[]) {
-  const [state, setState] = useState<{ i: number; loops: LoopState }>(() => ({
-    i: 0,
-    loops: commit(EMPTY, script[0]!),
-  }));
-  const { i, loops } = state;
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const last = i === script.length - 1;
-
-  useEffect(() => {
-    const beat = script[i]!;
-    const next = script[i + 1];
-    if (!next) return;
-
-    const hold = beat.hold ?? HOLD;
-
-    // A loop only fades when its thought is REPLACED. When the next beat simply
-    // adds a word to what is already there, the existing words hold perfectly
-    // still and only the new word fades in.
-    const grows = (key: Loop) => {
-      const a = beat[key] ?? [];
-      const b = next[key] ?? [];
-      return b.length >= a.length && same(a, b.slice(0, a.length));
-    };
-    const replaced = LOOPS.filter((key) => !grows(key));
-
-    const advance = (delay: number) =>
-      setTimeout(
-        () => setState((s) => ({ i: s.i + 1, loops: commit(s.loops, script[s.i + 1]!) })),
-        delay,
-      );
-
-    if (replaced.length === 0) {
-      timers.current = [advance(hold)];
-      return () => timers.current.forEach(clearTimeout);
-    }
-
-    const fade = setTimeout(() => {
-      setState((s) => {
-        const out = { ...s.loops };
-        for (const key of replaced) out[key] = { ...s.loops[key], opacity: 0 };
-        return { i: s.i, loops: out };
-      });
-    }, hold);
-    timers.current = [fade, advance(hold + BEAT_MS)];
-    return () => timers.current.forEach(clearTimeout);
-  }, [i, script]);
-
-
-  /**
-   * THE FINAL COMPOSITION, KNOWN IN ADVANCE. A loop's plan is the fullest form
-   * of the phrase it is currently building — found by walking forward while the
-   * next beat only ADDS to what is already there. Layout is computed from that
-   * plan, so a revealed word never moves when the next one arrives.
-   */
-  const plan = (key: Loop): string[] => {
-    // A loop that is FADING OUT (or merely holding a previous thought) must
-    // never adopt a future beat's composition: doing so swapped the words in
-    // while the group was still visible — the "100 sparks" pre-flash.
-    if (!script[i]![key]) return loops[key].lines;
-    let j = i;
-    while (j + 1 < script.length) {
-      const a = script[j]![key] ?? [];
-      const b = script[j + 1]![key] ?? [];
-      if (!(b.length >= a.length && same(a, b.slice(0, a.length)))) break;
-      j += 1;
-    }
-    return script[j]![key] ?? [];
-  };
-
-  /** The last beat that actually spoke through this loop owns its treatment. */
-  const owner = (key: Loop): Beat => {
-    for (let j = i; j >= 0; j -= 1) if (script[j]![key]) return script[j]!;
-    return script[i]!;
-  };
-
-  const copy = (key: Loop): LoopCopy | undefined => {
-    if (!loops[key].lines.length) return undefined;
-    const full = plan(key);
-    const own = owner(key);
-    const scale = own.scale?.[key];
-    const hero = own.hero?.[key];
-    return {
-      lines: loops[key].lines,
-      plan:
-        full.length >= loops[key].lines.length &&
-        same(loops[key].lines, full.slice(0, loops[key].lines.length))
-          ? full
-          : loops[key].lines,
-      opacity: loops[key].opacity,
-      ...(scale ? { scale } : {}),
-      ...(hero ? { hero } : {}),
-    };
-  };
-
-
-  return { world: script[i]!.world, copy, last };
-}
-
-
 
 export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {
   const [stage, setStage] = useState<Stage>("opening");
@@ -331,14 +83,8 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
     );
   }
 
-
   if (stage === "celebrate" && chosen) {
-    return (
-      <FirstGenerosity
-        username={chosen.username}
-        onDone={() => onDone(chosen.name)}
-      />
-    );
+    return <FirstGenerosity username={chosen.username} onDone={() => onDone(chosen.name)} />;
   }
 
   // The first act of generosity. Not optional: one of the four, or nothing.
@@ -358,107 +104,175 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
 }
 
 /**
- * Giver, speaking — and then handing over. The scripted words end holding "spark
- * change"; from that moment the lesson becomes PHYSICAL: a spark is released at
- * the middle loop's opening and travels the G's own path (it can be dragged, or
- * it will travel on its own). When it lands, the green resolves outward from
- * where it landed, and only then does Giver make the invitation.
+ * THE OPENING — ONE CONTINUOUS SHOT, never a stack of slides.
+ *
+ *   word   the composition reads as GIVER: the Living G IS the g
+ *   zoom   "iver" collapses into the spark while the camera flies into the
+ *          very same G until it reaches its canonical full-screen size
+ *   auto   the spark travels the G's own stroke, bottom loop -> middle loop
+ *   words  giver / kindness is currency / here's 100 sparks / 50 + 50
+ *   drag   the spark is handed over: the user walks it along the rail
+ *   green  arrival, haptic, colour change — and straight into the community
  */
+type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
+
+/** The camera: how small the G is while it is only a letter. */
+const LETTER_SCALE = 0.12;
+const LETTER_SHIFT = "-16vw";
+const ZOOM_MS = 900;
+const WORD_HOLD = 850;
+
 function OpeningSequence({ onDone }: { onDone: () => void }) {
-  const { world, copy, last } = useBeats(OPENING);
-  const [phase, setPhase] = useState<"script" | "travel" | "arriving" | "landed">("script");
+  const [phase, setPhase] = useState<Phase>("word");
+  const [i, setI] = useState(0);
+  const [fading, setFading] = useState(false);
   const [green, setGreen] = useState(false);
-  const [cue, setCue] = useState(false);
+  const [arrived, setArrived] = useState(false);
 
-  // The spark is released the moment "50 to give" has left the middle loop.
+  // word -> zoom -> auto: no waiting, no empty screens.
   useEffect(() => {
-    if (!last || phase !== "script") return;
-    const t = setTimeout(() => setPhase("travel"), 320);
-    return () => clearTimeout(t);
-  }, [last, phase]);
-
-  useEffect(() => {
-    if (phase !== "landed") return;
-    const t = setTimeout(() => setCue(true), 1600);
+    if (phase !== "word") return;
+    const t = setTimeout(() => setPhase("zoom"), WORD_HOLD);
     return () => clearTimeout(t);
   }, [phase]);
 
-  const scripted = copy("bottom");
+  useEffect(() => {
+    if (phase !== "zoom") return;
+    const t = setTimeout(() => setPhase("auto"), ZOOM_MS);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // The scripted thoughts: each arrives whole, holds, and hands over.
+  useEffect(() => {
+    if (phase !== "words") return;
+    const slide = WORDS[i]!;
+    const out = setTimeout(() => setFading(true), slide.hold);
+    const next = setTimeout(() => {
+      if (i + 1 < WORDS.length) {
+        setFading(false);
+        setI(i + 1);
+      } else {
+        setPhase("drag");
+      }
+    }, slide.hold + BEAT_MS);
+    return () => {
+      clearTimeout(out);
+      clearTimeout(next);
+    };
+  }, [phase, i]);
+
+  // The colour change IS the transition into the community. Nothing in between.
+  useEffect(() => {
+    if (!green) return;
+    const t = setTimeout(onDone, 220);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [green]);
+
+  const slide = phase === "words" ? WORDS[i]! : undefined;
+  const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
+    lines ? { lines, plan: lines, scale, opacity: fading ? 0 : 1 } : undefined;
+
+  const middle: LoopCopy | undefined =
+    phase === "drag"
+      ? { lines: ["drag"], plan: ["drag"], scale: BRAND, opacity: arrived ? 0 : 1 }
+      : say(slide?.middle, BRAND);
+
   const bottom: LoopCopy | undefined =
-    phase === "landed"
+    phase === "drag"
       ? {
-          lines: ["and make", "someone's day!"],
-          plan: ["and make", "someone's day!"],
-          scale: PAYOFF.bottom,
-          opacity: 1,
+          lines: ["sparks change."],
+          plan: ["sparks change."],
+          scale: PHRASE,
+          opacity: arrived ? 0 : 1,
         }
-      : phase === "arriving" && scripted
-        ? { ...scripted, opacity: 0 }
-        : scripted;
+      : say(slide?.bottom, PHRASE);
+
+  const small = phase === "word";
 
   return (
     <IntroG
-      world={green ? "gift" : world}
-      top={copy("top")}
-      middle={copy("middle")}
-      bottom={bottom}
-      {...(phase !== "script"
-        ? {
-            overlay: (
-              <SparkJourney
-                onArrive={() => {
-                  setPhase("arriving");
-                  // The phrase it replaces is allowed to leave first.
-                  setTimeout(() => setPhase("landed"), BEAT_MS);
-                }}
-                onGreen={() => setGreen(true)}
-              />
-            ),
-          }
-        : {})}
+      world={green ? "gift" : "welcome"}
+      {...(middle ? { middle } : {})}
+      {...(bottom ? { bottom } : {})}
+      stage={{
+        transformOrigin: "50% 50%",
+        transform: small
+          ? `translate(${LETTER_SHIFT}, 0) scale(${LETTER_SCALE})`
+          : "translate(0, 0) scale(1)",
+        transition: `transform ${ZOOM_MS}ms cubic-bezier(0.22,1,0.36,1)`,
+      }}
+      {...(phase === "auto"
+        ? { overlay: <SparkJourney mode="auto" onArrive={() => setPhase("words")} /> }
+        : phase === "drag"
+          ? {
+              overlay: (
+                <SparkJourney
+                  mode="drag"
+                  onArrive={() => setArrived(true)}
+                  onGreen={() => setGreen(true)}
+                />
+              ),
+            }
+          : {})}
     >
-      <LetsGiver show={cue} onClick={onDone} />
+      <Wordmark phase={phase} />
     </IntroG>
   );
 }
 
 /**
- * THE GIVER CALL TO ACTION. Not a button, not a pill, not an arrow — just the
- * words, in Giver's own language: let's giver.
+ * [LIVING G]IVER. The letters belong to the same word as the artwork, and when
+ * the camera pushes in they COLLAPSE INTO THE SPARK rather than disappearing —
+ * one object becoming another, never a cut.
  */
-function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
-  return (
-    <div
-      // A quiet next step in the BOTTOM-RIGHT corner, outside the artwork.
-      className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-end pr-7"
-      // The stage reserves this exact strip, so the words never cross the stroke.
-      style={{
-        height: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})`,
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
-    >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        className="px-1 text-[5.2vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
-        style={{
-          // The bright G green, never the deep furniture tint.
-          color: "var(--world-g)",
-          opacity: show ? 1 : 0,
-          pointerEvents: show ? "auto" : "none",
-        }}
-      >
+function Wordmark({ phase }: { phase: Phase }) {
+  const show = phase === "word" || phase === "zoom";
+  if (!show) return null;
+  const holding = phase === "word";
+  const letters = ["i", "v", "e", "r"];
 
-        let&apos;s giver
-      </button>
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+      <span
+        className="flex items-center font-black lowercase leading-none tracking-[-0.05em]"
+        style={{ fontSize: "12dvh", transform: "translateX(8.5vw)", color: "var(--world-g)" }}
+      >
+        {letters.map((l, k) => (
+          <span
+            key={l + k}
+            className="inline-block"
+            style={{
+              // Every letter travels to the SAME point — the spark — shrinking
+              // as it goes, so four letters read as one bead forming.
+              transform: holding
+                ? "translate(0,0) scale(1)"
+                : `translate(calc(${LETTER_SHIFT} - ${(letters.length - k) * 2.2}rem), 0) scale(0.12)`,
+              opacity: holding ? 1 : 0,
+              transition: `transform ${ZOOM_MS}ms cubic-bezier(0.5,0,0.2,1) ${k * 40}ms, opacity ${ZOOM_MS}ms ease-in ${k * 40}ms`,
+            }}
+          >
+            {l}
+          </span>
+        ))}
+      </span>
+
+      {/* THE BEAD the letters become. It hands over to the real spark on the G. */}
+      <span
+        className="absolute rounded-full"
+        style={{
+          width: "3.6vh",
+          height: "3.6vh",
+          left: `calc(50% + ${LETTER_SHIFT})`,
+          background: "var(--giver-generosity)",
+          opacity: holding ? 0 : 1,
+          transform: holding ? "scale(0.4)" : "scale(1)",
+          transition: `opacity ${ZOOM_MS * 0.6}ms ease-out, transform ${ZOOM_MS}ms cubic-bezier(0.22,1,0.36,1)`,
+        }}
+      />
     </div>
   );
 }
-
-
 
 /**
  * A sequence of lines that arrive one after another with the established fade
@@ -570,13 +384,7 @@ function ChooseRecipient({
  * THE FIRST GIFT, MADE HUMAN. A warm pat on the back, the sparks confirmed,
  * then one honest question about messaging — asked, never assumed.
  */
-function FirstGenerosity({
-  username,
-  onDone,
-}: {
-  username: string;
-  onDone: () => void;
-}) {
+function FirstGenerosity({ username, onDone }: { username: string; onDone: () => void }) {
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   // Reward flash: pop in fast, hold just long enough to read, then let the user move on instantly.
@@ -671,7 +479,6 @@ function FirstGenerosity({
   );
 }
 
-
 /** Messaging is a permission, so Giver asks. "not now" costs nothing. */
 function MessagingConsent({
   username,
@@ -765,4 +572,3 @@ function MessagingConsent({
     </div>
   );
 }
-

@@ -33,6 +33,7 @@ type Sample = { x: number; y: number; u: number };
 export function SparkJourney({
   mode = "drag",
   count,
+  onStart,
   onArrive,
   onGreen,
 }: {
@@ -40,6 +41,8 @@ export function SparkJourney({
   mode?: "auto" | "drag";
   /** How many Sparks this bundle carries — shown inside the bundle. */
   count?: number;
+  /** The user has taken hold of the bundle. */
+  onStart?: () => void;
   /** The spark has reached the end of its journey. */
   onArrive?: () => void;
   /** The green has finished resolving through the whole G. */
@@ -189,6 +192,7 @@ export function SparkJourney({
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     buzz(10);
+    onStart?.();
     project(e);
   };
 

@@ -107,10 +107,10 @@ const at = (angle: number, r: number): P => ({
 });
 
 /** Nearest seat measured AROUND the circle, so the ±180° seam is not a wall. */
-function nearestSeat(angle: number): Mode {
-  let best: Mode = "give";
+function nearestOf(angle: number, seats: readonly Seat[]): Seat {
+  let best: Seat = seats[0]!;
   let bestD = Infinity;
-  for (const m of MODES) {
+  for (const m of seats) {
     const d = Math.abs(shortest(angle, SEAT_ANGLE[m]));
     if (d < bestD) {
       bestD = d;
@@ -126,13 +126,15 @@ const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 /** The captured word lives in the piece's own negative space. */
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
-/** The locked four-mode colours, for seats that state a person's history. */
-const MODE_COLOUR: Record<Mode, string> = {
+/** The locked seat colours, for seats that state a person's history. */
+const MODE_COLOUR: Record<Seat, string> = {
+  giver: "var(--giver-me)",
   wish: "var(--mode-wish)",
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
 };
+
 
 export function EarSelector({
   mode,

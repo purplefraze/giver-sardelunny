@@ -570,7 +570,14 @@ function Index() {
           */}
           <Screen open={editor !== null}>
             {editor?.kind === "about" ? (
-              <AboutForm onDone={() => setEditor(null)} />
+              <AboutForm
+                onDone={() => setEditor(null)}
+                onHelp={() => {
+                  setEditor(null);
+                  setHelp(true);
+                }}
+              />
+
             ) : editor?.kind === "category" ? (
               <CategoryForm
                 category={editor.category}

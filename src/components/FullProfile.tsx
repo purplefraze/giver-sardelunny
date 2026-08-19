@@ -57,7 +57,18 @@ export function FullProfile({
   onOpen?: (id: string) => void;
 }) {
   const state = useItems();
-  const connections = connectionsOf(member.id);
+  const links = useConnections();
+  /*
+    MY OWN connections are earned live: only interactions that reached their
+    completed, mutually verified state ever appear. Sample people carry their
+    own already-earned links.
+  */
+  const connections =
+    member.id === ME_ID
+      ? earnedConnectionIds(links, ME_ID)
+          .map(memberById)
+          .filter((m): m is Member => Boolean(m))
+      : connectionsOf(member.id);
   const done: [string, number][] = [
     ["gifts shared", member.done.gifts],
     ["wishes granted", member.done.wishes],

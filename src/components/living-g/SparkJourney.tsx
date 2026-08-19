@@ -217,12 +217,33 @@ export function SparkJourney({
     project(e);
   };
 
+  /**
+   * THE SLIDE ALWAYS FINISHES. Let go past the halfway point and the bundle
+   * GLIDES the rest of the way on its own, smoothly, and lands — so the gesture
+   * can never end in an ambiguous "did that work?" state.
+   */
+  const glide = useRef(0);
+  const complete = () => {
+    const from = uRef.current;
+    const start = performance.now();
+    const ms = 420;
+    const step = (now: number) => {
+      const k = Math.min(1, (now - start) / ms);
+      put(from + (TO - from) * ease(k));
+      if (k < 1) glide.current = requestAnimationFrame(step);
+    };
+    glide.current = requestAnimationFrame(step);
+  };
+
   const release = () => {
     grabbed.current = false;
     setDragging(false);
-    // A gentle lock-in: within a hair of the destination, it settles there.
-    if (TO === 1 ? uRef.current > 0.97 : uRef.current < 0.03) put(TO);
+    const travelled = TO === 1 ? uRef.current : 1 - uRef.current;
+    // A gentle lock-in near the end; a confident finish from halfway onward.
+    if (travelled > 0.97) put(TO);
+    else if (travelled > 0.5) complete();
   };
+
 
   const R = count !== undefined ? 44 : 34;
 

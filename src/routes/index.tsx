@@ -8,10 +8,9 @@ import { SparklesReward } from "@/components/SparklesReward";
 import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
-import type { MyProfile, Category } from "@/data/my-profile";
+import type { Category } from "@/data/my-profile";
 import { myProfileStore, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
-import { topLoopContent } from "@/components/living-g/TopLoopSelector";
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
 import { ME_ID, communityItems, type ItemType } from "@/data/items";

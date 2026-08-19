@@ -404,7 +404,7 @@ export function EarSelector({
           dragRef.current = move.angle;
           setDrag(move.angle);
           if (!g?.moved) return;
-          const near = nearestSeat(move.angle);
+          const near = nearestOf(move.angle, seats);
           if (Math.abs(shortest(move.angle, SEAT_ANGLE[near])) < 0.2) commit(near);
         }}
 
@@ -414,15 +414,16 @@ export function EarSelector({
         }}
         onPointerCancel={end}
         onKeyDown={(e) => {
-          const i = MODES.indexOf(mode);
+          const i = ring.indexOf(mode);
           if (e.key === "ArrowRight" || e.key === "ArrowDown") {
             e.preventDefault();
-            commit(MODES[(i + 1) % MODES.length]!);
+            commit(ring[(i + 1) % ring.length]!);
           }
           if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
             e.preventDefault();
-            commit(MODES[(i + MODES.length - 1) % MODES.length]!);
+            commit(ring[(i + ring.length - 1) % ring.length]!);
           }
+
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             onTap?.();

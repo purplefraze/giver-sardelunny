@@ -88,7 +88,10 @@ export const ACTION_WRAP_FACTOR = 1.68;
 export const PROFILE_SAFE_INSET: Record<LoopRegion, number> = {
   top: 0.78,
   middle: 0.88,
-  bottom: 0.86,
+  /* The bottom loop holds THREE label+answer pairs, so its safe area is the
+     tightest of the three: generous breathing room to the stroke on all sides,
+     clear of the S-curve above and the navigation arrows below. */
+  bottom: 0.78,
 };
 
 /** How wide a profile line may run inside its safe area, as a share of radius. */
@@ -102,7 +105,9 @@ export const PROFILE_WRAP_FACTOR = 1.78;
 export const PROFILE_FILL: Record<LoopRegion, number> = {
   top: 1.06,
   middle: 1.16,
-  bottom: 1.18,
+  /* No extra width for the bottom loop: its stack is tall, so its lines sit
+     well away from the circle's widest point and must not reach for the rim. */
+  bottom: 1.0,
 };
 
 /**
@@ -119,7 +124,7 @@ export const PROFILE_TYPE: Record<
 > = {
   top: { answer: 30, label: 17, detail: 22 },
   middle: { answer: 74, label: 32, detail: 44 },
-  bottom: { answer: 106, label: 42, detail: 62 },
+  bottom: { answer: 78, label: 30, detail: 48 },
 };
 
 
@@ -128,7 +133,9 @@ export const PROFILE_TYPE: Record<
  * The ONLY freedom left: if a profile still overflows its safe area, the WHOLE
  * stack steps down through these few stops together — never per line, never up.
  */
-export const PROFILE_STEPS = [1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64, 0.58] as const;
+export const PROFILE_STEPS = [
+  1, 0.94, 0.88, 0.82, 0.76, 0.7, 0.64, 0.58, 0.52, 0.47, 0.42, 0.38,
+] as const;
 
 
 /** Kept for compatibility with earlier profile layout code. */

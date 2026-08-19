@@ -36,9 +36,12 @@ export const CATEGORY_PLURAL: Record<Category, string> = {
   borrow: "borrows",
 };
 
-/** Architecture ceiling. Onboarding only encourages the first three. */
-export const MAX_PER_CATEGORY = MAX_ACTIVE_PER_TYPE;
+/**
+ * PERMANENT LIMITS: gives are unlimited; wishes, trades and borrows are 3.
+ */
+export const MAX_PER_CATEGORY: Record<Category, number> = MAX_ACTIVE;
 export const SETUP_PER_CATEGORY = 3;
+
 
 
 export type MyProfile = {

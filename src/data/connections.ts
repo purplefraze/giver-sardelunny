@@ -344,7 +344,7 @@ export const connectionsStore = {
       ...s,
       connections: s.connections.map((c) =>
         c.id === connectionId && c.state !== "verified"
-          ? touch(c, { state: "cancelled", claimedBy: undefined, confirmedBy: [] })
+          ? { ...c, state: "cancelled", confirmedBy: [], updatedAt: Date.now() }
           : c,
       ),
     });

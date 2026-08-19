@@ -25,137 +25,26 @@ type Stage = "opening" | "meet" | "choose" | "celebrate";
 
 type Loop = "top" | "middle" | "bottom";
 
-/** One beat of the opening: which G, which loops speak, and how long it holds. */
-type Beat = {
-  world: string;
-  top?: string[];
-  middle?: string[];
-  bottom?: string[];
-  /** Deliberate emphasis for a single transitional beat ("so..."). */
-  scale?: Partial<Record<Loop, number>>;
-  /** First line of a loop is the hero ("50"); the rest support it. */
-  hero?: Partial<Record<Loop, boolean>>;
-  /** How long this composition holds before the next beat. */
-  hold?: number;
-};
-
-/**
- * Calm rhythm: a word gently arrives, it settles, and only then does the next
- * word begin. Each value is a SETTLE time — the fade itself (LOOP_WORD_MS) runs
- * underneath it, so consecutive words overlap softly rather than snapping.
- */
-const WORD_BEAT = 720;
-const COMPOSITION = 1350;
-/** A brand name needs room: it lands, and then it is allowed to sit there. */
-const HERO_BEAT = 1150;
-/** The empty G, breathing — before anything is said, and between thoughts. */
-const BREATH = 480;
-/** A small beat between thoughts: enough air, never a dramatic wait. */
-const SHORT_BEAT = 360;
-
 /**
  * OPENING TYPE HIERARCHY, as shared tokens — never per-word guesses.
- *   BRAND  — the brand word, alone in the middle loop
+ *   BRAND  — a word alone in the middle loop
  *   PHRASE — supporting language in the bottom loop
- *   PAYOFF — the invitation, once the spark has created change
  */
-const BRAND = { middle: 0.9 } as const;
-const PHRASE = { middle: 0.9, bottom: 0.8 } as const;
-const BOTTOM_ONLY = { bottom: 0.8 } as const;
-const PAYOFF = { bottom: 0.78 } as const;
+const BRAND = 0.9;
+const PHRASE = 0.8;
 
 /**
- * THE OPENING. No greeting, no "welcome to": the brand word simply arrives, and
- * every phrase after it hands over while the previous one is still on the paper.
- * It ends holding "spark change" — the moment the spark itself is released.
+ * THE OPENING, AS ONE CONTINUOUS STORY. Each slide is a COMPLETE thought that
+ * arrives whole — never word by word — and hands straight over to the next.
  */
-const OPENING: Beat[] = [
-  // 1 — the orange G, alone, breathing.
-  { world: "welcome", hold: BREATH },
+type Slide = { middle?: string[]; bottom?: string[]; hold: number };
 
-  // 1 — GIVER, in the middle loop. It stays for the whole first movement.
-  { world: "welcome", middle: ["giver"], scale: BRAND, hold: HERO_BEAT },
-
-  // 2 — KINDNESS · AS · CURRENCY builds underneath, while "giver" holds.
-  { world: "welcome", middle: ["giver"], bottom: ["kindness"], scale: PHRASE, hold: WORD_BEAT },
-  {
-    world: "welcome",
-    middle: ["giver"],
-    bottom: ["kindness", "as"],
-    scale: PHRASE,
-    hold: WORD_BEAT,
-  },
-  {
-    world: "welcome",
-    middle: ["giver"],
-    bottom: ["kindness", "as", "currency"],
-    scale: PHRASE,
-    hold: COMPOSITION,
-  },
-
-  // …then ONLY the phrase leaves. "giver" stays exactly where it is.
-  { world: "welcome", middle: ["giver"], scale: BRAND, hold: SHORT_BEAT },
-
-  // 3 — SPARK · CHANGE, still under "giver".
-  { world: "welcome", middle: ["giver"], bottom: ["spark"], scale: PHRASE, hold: WORD_BEAT },
-  {
-    world: "welcome",
-    middle: ["giver"],
-    bottom: ["spark", "change"],
-    scale: PHRASE,
-    hold: COMPOSITION,
-  },
-
-  // …and now ONLY "giver" leaves. "spark change" holds for the rest of the way.
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY, hold: SHORT_BEAT },
-
-  // 4 — HERE'S · 100 SPARKS, in the middle loop.
-  {
-    world: "welcome",
-    middle: ["here's"],
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: WORD_BEAT,
-  },
-  {
-    world: "welcome",
-    middle: ["here's", "100 sparks"],
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: COMPOSITION,
-  },
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY, hold: SHORT_BEAT },
-
-  // 5 — 50 TO WISH.
-  {
-    world: "welcome",
-    middle: ["50", "to wish"],
-    hero: { middle: true },
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: COMPOSITION,
-  },
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY, hold: SHORT_BEAT },
-
-  // 6 — 50 TO GIVE. This is the phrase that BECOMES the spark.
-  {
-    world: "welcome",
-    middle: ["50", "to give"],
-    hero: { middle: true },
-    bottom: ["spark", "change"],
-    scale: BOTTOM_ONLY,
-    hold: COMPOSITION,
-  },
-
-  // 7 — the middle loop empties as the spark is released at its opening.
-  { world: "welcome", bottom: ["spark", "change"], scale: BOTTOM_ONLY },
+const WORDS: Slide[] = [
+  { middle: ["giver"], hold: 900 },
+  { bottom: ["kindness is", "currency."], hold: 1250 },
+  { middle: ["here's", "100 sparks."], hold: 1250 },
+  { bottom: ["50 to wish.", "50 to give."], hold: 1400 },
 ];
-
-
-
-
-const HOLD = COMPOSITION;
-
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
   // Every sample person is ANOTHER PERSON from my perspective: BLUE.
@@ -165,137 +54,6 @@ const ROLE_COLOUR: Record<Member["world"], string> = {
   borrowing: "var(--giver-others)",
 };
 
-const LOOPS: Loop[] = ["top", "middle", "bottom"];
-
-const same = (a?: string[], b?: string[]) =>
-  (a ?? []).join("|") === (b ?? []).join("|");
-
-type LoopState = Record<Loop, { lines: string[]; opacity: number }>;
-
-const EMPTY: LoopState = {
-  top: { lines: [], opacity: 0 },
-  middle: { lines: [], opacity: 0 },
-  bottom: { lines: [], opacity: 0 },
-};
-
-/** Commit a beat's composition. Pure, so index and copy always agree. */
-function commit(prev: LoopState, beat: Beat): LoopState {
-  const out = { ...prev };
-  for (const key of LOOPS) {
-    const lines = beat[key];
-    if (lines) out[key] = { lines, opacity: 1 };
-    else out[key] = { ...prev[key], opacity: 0 };
-  }
-  return out;
-}
-
-/**
- * Plays a list of beats. Each loop is treated independently: a loop only fades
- * when its own words change, so a message can hold while another arrives.
- *
- * THE INDEX AND THE COPY ARE ONE STATE. A beat's composition is committed in the
- * SAME update that advances the index, so no frame can ever pair a new phrase
- * with the previous beat's reveal count — that mismatch was the flash of a
- * finished phrase before its animation began.
- */
-function useBeats(script: Beat[]) {
-  const [state, setState] = useState<{ i: number; loops: LoopState }>(() => ({
-    i: 0,
-    loops: commit(EMPTY, script[0]!),
-  }));
-  const { i, loops } = state;
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const last = i === script.length - 1;
-
-  useEffect(() => {
-    const beat = script[i]!;
-    const next = script[i + 1];
-    if (!next) return;
-
-    const hold = beat.hold ?? HOLD;
-
-    // A loop only fades when its thought is REPLACED. When the next beat simply
-    // adds a word to what is already there, the existing words hold perfectly
-    // still and only the new word fades in.
-    const grows = (key: Loop) => {
-      const a = beat[key] ?? [];
-      const b = next[key] ?? [];
-      return b.length >= a.length && same(a, b.slice(0, a.length));
-    };
-    const replaced = LOOPS.filter((key) => !grows(key));
-
-    const advance = (delay: number) =>
-      setTimeout(
-        () => setState((s) => ({ i: s.i + 1, loops: commit(s.loops, script[s.i + 1]!) })),
-        delay,
-      );
-
-    if (replaced.length === 0) {
-      timers.current = [advance(hold)];
-      return () => timers.current.forEach(clearTimeout);
-    }
-
-    const fade = setTimeout(() => {
-      setState((s) => {
-        const out = { ...s.loops };
-        for (const key of replaced) out[key] = { ...s.loops[key], opacity: 0 };
-        return { i: s.i, loops: out };
-      });
-    }, hold);
-    timers.current = [fade, advance(hold + BEAT_MS)];
-    return () => timers.current.forEach(clearTimeout);
-  }, [i, script]);
-
-
-  /**
-   * THE FINAL COMPOSITION, KNOWN IN ADVANCE. A loop's plan is the fullest form
-   * of the phrase it is currently building — found by walking forward while the
-   * next beat only ADDS to what is already there. Layout is computed from that
-   * plan, so a revealed word never moves when the next one arrives.
-   */
-  const plan = (key: Loop): string[] => {
-    // A loop that is FADING OUT (or merely holding a previous thought) must
-    // never adopt a future beat's composition: doing so swapped the words in
-    // while the group was still visible — the "100 sparks" pre-flash.
-    if (!script[i]![key]) return loops[key].lines;
-    let j = i;
-    while (j + 1 < script.length) {
-      const a = script[j]![key] ?? [];
-      const b = script[j + 1]![key] ?? [];
-      if (!(b.length >= a.length && same(a, b.slice(0, a.length)))) break;
-      j += 1;
-    }
-    return script[j]![key] ?? [];
-  };
-
-  /** The last beat that actually spoke through this loop owns its treatment. */
-  const owner = (key: Loop): Beat => {
-    for (let j = i; j >= 0; j -= 1) if (script[j]![key]) return script[j]!;
-    return script[i]!;
-  };
-
-  const copy = (key: Loop): LoopCopy | undefined => {
-    if (!loops[key].lines.length) return undefined;
-    const full = plan(key);
-    const own = owner(key);
-    const scale = own.scale?.[key];
-    const hero = own.hero?.[key];
-    return {
-      lines: loops[key].lines,
-      plan:
-        full.length >= loops[key].lines.length &&
-        same(loops[key].lines, full.slice(0, loops[key].lines.length))
-          ? full
-          : loops[key].lines,
-      opacity: loops[key].opacity,
-      ...(scale ? { scale } : {}),
-      ...(hero ? { hero } : {}),
-    };
-  };
-
-
-  return { world: script[i]!.world, copy, last };
-}
 
 
 

@@ -65,9 +65,33 @@ export const MAX_ACTIVE: Record<ItemType, number> = {
   borrow: 3,
 };
 
-/** A TRADE ALWAYS READS AS BOTH OF ITS SIDES — everywhere it appears. */
+/**
+ * A TRADE ALWAYS READS AS BOTH OF ITS SIDES — everywhere it appears, through
+ * this one formatter. A half-finished trade keeps its structure: "haircut for
+ * ___" / "___ for photography", so both sides are always visible.
+ */
+export const TRADE_BLANK = "___";
+
 export const tradeText = (offer: string, want: string) =>
-  `${offer.trim()} for ${want.trim()}`;
+  `${offer.trim() || TRADE_BLANK} for ${want.trim() || TRADE_BLANK}`;
+
+/** Recover the two sides from a legacy/seeded single-line trade. */
+export const splitTrade = (text: string): { offer: string; want: string } => {
+  const i = text.toLowerCase().indexOf(" for ");
+  if (i === -1) return { offer: text.trim(), want: "" };
+  return { offer: text.slice(0, i).trim(), want: text.slice(i + 5).trim() };
+};
+
+/**
+ * THE ONE LINE AN ITEM READS AS, anywhere in the app. No screen formats a
+ * trade for itself — this is the single display source for "offer for want".
+ */
+export const itemLine = (item: Item): string => {
+  if (item.type !== "trade") return item.text;
+  const sides = splitTrade(item.text);
+  return tradeText(item.offer ?? sides.offer, item.want ?? sides.want);
+};
+
 
 
 /** How much a single sparkle may ever be worth — guardrails, not a ranking. */

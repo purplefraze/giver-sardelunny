@@ -219,6 +219,7 @@ export function FullProfile({
             ))}
           </div>
         </Section>
+        ) : null}
       </div>
     </div>
   );

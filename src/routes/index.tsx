@@ -274,7 +274,7 @@ function Index() {
                             { text: "gives", role: "secondary" as const },
                             { text: clampField(myGive), role: "primary" as const },
                           ]
-                        : [{ text: "add a give", role: "primary" as const }]
+                        : /* TRULY EMPTY until a give exists. */ []
                       : [
                           {
                             text: `community ${CATEGORY_PLURAL[mode]}`,

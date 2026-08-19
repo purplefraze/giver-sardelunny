@@ -5,6 +5,7 @@ import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { profileLoop } from "@/components/living-g/profile-loop";
 import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
+import { SparkJourney } from "@/components/living-g/SparkJourney";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
 import { memberById, pastConnectionCount, type Member } from "@/data/giver";
 import { ACTIVITY_FILL, splitTrade, tradeText } from "@/data/items";
@@ -40,10 +41,23 @@ const line = (seat: Mode, text: string) => {
   return tradeText(offer, want);
 };
 
+/**
+ * EACH PERSON OPENS ON THEIR OWN WORLD, never all four on "give": the toggle's
+ * resting seat comes from the person themselves.
+ */
+const START_SEAT: Record<Member["world"], Mode> = {
+  giving: "give",
+  wishing: "wish",
+  trading: "trade",
+  borrowing: "borrow",
+};
+
 export function MemberExample({
   member,
   first,
   last,
+  sparks,
+  onGive,
   onBack,
   onPrev,
   onNext,
@@ -52,6 +66,13 @@ export function MemberExample({
   member: Member;
   first: boolean;
   last: boolean;
+  /**
+   * THE USER'S OWN SPARKS — the same single bundle carried from the intro. It
+   * rides the yellow STROKE, never the white interior. Undefined once given.
+   */
+  sparks?: number;
+  /** The user walked their sparks up this person's rail: they chose them. */
+  onGive?: () => void;
   onBack: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -62,15 +83,15 @@ export function MemberExample({
    * THE PROFILE TOGGLE. It rests on give — what this person is offering — but
    * it MOVES: dragging it shows what else they have going on right now.
    */
-  const [seat, setSeat] = useState<Mode>("give");
+  const [seat, setSeat] = useState<Mode>(START_SEAT[member.world]);
   /** Tapping the photo opens a real, scrollable profile page. */
   const [profile, setProfile] = useState<string | null>(null);
 
   useEffect(() => {
     setDeep(null);
     setProfile(null);
-    setSeat("give");
-  }, [member.id]);
+    setSeat(START_SEAT[member.world]);
+  }, [member.id, member.world]);
 
   /**
    * THE MIDDLE LOOP: the SELECTED world only. One primary item in that world's
@@ -156,7 +177,19 @@ export function MemberExample({
           contentKey={`${member.id}-${seat}`}
           earCut
           overlay={
-            <EarSelector
+            <>
+              {/* THE RAIL LAYER. The user's one bundle of sparks rests ON the
+                  yellow stroke of the bottom loop and can only travel along it,
+                  up through the S-curve toward this person's top loop. */}
+              {sparks !== undefined ? (
+                <SparkJourney
+                  key={member.id}
+                  mode="gift"
+                  count={sparks}
+                  onArrive={() => onGive?.()}
+                />
+              ) : null}
+              <EarSelector
               mode={seat}
               /* Other people's Gs keep the four activity seats only. */
               onChange={(next) => setSeat(next as Mode)}
@@ -170,7 +203,8 @@ export function MemberExample({
               }}
               // The seats a person has taken part in, told in their colours.
               history={["wish", "give", "trade", "borrow"]}
-            />
+              />
+            </>
           }
           regions={{
             middle: {

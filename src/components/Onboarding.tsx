@@ -63,6 +63,11 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   const [stage, setStage] = useState<Stage>("opening");
   const [who, setWho] = useState(0);
   const [chosen, setChosen] = useState<Member | null>(null);
+  /**
+   * ONE BUNDLE, ONE BALANCE. The 50 Give sparks from the intro follow the user
+   * from person to person; they are only ever spent once.
+   */
+  const [sparks, setSparks] = useState<number | null>(50);
 
   if (stage === "opening") {
     return (
@@ -83,6 +88,14 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         member={member}
         first={who === 0}
         last={who === MEMBERS.length - 1}
+        {...(sparks !== null ? { sparks } : {})}
+        onGive={() => {
+          if (sparks === null) return;
+          buzz([10, 40, 18]);
+          setSparks(null);
+          setChosen(member);
+          setStage("celebrate");
+        }}
         onBack={() => setStage("opening")}
         onPrev={() => setWho((w) => Math.max(0, w - 1))}
         onNext={() => setWho((w) => Math.min(MEMBERS.length - 1, w + 1))}
@@ -103,7 +116,9 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         setStage("meet");
       }}
       onChoose={(m) => {
+        if (sparks === null) return;
         buzz([10, 40, 18]);
+        setSparks(null);
         setChosen(m);
         setStage("celebrate");
       }}
@@ -136,7 +151,6 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   const [fading, setFading] = useState(false);
   const [green, setGreen] = useState(false);
   const [arrived, setArrived] = useState(false);
-  const [moving, setMoving] = useState(false);
 
   // word -> zoom -> auto: no waiting, no empty screens.
   useEffect(() => {
@@ -184,7 +198,9 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
 
   const middle: LoopCopy | undefined = phase === "drag" ? undefined : say(slide?.middle, BRAND);
 
-  const dragLine = moving ? "spark change." : "drag the sparks";
+  /* THE INSTRUCTION STAYS PUT until the sparks reach their destination —
+     touching or moving them never takes the guidance away. */
+  const dragLine = "drag the sparks";
   const bottom: LoopCopy | undefined =
     phase === "drag"
       ? {
@@ -219,7 +235,6 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
                   <SparkJourney
                     mode="drag"
                     count={50}
-                    onStart={() => setMoving(true)}
                     onArrive={() => setArrived(true)}
                     onGreen={() => setGreen(true)}
                   />

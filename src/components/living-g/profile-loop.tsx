@@ -76,7 +76,7 @@ const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
 const WRAP_FACTOR: Record<RegionKey, number> = {
   top: PROFILE_WRAP_FACTOR,
   middle: PROFILE_WRAP_FACTOR,
-  bottom: 1.42,
+  bottom: 1.5,
 };
 
 export function profileLoop({
@@ -101,7 +101,7 @@ export function profileLoop({
    * so the whole group is held to a smaller share of the loop's height, well
    * clear of the S-curve above and the stroke below.
    */
-  const height = region === "bottom" ? 2.0 : 1.8;
+  const height = region === "bottom" ? 1.92 : 1.8;
 
   const build = (step: number) => {
     const max = wrapWidth(region, WRAP_FACTOR[region], inset) * fill;

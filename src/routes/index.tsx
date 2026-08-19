@@ -342,6 +342,7 @@ function Index() {
                         ? [
                             { text: "gives", role: "secondary" as const },
                             { text: clampField(myGive), role: "primary" as const },
+                            ...more(me.items.give.length),
                           ]
                         : /* TRULY EMPTY until a give exists. */ []
                       : [
@@ -352,7 +353,9 @@ function Index() {
                           community
                             ? { text: clampField(community), role: "primary" as const }
                             : { text: "nothing yet", role: "tertiary" as const },
+                          ...(community ? more(theirs.length) : []),
                         ],
+
                   }),
               },
 

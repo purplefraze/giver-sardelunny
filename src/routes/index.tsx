@@ -8,7 +8,7 @@ import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { MyProfile } from "@/data/my-profile";
-import { myProfileStore, myAsMember, myPhoto, primaryAsk, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
+import { myProfileStore, myAsMember, myPhoto, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
 import {
   HISTORY_STATES,
@@ -158,17 +158,17 @@ function Index() {
   const [teach, setTeach] = useState(true);
 
   /**
-   * INSTRUCTIONAL COPY IS A CUE, NEVER FURNITURE. Entering, and every time the
-   * mode changes, the action words fade in, stay long enough to read
-   * comfortably, then fade away and leave the G clean again. Press and hold
-   * brings one back.
+   * INSTRUCTIONAL COPY IS A CUE, NEVER FURNITURE — AND NEVER MODE CONTENT.
+   * The action words teach the G ONCE, on first entry, then leave it clean for
+   * good; a press-and-hold brings one back. Switching mode NEVER re-fires them,
+   * so a mode prompt can never arrive on top of the loops' own words.
    */
   useEffect(() => {
     if (!entered) return;
     setTeach(true);
     const t = setTimeout(() => setTeach(false), 4200);
     return () => clearTimeout(t);
-  }, [entered, mode]);
+  }, [entered]);
 
   /**
    * ONE source of truth for the only depth that exists: the router.
@@ -202,7 +202,9 @@ function Index() {
 
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
-  const myAsk = primaryAsk(me);
+  /** THE ACTIVE MODE'S OWN #1 ITEM — the only mode content the G ever holds. */
+  const myMode = me.items[mode][0] ?? null;
+  /** MY GIVE — the bottom loop's permanent content, whatever the mode. */
   const myGive = primaryGive(me);
 
   return (
@@ -256,28 +258,45 @@ function Index() {
                 panelBody: null,
                 onPress: () => push("profile"),
               },
+              /*
+                MIDDLE LOOP = THE ACTIVE MODE. It holds exactly one mode's item —
+                the mode the toggle is sitting on — and nothing else. Changing
+                mode replaces this content outright (see contentKey above).
+              */
               middle: {
-                // MY PRIORITY ASK — wish, trade or borrow, whichever is #1.
-                label: content.mine.title,
+                label: "",
                 panelTitle: content.mine.title,
                 panelBody: content.mine.body,
-                ...(myAsk
+                ...(myMode
                   ? {
                       render: (anchor) =>
                         profileLoop({
                           anchor,
                           region: "middle",
                           blocks: [
-                            { text: myAsk.category, role: "secondary" as const },
-                            { text: clampField(myAsk.text), role: "primary" as const },
+                            { text: mode, role: "secondary" as const },
+                            { text: clampField(myMode), role: "primary" as const },
                           ],
                         }),
                     }
-                  : {}),
+                  : {
+                      render: (anchor) =>
+                        profileLoop({
+                          anchor,
+                          region: "middle",
+                          blocks: [
+                            { text: mode, role: "secondary" as const },
+                            { text: "nothing yet", role: "tertiary" as const },
+                          ],
+                        }),
+                    }),
               },
+              /*
+                BOTTOM LOOP = ALWAYS WHAT I AM GIVING. Permanent structural rule:
+                the toggle never changes this loop's meaning or its content.
+              */
               bottom: {
-                // MY PRIORITY GIVE — always what I decided matters most.
-                label: content.community.title,
+                label: "",
                 panelTitle: content.community.title,
                 panelBody: content.community.body,
                 ...(myGive

@@ -295,95 +295,77 @@ function Index() {
               top: {
                 label: "",
                 panelTitle: isProfile ? "more information" : "you",
-                panelBody: isProfile ? (
-                  <>
-                    <p className="opacity-70">{me.aboutMe || ME.about}</p>
-                    <p className="opacity-70">by day: {me.byDay || "—"}</p>
-                    <p className="opacity-70">by night: {me.byNight || "—"}</p>
-                    <p className="opacity-70">weekends: {me.weekend || "—"}</p>
-                  </>
-                ) : null,
+                panelBody: null,
+                /* TAP -> the profile information screen; back returns here. */
                 ...(isProfile
-                  ? { onPress: () => setFullMe(true) }
+                  ? { onPress: () => setEditor({ kind: "about" }) }
                   : { onPress: () => push("profile") }),
               },
               /*
                 MIDDLE LOOP:
                   giver = MY LATEST ACTIVITY of any type
                   mode  = MY <type>
-                Exactly one of them exists at a time (see contentKey above).
+                Tapping opens that item's own editor screen; saving returns to
+                this exact seat with the loop already showing the new content.
               */
               middle: {
                 label: "",
                 panelTitle: isProfile ? "latest activity" : content.mine.title,
-                panelBody: isProfile ? (
-                  <>
-                    {CATEGORIES.filter((c) => me.items[c].length).map((c) => (
-                      <p key={c}>
-                        {CATEGORY_PLURAL[c]}: {me.items[c].join(", ")}
-                      </p>
-                    ))}
-                  </>
-                ) : (
-                  content.mine.body
-                ),
+                panelBody: null,
+                onPress: () =>
+                  setEditor({
+                    kind: "category",
+                    category: isProfile ? (latest?.type ?? "wish") : mode,
+                  }),
                 render: (anchor) =>
                   profileLoop({
                     anchor,
                     region: "middle",
                     blocks: isProfile
-                      ? [
-                          { text: "latest", role: "secondary" as const },
-                          latest
-                            ? {
-                                text: clampField(latest.item.text),
-                                role: "primary" as const,
-                              }
-                            : { text: "nothing yet", role: "tertiary" as const },
-                          ...(latest
-                            ? [{ text: latest.type, role: "tertiary" as const }]
-                            : []),
-                        ]
+                      ? latest
+                        ? [
+                            { text: "latest", role: "secondary" as const },
+                            {
+                              text: clampField(latest.item.text),
+                              role: "primary" as const,
+                            },
+                            { text: latest.type, role: "tertiary" as const },
+                          ]
+                        : [{ text: "add a wish", role: "primary" as const }]
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode
                             ? { text: clampField(myMode), role: "primary" as const }
-                            : { text: "nothing yet", role: "tertiary" as const },
+                            : { text: `add a ${mode}`, role: "primary" as const },
                         ],
                   }),
               },
               /*
                 BOTTOM LOOP:
-                  giver = MY GIVES — what I offer the community
-                  mode  = COMMUNITY <type>
+                  giver = MY GIVES — what I offer the community (tap to edit)
+                  mode  = COMMUNITY <type> (tap to browse)
               */
               bottom: {
                 label: "",
                 panelTitle: isProfile ? "my gives" : content.community.title,
-                panelBody: isProfile ? (
-                  me.items.give.length ? (
-                    <>
-                      {me.items.give.map((g) => (
-                        <p key={g}>{g}</p>
-                      ))}
-                    </>
-                  ) : (
-                    <p className="opacity-70">nothing yet. what could you offer?</p>
-                  )
-                ) : (
-                  content.community.body
-                ),
+                panelBody: isProfile ? null : content.community.body,
+                ...(isProfile
+                  ? {
+                      onPress: () =>
+                        setEditor({ kind: "category", category: "give" }),
+                    }
+                  : {}),
                 render: (anchor) =>
                   profileLoop({
                     anchor,
                     region: "bottom",
                     blocks: isProfile
-                      ? [
-                          { text: "gives", role: "secondary" as const },
-                          myGive
-                            ? { text: clampField(myGive), role: "primary" as const }
-                            : { text: "nothing yet", role: "tertiary" as const },
-                        ]
+                      ? myGive
+                        ? [
+                            { text: "gives", role: "secondary" as const },
+                            { text: clampField(myGive), role: "primary" as const },
+                          ]
+                        : [{ text: "add a give", role: "primary" as const }]
                       : [
                           {
                             text: `community ${CATEGORY_PLURAL[mode]}`,
@@ -395,6 +377,7 @@ function Index() {
                         ],
                   }),
               },
+
             }}
           />
 

@@ -39,6 +39,12 @@ export type LoopBlock = {
   role?: LoopRole;
   /** Start a new visual group — extra breathing room above this block. */
   lead?: boolean;
+  /**
+   * COLOUR = MEANING. Real Wish / Give / Trade / Borrow content carries its
+   * world's colour token so the type of activity is readable at a glance.
+   * Generic profile copy leaves this unset and keeps the world's ink.
+   */
+  fill?: string;
 };
 
 /** Short-form fields only: longer answers belong on the deeper Profile page. */

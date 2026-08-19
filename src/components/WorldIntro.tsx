@@ -54,7 +54,10 @@ const BEATS: Record<IntroTopic, string[][]> = {
       "every time you grant someone’s wish, giver gives you 10 sparks.",
       "nobody pays anybody. the sparks come from giver — then you wish with them.",
     ],
-    ["so… what have you got to give?"],
+    [
+      "there is no limit on giving.",
+      "so… what have you got to give?",
+    ],
   ],
   trade: [
     [
@@ -65,9 +68,10 @@ const BEATS: Record<IntroTopic, string[][]> = {
     [
       "haircut for photography. guitar lesson for help moving. home-cooked dinner for help fixing a bike. plants for pottery. design help for language lessons. camping gear for something you need that weekend.",
       "if the trade works for both of you, it works for giver.",
-      "no sparks are exchanged for the trade itself.",
+      "no sparks needed. just a good trade.",
+      "you can have 3 trades going at a time.",
     ],
-    ["what would you trade?"],
+    ["what are you offering? and what would you like in return?"],
   ],
   borrow: [
     [
@@ -79,6 +83,7 @@ const BEATS: Record<IntroTopic, string[][]> = {
     [
       "before buying something you’ll barely use, see if your community already has it.",
       "borrow what you need. give it back when you’re done.",
+      "you can have 3 things you’re looking to borrow at a time.",
       "what would you like to borrow?",
     ],
   ],

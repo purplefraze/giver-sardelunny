@@ -465,47 +465,15 @@ function Index() {
 
 
           {/*
-            THE S-CURVE IS WHERE PEOPLE MEET. It is the part of the G that joins
-            two loops, so every CONVERSATION lives behind this one quiet word.
-            THIS IS NOT A CONNECTIONS CONTROL: connections are earned by
-            completed acts and live in the full profile only. Nothing permanent
-            about them ever sits on the Living G, so this word appears only when
-            a conversation is actually in motion.
+            MY G STAYS CLEAN. There is NO permanent messages control anywhere
+            around the Living G: messages are private account information and
+            live inside my full profile, beside sparks and sparkles. The only
+            messaging mark permitted out here is a tiny unread badge on my own
+            top profile loop (see EarSelector), which simply says something is
+            waiting inside.
+            NO SEPARATE "COMMUNITY" WORD either — the bottom loop is that door.
           */}
-          {intro === null &&
-          editor === null &&
-          !choose &&
-          !help &&
-          browse === null &&
-          detail === null &&
-          talking === null &&
-          !threads &&
-          seat === "giver" ? (
-            <div className="absolute bottom-4 right-6 z-20 flex flex-col items-end gap-1">
-              <button
-                type="button"
-                onClick={() => setThreads(true)}
-                className="text-[11px] font-black lowercase tracking-[0.28em]"
-                style={{
-                  color: waitingOnMe
-                    ? "var(--giver-connection)"
-                    : "var(--world-ink)",
-                  opacity: waitingOnMe || openCount ? 0.9 : 0.5,
-                }}
-              >
-                {waitingOnMe
-                  ? `${waitingOnMe} to confirm`
-                  : openCount
-                    ? `messages · ${openCount}`
-                    : "messages"}
-              </button>
-              {/*
-                NO SEPARATE "COMMUNITY" WORD. Tapping the bottom loop already
-                walks into the community, so a second door would be clutter.
-              */}
 
-            </div>
-          ) : null}
 
           {/* BROWSE -> ONE ACTIVITY -> A CONVERSATION. Never a shortcut. */}
           <Screen open={browse !== null}>

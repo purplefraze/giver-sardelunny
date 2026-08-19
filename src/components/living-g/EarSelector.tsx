@@ -28,6 +28,15 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
+/**
+ * THE FIFTH SEAT: GIVER = ME. It sits at 12 o'clock, dead above the middle
+ * loop's centre — the profile state, not another activity category. Screens
+ * that only speak activity (other people's Gs) keep the four-seat track.
+ */
+export const SEATS = ["giver", "wish", "give", "trade", "borrow"] as const;
+export type Seat = (typeof SEATS)[number];
+
+
 type P = { x: number; y: number };
 
 /** THE ONE TRACK — the middle loop's measured centre and outer rim. */
@@ -60,7 +69,9 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * there is no forbidden arc, so every seat can be reached by dragging either
  * way around the loop.
  */
-const SEAT_ANGLE: Record<Mode, number> = {
+const SEAT_ANGLE: Record<Seat, number> = {
+  // ME — dead centre above the middle loop, between wish and give.
+  giver: rad(-90), // 12 o'clock
   // UPPER PAIR — mirrored about the vertical axis through the loop's centre.
   wish: rad(-136), // ~10 o'clock
   give: rad(-44), // ~2 o'clock (canonical home)
@@ -68,6 +79,7 @@ const SEAT_ANGLE: Record<Mode, number> = {
   trade: rad(30), // ~4 o'clock
   borrow: rad(150), // ~8 o'clock
 };
+
 
 const TAU = Math.PI * 2;
 
@@ -95,10 +107,10 @@ const at = (angle: number, r: number): P => ({
 });
 
 /** Nearest seat measured AROUND the circle, so the ±180° seam is not a wall. */
-function nearestSeat(angle: number): Mode {
-  let best: Mode = "give";
+function nearestOf(angle: number, seats: readonly Seat[]): Seat {
+  let best: Seat = seats[0]!;
   let bestD = Infinity;
-  for (const m of MODES) {
+  for (const m of seats) {
     const d = Math.abs(shortest(angle, SEAT_ANGLE[m]));
     if (d < bestD) {
       bestD = d;
@@ -114,13 +126,15 @@ const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 /** The captured word lives in the piece's own negative space. */
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
-/** The locked four-mode colours, for seats that state a person's history. */
-const MODE_COLOUR: Record<Mode, string> = {
+/** The locked seat colours, for seats that state a person's history. */
+const MODE_COLOUR: Record<Seat, string> = {
+  giver: "var(--giver-me)",
   wish: "var(--mode-wish)",
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
 };
+
 
 export function EarSelector({
   mode,
@@ -129,9 +143,10 @@ export function EarSelector({
   locked = false,
   photo,
   history,
+  seats = MODES,
 }: {
-  mode: Mode;
-  onChange: (next: Mode) => void;
+  mode: Seat;
+  onChange: (next: Seat) => void;
   /** A simple tap on the piece opens the profile; a drag changes mode. */
   onTap?: () => void;
   /** True on a person's screen: the seat STATES their interaction type. */
@@ -139,12 +154,14 @@ export function EarSelector({
   /** A face riding the selector, inside the ring's own negative space. */
   photo?: string;
   /** The modes this person has taken part in, told by the seats themselves. */
-  history?: Mode[];
+  history?: Seat[];
+  /** Which seats this track offers. My own G offers all five (giver = me). */
+  seats?: readonly Seat[];
 }) {
 
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
-  const last = useRef<Mode>(mode);
+  const last = useRef<Seat>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
   /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
@@ -160,7 +177,8 @@ export function EarSelector({
   // circle, so settling takes the short way and never spins the long way.
   let target = unwrap(angleRef.current, restAngle);
   if (drag !== null) {
-    const seat = unwrap(drag, SEAT_ANGLE[nearestSeat(drag)]);
+    const seat = unwrap(drag, SEAT_ANGLE[nearestOf(drag, seats)]);
+
     const pull = Math.max(0, 1 - Math.abs(seat - drag) / CAPTURE) * 0.55;
     target = drag + (seat - drag) * pull;
   }
@@ -219,7 +237,7 @@ export function EarSelector({
   };
 
 
-  const commit = (next: Mode) => {
+  const commit = (next: Seat) => {
     if (next !== last.current) {
       last.current = next;
       buzz(10);
@@ -237,17 +255,21 @@ export function EarSelector({
 
   const end = () => {
     const g = gesture.current;
-    if (drag !== null && g?.moved) commit(nearestSeat(drag));
+    if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
     else if (g && !g.moved) onTap?.();
     gesture.current = null;
     dragRef.current = null;
     setDrag(null);
   };
 
+  /** Seats in travel order, so the keyboard walks the track, not the array. */
+  const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
+
   return (
     <g>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring. */}
-      {MODES.map((m) => {
+      {seats.map((m) => {
+
         const hint = at(SEAT_ANGLE[m], RIM_R + 16);
         const active = mode === m && !dragging;
         // On a person's screen the seats TELL THEIR STORY: a seat they have
@@ -357,8 +379,9 @@ export function EarSelector({
         tabIndex={0}
         aria-label="mode"
         aria-valuemin={1}
-        aria-valuemax={MODES.length}
-        aria-valuenow={MODES.indexOf(mode) + 1}
+        aria-valuemax={ring.length}
+        aria-valuenow={ring.indexOf(mode) + 1}
+
         aria-valuetext={mode}
         onPointerDown={(e) => {
           e.stopPropagation();
@@ -381,7 +404,7 @@ export function EarSelector({
           dragRef.current = move.angle;
           setDrag(move.angle);
           if (!g?.moved) return;
-          const near = nearestSeat(move.angle);
+          const near = nearestOf(move.angle, seats);
           if (Math.abs(shortest(move.angle, SEAT_ANGLE[near])) < 0.2) commit(near);
         }}
 
@@ -391,15 +414,16 @@ export function EarSelector({
         }}
         onPointerCancel={end}
         onKeyDown={(e) => {
-          const i = MODES.indexOf(mode);
+          const i = ring.indexOf(mode);
           if (e.key === "ArrowRight" || e.key === "ArrowDown") {
             e.preventDefault();
-            commit(MODES[(i + 1) % MODES.length]!);
+            commit(ring[(i + 1) % ring.length]!);
           }
           if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
             e.preventDefault();
-            commit(MODES[(i + MODES.length - 1) % MODES.length]!);
+            commit(ring[(i + ring.length - 1) % ring.length]!);
           }
+
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             onTap?.();

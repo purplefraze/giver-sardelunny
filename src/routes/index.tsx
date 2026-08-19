@@ -16,7 +16,10 @@ import {
   topLoopContent,
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
-import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
+import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { useItems } from "@/hooks/use-items";
+import { ME_ID, communityItems, type ItemType } from "@/data/items";
+
 
 
 import { World, ringPhoto } from "@/components/World";
@@ -43,13 +46,17 @@ const MY_HISTORY: string[][] = [
 ];
 
 /**
- * ONE LIVING G, FOUR MODES.
- * Mode never navigates: it only changes what the same persistent G holds.
+ * ONE LIVING G, FIVE TOGGLE STATES.
  *
- * The prompts are QUESTIONS, always — the G asks you something, it never files
- * anything away:
- *   middle loop = what I am putting into the world
- *   bottom loop = what the community is asking of me
+ * GIVER = ME (my profile):        top = more information
+ *                                 middle = latest activity
+ *                                 bottom = my gives
+ *
+ * WISH / GIVE / TRADE / BORROW = ACTIVITY WORLDS, always the same shape:
+ *                                 middle = MY <type>
+ *                                 bottom = COMMUNITY <type>
+ *
+ * The toggle never navigates: it only changes what the same persistent G holds.
  */
 const MODE_CONTENT: Record<
   Mode,
@@ -60,17 +67,17 @@ const MODE_CONTENT: Record<
 > = {
   wish: {
     mine: {
-      title: "what are you wishing for?",
+      title: "my wishes",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
     community: {
-      title: "what can you help with?",
+      title: "community wishes",
       body: <CommunityList type="wish" />,
     },
   },
   give: {
     mine: {
-      title: "what are you offering?",
+      title: "my gives",
       body: (
         <p className="opacity-70">
           share something you have, know, or can do.
@@ -78,33 +85,34 @@ const MODE_CONTENT: Record<
       ),
     },
     community: {
-      title: "what are you looking for?",
+      title: "community gives",
       body: <CommunityList type="give" />,
     },
   },
   trade: {
     mine: {
-      title: "what are you trading?",
+      title: "my trades",
       body: (
         <p className="opacity-70">offer something, ask for something back.</p>
       ),
     },
     community: {
-      title: "what trades are out there?",
+      title: "community trades",
       body: <CommunityList type="trade" />,
     },
   },
   borrow: {
     mine: {
-      title: "what would you like to borrow?",
+      title: "my borrows",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
     community: {
-      title: "what can you lend?",
+      title: "community borrows",
       body: <CommunityList type="borrow" />,
     },
   },
 };
+
 
 
 
@@ -149,8 +157,12 @@ function Index() {
 
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
-  /** Which mode the one persistent Living G is currently working in. */
-  const [mode, setMode] = useState<Mode>("give");
+  /**
+   * THE ONE SOURCE OF TRUTH for the toggle: giver | wish | give | trade | borrow.
+   * "giver" is ME (profile); the other four are activity worlds.
+   */
+  const [seat, setSeat] = useState<Seat>("giver");
+
   /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
    * the G goes quiet for good — a press-and-hold brings a label back.
@@ -198,14 +210,28 @@ function Index() {
     navigate({ search: {}, replace: true });
   }, [navigate, router]);
 
-  const content = MODE_CONTENT[mode];
-
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
-  /** THE ACTIVE MODE'S OWN #1 ITEM — the only mode content the G ever holds. */
+  const items = useItems();
+
+  /** GIVER = ME. The other four seats are activity worlds. */
+  const isProfile = seat === "giver";
+  const mode: Mode = isProfile ? "give" : (seat as Mode);
+  const content = MODE_CONTENT[mode];
+
+  /** MY <type> — the active world's #1 item, in my own priority order. */
   const myMode = me.items[mode][0] ?? null;
-  /** MY GIVE — the bottom loop's permanent content, whatever the mode. */
+  /** COMMUNITY <type> — the same item collection, queried by everyone else. */
+  const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
+  const community = theirs[0]?.text ?? null;
+  /** MY GIVE — what I offer the community, the profile's bottom loop. */
   const myGive = primaryGive(me);
+
+  /** MY LATEST ACTIVITY of ANY type — the profile's middle loop snapshot. */
+  const latest = CATEGORIES.flatMap((c) =>
+    me.records[c].map((i) => ({ type: c, item: i })),
+  ).sort((a, b) => b.item.updatedAt - a.item.updatedAt)[0] ?? null;
+
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
@@ -235,18 +261,20 @@ function Index() {
 
 
         <>
-          {/* THE WORKSPACE — one Living G, always yours. Mode is a state of it. */}
+          {/* THE WORKSPACE — one Living G, always yours. The seat is its state. */}
           <World
-            world={mode}
-            /* ONE ACTIVE MODE = ONE CLEAN SET OF IN-LOOP TEXT. */
-            contentKey={mode}
+            /* GIVER = my profile (red); the four modes keep their own colours. */
+            world={isProfile ? "profile" : mode}
+            /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
+            contentKey={seat}
             identity="giver"
             active={top === null}
             earCut
             overlay={
               <EarSelector
-                mode={mode}
-                onChange={setMode}
+                mode={seat}
+                onChange={setSeat}
+                seats={SEATS}
                 onTap={() => push("profile")}
               />
             }
@@ -254,68 +282,110 @@ function Index() {
             regions={{
               top: {
                 label: "",
-                panelTitle: "you",
-                panelBody: null,
-                onPress: () => push("profile"),
+                panelTitle: isProfile ? "more information" : "you",
+                panelBody: isProfile ? (
+                  <>
+                    <p className="opacity-70">{me.aboutMe || ME.about}</p>
+                    <p className="opacity-70">by day: {me.byDay || "—"}</p>
+                    <p className="opacity-70">by night: {me.byNight || "—"}</p>
+                    <p className="opacity-70">weekends: {me.weekend || "—"}</p>
+                  </>
+                ) : null,
+                ...(isProfile
+                  ? { onPress: () => setFullMe(true) }
+                  : { onPress: () => push("profile") }),
               },
               /*
-                MIDDLE LOOP = THE ACTIVE MODE. It holds exactly one mode's item —
-                the mode the toggle is sitting on — and nothing else. Changing
-                mode replaces this content outright (see contentKey above).
+                MIDDLE LOOP:
+                  giver = MY LATEST ACTIVITY of any type
+                  mode  = MY <type>
+                Exactly one of them exists at a time (see contentKey above).
               */
               middle: {
                 label: "",
-                panelTitle: content.mine.title,
-                panelBody: content.mine.body,
-                ...(myMode
-                  ? {
-                      render: (anchor) =>
-                        profileLoop({
-                          anchor,
-                          region: "middle",
-                          blocks: [
-                            { text: mode, role: "secondary" as const },
-                            { text: clampField(myMode), role: "primary" as const },
-                          ],
-                        }),
-                    }
-                  : {
-                      render: (anchor) =>
-                        profileLoop({
-                          anchor,
-                          region: "middle",
-                          blocks: [
-                            { text: mode, role: "secondary" as const },
-                            { text: "nothing yet", role: "tertiary" as const },
-                          ],
-                        }),
-                    }),
+                panelTitle: isProfile ? "latest activity" : content.mine.title,
+                panelBody: isProfile ? (
+                  <>
+                    {CATEGORIES.filter((c) => me.items[c].length).map((c) => (
+                      <p key={c}>
+                        {CATEGORY_PLURAL[c]}: {me.items[c].join(", ")}
+                      </p>
+                    ))}
+                  </>
+                ) : (
+                  content.mine.body
+                ),
+                render: (anchor) =>
+                  profileLoop({
+                    anchor,
+                    region: "middle",
+                    blocks: isProfile
+                      ? [
+                          { text: "latest", role: "secondary" as const },
+                          latest
+                            ? {
+                                text: clampField(latest.item.text),
+                                role: "primary" as const,
+                              }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                          ...(latest
+                            ? [{ text: latest.type, role: "tertiary" as const }]
+                            : []),
+                        ]
+                      : [
+                          { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
+                          myMode
+                            ? { text: clampField(myMode), role: "primary" as const }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                        ],
+                  }),
               },
               /*
-                BOTTOM LOOP = ALWAYS WHAT I AM GIVING. Permanent structural rule:
-                the toggle never changes this loop's meaning or its content.
+                BOTTOM LOOP:
+                  giver = MY GIVES — what I offer the community
+                  mode  = COMMUNITY <type>
               */
               bottom: {
                 label: "",
-                panelTitle: content.community.title,
-                panelBody: content.community.body,
-                ...(myGive
-                  ? {
-                      render: (anchor) =>
-                        profileLoop({
-                          anchor,
-                          region: "bottom",
-                          blocks: [
-                            { text: "give", role: "secondary" as const },
-                            { text: clampField(myGive), role: "primary" as const },
-                          ],
-                        }),
-                    }
-                  : {}),
+                panelTitle: isProfile ? "my gives" : content.community.title,
+                panelBody: isProfile ? (
+                  me.items.give.length ? (
+                    <>
+                      {me.items.give.map((g) => (
+                        <p key={g}>{g}</p>
+                      ))}
+                    </>
+                  ) : (
+                    <p className="opacity-70">nothing yet. what could you offer?</p>
+                  )
+                ) : (
+                  content.community.body
+                ),
+                render: (anchor) =>
+                  profileLoop({
+                    anchor,
+                    region: "bottom",
+                    blocks: isProfile
+                      ? [
+                          { text: "gives", role: "secondary" as const },
+                          myGive
+                            ? { text: clampField(myGive), role: "primary" as const }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                        ]
+                      : [
+                          {
+                            text: `community ${CATEGORY_PLURAL[mode]}`,
+                            role: "secondary" as const,
+                          },
+                          community
+                            ? { text: clampField(community), role: "primary" as const }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                        ],
+                  }),
               },
             }}
-
           />
+
 
 
           <Screen open={top === "profile"}>

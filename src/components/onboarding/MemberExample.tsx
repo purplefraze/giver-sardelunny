@@ -156,7 +156,9 @@ export function MemberExample({
           overlay={
             <EarSelector
               mode={seat}
-              onChange={setSeat}
+              /* Other people's Gs keep the four activity seats only. */
+              onChange={(next) => setSeat(next as Mode)}
+
               photo={member.photo}
               // THE PHOTO IS THE GATEWAY: a tap opens their full profile.
               onTap={() => {

@@ -368,7 +368,8 @@ export function EarSelector({
             "opacity 200ms ease-out, transform 220ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >
-        {mode}
+        {word ?? mode}
+
       </text>
 
       {/* Invisible grip, travelling with the ring. */}

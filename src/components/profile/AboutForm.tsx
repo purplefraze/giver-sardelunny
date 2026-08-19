@@ -126,18 +126,18 @@ export function AboutForm({
             }}
             className="text-left transition-transform active:scale-[0.98]"
           >
-            <dd
-              className="text-6xl font-black leading-none tracking-[-0.05em]"
-              style={{
-                color: unread
-                  ? "var(--giver-connection)"
-                  : "var(--world-ink)",
-                opacity: unread ? 1 : 0.55,
-              }}
+            {unread ? (
+              <dd
+                className="text-6xl font-black leading-none tracking-[-0.05em]"
+                style={{ color: "var(--giver-connection)" }}
+              >
+                {unread}
+              </dd>
+            ) : null}
+            <dt
+              className="text-[11px] font-black lowercase tracking-[0.3em]"
+              style={{ marginTop: unread ? "0.5rem" : "3.25rem", opacity: 0.5 }}
             >
-              {unread ? unread : "·"}
-            </dd>
-            <dt className="mt-2 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
               messages
             </dt>
           </button>

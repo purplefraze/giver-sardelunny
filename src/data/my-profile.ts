@@ -10,9 +10,11 @@ import {
   itemLine,
   splitTrade,
   tradeText,
+  type BorrowSide,
   type Item,
   type ItemType,
 } from "@/data/items";
+
 
 import { sparkFlashStore } from "@/data/spark-flash";
 import { buzz } from "@/lib/haptics";

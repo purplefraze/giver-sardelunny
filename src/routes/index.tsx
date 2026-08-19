@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { FullProfile } from "@/components/FullProfile";
-import { ProfileBuilder } from "@/components/ProfileBuilder";
+import { AboutForm } from "@/components/profile/AboutForm";
+import { CategoryForm } from "@/components/profile/CategoryForm";
+
 import { SparklesReward } from "@/components/SparklesReward";
 import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";

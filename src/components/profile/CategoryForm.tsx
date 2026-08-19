@@ -33,12 +33,26 @@ export function CategoryForm({
   const me = useMyProfile();
   const items = me.items[category];
   const [draft, setDraft] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
   const colour = `var(--me-${category})`;
   const full = items.length >= MAX_PER_CATEGORY;
+  /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
+  const cost = category === "wish" ? WISH_COST : 0;
+  const broke = cost > 0 && me.sparks < cost;
 
   const add = () => {
     if (!draft.trim()) return;
-    myProfileStore.addItem(category, draft);
+    const result = myProfileStore.addItem(category, draft);
+    if (!result.ok) {
+      setProblem(
+        result.reason === "sparks"
+          ? `a wish costs ${WISH_COST} sparks. give something to earn more.`
+          : `that’s ${MAX_PER_CATEGORY} already — complete one first.`,
+      );
+      buzz();
+      return;
+    }
+    setProblem(null);
     setDraft("");
     buzz();
   };
@@ -48,6 +62,7 @@ export function CategoryForm({
     buzz();
     onDone();
   };
+
 
   return (
     <div

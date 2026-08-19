@@ -15,7 +15,6 @@ export type LoopCopy = {
   hero?: boolean;
 };
 
-
 /**
  * One coordinated beat: colour and copy always move together. This is also the
  * FADE-OUT duration of a thought that is being replaced — slow enough to feel
@@ -59,7 +58,6 @@ export function IntroG({
   stage?: React.CSSProperties;
   children?: React.ReactNode;
 }) {
-
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
     if (!copy) return {};
     return {
@@ -80,7 +78,6 @@ export function IntroG({
               ...(copy.scale ? { scale: copy.scale } : {}),
               ...(copy.hero ? { hero: true } : {}),
             })}
-
           </g>
         ),
       },

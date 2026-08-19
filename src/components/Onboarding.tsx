@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
  */
 type Stage = "opening" | "meet" | "choose" | "celebrate";
 
-
 /**
  * OPENING TYPE HIERARCHY, as shared tokens — never per-word guesses.
  *   BRAND  — a word alone in the middle loop
@@ -51,9 +50,6 @@ const ROLE_COLOUR: Record<Member["world"], string> = {
   trading: "var(--giver-others)",
   borrowing: "var(--giver-others)",
 };
-
-
-
 
 export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {
   const [stage, setStage] = useState<Stage>("opening");
@@ -87,14 +83,8 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
     );
   }
 
-
   if (stage === "celebrate" && chosen) {
-    return (
-      <FirstGenerosity
-        username={chosen.username}
-        onDone={() => onDone(chosen.name)}
-      />
-    );
+    return <FirstGenerosity username={chosen.username} onDone={() => onDone(chosen.name)} />;
   }
 
   // The first act of generosity. Not optional: one of the four, or nothing.
@@ -284,9 +274,6 @@ function Wordmark({ phase }: { phase: Phase }) {
   );
 }
 
-
-
-
 /**
  * A sequence of lines that arrive one after another with the established fade
  * rhythm — no typewriter, no popping. Reports when the whole thought has
@@ -397,13 +384,7 @@ function ChooseRecipient({
  * THE FIRST GIFT, MADE HUMAN. A warm pat on the back, the sparks confirmed,
  * then one honest question about messaging — asked, never assumed.
  */
-function FirstGenerosity({
-  username,
-  onDone,
-}: {
-  username: string;
-  onDone: () => void;
-}) {
+function FirstGenerosity({ username, onDone }: { username: string; onDone: () => void }) {
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   // Reward flash: pop in fast, hold just long enough to read, then let the user move on instantly.
@@ -498,7 +479,6 @@ function FirstGenerosity({
   );
 }
 
-
 /** Messaging is a permission, so Giver asks. "not now" costs nothing. */
 function MessagingConsent({
   username,
@@ -592,4 +572,3 @@ function MessagingConsent({
     </div>
   );
 }
-

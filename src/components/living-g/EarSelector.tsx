@@ -145,6 +145,8 @@ export function EarSelector({
   history,
   seats = MODES,
   word,
+  badge,
+
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;
@@ -160,6 +162,14 @@ export function EarSelector({
   seats?: readonly Seat[];
   /** What the piece SAYS at rest, when the seat's own name is not the word. */
   word?: string;
+  /**
+   * PAST CONNECTIONS. A quiet count riding just outside the photo: proof that
+   * completed gives, granted wishes, trades and borrows sit behind this person.
+   * Never a list — the profile page tells those stories.
+   */
+  badge?: number;
+
+
 
 }) {
 
@@ -381,6 +391,31 @@ export function EarSelector({
           />
         </>
       ) : null}
+
+      {/* PAST CONNECTIONS — one quiet number tucked beside the face. */}
+      {badge ? (
+        <g pointerEvents="none" opacity={dragging ? 0 : 0.95} style={{ transition: "opacity 180ms ease-out" }}>
+          <circle
+            cx={ear.x + EAR_GEOMETRY.innerR * 0.82}
+            cy={ear.y + EAR_GEOMETRY.innerR * 0.82}
+            r={EAR_GEOMETRY.innerR * 0.42}
+            fill="var(--world-g)"
+          />
+          <text
+            x={ear.x + EAR_GEOMETRY.innerR * 0.82}
+            y={ear.y + EAR_GEOMETRY.innerR * 0.82}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="var(--world-bg)"
+            className="font-black"
+            style={{ fontSize: EAR_GEOMETRY.innerR * 0.44, letterSpacing: "-0.04em" }}
+          >
+            {badge}
+          </text>
+        </g>
+      ) : null}
+
+
 
       {/* dot -> word: the mode reads inside the piece that carries it */}
       <text

@@ -145,6 +145,8 @@ export function EarSelector({
   history,
   seats = MODES,
   word,
+  badge,
+
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;

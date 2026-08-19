@@ -395,3 +395,34 @@ export function CategoryForm({
     </div>
   );
 }
+
+/**
+ * A PHOTO MUST NEVER COST THE WORDS. Every picture is redrawn small before it
+ * is stored, so a give with three photos still fits in persistent storage.
+ */
+async function readSmall(file: File, max = 480): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("unreadable"));
+    reader.readAsDataURL(file);
+  });
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("bad image"));
+      img.src = dataUrl;
+    });
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.8);
+  } catch {
+    return dataUrl;
+  }
+}

@@ -146,6 +146,7 @@ export function EarSelector({
   seats = MODES,
   word,
   badge,
+  sparks,
 
 }: {
   mode: Seat;
@@ -168,10 +169,18 @@ export function EarSelector({
    * Never a list — the profile page tells those stories.
    */
   badge?: number;
+  /**
+   * MY SPARKS, AND ONLY EVER MINE. Sparks are private: this is passed on MY OWN
+   * Living G and never on anybody else's. It rides ALONGSIDE the top profile
+   * loop — clear of the photo, the stroke, the username and the selector's own
+   * travel — so it reads as part of my identity, not as a dashboard widget.
+   */
+  sparks?: number;
 
 
 
 }) {
+
 
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;

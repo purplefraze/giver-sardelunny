@@ -304,8 +304,11 @@ export function EarSelector({
 
   const end = () => {
     const g = gesture.current;
+    const wasHeld = held.current;
+    stopPeek();
+    held.current = false;
     if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
-    else if (g && !g.moved) onTap?.();
+    else if (g && !g.moved && !wasHeld) onTap?.();
     gesture.current = null;
     dragRef.current = null;
     setDrag(null);

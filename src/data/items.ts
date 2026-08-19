@@ -70,6 +70,19 @@ export const MAX_ACTIVE: Record<ItemType, number> = {
  * this one formatter. A half-finished trade keeps its structure: "haircut for
  * ___" / "___ for photography", so both sides are always visible.
  */
+/**
+ * COLOUR = MEANING. The ONE map from an activity type to the colour its text
+ * uses anywhere it is displayed — including inside My G, where several activity
+ * colours can legitimately live at once. Values are the world tokens, so the
+ * text can never drift from its Living G world.
+ */
+export const ACTIVITY_FILL: Record<Category, string> = {
+  wish: "var(--activity-wish)",
+  give: "var(--activity-give)",
+  trade: "var(--activity-trade)",
+  borrow: "var(--activity-borrow)",
+};
+
 export const TRADE_BLANK = "___";
 
 export const tradeText = (offer: string, want: string) =>

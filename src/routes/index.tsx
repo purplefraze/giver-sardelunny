@@ -1,7 +1,6 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
-import { FullProfile } from "@/components/FullProfile";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 
@@ -9,43 +8,17 @@ import { SparklesReward } from "@/components/SparklesReward";
 import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
-import type { MyProfile, Category } from "@/data/my-profile";
-import { myProfileStore, myAsMember, myPhoto, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
+import type { Category } from "@/data/my-profile";
+import { myProfileStore, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
-import {
-  HISTORY_STATES,
-  TopLoopSelector,
-  topLoopContent,
-  type TopLoopPosition,
-} from "@/components/living-g/TopLoopSelector";
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
 import { ME_ID, communityItems, type ItemType } from "@/data/items";
 
 
 
-import { World, ringPhoto } from "@/components/World";
-import { ME } from "@/data/giver";
+import { World } from "@/components/World";
 import { cn } from "@/lib/utils";
-
-/** The only place you ever go: your own profile. Everything else is a mode. */
-type Screen = "profile";
-
-const SCREENS: Screen[] = ["profile"];
-
-/** My own history, in the toggle's order: past wishes, gives, trades. */
-/** My REAL completed items, same order as the toggle: wishes, gives, trades. */
-const MY_COMPLETED: ((p: MyProfile) => string[])[] = [
-  (p) => p.completed.wish.map((i) => i.text),
-  (p) => p.completed.give.map((i) => i.text),
-  (p) => p.completed.trade.map((i) => i.text),
-];
-
-const MY_HISTORY: string[][] = [
-  ME.history.wishes,
-  ME.history.gives,
-  ME.history.trades,
-];
 
 /**
  * ONE LIVING G, FIVE TOGGLE STATES.
@@ -119,12 +92,6 @@ const MODE_CONTENT: Record<
 
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>): { w?: Screen } => {
-    const w = search["w"];
-    return typeof w === "string" && SCREENS.includes(w as Screen)
-      ? { w: w as Screen }
-      : {};
-  },
   head: () => ({
     meta: [
       { title: "Giver — Wishing. Giving. Trading." },
@@ -152,9 +119,6 @@ function Index() {
   const [setup, setSetup] = useState(false);
   /** Profile complete — the one-time sparkle reward. */
   const [reward, setReward] = useState(false);
-  const [gaveTo, setGaveTo] = useState<string | null>(null);
-  /** My deeper, conventional profile page — same data, browsable form. */
-  const [fullMe, setFullMe] = useState(false);
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already
@@ -165,9 +129,6 @@ function Index() {
   >(null);
 
 
-
-  /** Prototype top-loop selector on my own profile; stays where I leave it. */
-  const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
   /**
    * THE ONE SOURCE OF TRUTH for the toggle: giver | wish | give | trade | borrow.
    * "giver" is ME (profile); the other four are activity worlds.
@@ -192,34 +153,6 @@ function Index() {
     const t = setTimeout(() => setTeach(false), 4200);
     return () => clearTimeout(t);
   }, [entered]);
-
-  /**
-   * ONE source of truth for the only depth that exists: the router.
-   * Modes are state; profile is the single pushed screen.
-   */
-  const navigate = useNavigate({ from: Route.fullPath });
-  const router = useRouter();
-  const { w } = Route.useSearch();
-  const top = w ?? null;
-
-  const depth = useRef(0);
-
-  const push = useCallback(
-    (s: Screen) => {
-      depth.current += 1;
-      navigate({ search: { w: s } });
-    },
-    [navigate],
-  );
-
-  const pop = useCallback(() => {
-    if (depth.current > 0) {
-      depth.current -= 1;
-      router.history.back();
-      return;
-    }
-    navigate({ search: {}, replace: true });
-  }, [navigate, router]);
 
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
@@ -248,8 +181,7 @@ function Index() {
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
       {!entered ? (
         <Onboarding
-          onDone={(name) => {
-            setGaveTo(name);
+          onDone={() => {
             setEntered(true);
             /* Already built once? Never show the first-time builder again. */
             setSetup(!myProfileStore.get().built);
@@ -280,14 +212,15 @@ function Index() {
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             identity="giver"
-            active={top === null && editor === null && !fullMe}
+            active={editor === null}
             earCut
             overlay={
               <EarSelector
                 mode={seat}
                 onChange={setSeat}
                 seats={SEATS}
-                onTap={() => push("profile")}
+                {...(isProfile && me.photo ? { photo: me.photo } : {})}
+                onTap={() => setEditor({ kind: "about" })}
               />
             }
             teach={teach}
@@ -297,9 +230,7 @@ function Index() {
                 panelTitle: isProfile ? "more information" : "you",
                 panelBody: null,
                 /* TAP -> the profile information screen; back returns here. */
-                ...(isProfile
-                  ? { onPress: () => setEditor({ kind: "about" }) }
-                  : { onPress: () => push("profile") }),
+                onPress: () => setEditor({ kind: "about" }),
               },
               /*
                 MIDDLE LOOP:
@@ -397,81 +328,6 @@ function Index() {
           </Screen>
 
 
-          <Screen open={top === "profile"}>
-            <World
-              world="profile"
-              active={top === "profile"}
-              identity="you"
-              onBack={pop}
-              overlay={
-                <TopLoopSelector
-                  position={myTopPos}
-                  onChange={setMyTopPos}
-                  content={
-                    <>
-                      {topLoopContent.photo(myPhoto(me), "me-top")}
-                      {topLoopContent.stateLabel(HISTORY_STATES[myTopPos])}
-                    </>
-                  }
-                />
-              }
-              regions={{
-                top: {
-                  label: "",
-                  panelTitle: HISTORY_STATES[myTopPos],
-                  panelBody: (
-                    <>
-                      {(MY_COMPLETED[myTopPos]!(me).length
-                        ? MY_COMPLETED[myTopPos]!(me)
-                        : MY_HISTORY[myTopPos]!
-                      ).map((line) => (
-                        <p key={line}>{line}</p>
-                      ))}
-                      <p className="opacity-70">
-                        {gaveTo
-                          ? `you gave 50 sparks to ${gaveTo}.`
-                          : "you still have 50 sparks to give away."}
-                      </p>
-                      <p style={{ color: "var(--giver-participation)" }}>
-                        {me.sparkles} sparkles to help someone get seen.
-                      </p>
-                    </>
-                  ),
-
-                },
-                middle: {
-                  label: "",
-                  panelTitle: "me",
-                  panelBody: (
-                    <>
-                      {CATEGORIES.filter((c) => me.items[c].length).map((c) => (
-                        <p key={c}>
-                          {CATEGORY_PLURAL[c]}: {me.items[c].join(", ")}
-                        </p>
-                      ))}
-                      <p className="opacity-70">{me.aboutMe || ME.about}</p>
-                    </>
-                  ),
-                  render: ringPhoto(myPhoto(me), "me", 66),
-                  onPress: () => setFullMe(true),
-                },
-                bottom: {
-                  label: "edit profile",
-                  panelTitle: "about me",
-                  panelBody: null,
-                  onPress: () => setEditor({ kind: "about" }),
-                },
-              }}
-            />
-          </Screen>
-
-          <Screen open={fullMe}>
-            <FullProfile
-              member={myAsMember(me)}
-              world="me"
-              onBack={() => setFullMe(false)}
-            />
-          </Screen>
         </>
       )}
     </main>

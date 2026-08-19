@@ -89,9 +89,17 @@ export type LaidOutRow = {
   role: LoopTypeRole;
   /** Vertical offset from the loop's optical centre. */
   y: number;
+  /** Optional per-row colour override (activity content carries its world colour). */
+  fill?: string;
 };
 
-type StackRow = { text: string; size: number; role: LoopTypeRole; gap?: number };
+type StackRow = {
+  text: string;
+  size: number;
+  role: LoopTypeRole;
+  gap?: number;
+  fill?: string;
+};
 
 /**
  * Centre a stack of rows on the loop's optical centre and report whether every
@@ -127,7 +135,13 @@ export function layoutStack(
     // height — not the full line box. This is what lets a word FILL its loop.
     const allowed = halfChord(radius, Math.abs(centre) + row.size * 0.36) * 2 * fill;
     if (widthOf(row.text, row.size, row.role) > allowed) fits = false;
-    placed.push({ text: row.text, size: row.size, role: row.role, y: centre });
+    placed.push({
+      text: row.text,
+      size: row.size,
+      role: row.role,
+      y: centre,
+      ...(row.fill ? { fill: row.fill } : {}),
+    });
     y += row.size * 1.02;
   }
   return { rows: placed, fits };

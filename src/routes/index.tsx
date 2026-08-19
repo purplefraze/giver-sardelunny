@@ -20,7 +20,7 @@ import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
-import { ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
+import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
 
 
 
@@ -313,8 +313,10 @@ function Index() {
                         ? [
                             { text: "latest", role: "secondary" as const },
                             {
+                              /* THE ACTIVITY SPEAKS ITS WORLD'S COLOUR. */
                               text: clampField(itemLine(latest.item)),
                               role: "primary" as const,
+                              fill: ACTIVITY_FILL[latest.type],
                             },
                             { text: latest.type, role: "tertiary" as const },
                           ]
@@ -322,7 +324,11 @@ function Index() {
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode
-                            ? { text: clampField(myMode), role: "primary" as const }
+                            ? {
+                                text: clampField(myMode),
+                                role: "primary" as const,
+                                fill: ACTIVITY_FILL[mode as ItemType],
+                              }
                             : { text: `add a ${mode}`, role: "primary" as const },
                           ...(myMode ? more(me.items[mode].length) : []),
                         ],
@@ -353,7 +359,12 @@ function Index() {
                       ? myGive
                         ? [
                             { text: "gives", role: "secondary" as const },
-                            { text: clampField(myGive), role: "primary" as const },
+                            {
+                              /* MY GIVES ARE ALWAYS GREEN. */
+                              text: clampField(myGive),
+                              role: "primary" as const,
+                              fill: ACTIVITY_FILL.give,
+                            },
                             ...more(me.items.give.length),
                           ]
                         : /* TRULY EMPTY until a give exists. */ []
@@ -363,7 +374,11 @@ function Index() {
                             role: "secondary" as const,
                           },
                           community
-                            ? { text: clampField(community), role: "primary" as const }
+                            ? {
+                                text: clampField(community),
+                                role: "primary" as const,
+                                fill: ACTIVITY_FILL[mode as ItemType],
+                              }
                             : { text: "nothing yet", role: "tertiary" as const },
                           ...(community ? more(theirs.length) : []),
                         ],

@@ -173,16 +173,25 @@
        give   = generosity happening (green)
        wish   = me reaching another person (purple, connection)
        trade  = me participating with the community (orange)
-       borrow = leaning on the community (yellow) */
+       borrow = leaning on other people (bright blue) */
   --mode-give: var(--giver-generosity);
   --mode-wish: var(--giver-connection);
   --mode-trade: var(--giver-participation);
-  --mode-borrow: var(--giver-community);
+  --mode-borrow: var(--giver-others);
 
   --mode-give-complement: var(--giver-generosity-complement);
   --mode-wish-complement: var(--giver-connection-complement);
   --mode-trade-complement: var(--giver-participation-complement);
-  --mode-borrow-complement: var(--giver-community-complement);
+  --mode-borrow-complement: var(--giver-others-complement);
+
+  /* ---- ACTIVITY TEXT COLOUR = ITS WORLD'S G COLOUR ----
+     The one place any screen reads the colour of a Wish / Give / Trade /
+     Borrow ITEM, so activity text can never drift from its world. */
+  --activity-wish: var(--mode-wish);
+  --activity-give: var(--mode-give);
+  --activity-trade: var(--mode-trade);
+  --activity-borrow: var(--mode-borrow);
+
 
   /* Compatibility aliases — every one resolves to a semantic token above. */
   --giver-give: var(--giver-generosity);
@@ -288,11 +297,11 @@
   --world-accent: var(--giver-community);
 }
 
-/* Borrow — leaning on the community: yellow. */
+/* Borrow — leaning on other people: bright blue. */
 [data-world="borrow"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-borrow);
-  --world-ink: oklch(0.52 0.15 85);
+  --world-ink: oklch(0.4 0.15 255);
   --world-text: var(--mode-borrow-complement);
   --world-accent: var(--giver-generosity);
 }

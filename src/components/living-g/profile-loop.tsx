@@ -39,6 +39,12 @@ export type LoopBlock = {
   role?: LoopRole;
   /** Start a new visual group — extra breathing room above this block. */
   lead?: boolean;
+  /**
+   * COLOUR = MEANING. Real Wish / Give / Trade / Borrow content carries its
+   * world's colour token so the type of activity is readable at a glance.
+   * Generic profile copy leaves this unset and keeps the world's ink.
+   */
+  fill?: string;
 };
 
 /** Short-form fields only: longer answers belong on the deeper Profile page. */
@@ -95,6 +101,7 @@ export function profileLoop({
         size,
         role,
         gap: i === 0 && j === 0 ? 0 : j === 0 && block.lead ? lead : gap,
+        ...(block.fill ? { fill: block.fill } : {}),
       }));
     });
   };
@@ -119,7 +126,7 @@ export function profileLoop({
           y={origin.y + row.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill={LOOP_TEXT_FILL}
+          fill={row.fill ?? LOOP_TEXT_FILL}
           className="font-black lowercase"
           style={{
             fontSize: row.size,

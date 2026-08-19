@@ -15,7 +15,9 @@ import { CommunityFeed } from "@/components/community/CommunityFeed";
 import { ActivityDetail } from "@/components/community/ActivityDetail";
 import { Conversation } from "@/components/connection/Conversation";
 import { ConnectionsList } from "@/components/connection/ConnectionsList";
-import { SparkBalance } from "@/components/SparkBalance";
+import { tutorialSeenStore } from "@/data/tutorial-seen";
+import { useTutorialSeen } from "@/hooks/use-tutorial-seen";
+
 import { isOpen, myConnections, needsMyAnswer } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";

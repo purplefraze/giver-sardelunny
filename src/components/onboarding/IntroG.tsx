@@ -98,25 +98,28 @@ export function IntroG({
       }}
       onClick={onAdvance}
     >
-      <GStage>
-        <div
-          className="h-full w-full [&_path]:ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{ ["--beat" as string]: `${BEAT_MS}ms` }}
-        >
-          <div className="h-full w-full [&_path]:transition-[fill] [&_path]:duration-[700ms]">
-            <LivingG
-              className={G_PRESENCE}
-              showLabels={false}
-              {...(overlay ? { overlay } : {})}
-              regions={{
-                ...region("top", top),
-                ...region("middle", middle),
-                ...region("bottom", bottom),
-              }}
-            />
+      <div className="absolute inset-0" style={stage}>
+        <GStage>
+          <div
+            className="h-full w-full [&_path]:ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{ ["--beat" as string]: `${BEAT_MS}ms` }}
+          >
+            <div className="h-full w-full [&_path]:transition-[fill] [&_path]:duration-[700ms]">
+              <LivingG
+                className={G_PRESENCE}
+                showLabels={false}
+                {...(overlay ? { overlay } : {})}
+                regions={{
+                  ...region("top", top),
+                  ...region("middle", middle),
+                  ...region("bottom", bottom),
+                }}
+              />
+            </div>
           </div>
-        </div>
-      </GStage>
+        </GStage>
+      </div>
+
       {children}
     </div>
   );

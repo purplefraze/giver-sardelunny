@@ -318,10 +318,11 @@ function Index() {
                 panelBody: isProfile ? null : content.community.body,
                 ...(isProfile
                   ? {
-                      onPress: () =>
-                        setEditor({ kind: "category", category: "give" }),
+                      /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
+                      onPress: () => openWorld("give"),
                     }
                   : {}),
+
                 render: (anchor) =>
                   profileLoop({
                     anchor,

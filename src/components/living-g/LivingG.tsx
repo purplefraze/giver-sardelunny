@@ -49,12 +49,19 @@ type Props = {
   /** Interactive layer drawn above the artwork (e.g. the top-loop selector). */
   overlay?: React.ReactNode;
   /**
+   * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (e.g. the current mode).
+   * When it changes, every loop's content is UNMOUNTED and rebuilt, so no
+   * previous state's words, fades or timers can survive underneath the new one.
+   */
+  contentKey?: string;
+  /**
    * THE SELECTOR'S HOME. When the mode selector owns the small top circle, the
    * canonical ear + stem are removed ONCE by a tight static cut — applied to
    * the base artwork and every swell copy, so no fragment can peek back.
    */
   earCut?: boolean;
 };
+
 
 
 

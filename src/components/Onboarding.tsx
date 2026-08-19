@@ -45,10 +45,10 @@ type Slide = {
 
 const WORDS: Slide[] = [
   { middle: ["giver"], hold: 900 },
-  { bottom: ["kindness is", "currency."], hold: 1250 },
-  { bottom: ["here's", "100 sparks."], hold: 1500, spark: "hundred" },
-  { bottom: ["50 to wish."], hold: 1500, spark: "wish" },
-  { bottom: ["50 to give."], hold: 1500, spark: "give" },
+  { bottom: ["kindness is", "currency"], hold: 1250 },
+  { bottom: ["here's", "100 sparks"], hold: 1500, spark: "hundred" },
+  { bottom: ["50 to wish"], hold: 1500, spark: "wish" },
+  { bottom: ["50 to give"], hold: 1500, spark: "give" },
 ];
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
@@ -205,9 +205,10 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
     lines ? { lines, plan: lines, scale, opacity: fading ? 0 : 1 } : undefined;
 
-  /* ARRIVAL SPEAKS FOR ITSELF: the middle loop confirms the change in words. */
+  /* THE ACTION RESOLVES TO THE BRAND: completing the slide returns the middle
+     loop to "giver" — never a flash of other words in between. */
   const done: LoopCopy | undefined = arrived
-    ? { lines: ["spark", "change."], plan: ["spark", "change."], scale: BRAND, opacity: 1 }
+    ? { lines: ["giver"], plan: ["giver"], scale: BRAND, opacity: 1 }
     : undefined;
 
   const middle: LoopCopy | undefined =

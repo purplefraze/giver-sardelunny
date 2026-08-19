@@ -81,6 +81,24 @@ export function CategoryForm({
           my {CATEGORY_PLURAL[category]}
         </h1>
 
+        {/* THE ECONOMY, SAID PLAINLY: wishes cost, generosity earns. */}
+        <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-45">
+          {cost
+            ? `${cost} sparks a wish · you have ${me.sparks}`
+            : category === "give"
+              ? `free to offer · ${me.sparks} sparks in your account`
+              : `no sparks needed · you have ${me.sparks}`}
+        </p>
+
+        {problem ? (
+          <p
+            className="mt-3 text-sm font-black lowercase"
+            style={{ color: "var(--me-wish)" }}
+          >
+            {problem}
+          </p>
+        ) : null}
+
         <ul className="mt-8 space-y-4">
           {items.map((item, i) => (
             <li key={`${category}-${i}`} className="flex items-center gap-3">

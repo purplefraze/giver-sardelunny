@@ -46,7 +46,7 @@ export function ConnectionsList({
       <BackArrow onClick={onClose} label="back to my g" />
 
       <h1 className="text-[13vw] font-black lowercase leading-[0.82] tracking-[-0.055em]">
-        connections
+        conversations
       </h1>
 
       <ul className="mt-8 space-y-6">

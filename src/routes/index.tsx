@@ -115,10 +115,6 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [entered, setEntered] = useState(false);
-  /** First run only: set up your own profile before the workspace opens. */
-  const [setup, setSetup] = useState(false);
-  /** Profile complete — the one-time sparkle reward. */
-  const [reward, setReward] = useState(false);
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already

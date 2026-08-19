@@ -209,10 +209,15 @@ function Index() {
   /** MY GIVE — what I offer the community, the profile's bottom loop. */
   const myGive = primaryGive(me);
 
+  /** NEVER A LIST INSIDE THE G: one item, then how much more there is. */
+  const more = (count: number) =>
+    count > 1 ? [{ text: `+${count - 1} more`, role: "tertiary" as const }] : [];
+
   /** MY LATEST ACTIVITY of ANY type — the profile's middle loop snapshot. */
   const latest = CATEGORIES.flatMap((c) =>
     me.records[c].map((i) => ({ type: c, item: i })),
   ).sort((a, b) => b.item.updatedAt - a.item.updatedAt)[0] ?? null;
+
 
 
   return (

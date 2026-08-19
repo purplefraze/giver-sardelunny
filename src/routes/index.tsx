@@ -566,6 +566,11 @@ function Index() {
           <Screen open={editor !== null}>
             {editor?.kind === "about" ? (
               <AboutForm
+                unread={unread}
+                onMessages={() => {
+                  setEditor(null);
+                  setThreads(true);
+                }}
                 onDone={() => {
                   if (!lifecycle.onboardingCompletedAt) lifecycleStore.complete();
                   setEditor(null);

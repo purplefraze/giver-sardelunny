@@ -140,15 +140,31 @@ function invalidate() {
 /** Items change independently of the person, and every view must follow. */
 itemsStore.subscribe(invalidate);
 
-function savePerson(next: Person) {
-  person = next;
-  if (typeof window !== "undefined") {
+/**
+ * WRITE-THROUGH PERSISTENCE. Every keystroke lands in localStorage, so leaving
+ * a screen, reloading the preview or reopening the app restores exactly what
+ * was typed. A photo can be large enough to blow the storage quota; if that
+ * happens the WORDS must still survive, so we retry without the photo rather
+ * than silently losing the whole profile.
+ */
+function writePerson(next: Person) {
+  if (typeof window === "undefined") return next;
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(next));
+    return next;
+  } catch {
+    const withoutPhoto = { ...next, photo: null };
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(next));
+      window.localStorage.setItem(KEY, JSON.stringify(withoutPhoto));
+      return withoutPhoto;
     } catch {
-      /* prototype persistence is best-effort */
+      return next;
     }
   }
+}
+
+function savePerson(next: Person) {
+  person = writePerson(next);
   invalidate();
 }
 

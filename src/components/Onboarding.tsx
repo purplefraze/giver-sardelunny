@@ -145,8 +145,8 @@ type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
  * the canonical geometry is untouched.
  */
 const LETTER_SCALE = 0.26;
-const LETTER_SHIFT = "-19vw";
-const LETTER_RISE = "-1vh";
+const LETTER_SHIFT = "-7.3vw";
+const LETTER_RISE = "1.6vh";
 /** Where the letters "ıver" sit relative to screen centre. */
 const LETTERS_SHIFT = "13vw";
 const ZOOM_MS = 900;

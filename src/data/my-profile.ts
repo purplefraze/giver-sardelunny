@@ -10,6 +10,8 @@ import {
   type Item,
   type ItemType,
 } from "@/data/items";
+import { sparkFlashStore } from "@/data/spark-flash";
+import { buzz } from "@/lib/haptics";
 
 /**
  * MY PROFILE — THE SINGLE SOURCE OF TRUTH FOR THE PERSON.

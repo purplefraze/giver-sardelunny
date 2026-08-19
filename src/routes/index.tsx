@@ -132,6 +132,20 @@ function Index() {
   const [seat, setSeat] = useState<Seat>("giver");
 
   /**
+   * FIRST-TIME WORLD EXPLANATION. Giver explains wish / give / trade / borrow
+   * once each, from four PERSISTED flags — never component state — then gets
+   * out of the way. It is UI only: it creates no items and touches no profile.
+   */
+  const [intro, setIntro] = useState<Category | null>(null);
+  const introSeen = useIntroSeen();
+
+  useEffect(() => {
+    if (!entered || seat === "giver") return;
+    if (introSeen[seat]) return;
+    setIntro(seat);
+  }, [entered, seat, introSeen]);
+
+  /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
    * the G goes quiet for good — a press-and-hold brings a label back.
    */

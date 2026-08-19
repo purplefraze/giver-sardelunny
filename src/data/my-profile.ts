@@ -36,8 +36,6 @@ export const CATEGORY_PLURAL: Record<Category, string> = {
 export const MAX_PER_CATEGORY = MAX_ACTIVE_PER_TYPE;
 export const SETUP_PER_CATEGORY = 3;
 
-/** Sparkles awarded once, the first time a profile is completed. */
-export const PROFILE_SPARKLES = 10;
 
 export type MyProfile = {
   username: string;
@@ -140,15 +138,31 @@ function invalidate() {
 /** Items change independently of the person, and every view must follow. */
 itemsStore.subscribe(invalidate);
 
-function savePerson(next: Person) {
-  person = next;
-  if (typeof window !== "undefined") {
+/**
+ * WRITE-THROUGH PERSISTENCE. Every keystroke lands in localStorage, so leaving
+ * a screen, reloading the preview or reopening the app restores exactly what
+ * was typed. A photo can be large enough to blow the storage quota; if that
+ * happens the WORDS must still survive, so we retry without the photo rather
+ * than silently losing the whole profile.
+ */
+function writePerson(next: Person) {
+  if (typeof window === "undefined") return next;
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(next));
+    return next;
+  } catch {
+    const withoutPhoto = { ...next, photo: null };
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(next));
+      window.localStorage.setItem(KEY, JSON.stringify(withoutPhoto));
+      return withoutPhoto;
     } catch {
-      /* prototype persistence is best-effort */
+      return next;
     }
   }
+}
+
+function savePerson(next: Person) {
+  person = writePerson(next);
   invalidate();
 }
 
@@ -202,18 +216,7 @@ export const myProfileStore = {
     itemsStore.move(ME_ID, category, index, delta);
   },
 
-  /* ---- SPARKLES: earned, never bought. ---- */
-  /** Awarded once, when the first profile setup is completed. */
-  awardProfileSparkles(): number {
-    hydrate();
-    if (person.sparklesAwarded) return 0;
-    savePerson({
-      ...person,
-      sparkles: person.sparkles + PROFILE_SPARKLES,
-      sparklesAwarded: true,
-    });
-    return PROFILE_SPARKLES;
-  },
+  /* ---- SPARKLES: earned, never bought, never awarded for a profile. ---- */
   /** Spend one sparkle on somebody ELSE's active community item. */
   useSparkle(itemId: string): { ok: boolean; reason?: string } {
     hydrate();

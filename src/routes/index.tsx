@@ -4,12 +4,12 @@ import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 
-import { SparklesReward } from "@/components/SparklesReward";
+
 import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { myProfileStore, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
+import { primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
@@ -115,10 +115,6 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [entered, setEntered] = useState(false);
-  /** First run only: set up your own profile before the workspace opens. */
-  const [setup, setSetup] = useState(false);
-  /** Profile complete — the one-time sparkle reward. */
-  const [reward, setReward] = useState(false);
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already
@@ -180,28 +176,10 @@ function Index() {
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
       {!entered ? (
-        <Onboarding
-          onDone={() => {
-            setEntered(true);
-            /* Already built once? Never show the first-time builder again. */
-            setSetup(!myProfileStore.get().built);
-          }}
-        />
-      ) : setup ? (
-        /* FIRST RUN — the profile information screen, as its own destination. */
-        <AboutForm
-          firstTime
-          onDone={() => {
-            /* Awarded exactly once, however often the profile is edited. */
-            const awarded = myProfileStore.awardProfileSparkles();
-            setSetup(false);
-            if (awarded) setReward(true);
-          }}
-        />
-
-      ) : reward ? (
-        <SparklesReward onDone={() => setReward(false)} />
+        /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
+        <Onboarding onDone={() => setEntered(true)} />
       ) : (
+
 
 
         <>
@@ -262,7 +240,7 @@ function Index() {
                             },
                             { text: latest.type, role: "tertiary" as const },
                           ]
-                        : [{ text: "add a wish", role: "primary" as const }]
+                        : /* TRULY EMPTY until real activity exists. */ []
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode
@@ -296,7 +274,7 @@ function Index() {
                             { text: "gives", role: "secondary" as const },
                             { text: clampField(myGive), role: "primary" as const },
                           ]
-                        : [{ text: "add a give", role: "primary" as const }]
+                        : /* TRULY EMPTY until a give exists. */ []
                       : [
                           {
                             text: `community ${CATEGORY_PLURAL[mode]}`,

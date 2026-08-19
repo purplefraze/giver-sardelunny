@@ -9,13 +9,7 @@ import { buzz } from "@/lib/haptics";
  * screen sits underneath the G: it replaces it for as long as you are editing.
  * Every keystroke commits to the single source of truth immediately.
  */
-export function AboutForm({
-  onDone,
-  firstTime = false,
-}: {
-  onDone: () => void;
-  firstTime?: boolean;
-}) {
+export function AboutForm({ onDone }: { onDone: () => void }) {
   const me = useMyProfile();
 
   const pickPhoto = () => {
@@ -26,7 +20,11 @@ export function AboutForm({
       const file = input.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => myProfileStore.patch({ photo: String(reader.result) });
+      reader.onload = async () => {
+        /* Shrunk before saving so the photo always fits alongside the words. */
+        const photo = await shrink(String(reader.result));
+        myProfileStore.patch({ photo });
+      };
       reader.readAsDataURL(file);
     };
     input.click();
@@ -114,19 +112,9 @@ export function AboutForm({
           className="mt-16 text-left text-[13vw] font-black lowercase leading-[0.85] tracking-[-0.055em] transition-transform active:scale-[0.98]"
           style={{ color: "var(--giver-participation)" }}
         >
-          {firstTime ? (
-            <>
-              let's meet
-              <br />
-              the community
-            </>
-          ) : (
-            <>
-              back
-              <br />
-              to my g
-            </>
-          )}
+          back
+          <br />
+          to my g
         </button>
         <p className="mt-6 text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
           everything saves as you go
@@ -134,6 +122,31 @@ export function AboutForm({
       </div>
     </div>
   );
+}
+
+/**
+ * A photo must never cost the words. We redraw it small before it is stored,
+ * so the whole profile keeps fitting in persistent storage.
+ */
+async function shrink(dataUrl: string, max = 512): Promise<string> {
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("bad image"));
+      img.src = dataUrl;
+    });
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.82);
+  } catch {
+    return dataUrl;
+  }
 }
 
 /** One short-form field. Auto-saves on every keystroke. */

@@ -459,7 +459,7 @@ function Index() {
                   label: "edit profile",
                   panelTitle: "about me",
                   panelBody: null,
-                  onPress: () => setSetup(true),
+                  onPress: () => setEditor({ kind: "about" }),
                 },
               }}
             />

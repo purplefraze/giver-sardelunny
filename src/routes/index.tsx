@@ -315,6 +315,7 @@ function Index() {
                 seats={SEATS}
                 {...(isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
+                {...(isProfile && unread ? { badge: unread } : {})}
                 /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
                 sparks={me.sparks}
 

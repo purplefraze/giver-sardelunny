@@ -41,6 +41,24 @@ export function CommunityList({ type }: { type: ItemType }) {
                 {item.distanceKm === undefined ? "" : `, ${item.distanceKm} km`}
               </span>
             </span>
+            {/*
+              GRANTING A WISH IS A COMPLETED ACT. Only when the wish is actually
+              granted does giver recognise it with 10 sparks — never for
+              offering, messaging or simply opening it.
+            */}
+            {type === "wish" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  buzz();
+                  myProfileStore.grantWish(item.id);
+                }}
+                className="shrink-0 text-[11px] font-black lowercase tracking-[0.24em]"
+                style={{ color: "var(--giver-generosity)" }}
+              >
+                grant
+              </button>
+            ) : null}
             {/* SPARKLES HELP OTHER PEOPLE GET SEEN. */}
             <button
               type="button"
@@ -60,3 +78,4 @@ export function CommunityList({ type }: { type: ItemType }) {
     </ul>
   );
 }
+

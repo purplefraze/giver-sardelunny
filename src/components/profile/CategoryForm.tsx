@@ -342,7 +342,7 @@ export function CategoryForm({
                         type="button"
                         aria-label="remove photo"
                         onClick={() => {
-                          buzz();
+                          haptics.light();
                           setPhotos((prev) => prev.filter((_, k) => k !== i));
                         }}
                         className="relative h-20 w-20 overflow-hidden"

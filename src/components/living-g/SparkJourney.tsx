@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "./g-path";
 import { SparkBundle } from "./SparkBundle";
 import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
-import { buzz } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 
 /**
@@ -26,6 +26,13 @@ const WASH_MS = 1100;
 const AUTO_MS = 2200;
 
 /** Ease-in-out: it sets off gently and settles gently. No bounce. */
+/**
+ * WHERE THE TWO LOOPS MEET. The rail runs middle loop -> S-curve -> bottom loop,
+ * so the spine sits a little past halfway along its length. Crossing it is the
+ * one structural landmark of the journey, and the only thing felt in transit.
+ */
+const SPINE_U = 0.52;
+
 const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
 
 type Sample = { x: number; y: number; u: number };
@@ -59,7 +66,8 @@ export function SparkJourney({
   const samples = useRef<Sample[]>([]);
   const total = useRef(1);
   const grabbed = useRef(false);
-  const marks = useRef(0);
+  /** Which side of the spine the bead was last on, so a crossing is felt once. */
+  const crossed = useRef<boolean | null>(null);
   /** Live progress, so the drag can stay local without a stale closure. */
   const uRef = useRef(0);
 
@@ -132,7 +140,7 @@ export function SparkJourney({
       put(1 - ease(k), false);
       if (k < 1) raf = requestAnimationFrame(step);
       else {
-        buzz([10, 40, 16]);
+        haptics.success();
         onArrive?.();
       }
     };
@@ -146,7 +154,9 @@ export function SparkJourney({
     if (!draggable || arrived) return;
     if (TO === 1 ? u < 1 : u > 0) return;
     setArrived(true);
-    buzz([12, 60, 22]);
+    /* THE LANDING. The strongest, most meaningful haptic in the whole app: the
+       sparks have arrived and the G is about to change. */
+    haptics.success();
     onArrive?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, u, arrived]);
@@ -220,7 +230,8 @@ export function SparkJourney({
     // CAPTURE: the slide survives the finger straying off the rail's grip, and
     // keeps receiving moves right through the loops and the S-curve.
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    buzz(10);
+    // PICKUP: the lightest possible acknowledgement, once per drag.
+    haptics.light();
     onStart?.();
     project(e);
   };

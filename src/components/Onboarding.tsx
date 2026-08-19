@@ -236,7 +236,7 @@ function Wordmark({ phase }: { phase: Phase }) {
     <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
       <span
         className="flex items-center font-black lowercase leading-none tracking-[-0.05em]"
-        style={{ fontSize: "12dvh", transform: "translateX(6vw)", color: "var(--world-g)" }}
+        style={{ fontSize: "12dvh", transform: "translateX(8.5vw)", color: "var(--world-g)" }}
       >
         {letters.map((l, k) => (
           <span

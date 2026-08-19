@@ -112,13 +112,18 @@ export function WorldIntro({
         {category}
       </span>
 
-      <div key={beat} className="space-y-5 animate-in fade-in duration-200">
+      <div
+        key={beat}
+        className="animate-in fade-in space-y-4 overflow-y-auto duration-200"
+      >
         {lines.map((line, i) => (
           <p
             key={line}
-            className="font-black lowercase leading-[0.95] tracking-[-0.04em]"
+            className="font-black lowercase leading-[1.02] tracking-[-0.04em]"
             style={{
-              fontSize: i === 0 ? "9vw" : "5.2vw",
+              /* THE EXAMPLES ARE LONG BY DESIGN — the type breathes down for
+                 them instead of spilling off the screen. */
+              fontSize: i === 0 ? "8.4vw" : size(line),
               opacity: i === 0 ? 1 : 0.78,
               ...(i === 0 ? { color: colour } : {}),
             }}
@@ -127,6 +132,7 @@ export function WorldIntro({
           </p>
         ))}
       </div>
+
 
       <span className="absolute inset-x-7 bottom-10 text-[11px] font-black lowercase tracking-[0.3em] opacity-45">
         {last ? `tap for my ${CATEGORY_PLURAL[category]}` : "tap to continue"}

@@ -1,7 +1,6 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
-import { FullProfile } from "@/components/FullProfile";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 
@@ -10,21 +9,16 @@ import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { MyProfile, Category } from "@/data/my-profile";
-import { myProfileStore, myAsMember, myPhoto, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
+import { myProfileStore, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
-import {
-  HISTORY_STATES,
-  TopLoopSelector,
-  topLoopContent,
-  type TopLoopPosition,
-} from "@/components/living-g/TopLoopSelector";
+import { topLoopContent } from "@/components/living-g/TopLoopSelector";
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
 import { ME_ID, communityItems, type ItemType } from "@/data/items";
 
 
 
-import { World, ringPhoto } from "@/components/World";
+import { World } from "@/components/World";
 import { ME } from "@/data/giver";
 import { cn } from "@/lib/utils";
 

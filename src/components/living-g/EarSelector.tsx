@@ -302,7 +302,27 @@ export function EarSelector({
     return () => clearTimeout(t);
   }, [mode]);
 
-  const end = () => {
+  /**
+   * ONE FINGER, ONE GESTURE. The pointer that started the drag is the only one
+   * that can move or end it, so a second touch anywhere on the phone can never
+   * hijack or freeze the selector.
+   */
+  const activeId = useRef<number | null>(null);
+
+  const end = (e?: React.PointerEvent<SVGElement>) => {
+    if (e && activeId.current !== null && e.pointerId !== activeId.current) return;
+    if (e) {
+      const el = e.currentTarget as SVGElement & {
+        releasePointerCapture?: (id: number) => void;
+        hasPointerCapture?: (id: number) => boolean;
+      };
+      try {
+        if (el.hasPointerCapture?.(e.pointerId)) el.releasePointerCapture?.(e.pointerId);
+      } catch {
+        /* the browser already dropped the capture — nothing to release */
+      }
+    }
+    activeId.current = null;
     const g = gesture.current;
     const wasHeld = held.current;
     stopPeek();
@@ -313,6 +333,7 @@ export function EarSelector({
     dragRef.current = null;
     setDrag(null);
   };
+
 
   /** Seats in travel order, so the keyboard walks the track, not the array. */
   const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);

@@ -190,6 +190,32 @@ export function EarSelector({
   /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
   const dragRef = useRef<number | null>(null);
 
+  /**
+   * MY SPARKS ARE NEVER ON DISPLAY. A deliberate press and hold on MY OWN top
+   * loop breathes the balance into the negative space beside it; the instant my
+   * finger lifts it is gone again, and the hold does NOT open the profile.
+   */
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const held = useRef(false);
+  const startPeek = () => {
+    if (sparks === undefined) return;
+    held.current = false;
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+    peekTimer.current = setTimeout(() => {
+      held.current = true;
+      buzz(8);
+      setPeek(true);
+    }, 380);
+  };
+  const stopPeek = () => {
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+    setPeek(false);
+  };
+  useEffect(() => () => {
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+  }, []);
+
   /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
 

@@ -58,10 +58,8 @@ const MODE_CONTENT: Record<
       title: "my wishes",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
-    community: {
-      title: "community wishes",
-      body: <CommunityList type="wish" />,
-    },
+    community: { title: "community wishes" },
+
   },
   give: {
     mine: {

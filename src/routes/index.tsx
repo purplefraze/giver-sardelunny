@@ -154,8 +154,12 @@ function Index() {
 
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
   const [myTopPos, setMyTopPos] = useState<TopLoopPosition>(0);
-  /** Which mode the one persistent Living G is currently working in. */
-  const [mode, setMode] = useState<Mode>("give");
+  /**
+   * THE ONE SOURCE OF TRUTH for the toggle: giver | wish | give | trade | borrow.
+   * "giver" is ME (profile); the other four are activity worlds.
+   */
+  const [seat, setSeat] = useState<Seat>("giver");
+
   /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
    * the G goes quiet for good — a press-and-hold brings a label back.

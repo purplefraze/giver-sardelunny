@@ -538,7 +538,12 @@ export function EarSelector({
           const move = angleFrom(e);
           if (!move) return;
           const g = gesture.current;
-          if (g && !g.moved && dist(move.point, g.start) > 14) g.moved = true;
+          if (g && !g.moved && dist(move.point, g.start) > 14) {
+            g.moved = true;
+            /* A drag is a mode change, not a peek. */
+            stopPeek();
+            held.current = false;
+          }
           dragRef.current = move.angle;
           setDrag(move.angle);
           if (!g?.moved) return;

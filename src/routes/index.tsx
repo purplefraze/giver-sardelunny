@@ -381,6 +381,20 @@ function Index() {
             }}
           />
 
+          {/*
+            THE EDITOR DESTINATIONS. One screen at a time, above the G — never
+            beneath it. Leaving returns to the same seat, already updated.
+          */}
+          <Screen open={editor !== null}>
+            {editor?.kind === "about" ? (
+              <AboutForm onDone={() => setEditor(null)} />
+            ) : editor?.kind === "category" ? (
+              <CategoryForm
+                category={editor.category}
+                onDone={() => setEditor(null)}
+              />
+            ) : null}
+          </Screen>
 
 
           <Screen open={top === "profile"}>

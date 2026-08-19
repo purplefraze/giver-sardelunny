@@ -194,7 +194,13 @@ function Index() {
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
-        <Onboarding onDone={() => setEntered(true)} />
+        <Onboarding
+          onDone={() => {
+            /* The 50 sparks kept from onboarding become a REAL balance, once. */
+            myProfileStore.seedSparks();
+            setEntered(true);
+          }}
+        />
       ) : (
 
 

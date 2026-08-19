@@ -268,11 +268,22 @@ function Index() {
                 label: "",
                 panelTitle: isProfile ? "latest activity" : content.mine.title,
                 panelBody: null,
-                onPress: () =>
-                  setEditor({
-                    kind: "category",
-                    category: isProfile ? (latest?.type ?? "wish") : mode,
-                  }),
+                /*
+                  AN EMPTY MIDDLE LOOP NEVER ASSUMES A WISH. With no activity
+                  yet, it asks the question and offers the four worlds.
+                */
+                onPress: () => {
+                  if (isProfile && !latest) {
+                    setChoose(true);
+                    return;
+                  }
+                  if (isProfile) {
+                    openWorld(latest!.type);
+                    return;
+                  }
+                  setEditor({ kind: "category", category: mode });
+                },
+
                 render: (anchor) =>
                   profileLoop({
                     anchor,

@@ -68,6 +68,17 @@ const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
   tertiary: "detail",
 };
 
+/**
+ * How wide a line may run before wrapping, per loop. The bottom loop's stack is
+ * tall, so its lines sit where the circle is already narrowing: they wrap early
+ * rather than reach for the widest chord.
+ */
+const WRAP_FACTOR: Record<RegionKey, number> = {
+  top: PROFILE_WRAP_FACTOR,
+  middle: PROFILE_WRAP_FACTOR,
+  bottom: 1.42,
+};
+
 export function profileLoop({
   region,
   blocks,
@@ -85,10 +96,17 @@ export function profileLoop({
 
   const fill = PROFILE_FILL[region];
 
+  /**
+   * VERTICAL BREATHING ROOM. The bottom loop carries three label+answer pairs,
+   * so the whole group is held to a smaller share of the loop's height, well
+   * clear of the S-curve above and the stroke below.
+   */
+  const height = region === "bottom" ? 2.0 : 1.8;
+
   const build = (step: number) => {
-    const max = wrapWidth(region, PROFILE_WRAP_FACTOR, inset) * fill;
-    const gap = token.answer * step * 0.1;
-    const lead = token.answer * step * 0.38;
+    const max = wrapWidth(region, WRAP_FACTOR[region], inset) * fill;
+    const gap = token.answer * step * 0.06;
+    const lead = token.answer * step * 0.24;
     return blocks.flatMap((block, i) => {
       const key = block.role ?? "primary";
       const role = AS_ROLE[key];
@@ -110,11 +128,12 @@ export function profileLoop({
   // The stack is measured against the loop's TRUE negative space (fill), so a
   // long phrase uses the wide middle of the circle instead of shrinking
   // everything around it.
-  let placed = layoutStack(build(1), region, inset, fill);
+  let placed = layoutStack(build(1), region, inset, fill, height);
   for (const step of PROFILE_STEPS) {
-    placed = layoutStack(build(step), region, inset, fill);
+    placed = layoutStack(build(step), region, inset, fill, height);
     if (placed.fits) break;
   }
+
 
   return (
     <>

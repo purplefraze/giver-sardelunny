@@ -80,8 +80,26 @@ export function wrapLines(text: string, size: number, max: number, role: LoopTyp
     }
   }
   if (line) lines.push(line);
-  return lines;
+  return balance(lines, size, max, role);
 }
+
+/**
+ * A greedy wrap leaves the last line short ("no weekends allowed" -> "no
+ * weekends" / "allowed"). When moving a word down makes the two lines more
+ * even AND still fits, prefer the balanced break — never an orphan.
+ */
+function balance(lines: string[], size: number, max: number, role: LoopTypeRole) {
+  if (lines.length !== 2) return lines;
+  const words = lines[0]!.split(" ");
+  if (words.length < 2) return lines;
+  const first = words.slice(0, -1).join(" ");
+  const second = `${words[words.length - 1]} ${lines[1]}`;
+  if (widthOf(second, size, role) > max) return lines;
+  const before = Math.abs(widthOf(lines[0]!, size, role) - widthOf(lines[1]!, size, role));
+  const after = Math.abs(widthOf(first, size, role) - widthOf(second, size, role));
+  return after < before ? [first, second] : lines;
+}
+
 
 export type LaidOutRow = {
   text: string;
@@ -116,6 +134,11 @@ export function layoutStack(
    * type is allowed to use the loop's true width.
    */
   fill = 1,
+  /**
+   * How much of the safe circle's DIAMETER the stack's total height may use.
+   * Below 2 it leaves breathing room above and below the whole group.
+   */
+  heightFactor = 1.9,
 ): { rows: LaidOutRow[]; fits: boolean } {
   const radius = LOOP_SAFE_RADIUS[region] * inset;
   const total = rows.reduce(
@@ -125,7 +148,8 @@ export function layoutStack(
 
   let y = -total / 2;
   const placed: LaidOutRow[] = [];
-  let fits = total <= radius * 1.9;
+  let fits = total <= radius * heightFactor;
+
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i]!;
     if (i > 0) y += row.gap ?? 0;

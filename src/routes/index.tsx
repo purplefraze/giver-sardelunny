@@ -314,6 +314,9 @@ function Index() {
             }}
           />
 
+          {/* "+10 SPARKS ✨" — quick recognition, never a reward screen. */}
+          <SparkFlash />
+
           {/*
             THE QUIET WAY BACK TO THE EXPLANATION. Nothing shouts; one small
             word in the corner replays the world's intro on demand.

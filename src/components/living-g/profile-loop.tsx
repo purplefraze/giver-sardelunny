@@ -101,6 +101,7 @@ export function profileLoop({
         size,
         role,
         gap: i === 0 && j === 0 ? 0 : j === 0 && block.lead ? lead : gap,
+        ...(block.fill ? { fill: block.fill } : {}),
       }));
     });
   };

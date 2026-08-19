@@ -68,6 +68,17 @@ const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
   tertiary: "detail",
 };
 
+/**
+ * How wide a line may run before wrapping, per loop. The bottom loop's stack is
+ * tall, so its lines sit where the circle is already narrowing: they wrap early
+ * rather than reach for the widest chord.
+ */
+const WRAP_FACTOR: Record<RegionKey, number> = {
+  top: PROFILE_WRAP_FACTOR,
+  middle: PROFILE_WRAP_FACTOR,
+  bottom: 1.16,
+};
+
 export function profileLoop({
   region,
   blocks,
@@ -93,7 +104,7 @@ export function profileLoop({
   const height = region === "bottom" ? 1.5 : 1.8;
 
   const build = (step: number) => {
-    const max = wrapWidth(region, PROFILE_WRAP_FACTOR, inset) * fill;
+    const max = wrapWidth(region, WRAP_FACTOR[region], inset) * fill;
     const gap = token.answer * step * 0.06;
     const lead = token.answer * step * 0.24;
     return blocks.flatMap((block, i) => {

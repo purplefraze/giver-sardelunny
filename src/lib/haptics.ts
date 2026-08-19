@@ -211,16 +211,16 @@ export function hapticsReport() {
   const ios = isIOS();
 
   let verdict: string;
-  if (route === "capacitor") verdict = "native taptic engine — full haptics.";
-  else if (route === "custom") verdict = "native wrapper bridge — full haptics.";
-  else if (route === "vibrate") verdict = "android motor buzz — you should feel every event.";
+  if (route === "capacitor") verdict = "native taptic engine — full haptics";
+  else if (route === "custom") verdict = "native wrapper bridge — full haptics";
+  else if (route === "vibrate") verdict = "android motor buzz — you should feel every event";
   else if (route === "ios-switch" && frame)
-    verdict = "iphone safari inside a preview frame — no haptics possible here. add to home screen, or use the native build.";
+    verdict = "iphone safari inside a preview frame — no haptics possible here. add to home screen, or use the native build";
   else if (route === "ios-switch" && !standalone)
-    verdict = "iphone safari — ios gives web pages no vibration api. only ios 18+ may answer the switch tick; the native build is the real fix.";
+    verdict = "iphone safari — ios gives web pages no vibration api. only ios 18+ may answer the switch tick; the native build is the real fix";
   else if (route === "ios-switch")
-    verdict = "iphone, home screen — trying the ios switch tick. faint or silent is expected; the native build is the real fix.";
-  else verdict = "no haptic hardware on this device — nothing to feel.";
+    verdict = "iphone, home screen — trying the ios switch tick. faint or silent is expected; the native build is the real fix";
+  else verdict = "no haptic hardware on this device — nothing to feel";
 
   return { route, frame, standalone, ios, verdict };
 }

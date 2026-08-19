@@ -190,6 +190,32 @@ export function EarSelector({
   /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
   const dragRef = useRef<number | null>(null);
 
+  /**
+   * MY SPARKS ARE NEVER ON DISPLAY. A deliberate press and hold on MY OWN top
+   * loop breathes the balance into the negative space beside it; the instant my
+   * finger lifts it is gone again, and the hold does NOT open the profile.
+   */
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const held = useRef(false);
+  const startPeek = () => {
+    if (sparks === undefined) return;
+    held.current = false;
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+    peekTimer.current = setTimeout(() => {
+      held.current = true;
+      buzz(8);
+      setPeek(true);
+    }, 380);
+  };
+  const stopPeek = () => {
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+    setPeek(false);
+  };
+  useEffect(() => () => {
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+  }, []);
+
   /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
 
@@ -278,8 +304,11 @@ export function EarSelector({
 
   const end = () => {
     const g = gesture.current;
+    const wasHeld = held.current;
+    stopPeek();
+    held.current = false;
     if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
-    else if (g && !g.moved) onTap?.();
+    else if (g && !g.moved && !wasHeld) onTap?.();
     gesture.current = null;
     dragRef.current = null;
     setDrag(null);
@@ -431,18 +460,18 @@ export function EarSelector({
       */}
       {sparks !== undefined ? (
         <text
-          x={ear.x - Math.sin(angle) * (EAR_GEOMETRY.outerR + 52)}
-          y={ear.y + Math.cos(angle) * (EAR_GEOMETRY.outerR + 52)}
+          x={ear.x - Math.sin(angle) * (EAR_GEOMETRY.outerR + 46)}
+          y={ear.y + Math.cos(angle) * (EAR_GEOMETRY.outerR + 46)}
           textAnchor="middle"
           dominantBaseline="middle"
           fill="var(--giver-generosity)"
           className="font-black lowercase"
           pointerEvents="none"
           style={{
-            fontSize: 34,
-            letterSpacing: "0.06em",
-            opacity: dragging ? 0 : 0.9,
-            transition: "opacity 180ms ease-out",
+            fontSize: 22,
+            letterSpacing: "0.14em",
+            opacity: peek && !dragging ? 0.7 : 0,
+            transition: "opacity 160ms ease-out",
           }}
         >
           {sparks} sparks
@@ -495,6 +524,7 @@ export function EarSelector({
           e.stopPropagation();
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
+          startPeek();
           // LOCKED: the seat only STATES the mode; it cannot be dragged.
           if (locked) return;
           (e.target as SVGElement).setPointerCapture?.(e.pointerId);
@@ -508,7 +538,12 @@ export function EarSelector({
           const move = angleFrom(e);
           if (!move) return;
           const g = gesture.current;
-          if (g && !g.moved && dist(move.point, g.start) > 14) g.moved = true;
+          if (g && !g.moved && dist(move.point, g.start) > 14) {
+            g.moved = true;
+            /* A drag is a mode change, not a peek. */
+            stopPeek();
+            held.current = false;
+          }
           dragRef.current = move.angle;
           setDrag(move.angle);
           if (!g?.moved) return;

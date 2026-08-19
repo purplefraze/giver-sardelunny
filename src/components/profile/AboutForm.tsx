@@ -80,6 +80,41 @@ export function AboutForm({
           </span>
         </button>
 
+        {/*
+          THE PERMANENT HOME OF MY BALANCES. Sparks and sparkles live here and
+          nowhere else — they are mine, private, and never on display on the
+          Living G itself. Nobody else ever sees these numbers.
+        */}
+        <dl className="mt-12 flex gap-14">
+          <div>
+            <dd
+              className="text-6xl font-black leading-none tracking-[-0.05em]"
+              style={{ color: "var(--giver-generosity)" }}
+            >
+              {me.sparks}
+            </dd>
+            <dt className="mt-2 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
+              sparks
+            </dt>
+          </div>
+          <div>
+            <dd
+              className="text-6xl font-black leading-none tracking-[-0.05em]"
+              style={{ color: "var(--giver-participation)" }}
+            >
+              {me.sparkles}
+            </dd>
+            <dt className="mt-2 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
+              sparkles
+            </dt>
+          </div>
+        </dl>
+        <p className="mt-3 text-[11px] font-black lowercase tracking-[0.3em] opacity-35">
+          private to you
+        </p>
+
+
+
         <div className="mt-12">
           <Field
             label="about me"

@@ -116,105 +116,176 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
 }
 
 /**
- * Giver, speaking — and then handing over. The scripted words end holding "spark
- * change"; from that moment the lesson becomes PHYSICAL: a spark is released at
- * the middle loop's opening and travels the G's own path (it can be dragged, or
- * it will travel on its own). When it lands, the green resolves outward from
- * where it landed, and only then does Giver make the invitation.
+ * THE OPENING — ONE CONTINUOUS SHOT, never a stack of slides.
+ *
+ *   word   the composition reads as GIVER: the Living G IS the g
+ *   zoom   "iver" collapses into the spark while the camera flies into the
+ *          very same G until it reaches its canonical full-screen size
+ *   auto   the spark travels the G's own stroke, bottom loop -> middle loop
+ *   words  giver / kindness is currency / here's 100 sparks / 50 + 50
+ *   drag   the spark is handed over: the user walks it along the rail
+ *   green  arrival, haptic, colour change — and straight into the community
  */
+type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
+
+/** The camera: how small the G is while it is only a letter. */
+const LETTER_SCALE = 0.12;
+const LETTER_SHIFT = "-16vw";
+const ZOOM_MS = 900;
+const WORD_HOLD = 850;
+
 function OpeningSequence({ onDone }: { onDone: () => void }) {
-  const { world, copy, last } = useBeats(OPENING);
-  const [phase, setPhase] = useState<"script" | "travel" | "arriving" | "landed">("script");
+  const [phase, setPhase] = useState<Phase>("word");
+  const [i, setI] = useState(0);
+  const [fading, setFading] = useState(false);
   const [green, setGreen] = useState(false);
-  const [cue, setCue] = useState(false);
+  const [arrived, setArrived] = useState(false);
 
-  // The spark is released the moment "50 to give" has left the middle loop.
+  // word -> zoom -> auto: no waiting, no empty screens.
   useEffect(() => {
-    if (!last || phase !== "script") return;
-    const t = setTimeout(() => setPhase("travel"), 320);
-    return () => clearTimeout(t);
-  }, [last, phase]);
-
-  useEffect(() => {
-    if (phase !== "landed") return;
-    const t = setTimeout(() => setCue(true), 1600);
+    if (phase !== "word") return;
+    const t = setTimeout(() => setPhase("zoom"), WORD_HOLD);
     return () => clearTimeout(t);
   }, [phase]);
 
-  const scripted = copy("bottom");
+  useEffect(() => {
+    if (phase !== "zoom") return;
+    const t = setTimeout(() => setPhase("auto"), ZOOM_MS);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // The scripted thoughts: each arrives whole, holds, and hands over.
+  useEffect(() => {
+    if (phase !== "words") return;
+    const slide = WORDS[i]!;
+    const out = setTimeout(() => setFading(true), slide.hold);
+    const next = setTimeout(() => {
+      if (i + 1 < WORDS.length) {
+        setFading(false);
+        setI(i + 1);
+      } else {
+        setPhase("drag");
+      }
+    }, slide.hold + BEAT_MS);
+    return () => {
+      clearTimeout(out);
+      clearTimeout(next);
+    };
+  }, [phase, i]);
+
+  // The colour change IS the transition into the community. Nothing in between.
+  useEffect(() => {
+    if (!green) return;
+    const t = setTimeout(onDone, 220);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [green]);
+
+  const slide = phase === "words" ? WORDS[i]! : undefined;
+  const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
+    lines ? { lines, plan: lines, scale, opacity: fading ? 0 : 1 } : undefined;
+
+  const middle: LoopCopy | undefined =
+    phase === "drag"
+      ? { lines: ["drag"], plan: ["drag"], scale: BRAND, opacity: arrived ? 0 : 1 }
+      : say(slide?.middle, BRAND);
+
   const bottom: LoopCopy | undefined =
-    phase === "landed"
+    phase === "drag"
       ? {
-          lines: ["and make", "someone's day!"],
-          plan: ["and make", "someone's day!"],
-          scale: PAYOFF.bottom,
-          opacity: 1,
+          lines: ["sparks change."],
+          plan: ["sparks change."],
+          scale: PHRASE,
+          opacity: arrived ? 0 : 1,
         }
-      : phase === "arriving" && scripted
-        ? { ...scripted, opacity: 0 }
-        : scripted;
+      : say(slide?.bottom, PHRASE);
+
+  const small = phase === "word";
 
   return (
     <IntroG
-      world={green ? "gift" : world}
-      top={copy("top")}
-      middle={copy("middle")}
-      bottom={bottom}
-      {...(phase !== "script"
-        ? {
-            overlay: (
-              <SparkJourney
-                onArrive={() => {
-                  setPhase("arriving");
-                  // The phrase it replaces is allowed to leave first.
-                  setTimeout(() => setPhase("landed"), BEAT_MS);
-                }}
-                onGreen={() => setGreen(true)}
-              />
-            ),
-          }
-        : {})}
+      world={green ? "gift" : "welcome"}
+      {...(middle ? { middle } : {})}
+      {...(bottom ? { bottom } : {})}
+      stage={{
+        transformOrigin: "50% 50%",
+        transform: small
+          ? `translate(${LETTER_SHIFT}, 0) scale(${LETTER_SCALE})`
+          : "translate(0, 0) scale(1)",
+        transition: `transform ${ZOOM_MS}ms cubic-bezier(0.22,1,0.36,1)`,
+      }}
+      {...(phase === "auto"
+        ? { overlay: <SparkJourney mode="auto" onArrive={() => setPhase("words")} /> }
+        : phase === "drag"
+          ? {
+              overlay: (
+                <SparkJourney
+                  mode="drag"
+                  onArrive={() => setArrived(true)}
+                  onGreen={() => setGreen(true)}
+                />
+              ),
+            }
+          : {})}
     >
-      <LetsGiver show={cue} onClick={onDone} />
+      <Wordmark phase={phase} />
     </IntroG>
   );
 }
 
 /**
- * THE GIVER CALL TO ACTION. Not a button, not a pill, not an arrow — just the
- * words, in Giver's own language: let's giver.
+ * [LIVING G]IVER. The letters belong to the same word as the artwork, and when
+ * the camera pushes in they COLLAPSE INTO THE SPARK rather than disappearing —
+ * one object becoming another, never a cut.
  */
-function LetsGiver({ show, onClick }: { show: boolean; onClick: () => void }) {
-  return (
-    <div
-      // A quiet next step in the BOTTOM-RIGHT corner, outside the artwork.
-      className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-end pr-7"
-      // The stage reserves this exact strip, so the words never cross the stroke.
-      style={{
-        height: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})`,
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
-    >
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        className="px-1 text-[5.2vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
-        style={{
-          // The bright G green, never the deep furniture tint.
-          color: "var(--world-g)",
-          opacity: show ? 1 : 0,
-          pointerEvents: show ? "auto" : "none",
-        }}
-      >
+function Wordmark({ phase }: { phase: Phase }) {
+  const show = phase === "word" || phase === "zoom";
+  if (!show) return null;
+  const holding = phase === "word";
+  const letters = ["i", "v", "e", "r"];
 
-        let&apos;s giver
-      </button>
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+      <span
+        className="flex items-center font-black lowercase leading-none tracking-[-0.05em]"
+        style={{ fontSize: "12dvh", transform: "translateX(6vw)", color: "var(--world-g)" }}
+      >
+        {letters.map((l, k) => (
+          <span
+            key={l + k}
+            className="inline-block"
+            style={{
+              // Every letter travels to the SAME point — the spark — shrinking
+              // as it goes, so four letters read as one bead forming.
+              transform: holding
+                ? "translate(0,0) scale(1)"
+                : `translate(calc(${LETTER_SHIFT} - ${(letters.length - k) * 2.2}rem), 0) scale(0.12)`,
+              opacity: holding ? 1 : 0,
+              transition: `transform ${ZOOM_MS}ms cubic-bezier(0.5,0,0.2,1) ${k * 40}ms, opacity ${ZOOM_MS}ms ease-in ${k * 40}ms`,
+            }}
+          >
+            {l}
+          </span>
+        ))}
+      </span>
+
+      {/* THE BEAD the letters become. It hands over to the real spark on the G. */}
+      <span
+        className="absolute rounded-full"
+        style={{
+          width: "3.6vh",
+          height: "3.6vh",
+          left: `calc(50% + ${LETTER_SHIFT})`,
+          background: "var(--giver-generosity)",
+          opacity: holding ? 0 : 1,
+          transform: holding ? "scale(0.4)" : "scale(1)",
+          transition: `opacity ${ZOOM_MS * 0.6}ms ease-out, transform ${ZOOM_MS}ms cubic-bezier(0.22,1,0.36,1)`,
+        }}
+      />
     </div>
   );
 }
+
 
 
 

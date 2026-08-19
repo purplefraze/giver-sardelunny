@@ -282,6 +282,8 @@ export const itemsStore = {
     /** TRADES ONLY: the two sides, stored separately, read as one line. */
     parts?: { offer: string; want: string },
     note?: string,
+    /** PHOTOS AND THE BORROW/LEND SIDE ride on the SAME underlying record. */
+    extra?: { photos?: string[]; side?: BorrowSide },
   ): Item | null {
     const t = text.trim().slice(0, ACTIVITY_MAX);
     if (!t) return null;
@@ -291,6 +293,7 @@ export const itemsStore = {
     );
     if (mine.length >= MAX_ACTIVE[type]) return null;
     const now = Date.now();
+    const photos = (extra?.photos ?? []).slice(0, MAX_PHOTOS);
     const item: Item = {
       id: uid(),
       ownerId,
@@ -300,6 +303,8 @@ export const itemsStore = {
         ? { offer: parts.offer.trim(), want: parts.want.trim() }
         : {}),
       ...(note && note.trim() ? { note: note.trim().slice(0, NOTE_MAX) } : {}),
+      ...(photos.length ? { photos } : {}),
+      ...(type === "borrow" ? { side: extra?.side ?? "borrow" } : {}),
       status: "active",
       priority: mine.length,
       published: true,
@@ -310,6 +315,24 @@ export const itemsStore = {
     commit({ ...s, items: [...s.items, item] });
     return item;
   },
+
+  /** ATTACH A PHOTO TO THE REAL ITEM — never to a separate photo post. */
+  addPhoto(id: string, dataUrl: string) {
+    const s = ensure();
+    const item = s.items.find((i) => i.id === id);
+    if (!item) return;
+    const photos = [...(item.photos ?? []), dataUrl].slice(0, MAX_PHOTOS);
+    itemsStore.patch(id, { photos });
+  },
+
+  removePhoto(id: string, index: number) {
+    const s = ensure();
+    const item = s.items.find((i) => i.id === id);
+    if (!item) return;
+    const photos = (item.photos ?? []).filter((_, i) => i !== index);
+    itemsStore.patch(id, { photos });
+  },
+
 
 
   /** EDIT ONE ITEM — every view that references it updates with it. */

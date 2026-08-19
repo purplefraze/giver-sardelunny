@@ -128,7 +128,8 @@ export function MemberExample({
 
   return (
     <div
-      data-world={member.world}
+      /* EVERY SAMPLE PROFILE IS THE COMMUNITY MEETING ME: yellow, all four. */
+      data-world="community"
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >

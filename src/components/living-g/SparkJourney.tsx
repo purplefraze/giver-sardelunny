@@ -73,11 +73,13 @@ export function SparkJourney({
   useEffect(() => {
     const path = rail.current;
     if (!path) return;
-    const total = path.getTotalLength();
+    const len = path.getTotalLength();
+    total.current = len;
     const out: Sample[] = [];
-    for (let i = 0; i <= 300; i += 1) {
-      const s = i / 300;
-      const p = path.getPointAtLength(s * total);
+    const N = 1200;
+    for (let i = 0; i <= N; i += 1) {
+      const s = i / N;
+      const p = path.getPointAtLength(s * len);
       out.push({ x: p.x, y: p.y, u: s });
     }
     samples.current = out;

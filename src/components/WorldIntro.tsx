@@ -82,6 +82,19 @@ const BEATS: Record<IntroTopic, string[][]> = {
       "what would you like to borrow?",
     ],
   ],
+  sparks: [
+    [
+      "sparks are recognition.",
+      "not money. not points. not payment between people.",
+      "giver gives you sparks when you are generous.",
+    ],
+    [
+      "every give that reaches another giver: +10 sparks. ✨",
+      "every wish of someone else’s you grant: +10 sparks. ✨",
+      "every wish you make costs 10 sparks.",
+      "so generosity is what lets you ask.",
+    ],
+  ],
 };
 /** One idea per line, sized by how much of it there is. */
 const size = (line: string) =>
@@ -92,15 +105,19 @@ const size = (line: string) =>
 export function WorldIntro({
   category,
   onDone,
+  help = false,
 }: {
-  category: Category;
+  category: IntroTopic;
   onDone: () => void;
+  /** Opened voluntarily from help: explain, then simply close. */
+  help?: boolean;
 }) {
   const beats = BEATS[category];
   const [beat, setBeat] = useState(0);
   const lines = beats[beat] ?? [];
   const last = beat === beats.length - 1;
-  const colour = `var(--me-${category})`;
+  const colour =
+    category === "sparks" ? "var(--giver-me)" : `var(--me-${category})`;
 
   const next = () => {
     buzz();
@@ -112,7 +129,7 @@ export function WorldIntro({
     <button
       type="button"
       onClick={next}
-      data-world={category}
+      data-world={category === "sparks" ? "profile" : category}
       className="relative flex h-full w-full flex-col justify-center px-7 pb-24 pt-16 text-left"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
@@ -146,8 +163,13 @@ export function WorldIntro({
 
 
       <span className="absolute inset-x-7 bottom-10 text-[11px] font-black lowercase tracking-[0.3em] opacity-45">
-        {last ? `tap for my ${CATEGORY_PLURAL[category]}` : "tap to continue"}
+        {!last
+          ? "tap to continue"
+          : help || category === "sparks"
+            ? "tap to close"
+            : `tap for my ${CATEGORY_PLURAL[category]}`}
       </span>
     </button>
   );
 }
+

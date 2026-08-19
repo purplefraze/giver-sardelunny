@@ -486,11 +486,13 @@ function Spoken({
   show,
   className,
   style,
+  duration = 780,
   children,
 }: {
   show: boolean;
   className?: string;
   style?: React.CSSProperties;
+  duration?: number;
   children: React.ReactNode;
 }) {
   return (
@@ -498,7 +500,7 @@ function Spoken({
       className={cn("block", className)}
       style={{
         opacity: show ? 1 : 0,
-        transition: "opacity 780ms cubic-bezier(0.32,0,0.24,1)",
+        transition: `opacity ${duration}ms cubic-bezier(0.32,0,0.24,1)`,
         ...style,
       }}
     >

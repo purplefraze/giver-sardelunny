@@ -196,6 +196,8 @@ function Index() {
    * the G goes quiet for good — a press-and-hold brings a label back.
    */
   const [teach, setTeach] = useState(true);
+  /** A PERSISTED fact about this person: the G has already taught itself. */
+  const tutorialSeen = useTutorialSeen();
 
   /**
    * INSTRUCTIONAL COPY IS A CUE, NEVER FURNITURE — AND NEVER MODE CONTENT.
@@ -205,10 +207,19 @@ function Index() {
    */
   useEffect(() => {
     if (!entered) return;
+    if (tutorialSeenStore.get()) {
+      setTeach(false);
+      return;
+    }
     setTeach(true);
-    const t = setTimeout(() => setTeach(false), 4200);
+    const t = setTimeout(() => {
+      setTeach(false);
+      tutorialSeenStore.markSeen();
+    }, 4200);
     return () => clearTimeout(t);
   }, [entered]);
+
+
 
 
   /** ONE source of truth for who I am and what I have going on. */

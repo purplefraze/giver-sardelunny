@@ -1,5 +1,7 @@
 import { BackArrow } from "@/components/BackArrow";
-import { connectionsOf, type Member } from "@/data/giver";
+import { connectionsOf, memberById, type Member } from "@/data/giver";
+import { earnedConnectionIds } from "@/data/connections";
+import { useConnections } from "@/hooks/use-connections";
 import { ITEM_TYPES, ME_ID, boostWeight, itemLine, myItems } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
 import { useItems } from "@/hooks/use-items";

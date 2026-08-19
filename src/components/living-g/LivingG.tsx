@@ -178,6 +178,12 @@ export function LivingG({
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
+   * LOGO WEIGHT ONLY: a same-colour outer stroke drawn before the fill, so the
+   * canonical silhouette gains visual heft without redrawing its geometry.
+   */
+  const heavy = weight === "heavy" ? ({ stroke: "var(--world-g)", strokeWidth: 80, paintOrder: "stroke fill", strokeLinejoin: "round" } as const) : undefined;
+
+  /**
    * ONE ACTIVE STATE AT A TIME. The instant the loops start holding a new state,
    * every in-flight cue, hold and swell of the previous one is cancelled — no
    * stale fade can carry a dead state's words into the new one.

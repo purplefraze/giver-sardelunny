@@ -38,6 +38,7 @@ export function SparkJourney({
   const uid = useId().replace(/:/g, "");
   const rail = useRef<SVGPathElement | null>(null);
   const samples = useRef<Sample[]>([]);
+  const total = useRef(1);
   const grabbed = useRef(false);
   const marks = useRef(0);
   /** Live progress, so the drag can stay local without a stale closure. */

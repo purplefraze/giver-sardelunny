@@ -70,7 +70,10 @@ function ride(
 const MID_FROM = 52; // lower-right of the bowl: where the journey begins
 const MID_TO = -298; // = 62°, the spine junction, one full turn later
 const BOT_FROM = -84; // where the spine meets the lower loop
-const BOT_TO = -48; // upper-right of the lower loop: the destination
+// Nearly the whole circumference of the lower loop: from the entrance, round
+// the top, down the left, across the bottom, up the right, to the upper-right
+// destination (-408 = -48 one full turn later).
+const BOT_TO = -408;
 
 
 function build() {

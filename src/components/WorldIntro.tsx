@@ -9,9 +9,16 @@ import { buzz } from "@/lib/haptics";
  * Fast by design: a few short beats, each a single tap away. No word-by-word
  * animation, no holds, no blank screens. It is introductory UI ONLY and never
  * touches items, community content or the profile.
+ *
+ * The SAME screen serves the voluntary help area (`help`), where it explains
+ * and then simply closes — it never sets a first-time flag and never pushes
+ * anyone into a form.
  */
 
-const BEATS: Record<Category, string[][]> = {
+export type IntroTopic = Category | "sparks";
+
+const BEATS: Record<IntroTopic, string[][]> = {
+
   wish: [
     [
       "time to make a wish.",

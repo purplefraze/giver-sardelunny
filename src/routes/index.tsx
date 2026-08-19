@@ -122,6 +122,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  /* Preview fixtures must exist before the first store snapshots are read;
+     seeding in an effect briefly rendered an obsolete blank/onboarding state. */
+  seedDevelopmentProfileOnce();
   const lifecycle = useLifecycle();
   const [sessionEntered, setSessionEntered] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
@@ -232,10 +235,6 @@ function Index() {
   const me = useMyProfile();
   const items = useItems();
   const links = useConnections();
-
-  useEffect(() => {
-    seedDevelopmentProfileOnce();
-  }, []);
 
   /* Migrate an existing completed prototype profile into the explicit lifecycle. */
   useEffect(() => {

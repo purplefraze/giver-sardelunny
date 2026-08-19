@@ -1,0 +1,255 @@
+import { useState } from "react";
+import { BackArrow } from "@/components/BackArrow";
+import { memberById } from "@/data/giver";
+import { ACTIVITY_FILL, ME_ID, itemLine } from "@/data/items";
+import {
+  MESSAGE_MAX,
+  STATE_WORD,
+  canClaim,
+  connectionsStore,
+  generousIds,
+  messagesOf,
+  otherParty,
+} from "@/data/connections";
+import { useConnections } from "@/hooks/use-connections";
+import { useItems } from "@/hooks/use-items";
+import { buzz } from "@/lib/haptics";
+
+/**
+ * THE CONNECTION LIVES ON THE S-CURVE.
+ *
+ * In the Living G, the two loops are the two people and the S between them is
+ * what passes between them — so a conversation is drawn on that curve, and it
+ * PERSISTS: leaving this screen never ends it.
+ *
+ * NOTHING HERE COMPLETES ANYTHING ON ITS OWN. One person can only CLAIM that it
+ * happened; the other is asked plainly, and only their yes settles the sparks.
+ */
+export function Conversation({
+  connectionId,
+  onClose,
+}: {
+  connectionId: string;
+  onClose: () => void;
+}) {
+  const links = useConnections();
+  const items = useItems();
+  const [draft, setDraft] = useState("");
+  const [calling, setCalling] = useState(false);
+
+  const c = links.connections.find((x) => x.id === connectionId);
+  const item = c ? items.items.find((i) => i.id === c.itemId) : undefined;
+
+  if (!c)
+    return (
+      <div
+        data-world="connection"
+        className="relative flex h-full w-full items-center justify-center px-7"
+        style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
+      >
+        <BackArrow onClick={onClose} />
+        <p className="text-[9vw] font-black lowercase">no connection here.</p>
+      </div>
+    );
+
+  const them = memberById(otherParty(c, ME_ID));
+  const messages = messagesOf(links, c.id);
+  const iClaimed = c.claimedBy === ME_ID;
+  const awaitingMe = c.state === "awaiting" && !iClaimed;
+  const earns = generousIds(c).includes(ME_ID);
+
+  const send = () => {
+    if (!draft.trim()) return;
+    connectionsStore.send(c.id, draft, ME_ID);
+    setDraft("");
+    buzz();
+  };
+
+  return (
+    <div
+      data-world="connection"
+      className="relative flex h-full w-full flex-col overflow-hidden px-6 pb-6 pt-16"
+      style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
+    >
+      <BackArrow onClick={onClose} label="back" />
+
+      {/* THE CURVE ITSELF: the piece of the Living G that joins two people. */}
+      <svg
+        viewBox="0 0 120 60"
+        className="pointer-events-none absolute right-5 top-5 h-10 w-20 opacity-45"
+        aria-hidden="true"
+      >
+        <path
+          d="M8 52 C 44 52, 40 8, 78 8"
+          fill="none"
+          stroke="var(--world-g)"
+          strokeWidth={9}
+          strokeLinecap="round"
+        />
+      </svg>
+
+      <span className="text-[11px] font-black lowercase tracking-[0.3em] opacity-60">
+        {them ? them.username : "someone"} · {STATE_WORD[c.state]}
+      </span>
+      <h1
+        className="mt-2 text-[8vw] font-black lowercase leading-[0.9] tracking-[-0.045em]"
+        style={{ color: ACTIVITY_FILL[c.type] }}
+      >
+        {item ? itemLine(item) : c.type}
+      </h1>
+
+      {/* THE CONVERSATION. It is coordination, not a completion signal. */}
+      <ul className="mt-6 flex-1 space-y-4 overflow-y-auto pb-4">
+        {messages.length === 0 ? (
+          <li className="text-lg font-medium lowercase opacity-45">
+            say hello. work out the where and the when.
+          </li>
+        ) : null}
+        {messages.map((m) => (
+          <li
+            key={m.id}
+            className={m.fromId === ME_ID ? "text-right" : "text-left"}
+          >
+            <span
+              className="inline-block max-w-[85%] text-lg font-medium lowercase leading-snug"
+              style={{
+                color:
+                  m.fromId === ME_ID ? "var(--giver-me)" : "var(--giver-others)",
+              }}
+            >
+              {m.text}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {/* BORROWING HAS A CYCLE: out, then back. Neither one is a completion. */}
+      {c.type === "borrow" && (c.state === "connecting" || c.state === "disputed") ? (
+        <div className="mb-3 flex gap-5 text-[11px] font-black lowercase tracking-[0.24em]">
+          <button
+            type="button"
+            onClick={() =>
+              connectionsStore.setBorrowStage(c.id, "handedOver", !c.handedOver)
+            }
+            className={c.handedOver ? "opacity-100" : "opacity-40"}
+          >
+            handed over
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              connectionsStore.setBorrowStage(c.id, "returned", !c.returned)
+            }
+            className={c.returned ? "opacity-100" : "opacity-40"}
+          >
+            returned
+          </button>
+        </div>
+      ) : null}
+
+      {/* THE TWO-SIDED ENDING. */}
+      {c.state === "verified" ? (
+        <p className="mb-4 text-[6vw] font-black lowercase leading-[0.95]" style={{ color: "var(--giver-generosity)" }}>
+          you both verified it. {earns ? "sparks settled." : "thank you."}
+        </p>
+      ) : awaitingMe ? (
+        <div className="mb-4">
+          <p className="text-[7vw] font-black lowercase leading-[0.92]">
+            did this actually happen?
+          </p>
+          <div className="mt-3 flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                connectionsStore.respond(c.id, true, ME_ID);
+              }}
+              style={{ color: "var(--giver-generosity)" }}
+            >
+              yes, it happened
+            </button>
+            <button
+              type="button"
+              onClick={() => connectionsStore.respond(c.id, false, ME_ID)}
+              className="opacity-55"
+            >
+              not yet
+            </button>
+          </div>
+        </div>
+      ) : c.state === "awaiting" ? (
+        <p className="mb-4 text-[13px] font-medium lowercase opacity-55">
+          waiting for {them ? them.username : "them"} to confirm it happened.
+        </p>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-[13px] font-black lowercase tracking-[0.24em]">
+          <button
+            type="button"
+            disabled={!canClaim(c)}
+            onClick={() => {
+              buzz();
+              connectionsStore.claimComplete(c.id, ME_ID);
+            }}
+            className="disabled:opacity-25"
+            style={{ color: "var(--giver-generosity)" }}
+          >
+            this happened
+          </button>
+          <button
+            type="button"
+            onClick={() => setCalling(true)}
+            className="opacity-60"
+          >
+            call
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              connectionsStore.cancel(c.id);
+              onClose();
+            }}
+            className="opacity-45"
+          >
+            it didn’t work out
+          </button>
+        </div>
+      )}
+
+      {c.state === "disputed" ? (
+        <p className="mb-3 text-[13px] font-medium lowercase opacity-60">
+          you don’t agree yet. nothing is completed and nothing is paid — keep
+          talking, then try again.
+        </p>
+      ) : null}
+
+      {/* PRIVACY BY DEFAULT: numbers are never exchanged inside giver. */}
+      {calling ? (
+        <p className="mb-3 text-[13px] font-medium lowercase opacity-60">
+          giver connects the call for you — neither of you ever sees the other’s
+          number. calling arrives with the phone build.
+        </p>
+      ) : null}
+
+      {c.state !== "verified" && c.state !== "cancelled" ? (
+        <div className="flex items-end gap-3">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, MESSAGE_MAX))}
+            rows={2}
+            placeholder="say something"
+            className="min-w-0 flex-1 resize-none bg-transparent text-lg font-medium lowercase leading-snug outline-none placeholder:opacity-30"
+            style={{ color: "var(--world-ink)" }}
+          />
+          <button
+            type="button"
+            onClick={send}
+            className="pb-1 text-[12px] font-black lowercase tracking-[0.26em]"
+            style={{ color: "var(--giver-connection)" }}
+          >
+            send
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}

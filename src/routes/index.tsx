@@ -306,13 +306,15 @@ function Index() {
                             },
                             { text: latest.type, role: "tertiary" as const },
                           ]
-                        : /* TRULY EMPTY until real activity exists. */ []
+                      : /* TRULY EMPTY until real activity exists. */ []
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode
                             ? { text: clampField(myMode), role: "primary" as const }
                             : { text: `add a ${mode}`, role: "primary" as const },
+                          ...(myMode ? more(me.items[mode].length) : []),
                         ],
+
                   }),
               },
               /*

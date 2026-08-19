@@ -235,7 +235,7 @@ function Index() {
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             identity="giver"
-            active={editor === null && intro === null}
+            active={editor === null && intro === null && !choose && !help}
             earCut
             overlay={
               <EarSelector
@@ -243,9 +243,11 @@ function Index() {
                 onChange={setSeat}
                 seats={SEATS}
                 {...(isProfile && me.photo ? { photo: me.photo } : {})}
+                {...(isProfile ? { word: "my g" } : {})}
                 onTap={() => setEditor({ kind: "about" })}
               />
             }
+
             teach={teach}
             regions={{
               top: {

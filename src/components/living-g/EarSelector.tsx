@@ -160,6 +160,14 @@ export function EarSelector({
   seats?: readonly Seat[];
   /** What the piece SAYS at rest, when the seat's own name is not the word. */
   word?: string;
+  /**
+   * PAST CONNECTIONS. A quiet count riding just outside the photo: proof that
+   * completed gives, granted wishes, trades and borrows sit behind this person.
+   * Never a list — the profile page tells those stories.
+   */
+  badge?: number;
+
+
 
 }) {
 

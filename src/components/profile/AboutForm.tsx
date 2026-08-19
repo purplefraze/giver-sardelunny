@@ -80,13 +80,6 @@ export function AboutForm({
           </span>
         </button>
 
-        <h1 className="mt-12 text-[12vw] font-black lowercase leading-[0.86] tracking-[-0.05em]">
-          let's give 'em
-          <br />
-          something
-          <br />
-          to talk about
-        </h1>
 
         <Field
           label="about me"

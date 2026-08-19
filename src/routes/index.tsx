@@ -280,7 +280,7 @@ function Index() {
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             identity="giver"
-            active={top === null}
+            active={top === null && editor === null && !fullMe}
             earCut
             overlay={
               <EarSelector

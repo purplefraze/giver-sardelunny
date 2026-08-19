@@ -158,6 +158,7 @@ export function LivingG({
   className,
   showLabels = true,
   overlay,
+  contentKey = "",
   earCut = false,
 }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
@@ -169,6 +170,20 @@ export function LivingG({
   const revealed = useRef(false);
   const down = useRef<{ x: number; y: number } | null>(null);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * ONE ACTIVE STATE AT A TIME. The instant the loops start holding a new state,
+   * every in-flight cue, hold and swell of the previous one is cancelled — no
+   * stale fade can carry a dead state's words into the new one.
+   */
+  useEffect(() => {
+    if (cueTimer.current) clearTimeout(cueTimer.current);
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    revealed.current = false;
+    setCue(null);
+    setPressed(null);
+  }, [contentKey]);
+
 
   const release = () => {
     setPressed(null);

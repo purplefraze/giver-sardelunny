@@ -219,7 +219,7 @@ function Index() {
                 mode={seat}
                 onChange={setSeat}
                 seats={SEATS}
-                photo={isProfile && me.photo ? me.photo : undefined}
+                {...(isProfile && me.photo ? { photo: me.photo } : {})}
                 onTap={() => setEditor({ kind: "about" })}
               />
             }

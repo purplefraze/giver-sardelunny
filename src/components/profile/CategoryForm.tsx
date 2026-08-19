@@ -186,7 +186,8 @@ export function CategoryForm({
             <button
               type="button"
               onClick={add}
-              className="text-xl font-black lowercase"
+              disabled={broke}
+              className="text-xl font-black lowercase disabled:opacity-30"
               style={{ color: colour }}
             >
               add

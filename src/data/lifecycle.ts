@@ -19,6 +19,11 @@ function read(): Lifecycle {
 function hydrate() {
   if (!hydrated && typeof window !== "undefined") {
     hydrated = true;
+    /* Preview starts with a completed real-store fixture unless QA explicitly
+       selected another path. Loaded lazily to keep production lifecycle pure. */
+    if (import.meta.env.DEV && !window.localStorage.getItem("giver.dev-state-chosen.v1")) {
+      window.localStorage.setItem(KEY, JSON.stringify({ onboardingCompletedAt: Date.now() }));
+    }
     state = read();
   }
 }

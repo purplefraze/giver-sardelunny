@@ -236,6 +236,8 @@ function Index() {
           {/* THE WORKSPACE — one Living G, always yours. Mode is a state of it. */}
           <World
             world={mode}
+            /* ONE ACTIVE MODE = ONE CLEAN SET OF IN-LOOP TEXT. */
+            contentKey={mode}
             identity="giver"
             active={top === null}
             earCut

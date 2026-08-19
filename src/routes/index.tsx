@@ -34,6 +34,10 @@ import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@
 
 import { World } from "@/components/World";
 import { cn } from "@/lib/utils";
+import { DevControls } from "@/components/DevControls";
+import { lifecycleStore } from "@/data/lifecycle";
+import { seedDevelopmentProfileOnce } from "@/data/dev-fixture";
+import { useLifecycle } from "@/hooks/use-lifecycle";
 
 /**
  * ONE LIVING G, FIVE TOGGLE STATES.
@@ -118,7 +122,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [entered, setEntered] = useState(false);
+  const lifecycle = useLifecycle();
+  const [sessionEntered, setSessionEntered] = useState(false);
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already
@@ -226,6 +231,19 @@ function Index() {
   const me = useMyProfile();
   const items = useItems();
   const links = useConnections();
+
+  useEffect(() => {
+    seedDevelopmentProfileOnce();
+  }, []);
+
+  /* Migrate an existing completed prototype profile into the explicit lifecycle. */
+  useEffect(() => {
+    if (!lifecycle.onboardingCompletedAt && me.built && !import.meta.env.DEV) {
+      lifecycleStore.complete();
+    }
+  }, [lifecycle.onboardingCompletedAt, me.built]);
+
+  const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /** Conversations in motion, and the ones politely waiting on my answer. */
   const openCount = myConnections(links, ME_ID).filter(isOpen).length;
   const waitingOnMe = needsMyAnswer(links, ME_ID).length;
@@ -257,13 +275,15 @@ function Index() {
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
+      <DevControls />
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
           onDone={() => {
             /* The 50 sparks kept from onboarding become a REAL balance, once. */
             myProfileStore.seedSparks();
-            setEntered(true);
+            setSessionEntered(true);
+            setEditor({ kind: "about" });
           }}
         />
       ) : (
@@ -571,7 +591,10 @@ function Index() {
           <Screen open={editor !== null}>
             {editor?.kind === "about" ? (
               <AboutForm
-                onDone={() => setEditor(null)}
+                onDone={() => {
+                  if (!lifecycle.onboardingCompletedAt) lifecycleStore.complete();
+                  setEditor(null);
+                }}
                 onHelp={() => {
                   setEditor(null);
                   setHelp(true);

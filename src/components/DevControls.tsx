@@ -11,7 +11,7 @@ export function DevControls() {
   if (!import.meta.env.DEV) return null;
   const run = (action: () => void) => {
     action();
-    setOpen(false);
+    window.location.reload();
   };
   return (
     <div className="absolute right-2 top-2 z-[100] font-sans">

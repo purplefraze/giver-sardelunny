@@ -67,6 +67,12 @@ export type MyProfile = {
   sparklesAwarded: boolean;
   /** SPARKS: spent to wish, earned from completed generosity. */
   sparks: number;
+  /**
+   * RESERVED, NOT SPENT. A wish holds its 10 sparks until the wish is either
+   * granted-and-verified (they settle) or withdrawn (they come back).
+   * Keyed by the wish's item id, so a reservation always has an owner.
+   */
+  reserved: Record<string, number>;
   /** The onboarding balance lands exactly once. */
   sparksSeeded: boolean;
   /** One key per already-rewarded completed interaction. Never pays twice. */
@@ -84,9 +90,11 @@ type Person = {
   sparkles: number;
   sparklesAwarded: boolean;
   sparks: number;
+  reserved: Record<string, number>;
   sparksSeeded: boolean;
   rewarded: string[];
 };
+
 
 const KEY = "giver.my-profile.v1";
 

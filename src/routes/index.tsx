@@ -246,6 +246,8 @@ function Index() {
   /** Conversations in motion, and the ones politely waiting on my answer. */
   const openCount = myConnections(links, ME_ID).filter(isOpen).length;
   const waitingOnMe = needsMyAnswer(links, ME_ID).length;
+  /** PRIVATE TO ME: how many conversations have something waiting inside. */
+  const unread = unreadCount(links, ME_ID);
 
   /** GIVER = ME. The other four seats are activity worlds. */
   const isProfile = seat === "giver";

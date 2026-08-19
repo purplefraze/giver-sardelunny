@@ -30,7 +30,7 @@ type Block = { text: string; role: "message" | "label" };
  * Word fade: complete words, opacity only, G stationary. Slow and soft — a word
  * should feel like it is gently arriving, never popping in.
  */
-export const LOOP_WORD_MS = 780;
+export const LOOP_WORD_MS = 260;
 
 /** A gentle, almost linear-out curve. No overshoot, no snap. */
 export const LOOP_WORD_EASE = "cubic-bezier(0.32, 0, 0.24, 1)";

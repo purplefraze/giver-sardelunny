@@ -21,7 +21,10 @@ export type LoopCopy = {
  * FADE-OUT duration of a thought that is being replaced — slow enough to feel
  * like a breath, never a cut.
  */
-export const BEAT_MS = 680;
+export const BEAT_MS = 200;
+
+/** World colour keeps its unhurried polish: only the copy rhythm is quick. */
+export const WORLD_MS = 700;
 
 /**
  * One onboarding chapter: the canonical full-screen Living G in a single bold
@@ -83,7 +86,7 @@ export function IntroG({
       style={{
         background: "var(--world-bg)",
         color: "var(--world-ink)",
-        transition: `background-color ${BEAT_MS}ms var(--giver-ease)`,
+        transition: `background-color ${WORLD_MS}ms var(--giver-ease)`,
       }}
       onClick={onAdvance}
     >

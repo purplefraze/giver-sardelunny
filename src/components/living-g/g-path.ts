@@ -46,6 +46,20 @@ export const LOOP_SAFE_RADIUS = {
 } as const;
 
 /**
+ * Measured white opening of the lower loop. Unlike LOOP_SAFE_RADIUS (the
+ * largest conservative circle), this ellipse records the lower loop's real
+ * wider/taller negative space. Typography may read it; artwork may not.
+ */
+export const BOTTOM_LOOP_INTERIOR = {
+  cx: 270,
+  cy: 840,
+  rx: 202,
+  ry: 211,
+  /** Clear paper retained between painted glyphs and the coloured stroke. */
+  inset: 15,
+} as const;
+
+/**
  * TRUE optical centre of each loop's negative space, measured off the canonical
  * path (largest inscribed circle per loop). CONTENT-ONLY: in-loop typography is
  * centred here, while G_ANCHORS keeps owning swell origins and hit bands.

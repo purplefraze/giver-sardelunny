@@ -128,7 +128,9 @@ export const PROFILE_TYPE: Record<
      down through PROFILE_STEPS only when a genuinely long line needs the room —
      so it can never cross or touch the stroke. */
   middle: { answer: 96, label: 40, detail: 60 },
-  bottom: { answer: 84, label: 34, detail: 56 },
+  /* Derived from the lower loop's measured opening, not the smaller middle
+     loop token. The fitter may step these down, but begins at poster scale. */
+  bottom: { answer: 130, label: 42, detail: 64 },
 };
 
 

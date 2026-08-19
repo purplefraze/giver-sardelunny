@@ -85,10 +85,17 @@ export function profileLoop({
 
   const fill = PROFILE_FILL[region];
 
+  /**
+   * VERTICAL BREATHING ROOM. The bottom loop carries three label+answer pairs,
+   * so the whole group is held to a smaller share of the loop's height, well
+   * clear of the S-curve above and the stroke below.
+   */
+  const height = region === "bottom" ? 1.5 : 1.8;
+
   const build = (step: number) => {
     const max = wrapWidth(region, PROFILE_WRAP_FACTOR, inset) * fill;
-    const gap = token.answer * step * 0.1;
-    const lead = token.answer * step * 0.38;
+    const gap = token.answer * step * 0.06;
+    const lead = token.answer * step * 0.24;
     return blocks.flatMap((block, i) => {
       const key = block.role ?? "primary";
       const role = AS_ROLE[key];
@@ -110,11 +117,12 @@ export function profileLoop({
   // The stack is measured against the loop's TRUE negative space (fill), so a
   // long phrase uses the wide middle of the circle instead of shrinking
   // everything around it.
-  let placed = layoutStack(build(1), region, inset, fill);
+  let placed = layoutStack(build(1), region, inset, fill, height);
   for (const step of PROFILE_STEPS) {
-    placed = layoutStack(build(step), region, inset, fill);
+    placed = layoutStack(build(step), region, inset, fill, height);
     if (placed.fits) break;
   }
+
 
   return (
     <>

@@ -6,26 +6,38 @@ import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { profileLoop } from "@/components/living-g/profile-loop";
 import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
-import { memberById, type Member } from "@/data/giver";
+import { memberById, pastConnectionCount, type Member } from "@/data/giver";
+import { ACTIVITY_FILL, splitTrade, tradeText } from "@/data/items";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 /**
- * One community member, shown through the approved full-size Living G.
+ * ONE SAMPLE GIVER, SHOWN THROUGH THE APPROVED FULL-SIZE LIVING G.
  *
- * THE LIVING G SHOWS WHAT'S HAPPENING — never who the person is. The middle
- * loop carries their current WISH (what they need), the bottom loop carries
- * what they are currently OFFERING. Biography lives on the full profile page,
- * reached by tapping their photo. Those two jobs never mix again.
+ * The mental model is fixed for all four onboarding people, in every world:
+ *
+ *   TOP LOOP     their photo + a quiet PAST CONNECTIONS count  (identity/history)
+ *   MIDDLE LOOP  the SELECTED activity world: one primary item + "+N"  (now)
+ *   BOTTOM LOOP  by day / by night / weekends                  (who they are)
+ *
+ * Only the MIDDLE loop changes when the toggle moves. The "+N" is a discovery
+ * mechanic, not a report: tapping it reveals everything they have in that world.
  */
-type Deep = "wish" | "activity" | null;
+type Deep = Mode | "about" | null;
 
-/** How each category reads when the selector rests on it. */
-const OFFER_LABEL: Record<Mode, string> = {
+/** How each world reads when the selector rests on it. */
+const WORLD_LABEL: Record<Mode, string> = {
   wish: "wish",
-  give: "currently offering",
+  give: "giving",
   trade: "trading",
-  borrow: "wants to borrow",
+  borrow: "borrowing",
+};
+
+/** Trades always read as both sides, everywhere they appear. */
+const line = (seat: Mode, text: string) => {
+  if (seat !== "trade") return text;
+  const { offer, want } = splitTrade(text);
+  return tradeText(offer, want);
 };
 
 export function MemberExample({
@@ -60,54 +72,40 @@ export function MemberExample({
     setSeat("give");
   }, [member.id]);
 
-  /** THE MIDDLE LOOP: what do they need right now? */
-  const wishes = member.active.wish;
-  const wish: LoopBlock[] = wishes.length
+  /**
+   * THE MIDDLE LOOP: the SELECTED world only. One primary item in that world's
+   * own colour, then a quiet "+N" that promises there is more behind it.
+   */
+  const items = member.active[seat].map((t) => line(seat, t));
+  const activity: LoopBlock[] = items.length
     ? [
-        { text: "wish", role: "secondary" },
-        { text: wishes[0]!, role: "primary" },
-        ...(wishes.length > 1
+        { text: WORLD_LABEL[seat], role: "secondary" },
+        { text: items[0]!, role: "primary", fill: ACTIVITY_FILL[seat] },
+        ...(items.length > 1
           ? [
               {
-                text: `+${wishes.length - 1} more`,
+                text: `+${items.length - 1}`,
                 role: "tertiary" as const,
                 lead: true,
+                fill: ACTIVITY_FILL[seat],
               },
             ]
           : []),
       ]
     : [
-        { text: "wish", role: "secondary" },
+        { text: WORLD_LABEL[seat], role: "secondary" },
         { text: "nothing right now", role: "tertiary" },
       ];
 
-  /**
-   * THE BOTTOM LOOP: what are they offering? The selector's seat picks the
-   * category; the loop shows the primary item plus a quiet count. Zero items
-   * stays quiet — no "0", no empty count.
-   */
-  const activity: LoopBlock[] = (() => {
-    const items = member.active[seat];
-    const label = OFFER_LABEL[seat];
-    if (!items.length) {
-      return [
-        { text: label, role: "secondary" as const },
-        { text: "nothing right now", role: "tertiary" as const },
-      ];
-    }
-    const blocks: LoopBlock[] = [
-      { text: label, role: "secondary" },
-      { text: items[0]!, role: "primary" },
-    ];
-    if (items.length > 1) {
-      blocks.push({
-        text: `+${items.length - 1} more`,
-        role: "tertiary",
-        lead: true,
-      });
-    }
-    return blocks;
-  })();
+  /** THE BOTTOM LOOP: the person, never their activity. Stable in every world. */
+  const about: LoopBlock[] = [
+    { text: "by day", role: "secondary" },
+    { text: member.byDay, role: "primary" },
+    { text: "by night", role: "secondary", lead: true },
+    { text: member.byNight, role: "primary" },
+    { text: "weekends", role: "secondary", lead: true },
+    { text: member.weekend, role: "primary" },
+  ];
 
   const open = (d: Exclude<Deep, null>) => () => {
     buzz();
@@ -125,6 +123,7 @@ export function MemberExample({
     );
   }
 
+  const revealed = deep && deep !== "about" ? deep : null;
 
   return (
     <div
@@ -133,9 +132,6 @@ export function MemberExample({
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      {/* Navigation lives together, at the bottom. Nothing sits up top. */}
-
-
       {/* Same identity position as giver on Home: quiet, centred, small. */}
       <div className="pointer-events-none absolute inset-x-0 top-7 z-10 flex flex-col items-center gap-1 px-8">
         {/*
@@ -164,35 +160,31 @@ export function MemberExample({
               mode={seat}
               /* Other people's Gs keep the four activity seats only. */
               onChange={(next) => setSeat(next as Mode)}
-
               photo={member.photo}
+              /* PAST CONNECTIONS live with the photo, as one quiet number. */
+              badge={pastConnectionCount(member)}
               // THE PHOTO IS THE GATEWAY: a tap opens their full profile.
               onTap={() => {
                 buzz();
                 setProfile(member.id);
               }}
               // The seats a person has taken part in, told in their colours.
-              history={["wish", "give", "trade"]}
+              history={["wish", "give", "trade", "borrow"]}
             />
           }
           regions={{
             middle: {
-              onPress: open("wish"),
+              onPress: open(seat),
               render: (anchor) =>
-                profileLoop({ anchor, region: "middle", blocks: wish }),
+                profileLoop({ anchor, region: "middle", blocks: activity }),
             },
             bottom: {
-              onPress: open("activity"),
+              onPress: open("about"),
               render: (anchor) =>
-                profileLoop({
-                  anchor,
-                  region: "bottom",
-                  blocks: activity,
-                }),
+                profileLoop({ anchor, region: "bottom", blocks: about }),
             },
           }}
         />
-
       </GStage>
 
       {/*
@@ -221,8 +213,7 @@ export function MemberExample({
         </button>
       </div>
 
-
-      {/* Deeper previews — always a way back to this exact person. */}
+      {/* WHAT WAS BEHIND THE "+N" — always a way back to this exact person. */}
       <div
         className={cn(
           "absolute inset-0 z-50 flex flex-col px-7 pb-10 pt-16 transition-opacity duration-200 ease-out",
@@ -234,21 +225,52 @@ export function MemberExample({
         {deep ? (
           <>
             <BackArrow onClick={() => setDeep(null)} label={`back to ${member.name}`} />
-            <h2 className="mt-6 text-[16vw] font-black lowercase leading-[0.82] tracking-[-0.05em]">
-              {deep === "wish" ? "wish" : member.action}
+            <h2
+              className="mt-6 text-[15vw] font-black lowercase leading-[0.82] tracking-[-0.05em]"
+              style={revealed ? { color: ACTIVITY_FILL[revealed] } : undefined}
+            >
+              {revealed ? WORLD_LABEL[revealed] : "about them"}
             </h2>
-            <div className="mt-8 space-y-5">
-              {(deep === "wish" ? member.active.wish : member.active[seat]).map(
-                (line) => (
-                  <p key={line} className="text-2xl font-medium lowercase leading-tight">
-                    {line}
+            {revealed ? (
+              <div className="mt-8 space-y-5">
+                {member.active[revealed].map((text) => (
+                  <p
+                    key={text}
+                    className="text-2xl font-medium lowercase leading-tight"
+                    style={{ color: ACTIVITY_FILL[revealed] }}
+                  >
+                    {line(revealed, text)}
                   </p>
-                ),
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-8 space-y-6">
+                <p className="text-2xl font-medium lowercase leading-tight">
+                  {member.byDay} by day
+                </p>
+                <p className="text-2xl font-medium lowercase leading-tight">
+                  {member.byNight} by night
+                </p>
+                <p className="text-2xl font-medium lowercase leading-tight">
+                  {member.weekend} at weekends
+                </p>
+                <p className="text-xl font-medium lowercase leading-snug opacity-70">
+                  {member.aboutMe}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    buzz();
+                    setProfile(member.id);
+                  }}
+                  className="text-[12px] font-black lowercase tracking-[0.3em] underline underline-offset-8 opacity-70"
+                >
+                  see their whole profile
+                </button>
+              </div>
+            )}
           </>
         ) : null}
-
       </div>
     </div>
   );

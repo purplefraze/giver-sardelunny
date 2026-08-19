@@ -302,7 +302,27 @@ export function EarSelector({
     return () => clearTimeout(t);
   }, [mode]);
 
-  const end = () => {
+  /**
+   * ONE FINGER, ONE GESTURE. The pointer that started the drag is the only one
+   * that can move or end it, so a second touch anywhere on the phone can never
+   * hijack or freeze the selector.
+   */
+  const activeId = useRef<number | null>(null);
+
+  const end = (e?: React.PointerEvent<SVGElement>) => {
+    if (e && activeId.current !== null && e.pointerId !== activeId.current) return;
+    if (e) {
+      const el = e.currentTarget as SVGElement & {
+        releasePointerCapture?: (id: number) => void;
+        hasPointerCapture?: (id: number) => boolean;
+      };
+      try {
+        if (el.hasPointerCapture?.(e.pointerId)) el.releasePointerCapture?.(e.pointerId);
+      } catch {
+        /* the browser already dropped the capture — nothing to release */
+      }
+    }
+    activeId.current = null;
     const g = gesture.current;
     const wasHeld = held.current;
     stopPeek();
@@ -313,6 +333,7 @@ export function EarSelector({
     dragRef.current = null;
     setDrag(null);
   };
+
 
   /** Seats in travel order, so the keyboard walks the track, not the array. */
   const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
@@ -504,14 +525,63 @@ export function EarSelector({
 
       </text>
 
+      {/*
+        SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one
+        generous invisible disc per destination, painted BEFORE the grip so the
+        piece itself always wins the overlap. Same pointer events, same commit —
+        no separate touch implementation anywhere.
+      */}
+      {!locked
+        ? seats.map((m) => {
+            if (m === mode) return null;
+            const spot = at(SEAT_ANGLE[m], TRACK_R);
+            return (
+              <circle
+                key={`seat-${m}`}
+                cx={spot.x}
+                cy={spot.y}
+                r={78}
+                fill="transparent"
+                role="button"
+                aria-label={m}
+                className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+                style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  if (activeId.current !== null) return;
+                  activeId.current = e.pointerId;
+                  (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  if (activeId.current !== e.pointerId) return;
+                  activeId.current = null;
+                  try {
+                    e.currentTarget.releasePointerCapture?.(e.pointerId);
+                  } catch {
+                    /* already released */
+                  }
+                  commit(m);
+                }}
+                onPointerCancel={(e) => {
+                  if (activeId.current === e.pointerId) activeId.current = null;
+                }}
+              />
+            );
+          })
+        : null}
+
       {/* Invisible grip, travelling with the ring. */}
       <circle
         cx={ear.x}
         cy={ear.y}
-        r={96}
+        r={110}
         fill="transparent"
-        className="touch-none outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
-        style={{ cursor: "grab", outline: "none" }}
+        className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+        // touch-action lives in inline style, not a utility class: the browser
+        // must see it on THIS element to hand the gesture over instead of
+        // scrolling the page mid-drag.
+        style={{ cursor: "grab", touchAction: "none", outline: "none" }}
         role="slider"
         tabIndex={0}
         aria-label="mode"
@@ -522,18 +592,24 @@ export function EarSelector({
         aria-valuetext={mode}
         onPointerDown={(e) => {
           e.stopPropagation();
+          // A second finger never joins an active gesture.
+          if (activeId.current !== null) return;
+          activeId.current = e.pointerId;
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
           startPeek();
+          // CAPTURE ON THE ELEMENT THAT HANDLES THE GESTURE, so the drag keeps
+          // running even once the finger leaves the disc.
+          (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
           // LOCKED: the seat only STATES the mode; it cannot be dragged.
           if (locked) return;
-          (e.target as SVGElement).setPointerCapture?.(e.pointerId);
           const a = grab?.angle ?? angleRef.current;
           dragRef.current = a;
           setDrag(a);
         }}
         onPointerMove={(e) => {
-          if (locked || drag === null) return;
+          if (activeId.current !== e.pointerId) return;
+          if (locked || dragRef.current === null) return;
           e.stopPropagation();
           const move = angleFrom(e);
           if (!move) return;
@@ -553,9 +629,14 @@ export function EarSelector({
 
         onPointerUp={(e) => {
           e.stopPropagation();
-          end();
+          end(e);
         }}
-        onPointerCancel={end}
+        onPointerCancel={(e) => end(e)}
+        onLostPointerCapture={(e) => {
+          // Android can revoke a capture mid-gesture: settle where we are and
+          // leave the control immediately usable again.
+          if (activeId.current === e.pointerId) end(e);
+        }}
         onKeyDown={(e) => {
           const i = ring.indexOf(mode);
           if (e.key === "ArrowRight" || e.key === "ArrowDown") {
@@ -573,6 +654,7 @@ export function EarSelector({
           }
         }}
       />
+
     </g>
   );
 }

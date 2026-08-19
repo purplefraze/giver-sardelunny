@@ -85,13 +85,19 @@ export function SparkJourney({
     setAt({ x: p.x, y: p.y, ready: true });
 
     if (!tick) return;
-    // A quiet tick at each quarter of the journey — abacus, not applause.
-    const travelled = TO === 1 ? clamped : 1 - clamped;
-    const mark = Math.floor(travelled * 4);
-    if (mark > marks.current) {
-      marks.current = mark;
-      buzz(8);
+    /**
+     * ONE MILESTONE, NOT A RATTLE. The only thing worth feeling mid-journey is
+     * the architecture of the G itself: leaving one loop and crossing the
+     * S-curve into the other. It is felt ONCE per pass, in whichever direction
+     * the sparks are travelling, and never again until the bead crosses back.
+     */
+    const past = clamped >= SPINE_U;
+    if (crossed.current === null) crossed.current = past;
+    else if (crossed.current !== past) {
+      crossed.current = past;
+      haptics.medium();
     }
+
   };
 
   // The rail, sampled once, so a finger can be projected onto it precisely.

@@ -8,6 +8,12 @@ import type { LoopBlock } from "@/components/living-g/profile-loop";
 /**
  * All user-facing copy in Giver is lowercase. Proper nouns entered by a person
  * ("Burning Man") keep their own capitalisation.
+ *
+ * THESE ARE THE FOUR ONBOARDING SAMPLE PEOPLE. They exist to show a new user
+ * what a FULLY LIVED-IN Living G looks like: every one of them is active in all
+ * four worlds, has a personality (by day / by night / weekends) and has real
+ * completed connections behind them. This data is DEMO ONLY and never merges
+ * into the signed-in person's own G (see src/data/my-profile.ts).
  */
 export type Member = {
   id: string;
@@ -39,7 +45,10 @@ export type Member = {
   /**
    * WHAT THEY HAVE GOING ON RIGHT NOW, per category — not a lifetime history.
    * The profile toggle reads this: move a seat, see that person's live items.
-   * Prototype range 0-5; an empty category simply stays quiet.
+   * Every sample person carries 2-3 in EVERY world, deliberately spanning
+   * skills, time, knowledge, objects, experiences, favours, food, transport,
+   * teaching and companionship — never four variations on household clutter.
+   * Trades always read as "offer for want".
    */
   active: { wish: string[]; give: string[]; trade: string[]; borrow: string[] };
   /** Prototype history, one short line per state. */
@@ -72,9 +81,9 @@ export const MEMBERS: Member[] = [
     about:
       "29, about 0.7 km away. high-school chemistry teacher. out on her bike most weekends.",
     age: "29",
-    byDay: "teacher",
-    byNight: "cuddle bug",
-    weekend: "cycling",
+    byDay: "chemistry teacher",
+    byNight: "choir soprano",
+    weekend: "long bike rides",
     bottom: [
       { text: "currently offering", role: "secondary" },
       { text: "science", role: "primary" },
@@ -84,10 +93,26 @@ export const MEMBERS: Member[] = [
 
     alsoGiving: ["dog walking", "italian lessons"],
     active: {
-      wish: ["a lift to the coast"],
-      give: ["science tutoring", "dog walking", "italian lessons"],
-      trade: [],
-      borrow: [],
+      wish: [
+        "someone to teach me to swim",
+        "a lift to the coast on sunday",
+        "company at the late film",
+      ],
+      give: [
+        "science tutoring, evenings",
+        "italian conversation hour",
+        "sourdough starter, endless",
+      ],
+      trade: [
+        "italian lessons for photography",
+        "cake baking for bike repair",
+        "chemistry help for guitar lessons",
+      ],
+      borrow: [
+        "a tent for one weekend",
+        "a projector for movie night",
+        "waders, size 39",
+      ],
     },
     history: {
       wishes: ["a lift to the coast", "someone to water the plants"],
@@ -114,9 +139,9 @@ export const MEMBERS: Member[] = [
     activity: "wishing for a ride to the airport this tuesday, 4 pm.",
     about: "26, less than a kilometre away. business grad. deep into tarot and spirituality.",
     age: "26",
-    byDay: "who knows",
-    byNight: "wouldn't you like to know",
-    weekend: "who knows",
+    byDay: "market researcher",
+    byNight: "reads tarot",
+    weekend: "cold water swims",
     bottom: [
       { text: "wish", role: "secondary" },
       { text: "need ride", role: "primary" },
@@ -125,10 +150,26 @@ export const MEMBERS: Member[] = [
       { text: "at 4 pm", role: "tertiary" },
     ],
     active: {
-      wish: ["need ride to airport", "a desk lamp"],
-      give: ["tarot readings"],
-      trade: [],
-      borrow: [],
+      wish: [
+        "a ride to the airport, tuesday",
+        "someone to sit with my nonna",
+        "help naming my little studio",
+      ],
+      give: [
+        "tarot readings, sundays",
+        "cv and interview practice",
+        "a spare seat at sunday dinner",
+      ],
+      trade: [
+        "tarot readings for a haircut",
+        "spreadsheet help for houseplants",
+        "sunday dinner for dog sitting",
+      ],
+      borrow: [
+        "a suitcase for two weeks",
+        "a sewing machine, one evening",
+        "a bike for the airport run",
+      ],
     },
 
     history: {
@@ -157,9 +198,9 @@ export const MEMBERS: Member[] = [
     about:
       "43, about 1.5 km away. music festivals, bonfires and boys. tall enough that he has never owned a ladder.",
     age: "43",
-    byDay: "light guru",
-    byNight: "psychic oracle",
-    weekend: "festy bestie",
+    byDay: "lighting technician",
+    byNight: "vinyl digging",
+    weekend: "festivals and fires",
     bottom: [
       { text: "trading", role: "secondary" },
       { text: "a year's supply", role: "primary" },
@@ -169,10 +210,26 @@ export const MEMBERS: Member[] = [
       { text: "man ticket", role: "primary" },
     ],
     active: {
-      wish: ["a trailer for a weekend"],
-      give: ["stage lighting"],
-      trade: ["firewood for a ticket", "sharpening for a car wash"],
-      borrow: [],
+      wish: [
+        "a trailer for one weekend",
+        "someone to teach me to sing",
+        "help sanding a boat",
+      ],
+      give: [
+        "stage lighting for your party",
+        "a van and two strong arms",
+        "tool sharpening, any blade",
+      ],
+      trade: [
+        "firewood for a festival ticket",
+        "sharpening for a car wash",
+        "van runs for cooked dinners",
+      ],
+      borrow: [
+        "a ladder for an afternoon",
+        "a pressure washer, sunday",
+        "a suit for a wedding",
+      ],
     },
 
     history: {
@@ -200,19 +257,35 @@ export const MEMBERS: Member[] = [
     headline: "a cigarette",
     activity: "wants to borrow a cigarette.",
     about: "psychologist by day, snusing by night. no weekends allowed.",
-    age: "",
+    age: "38",
     byDay: "psychologist",
-    byNight: "snusing",
+    byNight: "night runner",
     weekend: "no weekends allowed",
     bottom: [
       { text: "wants to borrow", role: "secondary" },
       { text: "a cigarette", role: "primary" },
     ],
     active: {
-      wish: ["a lighter, any kind"],
-      give: ["an hour of listening"],
-      trade: ["snus for coffee"],
-      borrow: ["a cigarette"],
+      wish: [
+        "someone to run with at 6 am",
+        "a lighter, any kind",
+        "a recipe worth repeating",
+      ],
+      give: [
+        "an hour of real listening",
+        "help writing a hard email",
+        "lifts to the hospital",
+      ],
+      trade: [
+        "listening hour for cooking",
+        "coffee beans for snus",
+        "running company for swedish",
+      ],
+      borrow: [
+        "a folding table for saturday",
+        "a road bike for a month",
+        "a kids' car seat, one trip",
+      ],
     },
     history: {
       wishes: ["a lighter, any kind"],
@@ -240,6 +313,14 @@ export function connectionsOf(id: string): Member[] {
   for (const m of MEMBERS) if (m.connections.includes(id)) ids.add(m.id);
   ids.delete(id);
   return MEMBERS.filter((m) => ids.has(m.id));
+}
+
+/**
+ * PAST CONNECTIONS — every completed act behind a person, as one count. The
+ * top loop only ever shows this number; the profile page tells the stories.
+ */
+export function pastConnectionCount(m: Member) {
+  return m.done.gifts + m.done.wishes + m.done.trades + m.done.borrows;
 }
 
 export const ME = {

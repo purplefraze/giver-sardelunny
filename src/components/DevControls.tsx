@@ -32,8 +32,10 @@ export function DevControls() {
           <button type="button" className="py-2 text-left" onClick={() => run(resetNewUser)}>new-user reset</button>
           <button type="button" className="py-2 text-left" onClick={() => run(completeOnboarding)}>skip / complete</button>
           <button type="button" className="py-2 text-left" onClick={() => run(seedDevelopmentProfile)}>restore dev profile</button>
+          <button type="button" className="py-2 text-left" onClick={() => { setOpen(false); setHaptics(true); }}>haptics check</button>
         </div>
       ) : null}
+      {haptics ? <HapticsCheck onClose={() => setHaptics(false)} /> : null}
     </div>
   );
 }

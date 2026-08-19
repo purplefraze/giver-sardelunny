@@ -80,21 +80,16 @@ export function AboutForm({
           </span>
         </button>
 
-        <h1 className="mt-12 text-[12vw] font-black lowercase leading-[0.86] tracking-[-0.05em]">
-          let's give 'em
-          <br />
-          something
-          <br />
-          to talk about
-        </h1>
+        <div className="mt-12">
+          <Field
+            label="about me"
+            value={me.aboutMe}
+            onChange={(v) => myProfileStore.patch({ aboutMe: v })}
+            placeholder="a couple of honest lines"
+            multiline
+          />
+        </div>
 
-        <Field
-          label="about me"
-          value={me.aboutMe}
-          onChange={(v) => myProfileStore.patch({ aboutMe: v })}
-          placeholder="a couple of honest lines"
-          multiline
-        />
 
         <div className="mt-10 space-y-8">
           <Field

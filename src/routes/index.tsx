@@ -480,7 +480,7 @@ function Index() {
           detail === null &&
           talking === null &&
           !threads &&
-          (openCount > 0 || waitingOnMe > 0) ? (
+          seat === "giver" ? (
             <div className="absolute bottom-4 right-6 z-20 flex flex-col items-end gap-1">
               <button
                 type="button"
@@ -490,12 +490,14 @@ function Index() {
                   color: waitingOnMe
                     ? "var(--giver-connection)"
                     : "var(--world-ink)",
-                  opacity: 0.9,
+                  opacity: waitingOnMe || openCount ? 0.9 : 0.5,
                 }}
               >
                 {waitingOnMe
                   ? `${waitingOnMe} to confirm`
-                  : `conversations · ${openCount}`}
+                  : openCount
+                    ? `messages · ${openCount}`
+                    : "messages"}
               </button>
               {/*
                 NO SEPARATE "COMMUNITY" WORD. Tapping the bottom loop already

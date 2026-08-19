@@ -127,6 +127,21 @@ export function AboutForm({
         <p className="mt-6 text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
           everything saves as you go
         </p>
+
+        {/* LEARN HOW, WHENEVER YOU LIKE. Never a nag, always here. */}
+        {onHelp ? (
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              onHelp();
+            }}
+            className="mt-10 text-left text-[11px] font-black lowercase tracking-[0.3em] opacity-55"
+          >
+            learn how giver works
+          </button>
+        ) : null}
+
       </div>
     </div>
   );

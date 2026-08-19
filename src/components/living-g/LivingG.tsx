@@ -233,7 +233,13 @@ export function LivingG({
     <svg
       viewBox={LIVING_G_VIEWBOX}
       className={cn("h-full w-full select-none overflow-visible", className)}
+      // DIRECT MANIPULATION SURFACE. The G is dragged, not scrolled: the browser
+      // must be told here, on the element itself, or Android hands the gesture
+      // to the page scroller halfway through a drag. Scrolling everywhere else
+      // (panels, forms, lists) is untouched.
+      style={{ touchAction: "none", WebkitTapHighlightColor: "transparent" }}
     >
+
       {/*
         Canonical geometry, drawn once and never transformed, plus one
         soft-masked copy per region on top. Only the pressed region's copy

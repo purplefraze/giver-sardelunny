@@ -413,10 +413,12 @@ function Index() {
           <SparkFlash />
 
           {/*
-            THE QUIET WAY BACK TO EVERY EXPLANATION. Nothing shouts; one small
-            word in the corner. Opening it sets NO first-time flag.
+            THE FIRST-USE LEGEND, AND ONLY THE FIRST USE. Once the Living G has
+            taught itself, this corner clears for good — help then lives inside
+            the profile, where it belongs. Sparks are no longer printed here:
+            they ride my own top profile loop (see EarSelector).
           */}
-          {intro === null && editor === null && !choose && !help ? (
+          {!tutorialSeen && intro === null && editor === null && !choose && !help ? (
             <button
               type="button"
               onClick={() =>
@@ -428,8 +430,6 @@ function Index() {
             </button>
           ) : null}
 
-          {/* SPARKS, ALWAYS VISIBLE AND ALWAYS HONEST. */}
-          <SparkBalance />
 
           {/*
             THE S-CURVE IS WHERE PEOPLE MEET. It is the part of the G that joins

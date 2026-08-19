@@ -13,7 +13,7 @@ import {
 } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
-import { buzz } from "@/lib/haptics";
+import { buzz, haptics } from "@/lib/haptics";
 
 /**
  * THE CONNECTION LIVES ON THE S-CURVE.
@@ -161,7 +161,8 @@ export function Conversation({
             <button
               type="button"
               onClick={() => {
-                buzz();
+                // MUTUAL VERIFICATION — the moment an act becomes real.
+                haptics.success();
                 connectionsStore.respond(c.id, true, ME_ID);
               }}
               style={{ color: "var(--giver-generosity)" }}
@@ -187,7 +188,7 @@ export function Conversation({
             type="button"
             disabled={!canClaim(c)}
             onClick={() => {
-              buzz();
+              haptics.light();
               connectionsStore.claimComplete(c.id, ME_ID);
             }}
             className="disabled:opacity-25"

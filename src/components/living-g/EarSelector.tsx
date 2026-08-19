@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { buzz } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 import { EAR_GEOMETRY, LOOP_CENTRE, LOOP_RIM_RADIUS, LOOP_SAFE_RADIUS } from "./g-path";
 import { LOOP_ROLE_STYLE } from "./type-scale";
 
@@ -204,7 +204,7 @@ export function EarSelector({
     if (peekTimer.current) clearTimeout(peekTimer.current);
     peekTimer.current = setTimeout(() => {
       held.current = true;
-      buzz(8);
+      haptics.selection();
       setPeek(true);
     }, 380);
   };
@@ -289,7 +289,8 @@ export function EarSelector({
   const commit = (next: Seat) => {
     if (next !== last.current) {
       last.current = next;
-      buzz(10);
+      // THE SNAP ITSELF, never the drag: felt only when a seat is truly taken.
+      haptics.light();
       onChange(next);
     }
   };

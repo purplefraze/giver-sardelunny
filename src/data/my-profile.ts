@@ -17,7 +17,7 @@ import {
 
 
 import { sparkFlashStore } from "@/data/spark-flash";
-import { buzz } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 /**
  * MY PROFILE — THE SINGLE SOURCE OF TRUTH FOR THE PERSON.
@@ -226,7 +226,8 @@ function reward(key: string) {
     sparks: person.sparks + GENEROSITY_REWARD,
     rewarded: [...person.rewarded, key],
   });
-  buzz();
+  // GIVER RECOGNISING GENEROSITY: brief, warm, unmistakably an arrival.
+  haptics.success();
   sparkFlashStore.show(`+${GENEROSITY_REWARD} sparks ✨`);
 }
 

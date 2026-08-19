@@ -6,7 +6,7 @@ import { SparkSplit, type SplitStep } from "@/components/onboarding/SparkSplit";
 import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
 import { MemberExample } from "@/components/onboarding/MemberExample";
 import { MEMBERS, type Member } from "@/data/giver";
-import { buzz } from "@/lib/haptics";
+import { buzz, haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 /**
@@ -91,7 +91,8 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         {...(sparks !== null ? { sparks } : {})}
         onGive={() => {
           if (sparks === null) return;
-          buzz([10, 40, 18]);
+          // GENEROSITY LANDING ON A PERSON: the recipient is chosen.
+          haptics.success();
           setSparks(null);
           setChosen(member);
           setStage("celebrate");
@@ -117,7 +118,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
       }}
       onChoose={(m) => {
         if (sparks === null) return;
-        buzz([10, 40, 18]);
+        haptics.success();
         setSparks(null);
         setChosen(m);
         setStage("celebrate");
@@ -445,7 +446,7 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
   useEffect(() => {
     const t = setTimeout(() => {
       setLanded(true);
-      buzz([12, 50, 20]);
+      haptics.success();
     }, 90);
     return () => clearTimeout(t);
   }, []);

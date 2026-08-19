@@ -18,7 +18,7 @@ import { ConnectionsList } from "@/components/connection/ConnectionsList";
 import { tutorialSeenStore } from "@/data/tutorial-seen";
 import { useTutorialSeen } from "@/hooks/use-tutorial-seen";
 
-import { isOpen, myConnections, needsMyAnswer } from "@/data/connections";
+import { unreadCount } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
@@ -243,9 +243,8 @@ function Index() {
     }
   }, [lifecycle.onboardingCompletedAt, me.built]);
 
-  /** Conversations in motion, and the ones politely waiting on my answer. */
-  const openCount = myConnections(links, ME_ID).filter(isOpen).length;
-  const waitingOnMe = needsMyAnswer(links, ME_ID).length;
+  /** PRIVATE TO ME: how many conversations have something waiting inside. */
+  const unread = unreadCount(links, ME_ID);
 
   /** GIVER = ME. The other four seats are activity worlds. */
   const isProfile = seat === "giver";
@@ -315,6 +314,7 @@ function Index() {
                 seats={SEATS}
                 {...(isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
+                {...(isProfile && unread ? { badge: unread } : {})}
                 /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
                 sparks={me.sparks}
 
@@ -465,47 +465,15 @@ function Index() {
 
 
           {/*
-            THE S-CURVE IS WHERE PEOPLE MEET. It is the part of the G that joins
-            two loops, so every CONVERSATION lives behind this one quiet word.
-            THIS IS NOT A CONNECTIONS CONTROL: connections are earned by
-            completed acts and live in the full profile only. Nothing permanent
-            about them ever sits on the Living G, so this word appears only when
-            a conversation is actually in motion.
+            MY G STAYS CLEAN. There is NO permanent messages control anywhere
+            around the Living G: messages are private account information and
+            live inside my full profile, beside sparks and sparkles. The only
+            messaging mark permitted out here is a tiny unread badge on my own
+            top profile loop (see EarSelector), which simply says something is
+            waiting inside.
+            NO SEPARATE "COMMUNITY" WORD either — the bottom loop is that door.
           */}
-          {intro === null &&
-          editor === null &&
-          !choose &&
-          !help &&
-          browse === null &&
-          detail === null &&
-          talking === null &&
-          !threads &&
-          seat === "giver" ? (
-            <div className="absolute bottom-4 right-6 z-20 flex flex-col items-end gap-1">
-              <button
-                type="button"
-                onClick={() => setThreads(true)}
-                className="text-[11px] font-black lowercase tracking-[0.28em]"
-                style={{
-                  color: waitingOnMe
-                    ? "var(--giver-connection)"
-                    : "var(--world-ink)",
-                  opacity: waitingOnMe || openCount ? 0.9 : 0.5,
-                }}
-              >
-                {waitingOnMe
-                  ? `${waitingOnMe} to confirm`
-                  : openCount
-                    ? `messages · ${openCount}`
-                    : "messages"}
-              </button>
-              {/*
-                NO SEPARATE "COMMUNITY" WORD. Tapping the bottom loop already
-                walks into the community, so a second door would be clutter.
-              */}
 
-            </div>
-          ) : null}
 
           {/* BROWSE -> ONE ACTIVITY -> A CONVERSATION. Never a shortcut. */}
           <Screen open={browse !== null}>
@@ -595,6 +563,11 @@ function Index() {
           <Screen open={editor !== null}>
             {editor?.kind === "about" ? (
               <AboutForm
+                unread={unread}
+                onMessages={() => {
+                  setEditor(null);
+                  setThreads(true);
+                }}
                 onDone={() => {
                   if (!lifecycle.onboardingCompletedAt) lifecycleStore.complete();
                   setEditor(null);

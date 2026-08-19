@@ -12,10 +12,15 @@ import { buzz } from "@/lib/haptics";
 export function AboutForm({
   onDone,
   onHelp,
+  onMessages,
+  unread = 0,
 }: {
   onDone: () => void;
   /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
   onHelp?: () => void;
+  /** MY INBOX LIVES HERE, beside my balances — private account information. */
+  onMessages?: () => void;
+  unread?: number;
 }) {
   const me = useMyProfile();
 
@@ -85,7 +90,7 @@ export function AboutForm({
           nowhere else — they are mine, private, and never on display on the
           Living G itself. Nobody else ever sees these numbers.
         */}
-        <dl className="mt-12 flex gap-14">
+        <dl className="mt-12 flex flex-wrap items-start gap-x-10 gap-y-8">
           <div>
             <dd
               className="text-6xl font-black leading-none tracking-[-0.05em]"
@@ -108,6 +113,34 @@ export function AboutForm({
               sparkles
             </dt>
           </div>
+          {/*
+            MY MESSAGES SIT WITH MY BALANCES: one compact, private account
+            area. The count appears ONLY when something is unread — never a
+            zero. Nobody else ever sees any of these three numbers.
+          */}
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              onMessages?.();
+            }}
+            className="text-left transition-transform active:scale-[0.98]"
+          >
+            {unread ? (
+              <dd
+                className="text-6xl font-black leading-none tracking-[-0.05em]"
+                style={{ color: "var(--giver-connection)" }}
+              >
+                {unread}
+              </dd>
+            ) : null}
+            <dt
+              className="text-[11px] font-black lowercase tracking-[0.3em]"
+              style={{ marginTop: unread ? "0.5rem" : "3.25rem", opacity: 0.5 }}
+            >
+              messages
+            </dt>
+          </button>
         </dl>
         <p className="mt-3 text-[11px] font-black lowercase tracking-[0.3em] opacity-35">
           private to you

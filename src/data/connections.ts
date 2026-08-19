@@ -402,6 +402,21 @@ export function needsMyAnswer(s: State, meId = ME_ID) {
   );
 }
 
+/**
+ * WHAT IS WAITING FOR ME IN MY INBOX. A conversation counts as unread when the
+ * last thing said in it came from the other person, or when it is asking me to
+ * confirm. Read-only derivation: message persistence is untouched.
+ */
+export function unreadCount(s: State, meId = ME_ID) {
+  const waiting = new Set(needsMyAnswer(s, meId).map((c) => c.id));
+  for (const c of myConnections(s, meId)) {
+    const thread = messagesOf(s, c.id);
+    const last = thread[thread.length - 1];
+    if (last && last.fromId !== meId) waiting.add(c.id);
+  }
+  return waiting.size;
+}
+
 export const STATE_WORD: Record<ConnectionState, string> = {
   connecting: "connecting",
   awaiting: "awaiting confirmation",

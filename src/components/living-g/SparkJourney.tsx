@@ -204,7 +204,7 @@ export function SparkJourney({
     if (uRef.current > 0.97) put(1);
   };
 
-  const R = 34;
+  const R = count !== undefined ? 44 : 34;
 
   return (
     <g>

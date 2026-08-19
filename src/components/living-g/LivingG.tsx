@@ -46,10 +46,10 @@ type Props = {
   regions?: Partial<Record<RegionKey, GRegion>>;
   className?: string;
   showLabels?: boolean;
-  /** Interactive layer drawn above the artwork (e.g. the top-loop selector). */
+  /** Interactive layer drawn above the artwork (eg the top-loop selector). */
   overlay?: React.ReactNode;
   /**
-   * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (e.g. the current mode).
+   * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (eg the current mode).
    * When it changes, every loop's content is UNMOUNTED and rebuilt, so no
    * previous state's words, fades or timers can survive underneath the new one.
    */
@@ -60,6 +60,11 @@ type Props = {
    * the base artwork and every swell copy, so no fragment can peek back.
    */
   earCut?: boolean;
+  /**
+   * LOGO WEIGHT ONLY. Adds an outer stroke of the same colour so the Living G
+   * reads as one heavy glyph beside bold type, without redrawing the path.
+   */
+  weight?: "normal" | "heavy";
 };
 
 
@@ -160,6 +165,7 @@ export function LivingG({
   overlay,
   contentKey = "",
   earCut = false,
+  weight = "normal",
 }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
   /** The temporary word cue: revealed by a deliberate press-and-hold. */
@@ -170,6 +176,12 @@ export function LivingG({
   const revealed = useRef(false);
   const down = useRef<{ x: number; y: number } | null>(null);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * LOGO WEIGHT ONLY: a same-colour outer stroke drawn before the fill, so the
+   * canonical silhouette gains visual heft without redrawing its geometry.
+   */
+  const heavy = weight === "heavy" ? ({ stroke: "var(--world-g)", strokeWidth: 100, paintOrder: "stroke fill", strokeLinejoin: "round" } as const) : undefined;
 
   /**
    * ONE ACTIVE STATE AT A TIME. The instant the loops start holding a new state,
@@ -286,7 +298,7 @@ export function LivingG({
         {/* The cut applies to the ARTWORK only; the rim patch is drawn on top. */}
         <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
           <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-            <path d={LIVING_G_PATH} />
+            <path d={LIVING_G_PATH} {...heavy} />
           </g>
         </g>
         {earCut ? rimPatch() : null}
@@ -305,7 +317,7 @@ export function LivingG({
               >
                 <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
                   <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                    <path d={LIVING_G_PATH} />
+                    <path d={LIVING_G_PATH} {...heavy} />
                   </g>
                 </g>
                 {earCut ? rimPatch() : null}

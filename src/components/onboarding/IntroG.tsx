@@ -39,6 +39,7 @@ export function IntroG({
   copyOpacity = 1,
   overlay,
   stage,
+  weight = "normal",
   children,
 }: {
   world: string;
@@ -56,6 +57,8 @@ export function IntroG({
    * geometry is untouched: only the camera moves.
    */
   stage?: React.CSSProperties;
+  /** LOGO WEIGHT ONLY: thicken the Living G so it balances heavy type. */
+  weight?: "normal" | "heavy";
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
@@ -105,6 +108,7 @@ export function IntroG({
               <LivingG
                 className={G_PRESENCE}
                 showLabels={false}
+                weight={weight}
                 {...(overlay ? { overlay } : {})}
                 regions={{
                   ...region("top", top),

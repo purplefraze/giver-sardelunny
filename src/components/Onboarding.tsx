@@ -141,7 +141,7 @@ type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
 
 /** The camera: how small the G is while it is only a letter. */
 const LETTER_SCALE = 0.12;
-const LETTER_SHIFT = "-16vw";
+const LETTER_SHIFT = "-12vw";
 const ZOOM_MS = 900;
 const WORD_HOLD = 850;
 
@@ -224,6 +224,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   return (
     <IntroG
       world={green ? "gift" : "welcome"}
+      weight={small ? "heavy" : "normal"}
       {...(middle ? { middle } : {})}
       {...(bottom ? { bottom } : {})}
       stage={{

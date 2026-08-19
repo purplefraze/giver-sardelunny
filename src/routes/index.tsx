@@ -475,13 +475,11 @@ function Index() {
                     ? `connections · ${openCount}`
                     : "connections"}
               </button>
-              <button
-                type="button"
-                onClick={() => setBrowse({ type: null })}
-                className="text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
-              >
-                community
-              </button>
+              {/*
+                NO SEPARATE "COMMUNITY" WORD. Tapping the bottom loop already
+                walks into the community, so a second door would be clutter.
+              */}
+
             </div>
           ) : null}
 

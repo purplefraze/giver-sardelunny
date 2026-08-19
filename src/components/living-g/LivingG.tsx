@@ -417,25 +417,31 @@ export function LivingG({
             className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
             style={{ cursor: "pointer", outline: "none" }}
 
+            // ONE POINTER, ONE PRESS. Everything happens on pointer events, so
+            // mouse, touch and stylus travel the same path and no synthetic
+            // click is needed (Android suppresses those often enough to matter).
+            style_placeholder_removed
             onPointerDown={(e) => {
+              if (tapId.current !== null) return;
+              tapId.current = e.pointerId;
+              (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
               down.current = { x: e.clientX, y: e.clientY };
               revealed.current = false;
               setPressed(key);
               holdCue(key);
             }}
-            onPointerUp={release}
-            onPointerLeave={release}
-            onPointerCancel={release}
-
-            onClick={(e) => {
-              // A horizontal swipe across the G must not fire a region.
-              const d = down.current;
-              if (
-                d &&
-                Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10
-              ) {
-                return;
+            onPointerUp={(e) => {
+              if (tapId.current !== e.pointerId) return;
+              tapId.current = null;
+              try {
+                e.currentTarget.releasePointerCapture?.(e.pointerId);
+              } catch {
+                /* already released */
               }
+              release();
+              // A swipe across the G must not fire a region.
+              const d = down.current;
+              if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 14) return;
               // A hold TEACHES; only a tap travels.
               if (revealed.current) {
                 revealed.current = false;
@@ -446,11 +452,23 @@ export function LivingG({
               const run = region.onPress;
               navTimer.current = setTimeout(() => run?.(), RHYTHM.read);
             }}
-
+            onPointerCancel={(e) => {
+              // Android may cancel the gesture: forget it cleanly so the next
+              // tap works immediately.
+              if (tapId.current === e.pointerId) tapId.current = null;
+              release();
+            }}
+            onLostPointerCapture={(e) => {
+              if (tapId.current === e.pointerId) {
+                tapId.current = null;
+                release();
+              }
+            }}
 
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") region.onPress?.();
             }}
+
           />
         );
       })}

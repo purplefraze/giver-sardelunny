@@ -52,11 +52,38 @@ export type Item = {
    * context (a size, a time window, a condition). Never a description field.
    */
   note?: string;
+  /**
+   * PHOTOS BELONG TO THE ITEM, NEVER TO A SCREEN. One item, many views: a photo
+   * added while creating a give or a trade appears on my g, in community, on my
+   * full profile and on the detail page, because they all read this one record.
+   */
+  photos?: string[];
+  /**
+   * BORROWING HAS TWO SIDES. "borrow" = I would like to borrow something.
+   * "lend" = I am willing to lend something out. Never the same copy.
+   */
+  side?: BorrowSide;
   /** Where available — community discovery may sort or filter on it later. */
   distanceKm?: number;
   /** Cheap denormalised counter; the truth is the boost ledger. */
   boostCount: number;
 };
+
+export type BorrowSide = "borrow" | "lend";
+
+/** How each side of the borrow world reads, everywhere it appears. */
+export const BORROW_SIDE_WORD: Record<BorrowSide, string> = {
+  borrow: "borrow",
+  lend: "lend",
+};
+
+/** The word an item calls itself — borrow and lend are never interchangeable. */
+export const typeWord = (item: Pick<Item, "type" | "side">) =>
+  item.type === "borrow" ? BORROW_SIDE_WORD[item.side ?? "borrow"] : item.type;
+
+/** Photos are kept small enough to live happily in local storage. */
+export const MAX_PHOTOS = 4;
+
 
 export const ME_ID = "me";
 

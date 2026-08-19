@@ -180,28 +180,10 @@ function Index() {
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
       {!entered ? (
-        <Onboarding
-          onDone={() => {
-            setEntered(true);
-            /* Already built once? Never show the first-time builder again. */
-            setSetup(!myProfileStore.get().built);
-          }}
-        />
-      ) : setup ? (
-        /* FIRST RUN — the profile information screen, as its own destination. */
-        <AboutForm
-          firstTime
-          onDone={() => {
-            /* Awarded exactly once, however often the profile is edited. */
-            const awarded = myProfileStore.awardProfileSparkles();
-            setSetup(false);
-            if (awarded) setReward(true);
-          }}
-        />
-
-      ) : reward ? (
-        <SparklesReward onDone={() => setReward(false)} />
+        /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
+        <Onboarding onDone={() => setEntered(true)} />
       ) : (
+
 
 
         <>

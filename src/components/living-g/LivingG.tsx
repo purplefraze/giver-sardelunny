@@ -298,7 +298,7 @@ export function LivingG({
         {/* The cut applies to the ARTWORK only; the rim patch is drawn on top. */}
         <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
           <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-            <path d={LIVING_G_PATH} />
+            <path d={LIVING_G_PATH} {...heavy} />
           </g>
         </g>
         {earCut ? rimPatch() : null}
@@ -317,7 +317,7 @@ export function LivingG({
               >
                 <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
                   <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                    <path d={LIVING_G_PATH} />
+                    <path d={LIVING_G_PATH} {...heavy} />
                   </g>
                 </g>
                 {earCut ? rimPatch() : null}

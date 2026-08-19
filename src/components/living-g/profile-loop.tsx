@@ -76,7 +76,7 @@ const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
 const WRAP_FACTOR: Record<RegionKey, number> = {
   top: PROFILE_WRAP_FACTOR,
   middle: PROFILE_WRAP_FACTOR,
-  bottom: 1.16,
+  bottom: 1.42,
 };
 
 export function profileLoop({

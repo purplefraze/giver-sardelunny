@@ -129,25 +129,32 @@ export function SparkJourney({
 
   /**
    * MAGNETIC, AND LOCAL. The nearest point ON THE RAIL, searched only within a
-   * short stretch either side of where the bead already is. The bead therefore
-   * slides along the wire continuously and can never jump across a gap to a
-   * geometrically-near part of the rail — no shortcut to the destination.
+   * short ARC-LENGTH stretch either side of where the bead already is (measured
+   * in the G's own units, so the window is the same physical distance however
+   * long the whole journey is). The bead slides along the wire continuously and
+   * can never hop across a gap to a geometrically-near part of the rail, so the
+   * S-curve and the whole lower loop must actually be walked. A finger that
+   * strays far off the wire simply leaves the bead where it is.
    */
+  const STEP_LEN = 70; // how far along the wire one move may advance
+  const REACH = 260; // how far off the wire the finger may stray
+
   const project = (e: React.PointerEvent) => {
     const p = local(e);
     if (!p) return;
     const here = uRef.current;
+    const win = STEP_LEN / Math.max(1, total.current);
     let best: Sample | undefined;
     let d = Infinity;
     for (const s of samples.current) {
-      if (Math.abs(s.u - here) > 0.045) continue;
+      if (Math.abs(s.u - here) > win) continue;
       const k = (s.x - p.x) ** 2 + (s.y - p.y) ** 2;
       if (k < d) {
         d = k;
         best = s;
       }
     }
-    if (best) put(best.u);
+    if (best && d <= REACH * REACH) put(best.u);
   };
 
 

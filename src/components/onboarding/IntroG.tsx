@@ -108,6 +108,7 @@ export function IntroG({
               <LivingG
                 className={G_PRESENCE}
                 showLabels={false}
+                weight={weight}
                 {...(overlay ? { overlay } : {})}
                 regions={{
                   ...region("top", top),

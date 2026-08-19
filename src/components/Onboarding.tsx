@@ -224,6 +224,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   return (
     <IntroG
       world={green ? "gift" : "welcome"}
+      weight="heavy"
       {...(middle ? { middle } : {})}
       {...(bottom ? { bottom } : {})}
       stage={{

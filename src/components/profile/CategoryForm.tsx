@@ -328,6 +328,42 @@ export function CategoryForm({
             <p className="text-[11px] font-black lowercase tracking-[0.28em] opacity-30">
               {NOTE_MAX - note.length} left
             </p>
+
+            {/* PHOTOS ARE OPTIONAL, AND THEY BELONG TO THE THING ITSELF. */}
+            {canPhoto ? (
+              <div className="space-y-3">
+                {photos.length ? (
+                  <div className="flex gap-3">
+                    {photos.map((p, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        aria-label="remove photo"
+                        onClick={() => {
+                          buzz();
+                          setPhotos((prev) => prev.filter((_, k) => k !== i));
+                        }}
+                        className="relative h-20 w-20 overflow-hidden"
+                      >
+                        <img
+                          src={p}
+                          alt="photo of what you're offering"
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={pickPhotos}
+                  className="text-[11px] font-black lowercase tracking-[0.28em] opacity-55"
+                >
+                  {photos.length ? "add another photo" : "add a photo (optional)"}
+                </button>
+              </div>
+            ) : null}
+
             <button
               type="button"
               onClick={add}

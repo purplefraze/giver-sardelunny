@@ -297,20 +297,39 @@ export function SparkJourney({
           {/* A generous invisible grip along the rail, so the bead is easy to
               take hold of without any visible control appearing on the G. */}
           {draggable && !arrived ? (
-            <path
-              d={SPARK_TRACK_D}
-              fill="none"
-              stroke="transparent"
-              strokeWidth={130}
-              strokeLinecap="round"
-              className="[-webkit-tap-highlight-color:transparent]"
-              style={{ cursor: "grab", touchAction: "none" }}
-              onPointerDown={grab}
-              onPointerMove={move}
-              onPointerUp={release}
-              onPointerCancel={release}
-            />
+            <>
+              <path
+                d={SPARK_TRACK_D}
+                fill="none"
+                stroke="transparent"
+                strokeWidth={160}
+                strokeLinecap="round"
+                className="[-webkit-tap-highlight-color:transparent]"
+                style={{ cursor: "grab", touchAction: "none" }}
+                onPointerDown={grab}
+                onPointerMove={move}
+                onPointerUp={release}
+                onPointerCancel={release}
+                onLostPointerCapture={release}
+              />
+              {/* And a generous disc on the bead itself, so the bundle can be
+                  taken hold of without hunting for the rail. */}
+              <circle
+                cx={at.x}
+                cy={at.y}
+                r={110}
+                fill="transparent"
+                className="[-webkit-tap-highlight-color:transparent]"
+                style={{ cursor: "grab", touchAction: "none" }}
+                onPointerDown={grab}
+                onPointerMove={move}
+                onPointerUp={release}
+                onPointerCancel={release}
+                onLostPointerCapture={release}
+              />
+            </>
           ) : null}
+
 
           {/* THE SPARKS. A bundle of light, riding inside the stroke. */}
           <g

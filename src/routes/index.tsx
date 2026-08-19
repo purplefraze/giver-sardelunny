@@ -11,7 +11,13 @@ import { introSeenStore } from "@/data/intro-seen";
 import { useIntroSeen } from "@/hooks/use-intro-seen";
 
 
-import { CommunityList } from "@/components/CommunityList";
+import { CommunityFeed } from "@/components/community/CommunityFeed";
+import { ActivityDetail } from "@/components/community/ActivityDetail";
+import { Conversation } from "@/components/connection/Conversation";
+import { ConnectionsList } from "@/components/connection/ConnectionsList";
+import { SparkBalance } from "@/components/SparkBalance";
+import { isOpen, myConnections, needsMyAnswer } from "@/data/connections";
+import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
@@ -44,7 +50,7 @@ const MODE_CONTENT: Record<
   Mode,
   {
     mine: { title: string; body: React.ReactNode };
-    community: { title: string; body: React.ReactNode };
+    community: { title: string };
   }
 > = {
   wish: {
@@ -66,10 +72,7 @@ const MODE_CONTENT: Record<
         </p>
       ),
     },
-    community: {
-      title: "community gives",
-      body: <CommunityList type="give" />,
-    },
+    community: { title: "community gives" },
   },
   trade: {
     mine: {
@@ -78,20 +81,14 @@ const MODE_CONTENT: Record<
         <p className="opacity-70">offer something, ask for something back.</p>
       ),
     },
-    community: {
-      title: "community trades",
-      body: <CommunityList type="trade" />,
-    },
+    community: { title: "community trades" },
   },
   borrow: {
     mine: {
       title: "my borrows",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
-    community: {
-      title: "community borrows",
-      body: <CommunityList type="borrow" />,
-    },
+    community: { title: "community borrows" },
   },
 };
 
@@ -157,6 +154,17 @@ function Index() {
   const [help, setHelp] = useState(false);
 
   /**
+   * DISCOVER -> INTENT -> CONNECT -> COORDINATE -> COMPLETE -> VERIFY.
+   * Each step is its own destination, and none of them ever skips ahead:
+   * browsing opens an activity, an activity opens a conversation, and only a
+   * conversation both people verify ever settles sparks.
+   */
+  const [browse, setBrowse] = useState<{ type: ItemType | null } | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
+  const [talking, setTalking] = useState<string | null>(null);
+  const [threads, setThreads] = useState(false);
+
+  /**
    * ONE DOOR INTO A WORLD. First time: explain, then the form. Every time after:
    * straight to the form. The flag decides, never the caller.
    */
@@ -206,6 +214,10 @@ function Index() {
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
   const items = useItems();
+  const links = useConnections();
+  /** Conversations in motion, and the ones politely waiting on my answer. */
+  const openCount = myConnections(links, ME_ID).filter(isOpen).length;
+  const waitingOnMe = needsMyAnswer(links, ME_ID).length;
 
   /** GIVER = ME. The other four seats are activity worlds. */
   const isProfile = seat === "giver";
@@ -255,7 +267,16 @@ function Index() {
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             /* "giver" is drawn inside the G, under the toggle — see EarSelector. */
-            active={editor === null && intro === null && !choose && !help}
+            active={
+              editor === null &&
+              intro === null &&
+              !choose &&
+              !help &&
+              browse === null &&
+              detail === null &&
+              talking === null &&
+              !threads
+            }
             earCut
             overlay={
               <EarSelector
@@ -343,13 +364,12 @@ function Index() {
               bottom: {
                 label: "",
                 panelTitle: isProfile ? "my gives" : content.community.title,
-                panelBody: isProfile ? null : content.community.body,
-                ...(isProfile
-                  ? {
-                      /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
-                      onPress: () => openWorld("give"),
-                    }
-                  : {}),
+                panelBody: null,
+                onPress: isProfile
+                  ? /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
+                    () => openWorld("give")
+                  : /* BOTTOM = THE COMMUNITY, browsed for real. */
+                    () => setBrowse({ type: mode as ItemType }),
 
                 render: (anchor) =>
                   profileLoop({
@@ -407,6 +427,91 @@ function Index() {
               {isProfile ? "how giver works" : `what’s ${mode}?`}
             </button>
           ) : null}
+
+          {/* SPARKS, ALWAYS VISIBLE AND ALWAYS HONEST. */}
+          <SparkBalance />
+
+          {/*
+            THE S-CURVE IS WHERE PEOPLE MEET. It is the part of the G that joins
+            two loops, so every conversation lives behind this one quiet word.
+          */}
+          {intro === null &&
+          editor === null &&
+          !choose &&
+          !help &&
+          browse === null &&
+          detail === null &&
+          talking === null &&
+          !threads ? (
+            <div className="absolute bottom-4 right-6 z-20 flex flex-col items-end gap-1">
+              <button
+                type="button"
+                onClick={() => setThreads(true)}
+                className="text-[11px] font-black lowercase tracking-[0.28em]"
+                style={{
+                  color: waitingOnMe
+                    ? "var(--giver-connection)"
+                    : "var(--world-ink)",
+                  opacity: openCount ? 0.9 : 0.4,
+                }}
+              >
+                {waitingOnMe
+                  ? `${waitingOnMe} to confirm`
+                  : openCount
+                    ? `connections · ${openCount}`
+                    : "connections"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setBrowse({ type: null })}
+                className="text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
+              >
+                community
+              </button>
+            </div>
+          ) : null}
+
+          {/* BROWSE -> ONE ACTIVITY -> A CONVERSATION. Never a shortcut. */}
+          <Screen open={browse !== null}>
+            {browse ? (
+              <CommunityFeed
+                initialType={browse.type}
+                onOpen={(itemId) => setDetail(itemId)}
+                onClose={() => setBrowse(null)}
+              />
+            ) : null}
+          </Screen>
+
+          <Screen open={detail !== null}>
+            {detail ? (
+              <ActivityDetail
+                itemId={detail}
+                onOpenConnection={(id) => {
+                  setDetail(null);
+                  setTalking(id);
+                }}
+                onClose={() => setDetail(null)}
+              />
+            ) : null}
+          </Screen>
+
+          <Screen open={talking !== null}>
+            {talking ? (
+              <Conversation
+                connectionId={talking}
+                onClose={() => setTalking(null)}
+              />
+            ) : null}
+          </Screen>
+
+          <Screen open={threads}>
+            {threads ? (
+              <ConnectionsList
+                onOpen={(id) => setTalking(id)}
+                onClose={() => setThreads(false)}
+              />
+            ) : null}
+          </Screen>
 
           {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
           <Screen open={choose}>

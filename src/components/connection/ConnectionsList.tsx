@@ -85,8 +85,9 @@ export function ConnectionsList({
 
       {past.length ? (
         <>
+          {/* THE COMPLETED ACT CREATED THE CONNECTION — nothing else does. */}
           <h2 className="mt-14 text-[11px] font-black lowercase tracking-[0.3em] opacity-45">
-            past connections
+            connections · completed together
           </h2>
           <ul className="mt-5 space-y-4">
             {past.map((p) => {

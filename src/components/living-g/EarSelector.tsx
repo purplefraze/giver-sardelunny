@@ -237,7 +237,7 @@ export function EarSelector({
   };
 
 
-  const commit = (next: Mode) => {
+  const commit = (next: Seat) => {
     if (next !== last.current) {
       last.current = next;
       buzz(10);

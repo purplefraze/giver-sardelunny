@@ -131,11 +131,15 @@ function seedItems(): Item[] {
     const km = parseKm(member.distance);
     ITEM_TYPES.forEach((type) => {
       member.active[type].forEach((text, i) => {
+        /* SEEDED TRADES CARRY BOTH SIDES, like every trade the user makes. */
+        const sides = type === "trade" ? splitTrade(text) : null;
         out.push({
           id: `seed-${member.id}-${type}-${i}`,
           ownerId: member.id,
           type,
-          text,
+          text: sides ? tradeText(sides.offer, sides.want) : text,
+          ...(sides ? { offer: sides.offer, want: sides.want } : {}),
+
           status: "active",
           priority: i,
           published: true,

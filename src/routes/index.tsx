@@ -261,18 +261,20 @@ function Index() {
 
 
         <>
-          {/* THE WORKSPACE — one Living G, always yours. Mode is a state of it. */}
+          {/* THE WORKSPACE — one Living G, always yours. The seat is its state. */}
           <World
-            world={mode}
-            /* ONE ACTIVE MODE = ONE CLEAN SET OF IN-LOOP TEXT. */
-            contentKey={mode}
+            /* GIVER = my profile (red); the four modes keep their own colours. */
+            world={isProfile ? "profile" : mode}
+            /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
+            contentKey={seat}
             identity="giver"
             active={top === null}
             earCut
             overlay={
               <EarSelector
-                mode={mode}
-                onChange={setMode}
+                mode={seat}
+                onChange={setSeat}
+                seats={SEATS}
                 onTap={() => push("profile")}
               />
             }
@@ -280,68 +282,110 @@ function Index() {
             regions={{
               top: {
                 label: "",
-                panelTitle: "you",
-                panelBody: null,
-                onPress: () => push("profile"),
+                panelTitle: isProfile ? "more information" : "you",
+                panelBody: isProfile ? (
+                  <>
+                    <p className="opacity-70">{me.aboutMe || ME.about}</p>
+                    <p className="opacity-70">by day: {me.byDay || "—"}</p>
+                    <p className="opacity-70">by night: {me.byNight || "—"}</p>
+                    <p className="opacity-70">weekends: {me.weekend || "—"}</p>
+                  </>
+                ) : null,
+                ...(isProfile
+                  ? { onPress: () => setFullMe(true) }
+                  : { onPress: () => push("profile") }),
               },
               /*
-                MIDDLE LOOP = THE ACTIVE MODE. It holds exactly one mode's item —
-                the mode the toggle is sitting on — and nothing else. Changing
-                mode replaces this content outright (see contentKey above).
+                MIDDLE LOOP:
+                  giver = MY LATEST ACTIVITY of any type
+                  mode  = MY <type>
+                Exactly one of them exists at a time (see contentKey above).
               */
               middle: {
                 label: "",
-                panelTitle: content.mine.title,
-                panelBody: content.mine.body,
-                ...(myMode
-                  ? {
-                      render: (anchor) =>
-                        profileLoop({
-                          anchor,
-                          region: "middle",
-                          blocks: [
-                            { text: mode, role: "secondary" as const },
-                            { text: clampField(myMode), role: "primary" as const },
-                          ],
-                        }),
-                    }
-                  : {
-                      render: (anchor) =>
-                        profileLoop({
-                          anchor,
-                          region: "middle",
-                          blocks: [
-                            { text: mode, role: "secondary" as const },
-                            { text: "nothing yet", role: "tertiary" as const },
-                          ],
-                        }),
-                    }),
+                panelTitle: isProfile ? "latest activity" : content.mine.title,
+                panelBody: isProfile ? (
+                  <>
+                    {CATEGORIES.filter((c) => me.items[c].length).map((c) => (
+                      <p key={c}>
+                        {CATEGORY_PLURAL[c]}: {me.items[c].join(", ")}
+                      </p>
+                    ))}
+                  </>
+                ) : (
+                  content.mine.body
+                ),
+                render: (anchor) =>
+                  profileLoop({
+                    anchor,
+                    region: "middle",
+                    blocks: isProfile
+                      ? [
+                          { text: "latest", role: "secondary" as const },
+                          latest
+                            ? {
+                                text: clampField(latest.item.text),
+                                role: "primary" as const,
+                              }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                          ...(latest
+                            ? [{ text: latest.type, role: "tertiary" as const }]
+                            : []),
+                        ]
+                      : [
+                          { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
+                          myMode
+                            ? { text: clampField(myMode), role: "primary" as const }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                        ],
+                  }),
               },
               /*
-                BOTTOM LOOP = ALWAYS WHAT I AM GIVING. Permanent structural rule:
-                the toggle never changes this loop's meaning or its content.
+                BOTTOM LOOP:
+                  giver = MY GIVES — what I offer the community
+                  mode  = COMMUNITY <type>
               */
               bottom: {
                 label: "",
-                panelTitle: content.community.title,
-                panelBody: content.community.body,
-                ...(myGive
-                  ? {
-                      render: (anchor) =>
-                        profileLoop({
-                          anchor,
-                          region: "bottom",
-                          blocks: [
-                            { text: "give", role: "secondary" as const },
-                            { text: clampField(myGive), role: "primary" as const },
-                          ],
-                        }),
-                    }
-                  : {}),
+                panelTitle: isProfile ? "my gives" : content.community.title,
+                panelBody: isProfile ? (
+                  me.items.give.length ? (
+                    <>
+                      {me.items.give.map((g) => (
+                        <p key={g}>{g}</p>
+                      ))}
+                    </>
+                  ) : (
+                    <p className="opacity-70">nothing yet. what could you offer?</p>
+                  )
+                ) : (
+                  content.community.body
+                ),
+                render: (anchor) =>
+                  profileLoop({
+                    anchor,
+                    region: "bottom",
+                    blocks: isProfile
+                      ? [
+                          { text: "gives", role: "secondary" as const },
+                          myGive
+                            ? { text: clampField(myGive), role: "primary" as const }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                        ]
+                      : [
+                          {
+                            text: `community ${CATEGORY_PLURAL[mode]}`,
+                            role: "secondary" as const,
+                          },
+                          community
+                            ? { text: clampField(community), role: "primary" as const }
+                            : { text: "nothing yet", role: "tertiary" as const },
+                        ],
+                  }),
               },
             }}
-
           />
+
 
 
           <Screen open={top === "profile"}>

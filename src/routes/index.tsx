@@ -16,7 +16,10 @@ import {
   topLoopContent,
   type TopLoopPosition,
 } from "@/components/living-g/TopLoopSelector";
-import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
+import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { useItems } from "@/hooks/use-items";
+import { ME_ID, communityItems, type ItemType } from "@/data/items";
+
 
 
 import { World, ringPhoto } from "@/components/World";

@@ -126,7 +126,7 @@ export function profileLoop({
           y={origin.y + row.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill={LOOP_TEXT_FILL}
+          fill={row.fill ?? LOOP_TEXT_FILL}
           className="font-black lowercase"
           style={{
             fontSize: row.size,

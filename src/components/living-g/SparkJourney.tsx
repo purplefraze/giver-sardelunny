@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "./g-path";
+import { SparkBundle } from "./SparkBundle";
 import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
 import { buzz } from "@/lib/haptics";
+
 
 /**
  * THE TRAVELLING SPARK — a bead riding INSIDE the Living G's own stroke, on the
@@ -30,16 +32,23 @@ type Sample = { x: number; y: number; u: number };
 
 export function SparkJourney({
   mode = "drag",
+  count,
+  onStart,
   onArrive,
   onGreen,
 }: {
   /** "auto" travels bottom -> middle by itself; "drag" is the user's journey. */
   mode?: "auto" | "drag";
+  /** How many Sparks this bundle carries — shown inside the bundle. */
+  count?: number;
+  /** The user has taken hold of the bundle. */
+  onStart?: () => void;
   /** The spark has reached the end of its journey. */
   onArrive?: () => void;
   /** The green has finished resolving through the whole G. */
   onGreen?: () => void;
 }) {
+
   const uid = useId().replace(/:/g, "");
   const rail = useRef<SVGPathElement | null>(null);
   const samples = useRef<Sample[]>([]);
@@ -183,6 +192,7 @@ export function SparkJourney({
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     buzz(10);
+    onStart?.();
     project(e);
   };
 
@@ -198,7 +208,7 @@ export function SparkJourney({
     if (uRef.current > 0.97) put(1);
   };
 
-  const R = 34;
+  const R = count !== undefined ? 44 : 34;
 
   return (
     <g>
@@ -242,23 +252,29 @@ export function SparkJourney({
             />
           ) : null}
 
-          {/* THE SPARK. One bead, riding inside the stroke. */}
+          {/* THE SPARKS. A bundle of light, riding inside the stroke. */}
           <g
             pointerEvents="none"
+            transform={`translate(${at.x} ${at.y})`}
             style={{
               opacity: arrived ? 0 : 1,
               transition: `opacity ${WASH_MS}ms ease-out`,
             }}
           >
-            <circle
-              cx={at.x}
-              cy={at.y}
-              r={dragging ? R * 1.08 : R}
-              fill="var(--giver-generosity)"
-              style={{ transition: "r 220ms cubic-bezier(0.22,1,0.36,1)" }}
-            />
-            <circle cx={at.x} cy={at.y} r={R * 0.34} fill="var(--world-bg)" opacity={0.9} />
+            <g
+              style={{
+                transform: `scale(${dragging ? 1.08 : 1})`,
+                transition: "transform 220ms cubic-bezier(0.22,1,0.36,1)",
+              }}
+            >
+              <SparkBundle
+                r={R}
+                colour="var(--giver-generosity)"
+                {...(count !== undefined ? { count } : {})}
+              />
+            </g>
           </g>
+
         </>
       ) : null}
     </g>

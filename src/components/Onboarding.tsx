@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { SparkJourney } from "@/components/living-g/SparkJourney";
+import { SparkSplit, type SplitStep } from "@/components/onboarding/SparkSplit";
 
 import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
 import { MemberExample } from "@/components/onboarding/MemberExample";
@@ -34,13 +35,20 @@ const PHRASE = 0.8;
  * THE OPENING, AS ONE CONTINUOUS STORY. Each slide is a COMPLETE thought that
  * arrives whole — never word by word — and hands straight over to the next.
  */
-type Slide = { middle?: string[]; bottom?: string[]; hold: number };
+type Slide = {
+  middle?: string[];
+  bottom?: string[];
+  hold: number;
+  /** The Sparks themselves carry this beat; the words only name it. */
+  spark?: SplitStep;
+};
 
 const WORDS: Slide[] = [
   { middle: ["giver"], hold: 900 },
   { bottom: ["kindness is", "currency."], hold: 1250 },
-  { middle: ["here's", "100 sparks."], hold: 1250 },
-  { bottom: ["50 to wish.", "50 to give."], hold: 1400 },
+  { bottom: ["here's", "100 sparks."], hold: 1500, spark: "hundred" },
+  { bottom: ["50 to wish."], hold: 1500, spark: "wish" },
+  { bottom: ["50 to give."], hold: 1500, spark: "give" },
 ];
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
@@ -128,6 +136,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   const [fading, setFading] = useState(false);
   const [green, setGreen] = useState(false);
   const [arrived, setArrived] = useState(false);
+  const [moving, setMoving] = useState(false);
 
   // word -> zoom -> auto: no waiting, no empty screens.
   useEffect(() => {
@@ -173,16 +182,14 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
     lines ? { lines, plan: lines, scale, opacity: fading ? 0 : 1 } : undefined;
 
-  const middle: LoopCopy | undefined =
-    phase === "drag"
-      ? { lines: ["drag"], plan: ["drag"], scale: BRAND, opacity: arrived ? 0 : 1 }
-      : say(slide?.middle, BRAND);
+  const middle: LoopCopy | undefined = phase === "drag" ? undefined : say(slide?.middle, BRAND);
 
+  const dragLine = moving ? "spark change." : "drag the sparks";
   const bottom: LoopCopy | undefined =
     phase === "drag"
       ? {
-          lines: ["sparks change."],
-          plan: ["sparks change."],
+          lines: [dragLine],
+          plan: [dragLine],
           scale: PHRASE,
           opacity: arrived ? 0 : 1,
         }
@@ -207,14 +214,21 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
         : phase === "drag"
           ? {
               overlay: (
-                <SparkJourney
-                  mode="drag"
-                  onArrive={() => setArrived(true)}
-                  onGreen={() => setGreen(true)}
-                />
+                <>
+                  <SparkSplit step="held" />
+                  <SparkJourney
+                    mode="drag"
+                    count={50}
+                    onStart={() => setMoving(true)}
+                    onArrive={() => setArrived(true)}
+                    onGreen={() => setGreen(true)}
+                  />
+                </>
               ),
             }
-          : {})}
+          : slide?.spark
+            ? { overlay: <SparkSplit step={slide.spark} /> }
+            : {})}
     >
       <Wordmark phase={phase} />
     </IntroG>

@@ -255,17 +255,21 @@ export function EarSelector({
 
   const end = () => {
     const g = gesture.current;
-    if (drag !== null && g?.moved) commit(nearestSeat(drag));
+    if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
     else if (g && !g.moved) onTap?.();
     gesture.current = null;
     dragRef.current = null;
     setDrag(null);
   };
 
+  /** Seats in travel order, so the keyboard walks the track, not the array. */
+  const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
+
   return (
     <g>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring. */}
-      {MODES.map((m) => {
+      {seats.map((m) => {
+
         const hint = at(SEAT_ANGLE[m], RIM_R + 16);
         const active = mode === m && !dragging;
         // On a person's screen the seats TELL THEIR STORY: a seat they have

@@ -143,9 +143,10 @@ export function EarSelector({
   locked = false,
   photo,
   history,
+  seats = MODES,
 }: {
-  mode: Mode;
-  onChange: (next: Mode) => void;
+  mode: Seat;
+  onChange: (next: Seat) => void;
   /** A simple tap on the piece opens the profile; a drag changes mode. */
   onTap?: () => void;
   /** True on a person's screen: the seat STATES their interaction type. */
@@ -153,12 +154,14 @@ export function EarSelector({
   /** A face riding the selector, inside the ring's own negative space. */
   photo?: string;
   /** The modes this person has taken part in, told by the seats themselves. */
-  history?: Mode[];
+  history?: Seat[];
+  /** Which seats this track offers. My own G offers all five (giver = me). */
+  seats?: readonly Seat[];
 }) {
 
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
-  const last = useRef<Mode>(mode);
+  const last = useRef<Seat>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
   /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
@@ -174,7 +177,8 @@ export function EarSelector({
   // circle, so settling takes the short way and never spins the long way.
   let target = unwrap(angleRef.current, restAngle);
   if (drag !== null) {
-    const seat = unwrap(drag, SEAT_ANGLE[nearestSeat(drag)]);
+    const seat = unwrap(drag, SEAT_ANGLE[nearestOf(drag, seats)]);
+
     const pull = Math.max(0, 1 - Math.abs(seat - drag) / CAPTURE) * 0.55;
     target = drag + (seat - drag) * pull;
   }

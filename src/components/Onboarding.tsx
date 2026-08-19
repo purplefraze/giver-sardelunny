@@ -139,11 +139,19 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
  */
 type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
 
-/** The camera: how small the G is while it is only a letter. */
-const LETTER_SCALE = 0.12;
-const LETTER_SHIFT = "-12vw";
+/**
+ * THE LOGO COMPOSITION. The Living G is not a symbol beside the word: its SMALL
+ * TOP LOOP is the dot of the "i" in "iver". Scale, x and y are tuned together;
+ * the canonical geometry is untouched.
+ */
+const LETTER_SCALE = 0.26;
+const LETTER_SHIFT = "-19vw";
+const LETTER_RISE = "-1vh";
+/** Where the letters "ıver" sit relative to screen centre. */
+const LETTERS_SHIFT = "13vw";
 const ZOOM_MS = 900;
 const WORD_HOLD = 850;
+
 
 function OpeningSequence({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<Phase>("word");

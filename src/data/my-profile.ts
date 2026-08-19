@@ -193,6 +193,25 @@ function hydrate() {
   }
 }
 
+/**
+ * THE ONE PLACE SPARKS ARE EARNED. Ten sparks from GIVER — never from another
+ * person — for a completed act of generosity, recorded against a key so the
+ * same completed interaction can never pay out twice.
+ */
+function reward(key: string) {
+  hydrate();
+  if (person.rewarded.includes(key)) return;
+  savePerson({
+    ...person,
+    sparks: person.sparks + GENEROSITY_REWARD,
+    rewarded: [...person.rewarded, key],
+  });
+  buzz();
+  sparkFlashStore.show(`+${GENEROSITY_REWARD} sparks ✨`);
+}
+
+
+
 export const myProfileStore = {
   subscribe(listener: () => void) {
     hydrate();

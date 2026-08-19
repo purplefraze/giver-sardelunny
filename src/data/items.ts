@@ -76,7 +76,7 @@ export const MAX_ACTIVE: Record<ItemType, number> = {
  * colours can legitimately live at once. Values are the world tokens, so the
  * text can never drift from its Living G world.
  */
-export const ACTIVITY_FILL: Record<Category, string> = {
+export const ACTIVITY_FILL: Record<ItemType, string> = {
   wish: "var(--activity-wish)",
   give: "var(--activity-give)",
   trade: "var(--activity-trade)",

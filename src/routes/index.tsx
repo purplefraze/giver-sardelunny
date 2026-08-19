@@ -9,7 +9,7 @@ import { SparklesReward } from "@/components/SparklesReward";
 import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
-import type { MyProfile } from "@/data/my-profile";
+import type { MyProfile, Category } from "@/data/my-profile";
 import { myProfileStore, myAsMember, myPhoto, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
 import {

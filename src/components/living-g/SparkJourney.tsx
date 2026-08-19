@@ -4,22 +4,24 @@ import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
 import { buzz } from "@/lib/haptics";
 
 /**
- * THE TRAVELLING SPARK — an onboarding LESSON, not decoration.
+ * THE TRAVELLING SPARK — a bead riding INSIDE the Living G's own stroke, on the
+ * rail measured off the canonical geometry (see spark-track.ts).
  *
- * A bead sits inside the Living G's own stroke and rides the rail measured off
- * the canonical geometry (see spark-track.ts). It teaches three things at once:
- *
- *   THE G IS A TRACK.  THE ACTION MOVES THROUGH IT.  THE ACTION CREATES CHANGE.
- *
- * The bead can be DRAGGED — it follows the finger by projecting onto the rail,
- * so it can never leave the track — and if the user only watches, it travels on
- * its own. When it lands, the green resolves OUTWARD from the landing point: the
- * action causes the colour, never the other way round.
+ * Two modes, one rail:
+ *   auto  — the introduction. The bead travels the rail on its own, from the
+ *           bottom loop's opening up through the spine into the middle loop.
+ *           No drag, no colour change: it simply shows that sparks travel.
+ *   drag  — the lesson. The bead starts at the middle loop and can only be
+ *           moved by a finger, projected onto the rail so it can never leave
+ *           the stroke. On arrival the green resolves outward from the landing
+ *           point: the action causes the colour, never the other way round.
  */
 
 /** The green resolving through the G from the landing point. */
-const WASH_MS = 1400;
+const WASH_MS = 1100;
 
+/** The introductory journey: quick, confident, unmistakably along the stroke. */
+const AUTO_MS = 2200;
 
 /** Ease-in-out: it sets off gently and settles gently. No bounce. */
 const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
@@ -27,9 +29,12 @@ const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
 type Sample = { x: number; y: number; u: number };
 
 export function SparkJourney({
+  mode = "drag",
   onArrive,
   onGreen,
 }: {
+  /** "auto" travels bottom -> middle by itself; "drag" is the user's journey. */
+  mode?: "auto" | "drag";
   /** The spark has reached the end of its journey. */
   onArrive?: () => void;
   /** The green has finished resolving through the whole G. */
@@ -45,13 +50,13 @@ export function SparkJourney({
   const uRef = useRef(0);
 
   const [at, setAt] = useState({ x: 0, y: 0, ready: false });
-  const [u, setU] = useState(0);
+  const [u, setU] = useState(mode === "auto" ? 1 : 0);
   const [dragging, setDragging] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [wash, setWash] = useState(0);
 
   /** Where on the rail is progress u? Straight from the path itself. */
-  const put = (next: number) => {
+  const put = (next: number, tick = true) => {
     const path = rail.current;
     if (!path) return;
     const clamped = Math.min(1, Math.max(0, next));
@@ -60,7 +65,7 @@ export function SparkJourney({
     setU(clamped);
     setAt({ x: p.x, y: p.y, ready: true });
 
-
+    if (!tick) return;
     // A quiet tick at each quarter of the journey — abacus, not applause.
     const mark = Math.floor(clamped * 4);
     if (mark > marks.current) {
@@ -83,22 +88,41 @@ export function SparkJourney({
       out.push({ x: p.x, y: p.y, u: s });
     }
     samples.current = out;
-    put(0);
+    put(mode === "auto" ? 1 : 0, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // No auto-travel: the journey is the user's to make. The bead simply waits on
-  // the rail, at the bowl's lower right, until a finger takes it.
-
+  /**
+   * THE INTRODUCTION. The bead walks the rail backwards — from the bottom loop's
+   * opening, round the loop, through the spine, into the middle loop — entirely
+   * on its own. It never leaves the stroke because it is always ON the rail.
+   */
+  useEffect(() => {
+    if (mode !== "auto" || !at.ready) return;
+    let raf = 0;
+    const start = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - start) / AUTO_MS);
+      put(1 - ease(k), false);
+      if (k < 1) raf = requestAnimationFrame(step);
+      else {
+        buzz([10, 40, 16]);
+        onArrive?.();
+      }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, at.ready]);
 
   // Landing: the haptic, then the green travelling outward from the bead.
   useEffect(() => {
-    if (u < 1 || arrived) return;
+    if (mode !== "drag" || u < 1 || arrived) return;
     setArrived(true);
     buzz([12, 60, 22]);
     onArrive?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [u, arrived]);
+  }, [mode, u, arrived]);
 
   // THE CHANGE. Kept in its OWN effect so nothing can cancel it mid-flight.
   useEffect(() => {
@@ -129,12 +153,8 @@ export function SparkJourney({
 
   /**
    * MAGNETIC, AND LOCAL. The nearest point ON THE RAIL, searched only within a
-   * short ARC-LENGTH stretch either side of where the bead already is (measured
-   * in the G's own units, so the window is the same physical distance however
-   * long the whole journey is). The bead slides along the wire continuously and
-   * can never hop across a gap to a geometrically-near part of the rail, so the
-   * S-curve and the whole lower loop must actually be walked. A finger that
-   * strays far off the wire simply leaves the bead where it is.
+   * short ARC-LENGTH stretch either side of where the bead already is, so the
+   * bead slides along the wire continuously and can never hop across a gap.
    */
   const STEP_LEN = 70; // how far along the wire one move may advance
   const REACH = 260; // how far off the wire the finger may stray
@@ -157,7 +177,6 @@ export function SparkJourney({
     if (best && d <= REACH * REACH) put(best.u);
   };
 
-
   const grab = (e: React.PointerEvent) => {
     if (arrived) return;
     grabbed.current = true;
@@ -178,7 +197,6 @@ export function SparkJourney({
     // A gentle lock-in: within a hair of the destination, it settles there.
     if (uRef.current > 0.97) put(1);
   };
-
 
   const R = 34;
 
@@ -208,7 +226,7 @@ export function SparkJourney({
         <>
           {/* A generous invisible grip along the rail, so the bead is easy to
               take hold of without any visible control appearing on the G. */}
-          {!arrived ? (
+          {mode === "drag" && !arrived ? (
             <path
               d={SPARK_TRACK_D}
               fill="none"

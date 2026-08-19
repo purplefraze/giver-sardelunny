@@ -12,10 +12,15 @@ import { buzz } from "@/lib/haptics";
 export function AboutForm({
   onDone,
   onHelp,
+  onMessages,
+  unread = 0,
 }: {
   onDone: () => void;
   /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
   onHelp?: () => void;
+  /** MY INBOX LIVES HERE, beside my balances — private account information. */
+  onMessages?: () => void;
+  unread?: number;
 }) {
   const me = useMyProfile();
 

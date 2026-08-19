@@ -44,14 +44,14 @@ type Beat = {
  * word begin. Each value is a SETTLE time — the fade itself (LOOP_WORD_MS) runs
  * underneath it, so consecutive words overlap softly rather than snapping.
  */
-const WORD_BEAT = 1250;
-const COMPOSITION = 2900;
+const WORD_BEAT = 720;
+const COMPOSITION = 1350;
 /** A brand name needs room: it lands, and then it is allowed to sit there. */
-const HERO_BEAT = 2500;
+const HERO_BEAT = 1150;
 /** The empty G, breathing — before anything is said, and between thoughts. */
-const BREATH = 1100;
+const BREATH = 480;
 /** A small beat between thoughts: enough air, never a dramatic wait. */
-const SHORT_BEAT = 620;
+const SHORT_BEAT = 360;
 
 /**
  * OPENING TYPE HIERARCHY, as shared tokens — never per-word guesses.

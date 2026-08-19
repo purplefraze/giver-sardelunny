@@ -21,7 +21,7 @@ export type LoopCopy = {
  * FADE-OUT duration of a thought that is being replaced — slow enough to feel
  * like a breath, never a cut.
  */
-export const BEAT_MS = 680;
+export const BEAT_MS = 200;
 
 /**
  * One onboarding chapter: the canonical full-screen Living G in a single bold

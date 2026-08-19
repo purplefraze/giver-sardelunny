@@ -12,7 +12,8 @@ import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
+import { primaryGive, CATEGORY_PLURAL, CATEGORIES, myProfileStore } from "@/data/my-profile";
+import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";

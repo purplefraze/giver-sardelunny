@@ -155,6 +155,15 @@ function Index() {
   const [gaveTo, setGaveTo] = useState<string | null>(null);
   /** My deeper, conventional profile page — same data, browsable form. */
   const [fullMe, setFullMe] = useState(false);
+  /**
+   * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
+   * the G; closing it returns to the SAME seat, with the saved data already
+   * alive inside the loop. Forms are never appended beneath the G.
+   */
+  const [editor, setEditor] = useState<
+    { kind: "about" } | { kind: "category"; category: Category } | null
+  >(null);
+
 
 
   /** Prototype top-loop selector on my own profile; stays where I leave it. */

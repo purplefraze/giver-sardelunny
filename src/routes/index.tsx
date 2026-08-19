@@ -2,12 +2,14 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { FullProfile } from "@/components/FullProfile";
-import { ProfileBuilder } from "@/components/ProfileBuilder";
+import { AboutForm } from "@/components/profile/AboutForm";
+import { CategoryForm } from "@/components/profile/CategoryForm";
+
 import { SparklesReward } from "@/components/SparklesReward";
 import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
-import type { MyProfile } from "@/data/my-profile";
+import type { MyProfile, Category } from "@/data/my-profile";
 import { myProfileStore, myAsMember, myPhoto, primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
 
 import {
@@ -153,6 +155,15 @@ function Index() {
   const [gaveTo, setGaveTo] = useState<string | null>(null);
   /** My deeper, conventional profile page — same data, browsable form. */
   const [fullMe, setFullMe] = useState(false);
+  /**
+   * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
+   * the G; closing it returns to the SAME seat, with the saved data already
+   * alive inside the loop. Forms are never appended beneath the G.
+   */
+  const [editor, setEditor] = useState<
+    { kind: "about" } | { kind: "category"; category: Category } | null
+  >(null);
+
 
 
   /** Prototype top-loop selector on my own profile; stays where I leave it. */
@@ -245,16 +256,17 @@ function Index() {
           }}
         />
       ) : setup ? (
-        /* THE PROFILE BUILDER — writes straight to the real profile. */
-        <ProfileBuilder
+        /* FIRST RUN — the profile information screen, as its own destination. */
+        <AboutForm
+          firstTime
           onDone={() => {
             /* Awarded exactly once, however often the profile is edited. */
             const awarded = myProfileStore.awardProfileSparkles();
             setSetup(false);
             if (awarded) setReward(true);
           }}
-          firstTime={!me.built}
         />
+
       ) : reward ? (
         <SparklesReward onDone={() => setReward(false)} />
       ) : (
@@ -268,7 +280,7 @@ function Index() {
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             identity="giver"
-            active={top === null}
+            active={top === null && editor === null && !fullMe}
             earCut
             overlay={
               <EarSelector
@@ -283,95 +295,77 @@ function Index() {
               top: {
                 label: "",
                 panelTitle: isProfile ? "more information" : "you",
-                panelBody: isProfile ? (
-                  <>
-                    <p className="opacity-70">{me.aboutMe || ME.about}</p>
-                    <p className="opacity-70">by day: {me.byDay || "—"}</p>
-                    <p className="opacity-70">by night: {me.byNight || "—"}</p>
-                    <p className="opacity-70">weekends: {me.weekend || "—"}</p>
-                  </>
-                ) : null,
+                panelBody: null,
+                /* TAP -> the profile information screen; back returns here. */
                 ...(isProfile
-                  ? { onPress: () => setFullMe(true) }
+                  ? { onPress: () => setEditor({ kind: "about" }) }
                   : { onPress: () => push("profile") }),
               },
               /*
                 MIDDLE LOOP:
                   giver = MY LATEST ACTIVITY of any type
                   mode  = MY <type>
-                Exactly one of them exists at a time (see contentKey above).
+                Tapping opens that item's own editor screen; saving returns to
+                this exact seat with the loop already showing the new content.
               */
               middle: {
                 label: "",
                 panelTitle: isProfile ? "latest activity" : content.mine.title,
-                panelBody: isProfile ? (
-                  <>
-                    {CATEGORIES.filter((c) => me.items[c].length).map((c) => (
-                      <p key={c}>
-                        {CATEGORY_PLURAL[c]}: {me.items[c].join(", ")}
-                      </p>
-                    ))}
-                  </>
-                ) : (
-                  content.mine.body
-                ),
+                panelBody: null,
+                onPress: () =>
+                  setEditor({
+                    kind: "category",
+                    category: isProfile ? (latest?.type ?? "wish") : mode,
+                  }),
                 render: (anchor) =>
                   profileLoop({
                     anchor,
                     region: "middle",
                     blocks: isProfile
-                      ? [
-                          { text: "latest", role: "secondary" as const },
-                          latest
-                            ? {
-                                text: clampField(latest.item.text),
-                                role: "primary" as const,
-                              }
-                            : { text: "nothing yet", role: "tertiary" as const },
-                          ...(latest
-                            ? [{ text: latest.type, role: "tertiary" as const }]
-                            : []),
-                        ]
+                      ? latest
+                        ? [
+                            { text: "latest", role: "secondary" as const },
+                            {
+                              text: clampField(latest.item.text),
+                              role: "primary" as const,
+                            },
+                            { text: latest.type, role: "tertiary" as const },
+                          ]
+                        : [{ text: "add a wish", role: "primary" as const }]
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode
                             ? { text: clampField(myMode), role: "primary" as const }
-                            : { text: "nothing yet", role: "tertiary" as const },
+                            : { text: `add a ${mode}`, role: "primary" as const },
                         ],
                   }),
               },
               /*
                 BOTTOM LOOP:
-                  giver = MY GIVES — what I offer the community
-                  mode  = COMMUNITY <type>
+                  giver = MY GIVES — what I offer the community (tap to edit)
+                  mode  = COMMUNITY <type> (tap to browse)
               */
               bottom: {
                 label: "",
                 panelTitle: isProfile ? "my gives" : content.community.title,
-                panelBody: isProfile ? (
-                  me.items.give.length ? (
-                    <>
-                      {me.items.give.map((g) => (
-                        <p key={g}>{g}</p>
-                      ))}
-                    </>
-                  ) : (
-                    <p className="opacity-70">nothing yet. what could you offer?</p>
-                  )
-                ) : (
-                  content.community.body
-                ),
+                panelBody: isProfile ? null : content.community.body,
+                ...(isProfile
+                  ? {
+                      onPress: () =>
+                        setEditor({ kind: "category", category: "give" }),
+                    }
+                  : {}),
                 render: (anchor) =>
                   profileLoop({
                     anchor,
                     region: "bottom",
                     blocks: isProfile
-                      ? [
-                          { text: "gives", role: "secondary" as const },
-                          myGive
-                            ? { text: clampField(myGive), role: "primary" as const }
-                            : { text: "nothing yet", role: "tertiary" as const },
-                        ]
+                      ? myGive
+                        ? [
+                            { text: "gives", role: "secondary" as const },
+                            { text: clampField(myGive), role: "primary" as const },
+                          ]
+                        : [{ text: "add a give", role: "primary" as const }]
                       : [
                           {
                             text: `community ${CATEGORY_PLURAL[mode]}`,
@@ -383,9 +377,24 @@ function Index() {
                         ],
                   }),
               },
+
             }}
           />
 
+          {/*
+            THE EDITOR DESTINATIONS. One screen at a time, above the G — never
+            beneath it. Leaving returns to the same seat, already updated.
+          */}
+          <Screen open={editor !== null}>
+            {editor?.kind === "about" ? (
+              <AboutForm onDone={() => setEditor(null)} />
+            ) : editor?.kind === "category" ? (
+              <CategoryForm
+                category={editor.category}
+                onDone={() => setEditor(null)}
+              />
+            ) : null}
+          </Screen>
 
 
           <Screen open={top === "profile"}>
@@ -450,7 +459,7 @@ function Index() {
                   label: "edit profile",
                   panelTitle: "about me",
                   panelBody: null,
-                  onPress: () => setSetup(true),
+                  onPress: () => setEditor({ kind: "about" }),
                 },
               }}
             />

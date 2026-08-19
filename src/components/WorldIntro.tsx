@@ -16,30 +16,49 @@ const BEATS: Record<Category, string[][]> = {
     [
       "time to make a wish.",
       "anything!",
+      "a ride to the airport? help moving a couch? someone to teach you guitar? a birthday cake? a ladder? advice from someone who knows their stuff? company on a walk?",
+      "big, small, practical, weird, meaningful — wish for it.",
+    ],
+    [
       "each wish costs 10 sparks.",
       "don’t be shy. you’ve got a whole community of givers who’ve got your back.",
+      "when you wish upon a spark… makes no difference who you are. ✨",
     ],
-    ["when you wish upon a spark… makes no difference who you are. ✨", "so, what do you wish for?"],
     [
       "you get 3 wishes at a time.",
       "put what you want most at the top — we’ll make it more visible to your community.",
+      "drag your wishes to reorder them any time.",
+      "so, what do you wish for?",
     ],
   ],
   give: [
     [
       "what have you got to give?",
-      "it doesn’t have to be a thing.",
-      "give your time. your skills. something you don’t need. a helping hand. whatever you’ve got.",
-      "someone in your community might need exactly what you have to offer.",
+      "probably more than you think.",
+      "give your time. your talent. your knowledge. something you’ve made. something you don’t need. or simply show up for someone.",
     ],
-    ["what would you like to give?", "there is no spark charge for offering something."],
+    [
+      "cook someone dinner. cut their hair. teach them guitar. help build a shelf. give someone a ride. walk their dog. share vegetables from your garden. help with a résumé. fix a bike. take someone’s portrait. give away a jacket. sit down and listen.",
+      "if you’ve got something that could make somebody else’s day a little better, you can give it.",
+    ],
+    [
+      "and generosity creates sparks. ✨",
+      "every time one of your gives is shared with another giver, giver gives you 10 sparks.",
+      "every time you grant someone’s wish, giver gives you 10 sparks.",
+      "nobody pays anybody. the sparks come from giver — then you wish with them.",
+    ],
+    ["so… what have you got to give?"],
   ],
   trade: [
     [
       "let’s make a trade.",
-      "got something someone else might want? need something they might have?",
-      "trade things, skills, time, or favours directly with another person.",
-      "no sparks needed. just a good trade.",
+      "sometimes you’ve got something they want — and they’ve got something you want.",
+      "trade things, skills, time, knowledge, or favours.",
+    ],
+    [
+      "haircut for photography. guitar lesson for help moving. home-cooked dinner for help fixing a bike. plants for pottery. design help for language lessons. camping gear for something you need that weekend.",
+      "if the trade works for both of you, it works for giver.",
+      "no sparks are exchanged for the trade itself.",
     ],
     ["what would you trade?"],
   ],
@@ -47,13 +66,17 @@ const BEATS: Record<Category, string[][]> = {
     [
       "need it, but don’t need to own it?",
       "borrow it.",
-      "a drill. a ladder. camping gear. a pasta strainer. whatever you need for a little while.",
-      "someone nearby might already have one sitting around.",
-      "borrow what you need. give it back when you’re done.",
+      "a drill for twenty minutes. a ladder for the afternoon. camping gear for the weekend. a pasta strainer for dinner. a dress for a party. a projector for movie night.",
+      "a bike pump. a suitcase. a folding table. a tool you might literally use once.",
     ],
-    ["what would you like to borrow?"],
+    [
+      "before buying something you’ll barely use, see if your community already has it.",
+      "borrow what you need. give it back when you’re done.",
+      "what would you like to borrow?",
+    ],
   ],
 };
+
 
 export function WorldIntro({
   category,

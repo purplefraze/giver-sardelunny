@@ -9,8 +9,16 @@ import { buzz } from "@/lib/haptics";
  * screen sits underneath the G: it replaces it for as long as you are editing.
  * Every keystroke commits to the single source of truth immediately.
  */
-export function AboutForm({ onDone }: { onDone: () => void }) {
+export function AboutForm({
+  onDone,
+  onHelp,
+}: {
+  onDone: () => void;
+  /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
+  onHelp?: () => void;
+}) {
   const me = useMyProfile();
+
 
   const pickPhoto = () => {
     const input = document.createElement("input");

@@ -460,18 +460,18 @@ export function EarSelector({
       */}
       {sparks !== undefined ? (
         <text
-          x={ear.x - Math.sin(angle) * (EAR_GEOMETRY.outerR + 52)}
-          y={ear.y + Math.cos(angle) * (EAR_GEOMETRY.outerR + 52)}
+          x={ear.x - Math.sin(angle) * (EAR_GEOMETRY.outerR + 46)}
+          y={ear.y + Math.cos(angle) * (EAR_GEOMETRY.outerR + 46)}
           textAnchor="middle"
           dominantBaseline="middle"
           fill="var(--giver-generosity)"
           className="font-black lowercase"
           pointerEvents="none"
           style={{
-            fontSize: 34,
-            letterSpacing: "0.06em",
-            opacity: dragging ? 0 : 0.9,
-            transition: "opacity 180ms ease-out",
+            fontSize: 22,
+            letterSpacing: "0.14em",
+            opacity: peek && !dragging ? 0.7 : 0,
+            transition: "opacity 160ms ease-out",
           }}
         >
           {sparks} sparks

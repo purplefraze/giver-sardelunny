@@ -86,16 +86,14 @@ export function SparkBundle({
           >
             {count}
           </text>
-          {/* The Spark symbol, riding the bundle's own edge. */}
-          <text
-            x={r * 0.92}
-            y={-r * 0.92}
-            textAnchor="middle"
-            dominantBaseline="central"
-            style={{ fontSize: r * 0.5 }}
-          >
-            ✨
-          </text>
+          {/* THE SPARK MARK, drawn — a four-point star, never an emoji glyph
+              that a device might not have. */}
+          <g transform={`translate(${r * 0.95} ${-r * 0.95})`} fill={colour}>
+            <path
+              d={`M0 ${-r * 0.34} Q${r * 0.07} ${-r * 0.07} ${r * 0.34} 0 Q${r * 0.07} ${r * 0.07} 0 ${r * 0.34} Q${-r * 0.07} ${r * 0.07} ${-r * 0.34} 0 Q${-r * 0.07} ${-r * 0.07} 0 ${-r * 0.34} Z`}
+            />
+            <circle cx={r * 0.34} cy={-r * 0.34} r={r * 0.07} opacity={0.7} />
+          </g>
         </>
       ) : (
         <circle r={r * 0.32} fill="var(--world-bg)" opacity={0.9} />

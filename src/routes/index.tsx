@@ -240,7 +240,7 @@ function Index() {
                             },
                             { text: latest.type, role: "tertiary" as const },
                           ]
-                        : [{ text: "add a wish", role: "primary" as const }]
+                        : /* TRULY EMPTY until real activity exists. */ []
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode

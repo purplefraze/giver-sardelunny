@@ -308,6 +308,35 @@ function Index() {
           />
 
           {/*
+            THE QUIET WAY BACK TO THE EXPLANATION. Nothing shouts; one small
+            word in the corner replays the world's intro on demand.
+          */}
+          {!isProfile && intro === null && editor === null ? (
+            <button
+              type="button"
+              onClick={() => setIntro(mode)}
+              className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
+            >
+              what’s {mode}?
+            </button>
+          ) : null}
+
+          {/* FIRST-TIME EXPLANATION -> straight into my <type>. */}
+          <Screen open={intro !== null}>
+            {intro ? (
+              <WorldIntro
+                category={intro}
+                onDone={() => {
+                  introSeenStore.markSeen(intro);
+                  setIntro(null);
+                  setEditor({ kind: "category", category: intro });
+                }}
+              />
+            ) : null}
+          </Screen>
+
+
+          {/*
             THE EDITOR DESTINATIONS. One screen at a time, above the G — never
             beneath it. Leaving returns to the same seat, already updated.
           */}

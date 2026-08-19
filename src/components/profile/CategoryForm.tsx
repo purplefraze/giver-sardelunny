@@ -8,7 +8,7 @@ import {
   myProfileStore,
   type Category,
 } from "@/data/my-profile";
-import { tradeText } from "@/data/items";
+import { splitTrade, tradeText } from "@/data/items";
 import { buzz } from "@/lib/haptics";
 
 /**
@@ -132,7 +132,7 @@ export function CategoryForm({
               {category === "trade" ? (
                 <div className="min-w-0 flex-1 space-y-2">
                   <input
-                    value={item.offer ?? item.text}
+                    value={item.offer ?? splitTrade(item.text).offer}
                     onChange={(e) =>
                       myProfileStore.editTradeSide(
                         i,
@@ -147,7 +147,7 @@ export function CategoryForm({
                     for
                   </p>
                   <input
-                    value={item.want ?? ""}
+                    value={item.want ?? splitTrade(item.text).want}
                     onChange={(e) =>
                       myProfileStore.editTradeSide(
                         i,

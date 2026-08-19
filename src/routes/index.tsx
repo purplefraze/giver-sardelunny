@@ -20,7 +20,7 @@ import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
-import { ME_ID, communityItems, type ItemType } from "@/data/items";
+import { ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
 
 
 
@@ -163,14 +163,25 @@ function Index() {
   const openWorld = (category: Category) => {
     setChoose(false);
     if (introSeen[category]) setEditor({ kind: "category", category });
-    else setIntro({ topic: category, help: false });
+    else showIntro(category);
+  };
+
+  /**
+   * ENTERING THE INSTRUCTIONS IS SEEING THEM. The persisted flag is written the
+   * instant they open — not on continue, not on save — so pressing back, using
+   * a different door, remounting or reloading can never replay them.
+   */
+  const showIntro = (category: Category) => {
+    introSeenStore.markSeen(category);
+    setIntro({ topic: category, help: false });
   };
 
   useEffect(() => {
     if (!entered || seat === "giver") return;
-    if (introSeen[seat]) return;
-    setIntro({ topic: seat, help: false });
-  }, [entered, seat, introSeen]);
+    if (introSeenStore.get()[seat]) return;
+    showIntro(seat);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entered, seat]);
 
   /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
@@ -205,7 +216,8 @@ function Index() {
   const myMode = me.items[mode][0] ?? null;
   /** COMMUNITY <type> — the same item collection, queried by everyone else. */
   const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
-  const community = theirs[0]?.text ?? null;
+  const firstTheirs = theirs[0];
+  const community = firstTheirs ? itemLine(firstTheirs) : null;
   /** MY GIVE — what I offer the community, the profile's bottom loop. */
   const myGive = primaryGive(me);
 
@@ -301,7 +313,7 @@ function Index() {
                         ? [
                             { text: "latest", role: "secondary" as const },
                             {
-                              text: clampField(latest.item.text),
+                              text: clampField(itemLine(latest.item)),
                               role: "primary" as const,
                             },
                             { text: latest.type, role: "tertiary" as const },
@@ -411,7 +423,7 @@ function Index() {
                   const { topic, help: voluntary } = intro;
                   setIntro(null);
                   if (voluntary || topic === "sparks") return;
-                  introSeenStore.markSeen(topic);
+                  /* Already marked seen on entry — this just opens the form. */
                   setEditor({ kind: "category", category: topic });
                 }}
               />

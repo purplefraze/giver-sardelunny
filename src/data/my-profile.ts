@@ -7,6 +7,8 @@ import {
   completedItems,
   itemsStore,
   myItems,
+  itemLine,
+  splitTrade,
   tradeText,
   type Item,
   type ItemType,
@@ -151,7 +153,7 @@ function project(): MyProfile {
   for (const category of CATEGORIES) {
     records[category] = myItems(state, category);
     completed[category] = completedItems(state, category);
-    items[category] = records[category].map((i) => i.text);
+    items[category] = records[category].map(itemLine);
   }
   return { ...person, items, records, completed };
 }
@@ -269,8 +271,9 @@ export const myProfileStore = {
   editTradeSide(index: number, side: "offer" | "want", value: string) {
     const item = myProfileStore.get().records.trade[index];
     if (!item) return;
-    const offer = side === "offer" ? value : (item.offer ?? item.text);
-    const want = side === "want" ? value : (item.want ?? "");
+    const sides = splitTrade(item.text);
+    const offer = side === "offer" ? value : (item.offer ?? sides.offer);
+    const want = side === "want" ? value : (item.want ?? sides.want);
     itemsStore.patch(item.id, { offer, want, text: tradeText(offer, want) });
   },
 

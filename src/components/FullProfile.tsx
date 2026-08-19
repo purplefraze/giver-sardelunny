@@ -1,6 +1,6 @@
 import { BackArrow } from "@/components/BackArrow";
 import { connectionsOf, type Member } from "@/data/giver";
-import { ITEM_TYPES, ME_ID, boostWeight, myItems } from "@/data/items";
+import { ITEM_TYPES, ME_ID, boostWeight, itemLine, myItems } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
@@ -146,7 +146,7 @@ export function FullProfile({
                     {items.map((item) => (
                       <li key={item.id} className="flex items-start gap-4">
                         <span className="flex-1 text-2xl font-medium lowercase leading-tight">
-                          {item.text}
+                          {itemLine(item)}
                         </span>
                         {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
                         {member.id === ME_ID ? (

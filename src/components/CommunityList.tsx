@@ -2,6 +2,7 @@ import {
   ME_ID,
   boostWeight,
   communityItems,
+  itemLine,
   type ItemType,
 } from "@/data/items";
 import { memberById } from "@/data/giver";
@@ -35,7 +36,7 @@ export function CommunityList({ type }: { type: ItemType }) {
         return (
           <li key={item.id} className="flex items-start gap-4">
             <span className="flex-1">
-              {item.text}
+              {itemLine(item)}
               <span className="opacity-50">
                 {owner ? ` — ${owner.username}` : ""}
                 {item.distanceKm === undefined ? "" : `, ${item.distanceKm} km`}

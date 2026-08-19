@@ -32,16 +32,20 @@ type Sample = { x: number; y: number; u: number };
 
 export function SparkJourney({
   mode = "drag",
+  count,
   onArrive,
   onGreen,
 }: {
   /** "auto" travels bottom -> middle by itself; "drag" is the user's journey. */
   mode?: "auto" | "drag";
+  /** How many Sparks this bundle carries — shown inside the bundle. */
+  count?: number;
   /** The spark has reached the end of its journey. */
   onArrive?: () => void;
   /** The green has finished resolving through the whole G. */
   onGreen?: () => void;
 }) {
+
   const uid = useId().replace(/:/g, "");
   const rail = useRef<SVGPathElement | null>(null);
   const samples = useRef<Sample[]>([]);

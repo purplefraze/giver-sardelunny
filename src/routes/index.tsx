@@ -245,16 +245,17 @@ function Index() {
           }}
         />
       ) : setup ? (
-        /* THE PROFILE BUILDER — writes straight to the real profile. */
-        <ProfileBuilder
+        /* FIRST RUN — the profile information screen, as its own destination. */
+        <AboutForm
+          firstTime
           onDone={() => {
             /* Awarded exactly once, however often the profile is edited. */
             const awarded = myProfileStore.awardProfileSparkles();
             setSetup(false);
             if (awarded) setReward(true);
           }}
-          firstTime={!me.built}
         />
+
       ) : reward ? (
         <SparklesReward onDone={() => setReward(false)} />
       ) : (

@@ -90,7 +90,7 @@ export function AboutForm({
           nowhere else — they are mine, private, and never on display on the
           Living G itself. Nobody else ever sees these numbers.
         */}
-        <dl className="mt-12 flex gap-14">
+        <dl className="mt-12 flex flex-wrap items-start gap-x-10 gap-y-8">
           <div>
             <dd
               className="text-6xl font-black leading-none tracking-[-0.05em]"

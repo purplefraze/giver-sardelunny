@@ -215,8 +215,23 @@ export const myProfileStore = {
   },
 
   /* ---- ITEMS: thin delegation to the one shared item collection. ---- */
-  addItem(category: Category, text: string) {
-    itemsStore.add(ME_ID, category, text);
+  /**
+   * POSTING. A wish costs 10 sparks; giving, trading and lending are free.
+   * Nothing is created unless the cost can actually be paid.
+   */
+  addItem(
+    category: Category,
+    text: string,
+  ): { ok: boolean; reason?: "sparks" | "full" | "empty" } {
+    hydrate();
+    if (!text.trim()) return { ok: false, reason: "empty" };
+    if (category === "wish" && person.sparks < WISH_COST)
+      return { ok: false, reason: "sparks" };
+    const item = itemsStore.add(ME_ID, category, text);
+    if (!item) return { ok: false, reason: "full" };
+    if (category === "wish")
+      savePerson({ ...person, sparks: person.sparks - WISH_COST });
+    return { ok: true };
   },
   editItem(category: Category, index: number, text: string) {
     const item = myProfileStore.get().records[category][index];
@@ -226,14 +241,42 @@ export const myProfileStore = {
     const item = myProfileStore.get().records[category][index];
     if (item) itemsStore.remove(item.id);
   },
+  /**
+   * COMPLETED GENEROSITY. A give that has actually reached another Giver is a
+   * completed act, and Giver — not the other person — recognises it with 10
+   * sparks. The ledger key makes the reward impossible to collect twice.
+   */
   completeItem(category: Category, index: number) {
     const item = myProfileStore.get().records[category][index];
-    if (item) itemsStore.complete(item.id);
+    if (!item) return;
+    itemsStore.complete(item.id);
+    if (category === "give") reward(`give:${item.id}`);
+  },
+  /**
+   * GRANTING SOMEONE ELSE'S WISH. The wish closes and the granter earns 10
+   * sparks from Giver. Never awarded for offering, messaging or opening it.
+   */
+  grantWish(itemId: string): { ok: boolean; reason?: string } {
+    hydrate();
+    const item = itemsStore.get().items.find((i) => i.id === itemId);
+    if (!item || item.type !== "wish") return { ok: false, reason: "gone" };
+    if (item.ownerId === ME_ID) return { ok: false, reason: "self" };
+    if (item.status !== "active") return { ok: false, reason: "closed" };
+    itemsStore.complete(itemId);
+    reward(`wish:${itemId}`);
+    return { ok: true };
+  },
+  /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */
+  seedSparks() {
+    hydrate();
+    if (person.sparksSeeded) return;
+    savePerson({ ...person, sparks: STARTING_SPARKS, sparksSeeded: true });
   },
   /** REORDER = PRIORITISE. Position #1 is what the Living G shows. */
   moveItem(category: Category, index: number, delta: number) {
     itemsStore.move(ME_ID, category, index, delta);
   },
+
 
   /* ---- SPARKLES: earned, never bought, never awarded for a profile. ---- */
   /** Spend one sparkle on somebody ELSE's active community item. */

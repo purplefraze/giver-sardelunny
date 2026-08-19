@@ -242,23 +242,29 @@ export function SparkJourney({
             />
           ) : null}
 
-          {/* THE SPARK. One bead, riding inside the stroke. */}
+          {/* THE SPARKS. A bundle of light, riding inside the stroke. */}
           <g
             pointerEvents="none"
+            transform={`translate(${at.x} ${at.y})`}
             style={{
               opacity: arrived ? 0 : 1,
               transition: `opacity ${WASH_MS}ms ease-out`,
             }}
           >
-            <circle
-              cx={at.x}
-              cy={at.y}
-              r={dragging ? R * 1.08 : R}
-              fill="var(--giver-generosity)"
-              style={{ transition: "r 220ms cubic-bezier(0.22,1,0.36,1)" }}
-            />
-            <circle cx={at.x} cy={at.y} r={R * 0.34} fill="var(--world-bg)" opacity={0.9} />
+            <g
+              style={{
+                transform: `scale(${dragging ? 1.08 : 1})`,
+                transition: "transform 220ms cubic-bezier(0.22,1,0.36,1)",
+              }}
+            >
+              <SparkBundle
+                r={R}
+                colour="var(--giver-generosity)"
+                {...(count !== undefined ? { count } : {})}
+              />
+            </g>
           </g>
+
         </>
       ) : null}
     </g>

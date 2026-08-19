@@ -392,6 +392,31 @@ export function EarSelector({
         </>
       ) : null}
 
+      {/* PAST CONNECTIONS — one quiet number tucked beside the face. */}
+      {badge ? (
+        <g pointerEvents="none" opacity={dragging ? 0 : 0.95} style={{ transition: "opacity 180ms ease-out" }}>
+          <circle
+            cx={ear.x + EAR_GEOMETRY.innerR * 0.82}
+            cy={ear.y + EAR_GEOMETRY.innerR * 0.82}
+            r={EAR_GEOMETRY.innerR * 0.42}
+            fill="var(--world-g)"
+          />
+          <text
+            x={ear.x + EAR_GEOMETRY.innerR * 0.82}
+            y={ear.y + EAR_GEOMETRY.innerR * 0.82}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="var(--world-bg)"
+            className="font-black"
+            style={{ fontSize: EAR_GEOMETRY.innerR * 0.44, letterSpacing: "-0.04em" }}
+          >
+            {badge}
+          </text>
+        </g>
+      ) : null}
+
+
+
       {/* dot -> word: the mode reads inside the piece that carries it */}
       <text
         x={ear.x}

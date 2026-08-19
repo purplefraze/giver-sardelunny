@@ -46,10 +46,10 @@ type Props = {
   regions?: Partial<Record<RegionKey, GRegion>>;
   className?: string;
   showLabels?: boolean;
-  /** Interactive layer drawn above the artwork (e.g. the top-loop selector). */
+  /** Interactive layer drawn above the artwork (eg the top-loop selector). */
   overlay?: React.ReactNode;
   /**
-   * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (e.g. the current mode).
+   * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (eg the current mode).
    * When it changes, every loop's content is UNMOUNTED and rebuilt, so no
    * previous state's words, fades or timers can survive underneath the new one.
    */
@@ -60,6 +60,11 @@ type Props = {
    * the base artwork and every swell copy, so no fragment can peek back.
    */
   earCut?: boolean;
+  /**
+   * LOGO WEIGHT ONLY. Adds an outer stroke of the same colour so the Living G
+   * reads as one heavy glyph beside bold type, without redrawing the path.
+   */
+  weight?: "normal" | "heavy";
 };
 
 

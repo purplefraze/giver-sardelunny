@@ -87,7 +87,12 @@ export function ActivityDetail({
         className="text-[11px] font-black lowercase tracking-[0.3em]"
         style={{ color: ACTIVITY_FILL[item.type] }}
       >
-        {item.type}
+        {/* WHAT THIS IS, SAID EXACTLY: borrowing and lending are not the same. */}
+        {item.type === "borrow" && item.side === "lend"
+          ? "lending"
+          : item.type === "borrow"
+            ? "wants to borrow"
+            : item.type}
       </span>
       <h1
         className="mt-2 text-[12vw] font-black lowercase leading-[0.88] tracking-[-0.05em]"
@@ -96,19 +101,11 @@ export function ActivityDetail({
         {itemLine(item)}
       </h1>
 
-      {item.note ? (
-        <p className="mt-4 text-lg font-medium lowercase leading-snug opacity-65">
-          {item.note}
-        </p>
-      ) : null}
-
-      <p className="mt-6 text-[13px] font-medium lowercase opacity-50">
+      {/* WHO POSTED IT, RIGHT NEXT TO WHAT IT IS. No hunting. */}
+      <p className="mt-3 text-[13px] font-medium lowercase opacity-55">
         {owner ? owner.username : "someone"}
         {item.distanceKm === undefined ? "" : ` · ${item.distanceKm} km away`}
-      </p>
-
-      {/* WHERE THIS ACTIVITY REALLY IS. A word, not a badge, and never a lie. */}
-      <p className="mt-1 text-[13px] font-medium lowercase opacity-50">
+        {" · "}
         {status === "completed"
           ? "completed and verified"
           : mine
@@ -118,7 +115,28 @@ export function ActivityDetail({
               : "open"}
       </p>
 
-      <div className="mt-auto flex flex-col items-start gap-6 pt-12">
+      {item.note ? (
+        <p className="mt-3 text-lg font-medium lowercase leading-snug opacity-65">
+          {item.note}
+        </p>
+      ) : null}
+
+      {/* THE PHOTOS OF THE REAL THING, from the one shared record. */}
+      {item.photos?.length ? (
+        <div className="mt-4 flex gap-3 overflow-x-auto">
+          {item.photos.map((p, i) => (
+            <img
+              key={i}
+              src={p}
+              alt={`${itemLine(item)} photo ${i + 1}`}
+              className="h-32 w-32 shrink-0 object-cover"
+            />
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-8 flex flex-col items-start gap-4 pb-4">
+
         {status === "completed" ? (
           <p className="text-[6vw] font-black lowercase leading-[0.95] opacity-40">
             this one already happened.

@@ -379,8 +379,9 @@ export function EarSelector({
         tabIndex={0}
         aria-label="mode"
         aria-valuemin={1}
-        aria-valuemax={MODES.length}
-        aria-valuenow={MODES.indexOf(mode) + 1}
+        aria-valuemax={ring.length}
+        aria-valuenow={ring.indexOf(mode) + 1}
+
         aria-valuetext={mode}
         onPointerDown={(e) => {
           e.stopPropagation();

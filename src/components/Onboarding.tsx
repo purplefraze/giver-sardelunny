@@ -139,11 +139,19 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
  */
 type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
 
-/** The camera: how small the G is while it is only a letter. */
-const LETTER_SCALE = 0.12;
-const LETTER_SHIFT = "-12vw";
+/**
+ * THE LOGO COMPOSITION. The Living G is not a symbol beside the word: its SMALL
+ * TOP LOOP is the dot of the "i" in "iver". Scale, x and y are tuned together;
+ * the canonical geometry is untouched.
+ */
+const LETTER_SCALE = 0.26;
+const LETTER_SHIFT = "-6.4vw";
+const LETTER_RISE = "1.6vh";
+/** Where the letters "ıver" sit relative to screen centre. */
+const LETTERS_SHIFT = "15.9vw";
 const ZOOM_MS = 900;
 const WORD_HOLD = 850;
+
 
 function OpeningSequence({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<Phase>("word");
@@ -230,7 +238,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
       stage={{
         transformOrigin: "50% 50%",
         transform: small
-          ? `translate(${LETTER_SHIFT}, 0) scale(${LETTER_SCALE})`
+          ? `translate(${LETTER_SHIFT}, ${LETTER_RISE}) scale(${LETTER_SCALE})`
           : "translate(0, 0) scale(1)",
         transition: `transform ${ZOOM_MS}ms cubic-bezier(0.22,1,0.36,1)`,
       }}
@@ -268,13 +276,14 @@ function Wordmark({ phase }: { phase: Phase }) {
   const show = phase === "word" || phase === "zoom";
   if (!show) return null;
   const holding = phase === "word";
-  const letters = ["i", "v", "e", "r"];
+  /* DOTLESS I: the Living G's top loop is the only i-dot in the wordmark. */
+  const letters = ["\u0131", "v", "e", "r"];
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
       <span
         className="flex items-center font-black lowercase leading-none tracking-[-0.05em]"
-        style={{ fontSize: "12dvh", transform: "translateX(8.5vw)", color: "var(--world-g)" }}
+        style={{ fontSize: "12dvh", transform: `translateX(${LETTERS_SHIFT})`, color: "var(--world-g)" }}
       >
         {letters.map((l, k) => (
           <span

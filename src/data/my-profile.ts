@@ -56,6 +56,12 @@ export type MyProfile = {
   sparkles: number;
   /** The profile-completion reward is given exactly once. */
   sparklesAwarded: boolean;
+  /** SPARKS: spent to wish, earned from completed generosity. */
+  sparks: number;
+  /** The onboarding balance lands exactly once. */
+  sparksSeeded: boolean;
+  /** One key per already-rewarded completed interaction. Never pays twice. */
+  rewarded: string[];
 };
 
 type Person = {
@@ -68,9 +74,18 @@ type Person = {
   built: boolean;
   sparkles: number;
   sparklesAwarded: boolean;
+  sparks: number;
+  sparksSeeded: boolean;
+  rewarded: string[];
 };
 
 const KEY = "giver.my-profile.v1";
+
+/** POSTING A WISH COSTS. COMPLETED GENEROSITY EARNS. Same size, opposite sign. */
+export const WISH_COST = 10;
+export const GENEROSITY_REWARD = 10;
+/** What onboarding leaves in the account: 100 given, 50 gifted onward. */
+export const STARTING_SPARKS = 50;
 
 const EMPTY_PERSON: Person = {
   username: "@you",
@@ -82,7 +97,11 @@ const EMPTY_PERSON: Person = {
   built: false,
   sparkles: 0,
   sparklesAwarded: false,
+  sparks: 0,
+  sparksSeeded: false,
+  rewarded: [],
 };
+
 
 const NO_ITEMS: Record<Category, Item[]> = {
   wish: [],

@@ -261,12 +261,14 @@ export const myProfileStore = {
     text: string,
     /** TRADES ONLY: offer + want, stored separately, always read as one line. */
     parts?: { offer: string; want: string },
+    /** OPTIONAL, SHORT: anything else the other person should know. */
+    note?: string,
   ): { ok: boolean; reason?: "sparks" | "full" | "empty" } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };
     if (category === "wish" && person.sparks < WISH_COST)
       return { ok: false, reason: "sparks" };
-    const item = itemsStore.add(ME_ID, category, text, parts);
+    const item = itemsStore.add(ME_ID, category, text, parts, note);
     if (!item) return { ok: false, reason: "full" };
     /* A WISH RESERVES ITS SPARKS. They leave the balance but are not spent:
        they belong to the wish until it is granted and verified, or withdrawn. */

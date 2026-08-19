@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
+import { WorldIntro } from "@/components/WorldIntro";
+import { introSeenStore } from "@/data/intro-seen";
+import { useIntroSeen } from "@/hooks/use-intro-seen";
 
 
 import { CommunityList } from "@/components/CommunityList";
@@ -132,6 +135,20 @@ function Index() {
   const [seat, setSeat] = useState<Seat>("giver");
 
   /**
+   * FIRST-TIME WORLD EXPLANATION. Giver explains wish / give / trade / borrow
+   * once each, from four PERSISTED flags — never component state — then gets
+   * out of the way. It is UI only: it creates no items and touches no profile.
+   */
+  const [intro, setIntro] = useState<Category | null>(null);
+  const introSeen = useIntroSeen();
+
+  useEffect(() => {
+    if (!entered || seat === "giver") return;
+    if (introSeen[seat]) return;
+    setIntro(seat);
+  }, [entered, seat, introSeen]);
+
+  /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
    * the G goes quiet for good — a press-and-hold brings a label back.
    */
@@ -190,7 +207,7 @@ function Index() {
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             identity="giver"
-            active={editor === null}
+            active={editor === null && intro === null}
             earCut
             overlay={
               <EarSelector
@@ -289,6 +306,35 @@ function Index() {
 
             }}
           />
+
+          {/*
+            THE QUIET WAY BACK TO THE EXPLANATION. Nothing shouts; one small
+            word in the corner replays the world's intro on demand.
+          */}
+          {!isProfile && intro === null && editor === null ? (
+            <button
+              type="button"
+              onClick={() => setIntro(mode)}
+              className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
+            >
+              what’s {mode}?
+            </button>
+          ) : null}
+
+          {/* FIRST-TIME EXPLANATION -> straight into my <type>. */}
+          <Screen open={intro !== null}>
+            {intro ? (
+              <WorldIntro
+                category={intro}
+                onDone={() => {
+                  introSeenStore.markSeen(intro);
+                  setIntro(null);
+                  setEditor({ kind: "category", category: intro });
+                }}
+              />
+            ) : null}
+          </Screen>
+
 
           {/*
             THE EDITOR DESTINATIONS. One screen at a time, above the G — never

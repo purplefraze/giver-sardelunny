@@ -145,10 +145,10 @@ type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
  * the canonical geometry is untouched.
  */
 const LETTER_SCALE = 0.26;
-const LETTER_SHIFT = "-6.6vw";
+const LETTER_SHIFT = "-6.4vw";
 const LETTER_RISE = "1.6vh";
 /** Where the letters "ıver" sit relative to screen centre. */
-const LETTERS_SHIFT = "15vw";
+const LETTERS_SHIFT = "15.9vw";
 const ZOOM_MS = 900;
 const WORD_HOLD = 850;
 

@@ -151,7 +151,6 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   const [fading, setFading] = useState(false);
   const [green, setGreen] = useState(false);
   const [arrived, setArrived] = useState(false);
-  const [moving, setMoving] = useState(false);
 
   // word -> zoom -> auto: no waiting, no empty screens.
   useEffect(() => {
@@ -236,7 +235,6 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
                   <SparkJourney
                     mode="drag"
                     count={50}
-                    onStart={() => setMoving(true)}
                     onArrive={() => setArrived(true)}
                     onGreen={() => setGreen(true)}
                   />

@@ -163,14 +163,25 @@ function Index() {
   const openWorld = (category: Category) => {
     setChoose(false);
     if (introSeen[category]) setEditor({ kind: "category", category });
-    else setIntro({ topic: category, help: false });
+    else showIntro(category);
+  };
+
+  /**
+   * ENTERING THE INSTRUCTIONS IS SEEING THEM. The persisted flag is written the
+   * instant they open — not on continue, not on save — so pressing back, using
+   * a different door, remounting or reloading can never replay them.
+   */
+  const showIntro = (category: Category) => {
+    introSeenStore.markSeen(category);
+    setIntro({ topic: category, help: false });
   };
 
   useEffect(() => {
     if (!entered || seat === "giver") return;
-    if (introSeen[seat]) return;
-    setIntro({ topic: seat, help: false });
-  }, [entered, seat, introSeen]);
+    if (introSeenStore.get()[seat]) return;
+    showIntro(seat);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entered, seat]);
 
   /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
@@ -411,7 +422,7 @@ function Index() {
                   const { topic, help: voluntary } = intro;
                   setIntro(null);
                   if (voluntary || topic === "sparks") return;
-                  introSeenStore.markSeen(topic);
+                  /* Already marked seen on entry — this just opens the form. */
                   setEditor({ kind: "category", category: topic });
                 }}
               />

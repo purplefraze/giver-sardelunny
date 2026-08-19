@@ -113,6 +113,34 @@ export function AboutForm({
               sparkles
             </dt>
           </div>
+          {/*
+            MY MESSAGES SIT WITH MY BALANCES: one compact, private account
+            area. The count appears ONLY when something is unread — never a
+            zero. Nobody else ever sees any of these three numbers.
+          */}
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              onMessages?.();
+            }}
+            className="text-left transition-transform active:scale-[0.98]"
+          >
+            <dd
+              className="text-6xl font-black leading-none tracking-[-0.05em]"
+              style={{
+                color: unread
+                  ? "var(--giver-connection)"
+                  : "var(--world-ink)",
+                opacity: unread ? 1 : 0.55,
+              }}
+            >
+              {unread ? unread : "·"}
+            </dd>
+            <dt className="mt-2 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
+              messages
+            </dt>
+          </button>
         </dl>
         <p className="mt-3 text-[11px] font-black lowercase tracking-[0.3em] opacity-35">
           private to you

@@ -181,13 +181,20 @@ export function FullProfile({
           </Section>
         ) : null}
 
-        {/* CONNECTION = me + them = purple. */}
+        {/*
+          CONNECTION = me + them = purple. A connection only exists because a
+          give, wish, trade or borrow was COMPLETED together — never because
+          somebody messaged, followed or looked. Before the first completed act
+          there is nothing here at all, so the section stays away entirely.
+        */}
+        {connections.length ? (
         <Section title="connections">
           <p
             className="text-sm font-medium lowercase"
             style={{ color: "var(--giver-connection)" }}
           >
-            earned through completed gives, granted wishes and trades.
+            people i’ve actually done something with — completed gives, granted
+            wishes, trades and borrows.
           </p>
           <div className="mt-5 flex flex-wrap gap-6">
             {connections.map((person) => (

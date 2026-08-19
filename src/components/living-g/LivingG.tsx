@@ -165,6 +165,7 @@ export function LivingG({
   overlay,
   contentKey = "",
   earCut = false,
+  weight = "normal",
 }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
   /** The temporary word cue: revealed by a deliberate press-and-hold. */

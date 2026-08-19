@@ -522,7 +522,7 @@ function ChooseRecipient({
   onBack: () => void;
   onChoose: (m: Member) => void;
 }) {
-  const { shown, settled } = useSpeech(QUESTION.length, 1000, 1200);
+  const { shown, settled } = useSpeech(QUESTION.length, 180, 800);
 
   return (
     <div
@@ -535,7 +535,7 @@ function ChooseRecipient({
         style={{ color: "var(--giver-generosity)" }}
       >
         {QUESTION.map((phrase, i) => (
-          <Spoken key={phrase} show={i < shown}>
+          <Spoken key={phrase} show={i < shown} duration={220}>
             {phrase}
           </Spoken>
         ))}
@@ -546,7 +546,7 @@ function ChooseRecipient({
         className="mt-11 flex flex-col items-start gap-4"
         style={{
           opacity: settled ? 1 : 0,
-          transition: "opacity 900ms cubic-bezier(0.32,0,0.24,1)",
+          transition: "opacity 700ms cubic-bezier(0.32,0,0.24,1)",
           pointerEvents: settled ? "auto" : "none",
         }}
       >

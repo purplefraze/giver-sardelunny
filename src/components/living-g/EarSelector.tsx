@@ -524,6 +524,7 @@ export function EarSelector({
           e.stopPropagation();
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
+          startPeek();
           // LOCKED: the seat only STATES the mode; it cannot be dragged.
           if (locked) return;
           (e.target as SVGElement).setPointerCapture?.(e.pointerId);

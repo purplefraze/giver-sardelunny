@@ -86,7 +86,7 @@ export function IntroG({
       style={{
         background: "var(--world-bg)",
         color: "var(--world-ink)",
-        transition: `background-color ${BEAT_MS}ms var(--giver-ease)`,
+        transition: `background-color ${WORLD_MS}ms var(--giver-ease)`,
       }}
       onClick={onAdvance}
     >

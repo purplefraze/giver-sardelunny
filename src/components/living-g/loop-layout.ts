@@ -80,8 +80,26 @@ export function wrapLines(text: string, size: number, max: number, role: LoopTyp
     }
   }
   if (line) lines.push(line);
-  return lines;
+  return balance(lines, size, max, role);
 }
+
+/**
+ * A greedy wrap leaves the last line short ("no weekends allowed" -> "no
+ * weekends" / "allowed"). When moving a word down makes the two lines more
+ * even AND still fits, prefer the balanced break — never an orphan.
+ */
+function balance(lines: string[], size: number, max: number, role: LoopTypeRole) {
+  if (lines.length !== 2) return lines;
+  const words = lines[0]!.split(" ");
+  if (words.length < 2) return lines;
+  const first = words.slice(0, -1).join(" ");
+  const second = `${words[words.length - 1]} ${lines[1]}`;
+  if (widthOf(second, size, role) > max) return lines;
+  const before = Math.abs(widthOf(lines[0]!, size, role) - widthOf(lines[1]!, size, role));
+  const after = Math.abs(widthOf(first, size, role) - widthOf(second, size, role));
+  return after < before ? [first, second] : lines;
+}
+
 
 export type LaidOutRow = {
   text: string;

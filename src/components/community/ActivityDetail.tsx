@@ -1,0 +1,155 @@
+import { BackArrow } from "@/components/BackArrow";
+import { memberById } from "@/data/giver";
+import { ACTIVITY_FILL, ME_ID, itemLine, type ItemType } from "@/data/items";
+import {
+  STATE_WORD,
+  activityStatus,
+  connectionsForItem,
+  connectionsStore,
+  isOpen,
+  myConnectionFor,
+} from "@/data/connections";
+import { myProfileStore } from "@/data/my-profile";
+import { useConnections } from "@/hooks/use-connections";
+import { useItems } from "@/hooks/use-items";
+import { useMyProfile } from "@/hooks/use-my-profile";
+import { buzz } from "@/lib/haptics";
+
+/**
+ * ONE ACTIVITY, IN FULL — AND ONE HONEST BUTTON.
+ *
+ * The button below starts something; it never finishes anything. Pressing it
+ * expresses INTENT: it opens a conversation between two people and leaves the
+ * activity exactly where it was, still active, still discoverable by others.
+ */
+
+/** THE INVITATION, in the language of the activity. Never "claim" or "accept". */
+const INTENT_WORD: Record<ItemType, string> = {
+  wish: "think you can grant this wish?",
+  give: "would this help you?",
+  trade: "want to trade?",
+  borrow: "can you lend this?",
+};
+
+export function ActivityDetail({
+  itemId,
+  onOpenConnection,
+  onClose,
+}: {
+  itemId: string;
+  onOpenConnection: (connectionId: string) => void;
+  onClose: () => void;
+}) {
+  const items = useItems();
+  const links = useConnections();
+  const sparkles = useMyProfile().sparkles;
+  const item = items.items.find((i) => i.id === itemId);
+
+  if (!item)
+    return (
+      <div
+        data-world="community"
+        className="relative flex h-full w-full flex-col justify-center px-7"
+        style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
+      >
+        <BackArrow onClick={onClose} />
+        <p className="text-[9vw] font-black lowercase leading-[0.9]">this one is gone.</p>
+      </div>
+    );
+
+  const owner = memberById(item.ownerId);
+  const mine = myConnectionFor(links, item.id);
+  const status = activityStatus(links, item.id, item.status);
+  const others = connectionsForItem(links, item.id).filter(
+    (c) => isOpen(c) && c.helperId !== ME_ID,
+  ).length;
+
+  const step = () => {
+    buzz();
+    if (mine) {
+      onOpenConnection(mine.id);
+      return;
+    }
+    /* INTENT ONLY. This opens a conversation — it completes nothing. */
+    const result = connectionsStore.expressIntent(item.id, ME_ID);
+    if (result.ok && result.id) onOpenConnection(result.id);
+  };
+
+  return (
+    <div
+      data-world="community"
+      className="relative flex h-full w-full flex-col overflow-y-auto px-6 pb-10 pt-16"
+      style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
+    >
+      <BackArrow onClick={onClose} label="back to community" />
+
+      <span
+        className="text-[11px] font-black lowercase tracking-[0.3em]"
+        style={{ color: ACTIVITY_FILL[item.type] }}
+      >
+        {item.type}
+      </span>
+      <h1
+        className="mt-2 text-[12vw] font-black lowercase leading-[0.88] tracking-[-0.05em]"
+        style={{ color: ACTIVITY_FILL[item.type] }}
+      >
+        {itemLine(item)}
+      </h1>
+
+      {item.note ? (
+        <p className="mt-4 text-lg font-medium lowercase leading-snug opacity-65">
+          {item.note}
+        </p>
+      ) : null}
+
+      <p className="mt-6 text-[13px] font-medium lowercase opacity-50">
+        {owner ? owner.username : "someone"}
+        {item.distanceKm === undefined ? "" : ` · ${item.distanceKm} km away`}
+      </p>
+
+      {/* WHERE THIS ACTIVITY REALLY IS. A word, not a badge, and never a lie. */}
+      <p className="mt-1 text-[13px] font-medium lowercase opacity-50">
+        {status === "completed"
+          ? "completed and verified"
+          : mine
+            ? STATE_WORD[mine.state]
+            : status === "connecting"
+              ? `${others} ${others === 1 ? "person" : "people"} already talking — still open`
+              : "open"}
+      </p>
+
+      <div className="mt-auto flex flex-col items-start gap-6 pt-12">
+        {status === "completed" ? (
+          <p className="text-[6vw] font-black lowercase leading-[0.95] opacity-40">
+            this one already happened.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={step}
+            className="text-left text-[9vw] font-black lowercase leading-[0.92] tracking-[-0.045em]"
+            style={{ color: ACTIVITY_FILL[item.type] }}
+          >
+            {mine ? "open the conversation" : INTENT_WORD[item.type]}
+          </button>
+        )}
+
+        {/* SPARKLES HELP SOMEBODY ELSE GET SEEN. Not a completion, not a payment. */}
+        {status !== "completed" ? (
+          <button
+            type="button"
+            disabled={sparkles < 1}
+            onClick={() => {
+              buzz();
+              myProfileStore.useSparkle(item.id);
+            }}
+            className="text-[12px] font-black lowercase tracking-[0.26em] disabled:opacity-25"
+            style={{ color: "var(--giver-participation)" }}
+          >
+            {item.boostCount > 0 ? `sparkled ×${item.boostCount}` : "sparkle this"}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}

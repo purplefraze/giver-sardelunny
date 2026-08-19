@@ -353,32 +353,58 @@ function Index() {
           <SparkFlash />
 
           {/*
-            THE QUIET WAY BACK TO THE EXPLANATION. Nothing shouts; one small
-            word in the corner replays the world's intro on demand.
+            THE QUIET WAY BACK TO EVERY EXPLANATION. Nothing shouts; one small
+            word in the corner. Opening it sets NO first-time flag.
           */}
-          {!isProfile && intro === null && editor === null ? (
+          {intro === null && editor === null && !choose && !help ? (
             <button
               type="button"
-              onClick={() => setIntro(mode)}
+              onClick={() =>
+                isProfile ? setHelp(true) : setIntro({ topic: mode, help: true })
+              }
               className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
             >
-              what’s {mode}?
+              {isProfile ? "how giver works" : `what’s ${mode}?`}
             </button>
           ) : null}
+
+          {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
+          <Screen open={choose}>
+            {choose ? (
+              <ChooseWorld
+                onChoose={openWorld}
+                onCancel={() => setChoose(false)}
+              />
+            ) : null}
+          </Screen>
+
+          {/* THE VOLUNTARY HELP AREA — explanations only, no flags, no forms. */}
+          <Screen open={help}>
+            {help ? (
+              <HelpIndex
+                onOpen={(topic) => setIntro({ topic, help: true })}
+                onClose={() => setHelp(false)}
+              />
+            ) : null}
+          </Screen>
 
           {/* FIRST-TIME EXPLANATION -> straight into my <type>. */}
           <Screen open={intro !== null}>
             {intro ? (
               <WorldIntro
-                category={intro}
+                category={intro.topic}
+                help={intro.help}
                 onDone={() => {
-                  introSeenStore.markSeen(intro);
+                  const { topic, help: voluntary } = intro;
                   setIntro(null);
-                  setEditor({ kind: "category", category: intro });
+                  if (voluntary || topic === "sparks") return;
+                  introSeenStore.markSeen(topic);
+                  setEditor({ kind: "category", category: topic });
                 }}
               />
             ) : null}
           </Screen>
+
 
 
           {/*

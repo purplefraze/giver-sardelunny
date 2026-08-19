@@ -8,7 +8,7 @@ import {
   myProfileStore,
   type Category,
 } from "@/data/my-profile";
-import { splitTrade, tradeText } from "@/data/items";
+import { ACTIVITY_MAX, NOTE_MAX, splitTrade, tradeText } from "@/data/items";
 import { buzz } from "@/lib/haptics";
 
 /**
@@ -40,6 +40,8 @@ export function CategoryForm({
   const records = me.records[category];
   const [draft, setDraft] = useState("");
   const [want, setWant] = useState("");
+  /** ONE OPTIONAL, SHORT LINE OF CONTEXT. Never a description box. */
+  const [note, setNote] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const colour = `var(--me-${category})`;
   const limit = MAX_PER_CATEGORY[category];
@@ -58,15 +60,17 @@ export function CategoryForm({
     }
     const result =
       category === "trade"
-        ? myProfileStore.addItem("trade", tradeText(draft, want), {
-            offer: draft,
-            want,
-          })
-        : myProfileStore.addItem(category, draft);
+        ? myProfileStore.addItem(
+            "trade",
+            tradeText(draft, want),
+            { offer: draft, want },
+            note,
+          )
+        : myProfileStore.addItem(category, draft, undefined, note);
     if (!result.ok) {
       setProblem(
         result.reason === "sparks"
-          ? `a wish costs ${WISH_COST} sparks. give something to earn more.`
+          ? `a wish holds ${WISH_COST} sparks until it’s granted. give something to earn more.`
           : `you can have ${limit} at a time — remove one to add another.`,
       );
       buzz();
@@ -75,6 +79,7 @@ export function CategoryForm({
     setProblem(null);
     setDraft("");
     setWant("");
+    setNote("");
     buzz();
   };
 
@@ -103,7 +108,7 @@ export function CategoryForm({
         {/* THE ECONOMY, SAID PLAINLY: wishes cost, generosity earns. */}
         <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-45">
           {cost
-            ? `${cost} sparks a wish · 3 at a time · you have ${me.sparks}`
+            ? `${cost} sparks stay with each wish until it’s granted · 3 at a time · you have ${me.sparks}`
             : unlimited
               ? `give as much as you’ve got · ${me.sparks} sparks in your account`
               : `no sparks needed · ${limit} at a time`}
@@ -226,7 +231,7 @@ export function CategoryForm({
             <input
               autoFocus
               value={draft}
-              onChange={(e) => setDraft(e.target.value.slice(0, 40))}
+              onChange={(e) => setDraft(e.target.value.slice(0, ACTIVITY_MAX))}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && category !== "trade") add();
               }}
@@ -236,7 +241,7 @@ export function CategoryForm({
             {category === "trade" ? (
               <input
                 value={want}
-                onChange={(e) => setWant(e.target.value.slice(0, 40))}
+                onChange={(e) => setWant(e.target.value.slice(0, ACTIVITY_MAX))}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") add();
                 }}
@@ -244,6 +249,19 @@ export function CategoryForm({
                 className="w-full border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
               />
             ) : null}
+            {/* SHORT AND SWEET, VISIBLY SO. */}
+            <p className="text-[11px] font-black lowercase tracking-[0.28em] opacity-35">
+              keep it short and sweet · {ACTIVITY_MAX - draft.length} left
+            </p>
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value.slice(0, NOTE_MAX))}
+              placeholder="anything else we should know? (optional)"
+              className="w-full border-b border-current/15 bg-transparent pb-1 text-base font-medium lowercase outline-none placeholder:opacity-30"
+            />
+            <p className="text-[11px] font-black lowercase tracking-[0.28em] opacity-30">
+              {NOTE_MAX - note.length} left
+            </p>
             <button
               type="button"
               onClick={add}

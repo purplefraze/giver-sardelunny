@@ -47,6 +47,11 @@ export type Item = {
   published: boolean;
   createdAt: number;
   updatedAt: number;
+  /**
+   * ANYTHING ELSE WE SHOULD KNOW — one optional, deliberately short line of
+   * context (a size, a time window, a condition). Never a description field.
+   */
+  note?: string;
   /** Where available — community discovery may sort or filter on it later. */
   distanceKm?: number;
   /** Cheap denormalised counter; the truth is the boost ledger. */
@@ -54,6 +59,13 @@ export type Item = {
 };
 
 export const ME_ID = "me";
+
+/**
+ * SHORT AND SWEET, ENFORCED. An activity is a headline, not a description:
+ * one glanceable line, plus at most one short line of extra context.
+ */
+export const ACTIVITY_MAX = 40;
+export const NOTE_MAX = 50;
 
 /**
  * PERMANENT LIMITS. Generosity is never capped; asking is deliberately scarce.
@@ -242,8 +254,9 @@ export const itemsStore = {
     text: string,
     /** TRADES ONLY: the two sides, stored separately, read as one line. */
     parts?: { offer: string; want: string },
+    note?: string,
   ): Item | null {
-    const t = text.trim();
+    const t = text.trim().slice(0, ACTIVITY_MAX);
     if (!t) return null;
     const s = ensure();
     const mine = s.items.filter(
@@ -259,6 +272,7 @@ export const itemsStore = {
       ...(parts
         ? { offer: parts.offer.trim(), want: parts.want.trim() }
         : {}),
+      ...(note && note.trim() ? { note: note.trim().slice(0, NOTE_MAX) } : {}),
       status: "active",
       priority: mine.length,
       published: true,

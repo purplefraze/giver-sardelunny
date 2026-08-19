@@ -67,6 +67,12 @@ export type MyProfile = {
   sparklesAwarded: boolean;
   /** SPARKS: spent to wish, earned from completed generosity. */
   sparks: number;
+  /**
+   * RESERVED, NOT SPENT. A wish holds its 10 sparks until the wish is either
+   * granted-and-verified (they settle) or withdrawn (they come back).
+   * Keyed by the wish's item id, so a reservation always has an owner.
+   */
+  reserved: Record<string, number>;
   /** The onboarding balance lands exactly once. */
   sparksSeeded: boolean;
   /** One key per already-rewarded completed interaction. Never pays twice. */
@@ -84,9 +90,11 @@ type Person = {
   sparkles: number;
   sparklesAwarded: boolean;
   sparks: number;
+  reserved: Record<string, number>;
   sparksSeeded: boolean;
   rewarded: string[];
 };
+
 
 const KEY = "giver.my-profile.v1";
 
@@ -107,6 +115,7 @@ const EMPTY_PERSON: Person = {
   sparkles: 0,
   sparklesAwarded: false,
   sparks: 0,
+  reserved: {},
   sparksSeeded: false,
   rewarded: [],
 };
@@ -125,7 +134,7 @@ function readPerson(): Person {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return EMPTY_PERSON;
     const parsed = JSON.parse(raw) as Partial<Person>;
-    return { ...EMPTY_PERSON, ...parsed };
+    return { ...EMPTY_PERSON, ...parsed, reserved: parsed.reserved ?? {} };
   } catch {
     return EMPTY_PERSON;
   }
@@ -252,15 +261,23 @@ export const myProfileStore = {
     text: string,
     /** TRADES ONLY: offer + want, stored separately, always read as one line. */
     parts?: { offer: string; want: string },
+    /** OPTIONAL, SHORT: anything else the other person should know. */
+    note?: string,
   ): { ok: boolean; reason?: "sparks" | "full" | "empty" } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };
     if (category === "wish" && person.sparks < WISH_COST)
       return { ok: false, reason: "sparks" };
-    const item = itemsStore.add(ME_ID, category, text, parts);
+    const item = itemsStore.add(ME_ID, category, text, parts, note);
     if (!item) return { ok: false, reason: "full" };
+    /* A WISH RESERVES ITS SPARKS. They leave the balance but are not spent:
+       they belong to the wish until it is granted and verified, or withdrawn. */
     if (category === "wish")
-      savePerson({ ...person, sparks: person.sparks - WISH_COST });
+      savePerson({
+        ...person,
+        sparks: person.sparks - WISH_COST,
+        reserved: { ...person.reserved, [item.id]: WISH_COST },
+      });
     return { ok: true };
   },
   editItem(category: Category, index: number, text: string) {
@@ -279,7 +296,10 @@ export const myProfileStore = {
 
   removeItem(category: Category, index: number) {
     const item = myProfileStore.get().records[category][index];
-    if (item) itemsStore.remove(item.id);
+    if (!item) return;
+    /* WITHDRAWING A WISH RETURNS ITS RESERVED SPARKS. Nothing was completed. */
+    if (category === "wish") myProfileStore.releaseWish(item.id, true);
+    itemsStore.remove(item.id);
   },
   /**
    * COMPLETED GENEROSITY. A give that has actually reached another Giver is a
@@ -293,19 +313,31 @@ export const myProfileStore = {
     if (category === "give") reward(`give:${item.id}`);
   },
   /**
-   * GRANTING SOMEONE ELSE'S WISH. The wish closes and the granter earns 10
-   * sparks from Giver. Never awarded for offering, messaging or opening it.
+   * SETTLE GENEROSITY. Called ONLY by the connection layer, and only once both
+   * people have verified that the interaction actually happened. Expressing
+   * intent, messaging or claiming completion never reaches this.
    */
-  grantWish(itemId: string): { ok: boolean; reason?: string } {
-    hydrate();
-    const item = itemsStore.get().items.find((i) => i.id === itemId);
-    if (!item || item.type !== "wish") return { ok: false, reason: "gone" };
-    if (item.ownerId === ME_ID) return { ok: false, reason: "self" };
-    if (item.status !== "active") return { ok: false, reason: "closed" };
-    itemsStore.complete(itemId);
-    reward(`wish:${itemId}`);
-    return { ok: true };
+  earnSparks(key: string) {
+    reward(key);
   },
+
+  /**
+   * A WISH'S RESERVED SPARKS LEAVE RESERVE. Either they were settled to the
+   * granter (refund = false) or the wish was withdrawn (refund = true).
+   */
+  releaseWish(itemId: string, refund: boolean) {
+    hydrate();
+    const held = person.reserved[itemId];
+    if (held === undefined) return;
+    const reserved = { ...person.reserved };
+    delete reserved[itemId];
+    savePerson({
+      ...person,
+      reserved,
+      sparks: refund ? person.sparks + held : person.sparks,
+    });
+  },
+
   /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */
   seedSparks() {
     hydrate();
@@ -329,6 +361,10 @@ export const myProfileStore = {
     return { ok: true };
   },
 };
+
+/** Sparks currently held inside my open wishes — visible, never hidden. */
+export const reservedTotal = (p: MyProfile) =>
+  Object.values(p.reserved).reduce((sum, n) => sum + n, 0);
 
 /** The one give the Living G advertises: priority #1 of my active gives. */
 export function primaryGive(p: MyProfile): string | null {

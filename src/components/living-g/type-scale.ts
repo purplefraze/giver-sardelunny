@@ -107,7 +107,7 @@ export const PROFILE_FILL: Record<LoopRegion, number> = {
   middle: 1.16,
   /* No extra width for the bottom loop: its stack is tall, so its lines sit
      well away from the circle's widest point and must not reach for the rim. */
-  bottom: 0.92,
+  bottom: 1.0,
 };
 
 /**
@@ -124,7 +124,10 @@ export const PROFILE_TYPE: Record<
 > = {
   top: { answer: 30, label: 17, detail: 22 },
   middle: { answer: 74, label: 32, detail: 44 },
-  bottom: { answer: 46, label: 20, detail: 34 },
+  /* CONFIDENT, NOT TINY. The bottom loop's biography is the loudest content on
+     a sample profile: it starts LARGE and only steps down when a longer answer
+     genuinely needs the room (PROFILE_STEPS). */
+  bottom: { answer: 66, label: 27, detail: 42 },
 };
 
 

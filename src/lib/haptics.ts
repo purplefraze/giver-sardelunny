@@ -152,15 +152,79 @@ function iosSwitchTick() {
 /** Which route is available, resolved lazily and remembered. */
 let bridge: Bridge | null = null;
 
+/**
+ * A VERDICT IS NEVER FINAL. The first resolve can happen before a native shell
+ * has injected its bridge, or before an iOS page is running standalone from the
+ * home screen. So a "none"/web answer is re-asked on the next call and whenever
+ * the app returns to the foreground; only a real engine is remembered for good.
+ */
+function detect(): Bridge {
+  if (capacitorHaptics()) return "capacitor";
+  if (customBridge()) return "custom";
+  if (canVibrate()) return "vibrate";
+  if (isIOS()) return "ios-switch";
+  return "none";
+}
+
 function resolve(): Bridge {
-  if (bridge) return bridge;
-  if (capacitorHaptics()) bridge = "capacitor";
-  else if (customBridge()) bridge = "custom";
-  else if (canVibrate()) bridge = "vibrate";
-  else if (isIOS()) bridge = "ios-switch";
-  else bridge = "none";
+  if (bridge === "capacitor" || bridge === "custom") return bridge;
+  bridge = detect();
   return bridge;
 }
+
+/** Forget a web-only verdict so the next call looks again. */
+export function refreshHapticBridge() {
+  if (bridge !== "capacitor" && bridge !== "custom") bridge = null;
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshHapticBridge();
+  });
+}
+
+/** Is the page inside a frame? A cross-origin frame blocks the iOS switch tick. */
+function inFrame() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+/** Running from the home screen, the only iOS web context with any chance. */
+function isStandalone() {
+  if (typeof window === "undefined") return false;
+  const nav = navigator as unknown as Loose;
+  return (
+    nav["standalone"] === true ||
+    window.matchMedia?.("(display-mode: standalone)").matches === true
+  );
+}
+
+/** Everything the diagnostic needs, in one honest read. */
+export function hapticsReport() {
+  const route = resolve();
+  const frame = inFrame();
+  const standalone = isStandalone();
+  const ios = isIOS();
+
+  let verdict: string;
+  if (route === "capacitor") verdict = "native taptic engine — full haptics";
+  else if (route === "custom") verdict = "native wrapper bridge — full haptics";
+  else if (route === "vibrate") verdict = "android motor buzz — you should feel every event";
+  else if (route === "ios-switch" && frame)
+    verdict = "iphone safari inside a preview frame — no haptics possible here. add to home screen, or use the native build";
+  else if (route === "ios-switch" && !standalone)
+    verdict = "iphone safari — ios gives web pages no vibration api. only ios 18+ may answer the switch tick; the native build is the real fix";
+  else if (route === "ios-switch")
+    verdict = "iphone, home screen — trying the ios switch tick. faint or silent is expected; the native build is the real fix";
+  else verdict = "no haptic hardware on this device — nothing to feel";
+
+  return { route, frame, standalone, ios, verdict };
+}
+
 
 /**
  * NEVER TWICE FOR ONE MOMENT. A single state change often surfaces in more than

@@ -43,13 +43,17 @@ const MY_HISTORY: string[][] = [
 ];
 
 /**
- * ONE LIVING G, FOUR MODES.
- * Mode never navigates: it only changes what the same persistent G holds.
+ * ONE LIVING G, FIVE TOGGLE STATES.
  *
- * The prompts are QUESTIONS, always — the G asks you something, it never files
- * anything away:
- *   middle loop = what I am putting into the world
- *   bottom loop = what the community is asking of me
+ * GIVER = ME (my profile):        top = more information
+ *                                 middle = latest activity
+ *                                 bottom = my gives
+ *
+ * WISH / GIVE / TRADE / BORROW = ACTIVITY WORLDS, always the same shape:
+ *                                 middle = MY <type>
+ *                                 bottom = COMMUNITY <type>
+ *
+ * The toggle never navigates: it only changes what the same persistent G holds.
  */
 const MODE_CONTENT: Record<
   Mode,
@@ -60,17 +64,17 @@ const MODE_CONTENT: Record<
 > = {
   wish: {
     mine: {
-      title: "what are you wishing for?",
+      title: "my wishes",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
     community: {
-      title: "what can you help with?",
+      title: "community wishes",
       body: <CommunityList type="wish" />,
     },
   },
   give: {
     mine: {
-      title: "what are you offering?",
+      title: "my gives",
       body: (
         <p className="opacity-70">
           share something you have, know, or can do.
@@ -78,33 +82,34 @@ const MODE_CONTENT: Record<
       ),
     },
     community: {
-      title: "what are you looking for?",
+      title: "community gives",
       body: <CommunityList type="give" />,
     },
   },
   trade: {
     mine: {
-      title: "what are you trading?",
+      title: "my trades",
       body: (
         <p className="opacity-70">offer something, ask for something back.</p>
       ),
     },
     community: {
-      title: "what trades are out there?",
+      title: "community trades",
       body: <CommunityList type="trade" />,
     },
   },
   borrow: {
     mine: {
-      title: "what would you like to borrow?",
+      title: "my borrows",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
     community: {
-      title: "what can you lend?",
+      title: "community borrows",
       body: <CommunityList type="borrow" />,
     },
   },
 };
+
 
 
 

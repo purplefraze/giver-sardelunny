@@ -23,6 +23,9 @@ export type LoopCopy = {
  */
 export const BEAT_MS = 200;
 
+/** World colour keeps its unhurried polish: only the copy rhythm is quick. */
+export const WORLD_MS = 700;
+
 /**
  * One onboarding chapter: the canonical full-screen Living G in a single bold
  * colour, with the words living inside its negative space. No headings, no

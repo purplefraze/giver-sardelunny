@@ -36,8 +36,6 @@ export const CATEGORY_PLURAL: Record<Category, string> = {
 export const MAX_PER_CATEGORY = MAX_ACTIVE_PER_TYPE;
 export const SETUP_PER_CATEGORY = 3;
 
-/** Sparkles awarded once, the first time a profile is completed. */
-export const PROFILE_SPARKLES = 10;
 
 export type MyProfile = {
   username: string;

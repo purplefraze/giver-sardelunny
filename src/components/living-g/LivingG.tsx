@@ -175,6 +175,8 @@ export function LivingG({
   /** True once a hold has revealed a label, so release does not navigate. */
   const revealed = useRef(false);
   const down = useRef<{ x: number; y: number } | null>(null);
+  /** The one pointer allowed to drive the current press. */
+  const tapId = useRef<number | null>(null);
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**

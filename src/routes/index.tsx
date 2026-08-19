@@ -242,7 +242,7 @@ function Index() {
             world={isProfile ? "profile" : mode}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
-            identity="giver"
+            /* "giver" is drawn inside the G, under the toggle — see EarSelector. */
             active={editor === null && intro === null && !choose && !help}
             earCut
             overlay={

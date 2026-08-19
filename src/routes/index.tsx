@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
+import { WorldIntro } from "@/components/WorldIntro";
+import { introSeenStore } from "@/data/intro-seen";
+import { useIntroSeen } from "@/hooks/use-intro-seen";
 
 
 import { CommunityList } from "@/components/CommunityList";

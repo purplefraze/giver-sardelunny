@@ -8,19 +8,24 @@ import {
   myProfileStore,
   type Category,
 } from "@/data/my-profile";
+import { tradeText } from "@/data/items";
 import { buzz } from "@/lib/haptics";
 
 /**
  * DESTINATION SCREEN — the editor behind ONE loop of the Living G.
- * add a wish, a give, a trade or a borrow; reorder, complete, remove. Saving is
- * continuous, so leaving the screen returns you straight to the G you came
- * from, with the new item already alive inside its loop.
+ * add a wish, a give, a trade or a borrow; reorder or remove. Saving is
+ * continuous — AUTOSAVE IS THE CONFIRMATION, so there is no checkmark and no
+ * save step. Leaving returns you to the G you came from, with the new item
+ * already alive inside its loop.
+ *
+ * LIMITS: gives are UNLIMITED. wishes, trades and borrows are 3 at a time.
+ * A TRADE IS ONE RECORD WITH TWO SIDES, and reads everywhere as "offer for want".
  */
 
 const CATEGORY_ASK: Record<Category, string> = {
   wish: "what do you wish for?",
   give: "what can you give?",
-  trade: "what would you trade?",
+  trade: "what are you offering?",
   borrow: "what would you borrow?",
 };
 
@@ -32,38 +37,52 @@ export function CategoryForm({
   onDone: () => void;
 }) {
   const me = useMyProfile();
-  const items = me.items[category];
+  const records = me.records[category];
   const [draft, setDraft] = useState("");
+  const [want, setWant] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const colour = `var(--me-${category})`;
-  const full = items.length >= MAX_PER_CATEGORY;
+  const limit = MAX_PER_CATEGORY[category];
+  const unlimited = !Number.isFinite(limit);
+  const full = records.length >= limit;
   /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
   const cost = category === "wish" ? WISH_COST : 0;
   const broke = cost > 0 && me.sparks < cost;
 
   const add = () => {
     if (!draft.trim()) return;
-    const result = myProfileStore.addItem(category, draft);
+    if (category === "trade" && !want.trim()) {
+      setProblem("a trade has two sides. what would you like in return?");
+      buzz();
+      return;
+    }
+    const result =
+      category === "trade"
+        ? myProfileStore.addItem("trade", tradeText(draft, want), {
+            offer: draft,
+            want,
+          })
+        : myProfileStore.addItem(category, draft);
     if (!result.ok) {
       setProblem(
         result.reason === "sparks"
           ? `a wish costs ${WISH_COST} sparks. give something to earn more.`
-          : `that’s ${MAX_PER_CATEGORY} already — complete one first.`,
+          : `you can have ${limit} at a time — remove one to add another.`,
       );
       buzz();
       return;
     }
     setProblem(null);
     setDraft("");
+    setWant("");
     buzz();
   };
 
   const leave = () => {
-    if (draft.trim()) myProfileStore.addItem(category, draft);
+    if (draft.trim() && (category !== "trade" || want.trim())) add();
     buzz();
     onDone();
   };
-
 
   return (
     <div
@@ -84,10 +103,10 @@ export function CategoryForm({
         {/* THE ECONOMY, SAID PLAINLY: wishes cost, generosity earns. */}
         <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-45">
           {cost
-            ? `${cost} sparks a wish · you have ${me.sparks}`
-            : category === "give"
-              ? `free to offer · ${me.sparks} sparks in your account`
-              : `no sparks needed · you have ${me.sparks}`}
+            ? `${cost} sparks a wish · 3 at a time · you have ${me.sparks}`
+            : unlimited
+              ? `give as much as you’ve got · ${me.sparks} sparks in your account`
+              : `no sparks needed · ${limit} at a time`}
         </p>
 
         {problem ? (
@@ -99,60 +118,87 @@ export function CategoryForm({
           </p>
         ) : null}
 
-        <ul className="mt-8 space-y-4">
-          {items.map((item, i) => (
-            <li key={`${category}-${i}`} className="flex items-center gap-3">
+        <ul className="mt-8 space-y-5">
+          {records.map((item, i) => (
+            <li key={item.id} className="flex items-start gap-3">
               <span
-                className="w-6 shrink-0 text-[11px] font-black tracking-[0.2em]"
+                className="w-6 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em]"
                 style={{ color: colour, opacity: i === 0 ? 1 : 0.45 }}
               >
                 {i + 1}
               </span>
-              <input
-                value={item}
-                onChange={(e) =>
-                  myProfileStore.editItem(category, i, e.target.value.slice(0, 40))
-                }
-                className="min-w-0 flex-1 border-b border-current/20 bg-transparent pb-1 text-xl font-medium lowercase outline-none"
-              />
+
+              {/* ONE TRADE = ONE RECORD, two inputs, one set of controls. */}
+              {category === "trade" ? (
+                <div className="min-w-0 flex-1 space-y-2">
+                  <input
+                    value={item.offer ?? item.text}
+                    onChange={(e) =>
+                      myProfileStore.editTradeSide(
+                        i,
+                        "offer",
+                        e.target.value.slice(0, 40),
+                      )
+                    }
+                    aria-label="offering"
+                    className="w-full border-b border-current/20 bg-transparent pb-1 text-xl font-medium lowercase outline-none"
+                  />
+                  <p className="text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
+                    for
+                  </p>
+                  <input
+                    value={item.want ?? ""}
+                    onChange={(e) =>
+                      myProfileStore.editTradeSide(
+                        i,
+                        "want",
+                        e.target.value.slice(0, 40),
+                      )
+                    }
+                    aria-label="in return"
+                    className="w-full border-b border-current/20 bg-transparent pb-1 text-xl font-medium lowercase outline-none"
+                  />
+                </div>
+              ) : (
+                <input
+                  value={item.text}
+                  onChange={(e) =>
+                    myProfileStore.editItem(category, i, e.target.value.slice(0, 40))
+                  }
+                  className="min-w-0 flex-1 border-b border-current/20 bg-transparent pb-1 text-xl font-medium lowercase outline-none"
+                />
+              )}
+
+              {/* ↑ ↓ × — nothing else. Autosave is the confirmation. */}
+              {i === 0 ? null : (
+                <button
+                  type="button"
+                  aria-label={`move ${item.text} up`}
+                  onClick={() => {
+                    buzz();
+                    myProfileStore.moveItem(category, i, -1);
+                  }}
+                  className="px-2 text-xl font-black"
+                >
+                  ↑
+                </button>
+              )}
+              {i === records.length - 1 ? null : (
+                <button
+                  type="button"
+                  aria-label={`move ${item.text} down`}
+                  onClick={() => {
+                    buzz();
+                    myProfileStore.moveItem(category, i, 1);
+                  }}
+                  className="px-2 text-xl font-black"
+                >
+                  ↓
+                </button>
+              )}
               <button
                 type="button"
-                aria-label={`move ${item} up`}
-                onClick={() => {
-                  buzz();
-                  myProfileStore.moveItem(category, i, -1);
-                }}
-                disabled={i === 0}
-                className="px-2 text-xl font-black disabled:opacity-20"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                aria-label={`move ${item} down`}
-                onClick={() => {
-                  buzz();
-                  myProfileStore.moveItem(category, i, 1);
-                }}
-                disabled={i === items.length - 1}
-                className="px-2 text-xl font-black disabled:opacity-20"
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                aria-label={`mark ${item} completed`}
-                onClick={() => {
-                  buzz();
-                  myProfileStore.completeItem(category, i);
-                }}
-                className="px-2 text-xl font-black opacity-45"
-              >
-                ✓
-              </button>
-              <button
-                type="button"
-                aria-label={`remove ${item}`}
+                aria-label={`remove ${item.text}`}
                 onClick={() => {
                   buzz();
                   myProfileStore.removeItem(category, i);
@@ -165,24 +211,39 @@ export function CategoryForm({
           ))}
         </ul>
 
-        {items.length ? (
+        {records.length ? (
           <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-40">
             #1 is your priority
           </p>
         ) : null}
 
-        {full ? null : (
-          <div className="mt-8 flex items-end gap-4">
+        {full ? (
+          <p className="mt-8 text-[11px] font-black lowercase tracking-[0.28em] opacity-40">
+            that’s {limit} — remove one to add another
+          </p>
+        ) : (
+          <div className="mt-8 space-y-4">
             <input
               autoFocus
               value={draft}
               onChange={(e) => setDraft(e.target.value.slice(0, 40))}
               onKeyDown={(e) => {
-                if (e.key === "Enter") add();
+                if (e.key === "Enter" && category !== "trade") add();
               }}
               placeholder={CATEGORY_ASK[category]}
-              className="min-w-0 flex-1 border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
+              className="w-full border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
             />
+            {category === "trade" ? (
+              <input
+                value={want}
+                onChange={(e) => setWant(e.target.value.slice(0, 40))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") add();
+                }}
+                placeholder="what would you like in return?"
+                className="w-full border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
+              />
+            ) : null}
             <button
               type="button"
               onClick={add}
@@ -190,7 +251,9 @@ export function CategoryForm({
               className="text-xl font-black lowercase disabled:opacity-30"
               style={{ color: colour }}
             >
-              add
+              {records.length
+                ? `+ add another ${category}`
+                : `+ add ${category === "borrow" ? "a borrow" : `a ${category}`}`}
             </button>
           </div>
         )}
@@ -201,9 +264,9 @@ export function CategoryForm({
           className="mt-16 text-left text-[12vw] font-black lowercase leading-[0.85] tracking-[-0.055em] transition-transform active:scale-[0.98]"
           style={{ color: "var(--giver-participation)" }}
         >
-          save
+          back
           <br />
-          &amp; return
+          to my g
         </button>
         <p className="mt-6 text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
           everything saves as you go

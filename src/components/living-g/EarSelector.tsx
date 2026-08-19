@@ -303,14 +303,46 @@ export function EarSelector({
 
 
       {/*
+        THE WORD "GIVER" LIVES UNDERNEATH THE TOGGLE — one element, one place,
+        seated at the 12 o'clock giver position. It is painted BEFORE the
+        assembly, so when the toggle arrives there it physically covers it.
+        Nothing moves, fades or duplicates: the layering does the work.
+      */}
+      {seats.includes("giver") ? (
+        <text
+          x={at(SEAT_ANGLE.giver, TRACK_R).x}
+          y={at(SEAT_ANGLE.giver, TRACK_R).y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="var(--world-ink)"
+          className="font-black lowercase"
+          pointerEvents="none"
+          style={{
+            fontSize: WORD_SIZE,
+            letterSpacing: LOOP_ROLE_STYLE.action.tracking,
+            opacity: 0.6,
+          }}
+        >
+          giver
+        </text>
+      ) : null}
+
+      {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,
         then placed by a single rotation about the track centre. Stem root under
         the rim, ring beyond it, distance between them fixed by construction.
+        The solid disc makes the piece PHYSICAL: whatever it sits on is hidden.
       */}
       <g
         transform={`rotate(${deg} ${TRACK_C.x} ${TRACK_C.y})`}
         pointerEvents="none"
       >
+        <circle
+          cx={TRACK_C.x + TRACK_R}
+          cy={TRACK_C.y}
+          r={EAR_GEOMETRY.outerR}
+          fill="var(--world-bg)"
+        />
         <rect
           x={TRACK_C.x + STEM_FROM}
           y={TRACK_C.y - STEM_HALF}
@@ -328,6 +360,7 @@ export function EarSelector({
           strokeWidth={RING_W}
         />
       </g>
+
 
       {photo ? (
         <>

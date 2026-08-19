@@ -218,18 +218,7 @@ export const myProfileStore = {
     itemsStore.move(ME_ID, category, index, delta);
   },
 
-  /* ---- SPARKLES: earned, never bought. ---- */
-  /** Awarded once, when the first profile setup is completed. */
-  awardProfileSparkles(): number {
-    hydrate();
-    if (person.sparklesAwarded) return 0;
-    savePerson({
-      ...person,
-      sparkles: person.sparkles + PROFILE_SPARKLES,
-      sparklesAwarded: true,
-    });
-    return PROFILE_SPARKLES;
-  },
+  /* ---- SPARKLES: earned, never bought, never awarded for a profile. ---- */
   /** Spend one sparkle on somebody ELSE's active community item. */
   useSparkle(itemId: string): { ok: boolean; reason?: string } {
     hydrate();

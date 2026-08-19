@@ -209,10 +209,15 @@ function Index() {
   /** MY GIVE — what I offer the community, the profile's bottom loop. */
   const myGive = primaryGive(me);
 
+  /** NEVER A LIST INSIDE THE G: one item, then how much more there is. */
+  const more = (count: number) =>
+    count > 1 ? [{ text: `+${count - 1} more`, role: "tertiary" as const }] : [];
+
   /** MY LATEST ACTIVITY of ANY type — the profile's middle loop snapshot. */
   const latest = CATEGORIES.flatMap((c) =>
     me.records[c].map((i) => ({ type: c, item: i })),
   ).sort((a, b) => b.item.updatedAt - a.item.updatedAt)[0] ?? null;
+
 
 
   return (
@@ -237,7 +242,7 @@ function Index() {
             world={isProfile ? "profile" : mode}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
-            identity="giver"
+            /* "giver" is drawn inside the G, under the toggle — see EarSelector. */
             active={editor === null && intro === null && !choose && !help}
             earCut
             overlay={
@@ -301,13 +306,15 @@ function Index() {
                             },
                             { text: latest.type, role: "tertiary" as const },
                           ]
-                        : /* TRULY EMPTY until real activity exists. */ []
+                      : /* TRULY EMPTY until real activity exists. */ []
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode
                             ? { text: clampField(myMode), role: "primary" as const }
                             : { text: `add a ${mode}`, role: "primary" as const },
+                          ...(myMode ? more(me.items[mode].length) : []),
                         ],
+
                   }),
               },
               /*
@@ -335,6 +342,7 @@ function Index() {
                         ? [
                             { text: "gives", role: "secondary" as const },
                             { text: clampField(myGive), role: "primary" as const },
+                            ...more(me.items.give.length),
                           ]
                         : /* TRULY EMPTY until a give exists. */ []
                       : [
@@ -345,7 +353,9 @@ function Index() {
                           community
                             ? { text: clampField(community), role: "primary" as const }
                             : { text: "nothing yet", role: "tertiary" as const },
+                          ...(community ? more(theirs.length) : []),
                         ],
+
                   }),
               },
 

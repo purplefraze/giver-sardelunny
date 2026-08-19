@@ -35,7 +35,11 @@ export type Item = {
   id: string;
   ownerId: string;
   type: ItemType;
+  /** The one line an item reads as. For a trade it is always "offer for want". */
   text: string;
+  /** TRADES HAVE TWO SIDES, stored separately and rendered as one line. */
+  offer?: string;
+  want?: string;
   status: ItemStatus;
   /** 0 = the owner's #1 priority in that type. User-controlled ordering. */
   priority: number;
@@ -51,8 +55,20 @@ export type Item = {
 
 export const ME_ID = "me";
 
-/** Architecture ceiling per person, per type. */
-export const MAX_ACTIVE_PER_TYPE = 5;
+/**
+ * PERMANENT LIMITS. Generosity is never capped; asking is deliberately scarce.
+ */
+export const MAX_ACTIVE: Record<ItemType, number> = {
+  wish: 3,
+  give: Number.POSITIVE_INFINITY,
+  trade: 3,
+  borrow: 3,
+};
+
+/** A TRADE ALWAYS READS AS BOTH OF ITS SIDES — everywhere it appears. */
+export const tradeText = (offer: string, want: string) =>
+  `${offer.trim()} for ${want.trim()}`;
+
 
 /** How much a single sparkle may ever be worth — guardrails, not a ranking. */
 export const BOOST_RULES = {
@@ -179,20 +195,29 @@ export const itemsStore = {
   },
 
   /** CREATE. Belongs to MY list and, being active+published, to community too. */
-  add(ownerId: string, type: ItemType, text: string): Item | null {
+  add(
+    ownerId: string,
+    type: ItemType,
+    text: string,
+    /** TRADES ONLY: the two sides, stored separately, read as one line. */
+    parts?: { offer: string; want: string },
+  ): Item | null {
     const t = text.trim();
     if (!t) return null;
     const s = ensure();
     const mine = s.items.filter(
       (i) => i.ownerId === ownerId && i.type === type && i.status === "active",
     );
-    if (mine.length >= MAX_ACTIVE_PER_TYPE) return null;
+    if (mine.length >= MAX_ACTIVE[type]) return null;
     const now = Date.now();
     const item: Item = {
       id: uid(),
       ownerId,
       type,
       text: t,
+      ...(parts
+        ? { offer: parts.offer.trim(), want: parts.want.trim() }
+        : {}),
       status: "active",
       priority: mine.length,
       published: true,
@@ -203,6 +228,7 @@ export const itemsStore = {
     commit({ ...s, items: [...s.items, item] });
     return item;
   },
+
 
   /** EDIT ONE ITEM — every view that references it updates with it. */
   patch(id: string, fields: Partial<Omit<Item, "id" | "ownerId" | "type">>) {

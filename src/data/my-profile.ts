@@ -2,14 +2,16 @@ import meFallback from "@/assets/me.jpg";
 import type { Member } from "@/data/giver";
 import {
   ITEM_TYPES,
-  MAX_ACTIVE_PER_TYPE,
+  MAX_ACTIVE,
   ME_ID,
   completedItems,
   itemsStore,
   myItems,
+  tradeText,
   type Item,
   type ItemType,
 } from "@/data/items";
+
 import { sparkFlashStore } from "@/data/spark-flash";
 import { buzz } from "@/lib/haptics";
 
@@ -34,9 +36,12 @@ export const CATEGORY_PLURAL: Record<Category, string> = {
   borrow: "borrows",
 };
 
-/** Architecture ceiling. Onboarding only encourages the first three. */
-export const MAX_PER_CATEGORY = MAX_ACTIVE_PER_TYPE;
+/**
+ * PERMANENT LIMITS: gives are unlimited; wishes, trades and borrows are 3.
+ */
+export const MAX_PER_CATEGORY: Record<Category, number> = MAX_ACTIVE;
 export const SETUP_PER_CATEGORY = 3;
+
 
 
 export type MyProfile = {
@@ -243,12 +248,14 @@ export const myProfileStore = {
   addItem(
     category: Category,
     text: string,
+    /** TRADES ONLY: offer + want, stored separately, always read as one line. */
+    parts?: { offer: string; want: string },
   ): { ok: boolean; reason?: "sparks" | "full" | "empty" } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };
     if (category === "wish" && person.sparks < WISH_COST)
       return { ok: false, reason: "sparks" };
-    const item = itemsStore.add(ME_ID, category, text);
+    const item = itemsStore.add(ME_ID, category, text, parts);
     if (!item) return { ok: false, reason: "full" };
     if (category === "wish")
       savePerson({ ...person, sparks: person.sparks - WISH_COST });
@@ -258,6 +265,15 @@ export const myProfileStore = {
     const item = myProfileStore.get().records[category][index];
     if (item) itemsStore.patch(item.id, { text });
   },
+  /** EDIT ONE SIDE OF A TRADE — the single record keeps both sides in step. */
+  editTradeSide(index: number, side: "offer" | "want", value: string) {
+    const item = myProfileStore.get().records.trade[index];
+    if (!item) return;
+    const offer = side === "offer" ? value : (item.offer ?? item.text);
+    const want = side === "want" ? value : (item.want ?? "");
+    itemsStore.patch(item.id, { offer, want, text: tradeText(offer, want) });
+  },
+
   removeItem(category: Category, index: number) {
     const item = myProfileStore.get().records[category][index];
     if (item) itemsStore.remove(item.id);

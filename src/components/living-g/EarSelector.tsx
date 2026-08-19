@@ -146,6 +146,7 @@ export function EarSelector({
   seats = MODES,
   word,
   badge,
+  sparks,
 
 }: {
   mode: Seat;
@@ -168,10 +169,18 @@ export function EarSelector({
    * Never a list — the profile page tells those stories.
    */
   badge?: number;
+  /**
+   * MY SPARKS, AND ONLY EVER MINE. Sparks are private: this is passed on MY OWN
+   * Living G and never on anybody else's. It rides ALONGSIDE the top profile
+   * loop — clear of the photo, the stroke, the username and the selector's own
+   * travel — so it reads as part of my identity, not as a dashboard widget.
+   */
+  sparks?: number;
 
 
 
 }) {
+
 
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
@@ -414,6 +423,32 @@ export function EarSelector({
           </text>
         </g>
       ) : null}
+
+      {/*
+        MY SPARKS — part of my identity, sitting BESIDE my own profile loop.
+        Placed on the tangent to the selector's track, so it travels with the
+        piece and can never land on the photo, the stroke or the loop's words.
+      */}
+      {sparks !== undefined ? (
+        <text
+          x={ear.x - Math.sin(angle) * (EAR_GEOMETRY.outerR + 52)}
+          y={ear.y + Math.cos(angle) * (EAR_GEOMETRY.outerR + 52)}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="var(--giver-generosity)"
+          className="font-black lowercase"
+          pointerEvents="none"
+          style={{
+            fontSize: 34,
+            letterSpacing: "0.06em",
+            opacity: dragging ? 0 : 0.9,
+            transition: "opacity 180ms ease-out",
+          }}
+        >
+          {sparks} sparks
+        </text>
+      ) : null}
+
 
 
 

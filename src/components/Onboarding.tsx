@@ -184,10 +184,11 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
     };
   }, [phase, i]);
 
-  // The colour change IS the transition into the community. Nothing in between.
+  /* THE CHANGE IS THE TRANSITION. It holds just long enough to be unmistakably
+     COMPLETE — the green G, the confirmed words — then hands over to the people. */
   useEffect(() => {
     if (!green) return;
-    const t = setTimeout(onDone, 220);
+    const t = setTimeout(onDone, 760);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [green]);
@@ -196,11 +197,17 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
     lines ? { lines, plan: lines, scale, opacity: fading ? 0 : 1 } : undefined;
 
-  const middle: LoopCopy | undefined = phase === "drag" ? undefined : say(slide?.middle, BRAND);
+  /* ARRIVAL SPEAKS FOR ITSELF: the middle loop confirms the change in words. */
+  const done: LoopCopy | undefined = arrived
+    ? { lines: ["spark", "change."], plan: ["spark", "change."], scale: BRAND, opacity: 1 }
+    : undefined;
+
+  const middle: LoopCopy | undefined =
+    phase === "drag" ? done : say(slide?.middle, BRAND);
 
   /* THE INSTRUCTION STAYS PUT until the sparks reach their destination —
      touching or moving them never takes the guidance away. */
-  const dragLine = "drag the sparks";
+  const dragLine = "slide to spark change";
   const bottom: LoopCopy | undefined =
     phase === "drag"
       ? {
@@ -210,6 +217,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
           opacity: arrived ? 0 : 1,
         }
       : say(slide?.bottom, PHRASE);
+
 
   const small = phase === "word";
 
@@ -410,14 +418,26 @@ function ChooseRecipient({
 }
 
 /**
- * THE FIRST GIFT, MADE HUMAN. A warm pat on the back, the sparks confirmed,
- * then one honest question about messaging — asked, never assumed.
+ * THE FIRST GIFT, MADE HUMAN — AND IT LANDS AS ONE MOMENT.
+ *
+ * No sentence-by-sentence reveal here: the whole confirmation — the word, the
+ * praise, both halves of the sparks and the way onward — arrives TOGETHER on a
+ * single confident fade, with one haptic. Boom, complete. The copy and the
+ * semantic colours are exactly as approved; only the timing changed.
  */
 function FirstGenerosity({ username, onDone }: { username: string; onDone: () => void }) {
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  // Reward flash: pop in fast, hold just long enough to read, then let the user move on instantly.
-  const { shown, settled } = useSpeech(6, 140, 600);
+  /** ONE landing for the whole composition. */
+  const [landed, setLanded] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setLanded(true);
+      buzz([12, 50, 20]);
+    }, 90);
+    return () => clearTimeout(t);
+  }, []);
 
   if (asked) {
     return (
@@ -438,52 +458,40 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
       className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
       style={{ background: "var(--giver-paper)", color: "var(--giver-ink)" }}
     >
-      <Spoken
-        show={shown >= 1}
-        duration={180}
-        className="text-[16vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
-        style={{ color: "var(--giver-generosity)" }}
+      {/* ONE COMPOSITION, ONE ARRIVAL. Nothing here is staggered. */}
+      <div
+        style={{
+          opacity: landed ? 1 : 0,
+          transform: landed ? "scale(1)" : "scale(0.965)",
+          transition:
+            "opacity 460ms cubic-bezier(0.32,0,0.24,1), transform 620ms cubic-bezier(0.22,1,0.36,1)",
+        }}
       >
-        congrats
-      </Spoken>
-      <Spoken
-        show={shown >= 2}
-        duration={180}
-        className="mt-7 max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.92] tracking-[-0.045em]"
-      >
-        you just made your first act of generosity on giver
-      </Spoken>
-      <Spoken
-        show={shown >= 3}
-        duration={180}
-        className="mt-7 max-w-[14ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em]"
-      >
-        give yourself a pat on the back
-      </Spoken>
-      <Spoken
-        show={shown >= 4}
-        duration={180}
-        className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
-      >
-        50 sparks have now been given to {username}
-      </Spoken>
-      {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
-      <Spoken
-        show={shown >= 5}
-        duration={180}
-        className="mt-5 text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
-      >
-        and
-      </Spoken>
-      <Spoken
-        show={shown >= 6}
-        duration={180}
-        className="mt-2 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
-      >
-        50 sparks have now been added to your account
-      </Spoken>
+        <p
+          className="text-[16vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
+          style={{ color: "var(--giver-generosity)" }}
+        >
+          congrats
+        </p>
+        <p className="mt-7 max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.92] tracking-[-0.045em]">
+          you just made your first act of generosity on giver
+        </p>
+        <p className="mt-7 max-w-[14ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em]">
+          give yourself a pat on the back
+        </p>
+        <p className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
+          50 sparks have now been given to {username}
+        </p>
+        {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
+        <p className="mt-5 text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
+          and
+        </p>
+        <p className="mt-2 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
+          50 sparks have now been added to your account
+        </p>
+      </div>
 
-      {/* The Giver call to action, in Giver's own language. */}
+      {/* The Giver call to action, in Giver's own language — part of the same beat. */}
       <div
         className="absolute inset-x-0 bottom-0 flex justify-end px-7"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
@@ -497,8 +505,8 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
           className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
           style={{
             color: "var(--giver-generosity)",
-            opacity: settled ? 1 : 0,
-            pointerEvents: settled ? "auto" : "none",
+            opacity: landed ? 1 : 0,
+            pointerEvents: landed ? "auto" : "none",
           }}
         >
           let&apos;s giver
@@ -507,6 +515,7 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
     </div>
   );
 }
+
 
 /** Messaging is a permission, so Giver asks. "not now" costs nothing. */
 function MessagingConsent({

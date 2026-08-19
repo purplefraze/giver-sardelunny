@@ -9,8 +9,16 @@ import { buzz } from "@/lib/haptics";
  * screen sits underneath the G: it replaces it for as long as you are editing.
  * Every keystroke commits to the single source of truth immediately.
  */
-export function AboutForm({ onDone }: { onDone: () => void }) {
+export function AboutForm({
+  onDone,
+  onHelp,
+}: {
+  onDone: () => void;
+  /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
+  onHelp?: () => void;
+}) {
   const me = useMyProfile();
+
 
   const pickPhoto = () => {
     const input = document.createElement("input");
@@ -119,6 +127,21 @@ export function AboutForm({ onDone }: { onDone: () => void }) {
         <p className="mt-6 text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
           everything saves as you go
         </p>
+
+        {/* LEARN HOW, WHENEVER YOU LIKE. Never a nag, always here. */}
+        {onHelp ? (
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              onHelp();
+            }}
+            className="mt-10 text-left text-[11px] font-black lowercase tracking-[0.3em] opacity-55"
+          >
+            learn how giver works
+          </button>
+        ) : null}
+
       </div>
     </div>
   );

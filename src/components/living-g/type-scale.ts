@@ -123,12 +123,14 @@ export const PROFILE_TYPE: Record<
   { answer: number; label: number; detail: number }
 > = {
   top: { answer: 30, label: 17, detail: 22 },
-  middle: { answer: 74, label: 32, detail: 44 },
-  /* CONFIDENT, NOT TINY. The bottom loop's biography is the loudest content on
-     a sample profile: it starts LARGE and only steps down when a longer answer
-     genuinely needs the room (PROFILE_STEPS). */
-  bottom: { answer: 66, label: 27, detail: 42 },
+  /* CONFIDENT, NOT TINY. Activity copy inside a loop is the loudest content on
+     anybody's G: it STARTS large and uses the loop's negative space, stepping
+     down through PROFILE_STEPS only when a genuinely long line needs the room —
+     so it can never cross or touch the stroke. */
+  middle: { answer: 96, label: 40, detail: 60 },
+  bottom: { answer: 84, label: 34, detail: 56 },
 };
+
 
 
 

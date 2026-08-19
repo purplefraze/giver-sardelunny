@@ -15,7 +15,9 @@ import { CommunityFeed } from "@/components/community/CommunityFeed";
 import { ActivityDetail } from "@/components/community/ActivityDetail";
 import { Conversation } from "@/components/connection/Conversation";
 import { ConnectionsList } from "@/components/connection/ConnectionsList";
-import { SparkBalance } from "@/components/SparkBalance";
+import { tutorialSeenStore } from "@/data/tutorial-seen";
+import { useTutorialSeen } from "@/hooks/use-tutorial-seen";
+
 import { isOpen, myConnections, needsMyAnswer } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
@@ -194,6 +196,8 @@ function Index() {
    * the G goes quiet for good — a press-and-hold brings a label back.
    */
   const [teach, setTeach] = useState(true);
+  /** A PERSISTED fact about this person: the G has already taught itself. */
+  const tutorialSeen = useTutorialSeen();
 
   /**
    * INSTRUCTIONAL COPY IS A CUE, NEVER FURNITURE — AND NEVER MODE CONTENT.
@@ -203,10 +207,19 @@ function Index() {
    */
   useEffect(() => {
     if (!entered) return;
+    if (tutorialSeenStore.get()) {
+      setTeach(false);
+      return;
+    }
     setTeach(true);
-    const t = setTimeout(() => setTeach(false), 4200);
+    const t = setTimeout(() => {
+      setTeach(false);
+      tutorialSeenStore.markSeen();
+    }, 4200);
     return () => clearTimeout(t);
   }, [entered]);
+
+
 
 
   /** ONE source of truth for who I am and what I have going on. */
@@ -283,6 +296,9 @@ function Index() {
                 seats={SEATS}
                 {...(isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
+                /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
+                sparks={me.sparks}
+
                 onTap={() => setEditor({ kind: "about" })}
               />
             }
@@ -411,10 +427,12 @@ function Index() {
           <SparkFlash />
 
           {/*
-            THE QUIET WAY BACK TO EVERY EXPLANATION. Nothing shouts; one small
-            word in the corner. Opening it sets NO first-time flag.
+            THE FIRST-USE LEGEND, AND ONLY THE FIRST USE. Once the Living G has
+            taught itself, this corner clears for good — help then lives inside
+            the profile, where it belongs. Sparks are no longer printed here:
+            they ride my own top profile loop (see EarSelector).
           */}
-          {intro === null && editor === null && !choose && !help ? (
+          {!tutorialSeen && intro === null && editor === null && !choose && !help ? (
             <button
               type="button"
               onClick={() =>
@@ -426,8 +444,6 @@ function Index() {
             </button>
           ) : null}
 
-          {/* SPARKS, ALWAYS VISIBLE AND ALWAYS HONEST. */}
-          <SparkBalance />
 
           {/*
             THE S-CURVE IS WHERE PEOPLE MEET. It is the part of the G that joins
@@ -459,13 +475,11 @@ function Index() {
                     ? `connections · ${openCount}`
                     : "connections"}
               </button>
-              <button
-                type="button"
-                onClick={() => setBrowse({ type: null })}
-                className="text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
-              >
-                community
-              </button>
+              {/*
+                NO SEPARATE "COMMUNITY" WORD. Tapping the bottom loop already
+                walks into the community, so a second door would be clutter.
+              */}
+
             </div>
           ) : null}
 
@@ -556,7 +570,14 @@ function Index() {
           */}
           <Screen open={editor !== null}>
             {editor?.kind === "about" ? (
-              <AboutForm onDone={() => setEditor(null)} />
+              <AboutForm
+                onDone={() => setEditor(null)}
+                onHelp={() => {
+                  setEditor(null);
+                  setHelp(true);
+                }}
+              />
+
             ) : editor?.kind === "category" ? (
               <CategoryForm
                 category={editor.category}

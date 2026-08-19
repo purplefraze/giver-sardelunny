@@ -8,7 +8,14 @@ import {
   myProfileStore,
   type Category,
 } from "@/data/my-profile";
-import { ACTIVITY_MAX, NOTE_MAX, splitTrade, tradeText } from "@/data/items";
+import {
+  ACTIVITY_MAX,
+  NOTE_MAX,
+  splitTrade,
+  tradeText,
+  type BorrowSide,
+} from "@/data/items";
+
 import { buzz } from "@/lib/haptics";
 
 /**
@@ -29,6 +36,12 @@ const CATEGORY_ASK: Record<Category, string> = {
   borrow: "what would you borrow?",
 };
 
+/** BORROWING HAS TWO SIDES, and giver asks which one you mean. */
+const SIDE_ASK: Record<BorrowSide, string> = {
+  borrow: "what would you like to borrow?",
+  lend: "what are you happy to lend?",
+};
+
 export function CategoryForm({
   category,
   onDone,
@@ -42,6 +55,10 @@ export function CategoryForm({
   const [want, setWant] = useState("");
   /** ONE OPTIONAL, SHORT LINE OF CONTEXT. Never a description box. */
   const [note, setNote] = useState("");
+  /** BORROW OR LEND — asked plainly, never assumed. */
+  const [side, setSide] = useState<BorrowSide>("borrow");
+  /** OPTIONAL PHOTOS. They belong to the item the moment it exists. */
+  const [photos, setPhotos] = useState<string[]>([]);
   const [problem, setProblem] = useState<string | null>(null);
   const colour = `var(--me-${category})`;
   const limit = MAX_PER_CATEGORY[category];
@@ -50,6 +67,23 @@ export function CategoryForm({
   /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
   const cost = category === "wish" ? WISH_COST : 0;
   const broke = cost > 0 && me.sparks < cost;
+  /** PHOTOS HELP FOR REAL THINGS: gives, trades and borrows. Never wishes. */
+  const canPhoto = category !== "wish";
+
+  const pickPhotos = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = async () => {
+      const files = Array.from(input.files ?? []);
+      const shrunk = await Promise.all(files.map(readSmall));
+      setPhotos((prev) => [...prev, ...shrunk.filter(Boolean)].slice(0, 3) as string[]);
+      buzz();
+    };
+    input.click();
+  };
+
 
   const add = () => {
     if (!draft.trim()) return;
@@ -58,6 +92,12 @@ export function CategoryForm({
       buzz();
       return;
     }
+    /* ONE ITEM, MANY VIEWS: photos and the borrow/lend side are stored on the
+       real record, so every screen that reads it shows the same truth. */
+    const extra = {
+      ...(photos.length ? { photos } : {}),
+      ...(category === "borrow" ? { side } : {}),
+    };
     const result =
       category === "trade"
         ? myProfileStore.addItem(
@@ -65,8 +105,9 @@ export function CategoryForm({
             tradeText(draft, want),
             { offer: draft, want },
             note,
+            extra,
           )
-        : myProfileStore.addItem(category, draft, undefined, note);
+        : myProfileStore.addItem(category, draft, undefined, note, extra);
     if (!result.ok) {
       setProblem(
         result.reason === "sparks"
@@ -80,7 +121,9 @@ export function CategoryForm({
     setDraft("");
     setWant("");
     setNote("");
+    setPhotos([]);
     buzz();
+
   };
 
   const leave = () => {
@@ -228,6 +271,26 @@ export function CategoryForm({
           </p>
         ) : (
           <div className="mt-8 space-y-4">
+            {/* BORROW OR LEND — one plain question, two honest answers. */}
+            {category === "borrow" ? (
+              <div className="flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
+                {(["borrow", "lend"] as BorrowSide[]).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      buzz();
+                      setSide(s);
+                    }}
+                    style={{ color: side === s ? colour : "var(--world-ink)" }}
+                    className={side === s ? "opacity-100" : "opacity-40"}
+                  >
+                    {s === "borrow" ? "i want to borrow" : "i can lend"}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
             <input
               autoFocus
               value={draft}
@@ -235,9 +298,12 @@ export function CategoryForm({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && category !== "trade") add();
               }}
-              placeholder={CATEGORY_ASK[category]}
+              placeholder={
+                category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]
+              }
               className="w-full border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
             />
+
             {category === "trade" ? (
               <input
                 value={want}
@@ -262,6 +328,42 @@ export function CategoryForm({
             <p className="text-[11px] font-black lowercase tracking-[0.28em] opacity-30">
               {NOTE_MAX - note.length} left
             </p>
+
+            {/* PHOTOS ARE OPTIONAL, AND THEY BELONG TO THE THING ITSELF. */}
+            {canPhoto ? (
+              <div className="space-y-3">
+                {photos.length ? (
+                  <div className="flex gap-3">
+                    {photos.map((p, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        aria-label="remove photo"
+                        onClick={() => {
+                          buzz();
+                          setPhotos((prev) => prev.filter((_, k) => k !== i));
+                        }}
+                        className="relative h-20 w-20 overflow-hidden"
+                      >
+                        <img
+                          src={p}
+                          alt="photo of what you're offering"
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={pickPhotos}
+                  className="text-[11px] font-black lowercase tracking-[0.28em] opacity-55"
+                >
+                  {photos.length ? "add another photo" : "add a photo (optional)"}
+                </button>
+              </div>
+            ) : null}
+
             <button
               type="button"
               onClick={add}
@@ -292,4 +394,35 @@ export function CategoryForm({
       </div>
     </div>
   );
+}
+
+/**
+ * A PHOTO MUST NEVER COST THE WORDS. Every picture is redrawn small before it
+ * is stored, so a give with three photos still fits in persistent storage.
+ */
+async function readSmall(file: File, max = 480): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("unreadable"));
+    reader.readAsDataURL(file);
+  });
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("bad image"));
+      img.src = dataUrl;
+    });
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.8);
+  } catch {
+    return dataUrl;
+  }
 }

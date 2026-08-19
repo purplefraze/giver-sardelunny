@@ -263,12 +263,14 @@ export const myProfileStore = {
     parts?: { offer: string; want: string },
     /** OPTIONAL, SHORT: anything else the other person should know. */
     note?: string,
-  ): { ok: boolean; reason?: "sparks" | "full" | "empty" } {
+    /** PHOTOS + BORROW/LEND SIDE — stored on the one real item, not a copy. */
+    extra?: { photos?: string[]; side?: BorrowSide },
+  ): { ok: boolean; reason?: "sparks" | "full" | "empty"; id?: string } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };
     if (category === "wish" && person.sparks < WISH_COST)
       return { ok: false, reason: "sparks" };
-    const item = itemsStore.add(ME_ID, category, text, parts, note);
+    const item = itemsStore.add(ME_ID, category, text, parts, note, extra);
     if (!item) return { ok: false, reason: "full" };
     /* A WISH RESERVES ITS SPARKS. They leave the balance but are not spent:
        they belong to the wish until it is granted and verified, or withdrawn. */
@@ -278,8 +280,9 @@ export const myProfileStore = {
         sparks: person.sparks - WISH_COST,
         reserved: { ...person.reserved, [item.id]: WISH_COST },
       });
-    return { ok: true };
+    return { ok: true, id: item.id };
   },
+
   editItem(category: Category, index: number, text: string) {
     const item = myProfileStore.get().records[category][index];
     if (item) itemsStore.patch(item.id, { text });

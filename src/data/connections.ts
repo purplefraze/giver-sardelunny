@@ -409,3 +409,15 @@ export const STATE_WORD: Record<ConnectionState, string> = {
   disputed: "unresolved",
   cancelled: "cancelled",
 };
+
+/**
+ * EARNED CONNECTIONS. A connection is NOT a follow, a message or a viewed
+ * profile: it is created the moment a qualifying interaction reaches its
+ * completed, mutually verified state — and it is mutual at that instant.
+ * Anything still in motion (connecting, awaiting, disputed) counts for nothing.
+ */
+export function earnedConnectionIds(s: State, meId = ME_ID): string[] {
+  const ids = new Set<string>();
+  for (const p of s.past) if (p.withId && p.withId !== meId) ids.add(p.withId);
+  return Array.from(ids);
+}

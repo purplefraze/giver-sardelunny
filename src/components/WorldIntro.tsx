@@ -76,6 +76,10 @@ const BEATS: Record<Category, string[][]> = {
     ],
   ],
 };
+/** One idea per line, sized by how much of it there is. */
+const size = (line: string) =>
+  line.length > 170 ? "3.9vw" : line.length > 90 ? "4.5vw" : "5.2vw";
+
 
 
 export function WorldIntro({

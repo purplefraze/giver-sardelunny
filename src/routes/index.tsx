@@ -18,7 +18,7 @@ import { ConnectionsList } from "@/components/connection/ConnectionsList";
 import { tutorialSeenStore } from "@/data/tutorial-seen";
 import { useTutorialSeen } from "@/hooks/use-tutorial-seen";
 
-import { isOpen, myConnections, needsMyAnswer, unreadCount } from "@/data/connections";
+import { unreadCount } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";

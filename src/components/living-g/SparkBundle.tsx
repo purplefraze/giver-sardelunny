@@ -70,24 +70,37 @@ export function SparkBundle({
 
       {/* THE COUNT, living inside the light. */}
       {count !== undefined ? (
-        <text
-          x={0}
-          y={0}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fill="var(--world-bg)"
-          style={{
-            fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-            fontWeight: 900,
-            fontSize: r * 0.82,
-            letterSpacing: "-0.03em",
-          }}
-        >
-          {count}
-        </text>
+        <>
+          <text
+            x={0}
+            y={0}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="var(--world-bg)"
+            style={{
+              fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+              fontWeight: 900,
+              fontSize: r * (count >= 100 ? 0.62 : 0.8),
+              letterSpacing: "-0.04em",
+            }}
+          >
+            {count}
+          </text>
+          {/* The Spark symbol, riding the bundle's own edge. */}
+          <text
+            x={r * 0.92}
+            y={-r * 0.92}
+            textAnchor="middle"
+            dominantBaseline="central"
+            style={{ fontSize: r * 0.5 }}
+          >
+            ✨
+          </text>
+        </>
       ) : (
         <circle r={r * 0.32} fill="var(--world-bg)" opacity={0.9} />
       )}
+
     </g>
   );
 }

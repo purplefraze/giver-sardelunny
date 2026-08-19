@@ -412,7 +412,7 @@ export function unreadCount(s: State, meId = ME_ID) {
   for (const c of myConnections(s, meId)) {
     const thread = messagesOf(s, c.id);
     const last = thread[thread.length - 1];
-    if (last && last.senderId !== meId) waiting.add(c.id);
+    if (last && last.fromId !== meId) waiting.add(c.id);
   }
   return waiting.size;
 }

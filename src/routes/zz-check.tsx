@@ -15,6 +15,7 @@ function Check() {
   );
   const member = MEMBERS[i]!;
   return (
+    <div className="fixed inset-0">
     <MemberExample
       member={member}
       first={false}
@@ -24,5 +25,6 @@ function Check() {
       onNext={() => {}}
       onDone={() => {}}
     />
+    </div>
   );
 }

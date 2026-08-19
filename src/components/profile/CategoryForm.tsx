@@ -271,6 +271,26 @@ export function CategoryForm({
           </p>
         ) : (
           <div className="mt-8 space-y-4">
+            {/* BORROW OR LEND — one plain question, two honest answers. */}
+            {category === "borrow" ? (
+              <div className="flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
+                {(["borrow", "lend"] as BorrowSide[]).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      buzz();
+                      setSide(s);
+                    }}
+                    style={{ color: side === s ? colour : "var(--world-ink)" }}
+                    className={side === s ? "opacity-100" : "opacity-40"}
+                  >
+                    {s === "borrow" ? "i want to borrow" : "i can lend"}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
             <input
               autoFocus
               value={draft}
@@ -278,9 +298,12 @@ export function CategoryForm({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && category !== "trade") add();
               }}
-              placeholder={CATEGORY_ASK[category]}
+              placeholder={
+                category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]
+              }
               className="w-full border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
             />
+
             {category === "trade" ? (
               <input
                 value={want}

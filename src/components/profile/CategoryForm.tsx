@@ -8,7 +8,14 @@ import {
   myProfileStore,
   type Category,
 } from "@/data/my-profile";
-import { ACTIVITY_MAX, NOTE_MAX, splitTrade, tradeText } from "@/data/items";
+import {
+  ACTIVITY_MAX,
+  NOTE_MAX,
+  splitTrade,
+  tradeText,
+  type BorrowSide,
+} from "@/data/items";
+
 import { buzz } from "@/lib/haptics";
 
 /**

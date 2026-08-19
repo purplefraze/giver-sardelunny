@@ -202,10 +202,17 @@ export function SparkJourney({
     if (best && d <= REACH * REACH) put(best.u);
   };
 
+  /** The one finger driving this slide; any other touch is ignored. */
+  const activeId = useRef<number | null>(null);
+
   const grab = (e: React.PointerEvent) => {
     if (arrived) return;
+    if (activeId.current !== null) return;
+    activeId.current = e.pointerId;
     grabbed.current = true;
     setDragging(true);
+    // CAPTURE: the slide survives the finger straying off the rail's grip, and
+    // keeps receiving moves right through the loops and the S-curve.
     e.currentTarget.setPointerCapture?.(e.pointerId);
     buzz(10);
     onStart?.();
@@ -213,6 +220,7 @@ export function SparkJourney({
   };
 
   const move = (e: React.PointerEvent) => {
+    if (activeId.current !== e.pointerId) return;
     if (!grabbed.current || arrived) return;
     project(e);
   };
@@ -235,7 +243,21 @@ export function SparkJourney({
     glide.current = requestAnimationFrame(step);
   };
 
-  const release = () => {
+  /**
+   * RELEASE OR CANCELLATION, HANDLED THE SAME WAY: the bead keeps its last
+   * valid position on the rail and the control is immediately grabbable again.
+   */
+  const release = (e?: React.PointerEvent) => {
+    if (e) {
+      if (activeId.current !== null && activeId.current !== e.pointerId) return;
+      try {
+        if (e.currentTarget.hasPointerCapture?.(e.pointerId))
+          e.currentTarget.releasePointerCapture?.(e.pointerId);
+      } catch {
+        /* the browser already dropped it */
+      }
+    }
+    activeId.current = null;
     grabbed.current = false;
     setDragging(false);
     const travelled = TO === 1 ? uRef.current : 1 - uRef.current;
@@ -243,6 +265,7 @@ export function SparkJourney({
     if (travelled > 0.97) put(TO);
     else if (travelled > 0.5) complete();
   };
+
 
 
   const R = count !== undefined ? 44 : 34;

@@ -5,10 +5,13 @@ import {
   resetNewUser,
   seedDevelopmentProfile,
 } from "@/data/dev-fixture";
+import { HapticsCheck } from "@/components/HapticsCheck";
 
 export function DevControls() {
   const [open, setOpen] = useState(false);
+  const [haptics, setHaptics] = useState(false);
   if (!import.meta.env.DEV) return null;
+
   const run = (action: () => void) => {
     action();
     window.location.reload();

@@ -486,11 +486,13 @@ function Spoken({
   show,
   className,
   style,
+  duration = 780,
   children,
 }: {
   show: boolean;
   className?: string;
   style?: React.CSSProperties;
+  duration?: number;
   children: React.ReactNode;
 }) {
   return (
@@ -498,7 +500,7 @@ function Spoken({
       className={cn("block", className)}
       style={{
         opacity: show ? 1 : 0,
-        transition: "opacity 780ms cubic-bezier(0.32,0,0.24,1)",
+        transition: `opacity ${duration}ms cubic-bezier(0.32,0,0.24,1)`,
         ...style,
       }}
     >
@@ -520,7 +522,7 @@ function ChooseRecipient({
   onBack: () => void;
   onChoose: (m: Member) => void;
 }) {
-  const { shown, settled } = useSpeech(QUESTION.length, 1000, 1200);
+  const { shown, settled } = useSpeech(QUESTION.length, 180, 800);
 
   return (
     <div
@@ -533,7 +535,7 @@ function ChooseRecipient({
         style={{ color: "var(--giver-generosity)" }}
       >
         {QUESTION.map((phrase, i) => (
-          <Spoken key={phrase} show={i < shown}>
+          <Spoken key={phrase} show={i < shown} duration={220}>
             {phrase}
           </Spoken>
         ))}
@@ -544,7 +546,7 @@ function ChooseRecipient({
         className="mt-11 flex flex-col items-start gap-4"
         style={{
           opacity: settled ? 1 : 0,
-          transition: "opacity 900ms cubic-bezier(0.32,0,0.24,1)",
+          transition: "opacity 700ms cubic-bezier(0.32,0,0.24,1)",
           pointerEvents: settled ? "auto" : "none",
         }}
       >
@@ -577,8 +579,8 @@ function FirstGenerosity({
 }) {
   const [asked, setAsked] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  // MEANINGFUL BEAT: nothing advances on its own here. The user reads, then taps.
-  const { shown, settled } = useSpeech(6, 1500, 1600);
+  // Reward flash: pop in fast, hold just long enough to read, then let the user move on instantly.
+  const { shown, settled } = useSpeech(6, 140, 600);
 
   if (asked) {
     return (
@@ -601,6 +603,7 @@ function FirstGenerosity({
     >
       <Spoken
         show={shown >= 1}
+        duration={180}
         className="text-[16vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
         style={{ color: "var(--giver-generosity)" }}
       >
@@ -608,18 +611,21 @@ function FirstGenerosity({
       </Spoken>
       <Spoken
         show={shown >= 2}
+        duration={180}
         className="mt-7 max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.92] tracking-[-0.045em]"
       >
         you just made your first act of generosity on giver
       </Spoken>
       <Spoken
         show={shown >= 3}
+        duration={180}
         className="mt-7 max-w-[14ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em]"
       >
         give yourself a pat on the back
       </Spoken>
       <Spoken
         show={shown >= 4}
+        duration={180}
         className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
       >
         50 sparks have now been given to {username}
@@ -627,12 +633,14 @@ function FirstGenerosity({
       {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
       <Spoken
         show={shown >= 5}
+        duration={180}
         className="mt-5 text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
       >
         and
       </Spoken>
       <Spoken
         show={shown >= 6}
+        duration={180}
         className="mt-2 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70"
       >
         50 sparks have now been added to your account
@@ -649,7 +657,7 @@ function FirstGenerosity({
             buzz();
             setAsked(true);
           }}
-          className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[900ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+          className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
           style={{
             color: "var(--giver-generosity)",
             opacity: settled ? 1 : 0,

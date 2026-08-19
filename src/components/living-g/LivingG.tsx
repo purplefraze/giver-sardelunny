@@ -320,7 +320,14 @@ export function LivingG({
 
 
 
-      {/* Region content */}
+      {/*
+        REGION CONTENT — ONE STATE, ONE SET OF WORDS PER LOOP.
+        The whole group is keyed by the active state, so switching state UNMOUNTS
+        the previous state's words outright instead of fading them behind the new
+        ones. And a loop's action prompt and its content are MUTUALLY EXCLUSIVE:
+        while the prompt is readable the content is not mounted, and vice versa —
+        two complete states can never occupy the same negative space.
+      */}
       {ORDER.map((key) => {
         const region = regions?.[key];
         if (!region) return null;
@@ -331,19 +338,22 @@ export function LivingG({
         const origin = loopOrigin(key, LABEL_LIFT[key]);
         const lines = region.label ? actionLines(region.label, key) : [];
         const line = LABEL_SIZE[key] * ACTION_LINE_HEIGHT;
+        const promptShown = lines.length > 0 && (showLabels || cue === key);
 
         return (
-          <g key={`content-${key}`} pointerEvents="none">
-            <g
-              style={{
-                transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
-                transform: `scale(${isPressed ? 0.985 : 1})`,
-                transformOrigin: `${ring.x}px ${ring.y}px`,
-              }}
-            >
-              {region.render?.(ring)}
-            </g>
-            {lines.length ? (
+          <g key={`content-${key}-${contentKey}`} pointerEvents="none">
+            {promptShown ? null : (
+              <g
+                style={{
+                  transition: `transform ${RHYTHM.swell}ms cubic-bezier(0.22,1,0.36,1)`,
+                  transform: `scale(${isPressed ? 0.985 : 1})`,
+                  transformOrigin: `${ring.x}px ${ring.y}px`,
+                }}
+              >
+                {region.render?.(ring)}
+              </g>
+            )}
+            {promptShown ? (
               <text
                 x={origin.x}
                 y={origin.y - ((lines.length - 1) * line) / 2}
@@ -354,7 +364,7 @@ export function LivingG({
                 style={{
                   fontSize: LABEL_SIZE[key],
                   letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-                  opacity: showLabels || cue === key ? LOOP_ROLE_STYLE.action.opacity : 0,
+                  opacity: LOOP_ROLE_STYLE.action.opacity,
                   transition: `opacity ${
                     cue === key ? RHYTHM.cueIn : RHYTHM.cueOut
                   }ms ease-out`,
@@ -367,9 +377,8 @@ export function LivingG({
                 ))}
               </text>
             ) : null}
-
-
           </g>
+
         );
       })}
 

@@ -37,8 +37,13 @@ export function SparkJourney({
   onArrive,
   onGreen,
 }: {
-  /** "auto" travels bottom -> middle by itself; "drag" is the user's journey. */
-  mode?: "auto" | "drag";
+  /**
+   * "auto" travels bottom -> middle by itself; "drag" is the user's journey
+   * along the rail into the bottom loop; "gift" is the same rail walked the
+   * OTHER way — from the bottom-loop stroke up through the S-curve and round
+   * the middle loop toward this person's top loop.
+   */
+  mode?: "auto" | "drag" | "gift";
   /** How many Sparks this bundle carries — shown inside the bundle. */
   count?: number;
   /** The user has taken hold of the bundle. */
@@ -59,7 +64,12 @@ export function SparkJourney({
   const uRef = useRef(0);
 
   const [at, setAt] = useState({ x: 0, y: 0, ready: false });
-  const [u, setU] = useState(mode === "auto" ? 1 : 0);
+  /** Where this journey begins and ends on the shared rail. */
+  const FROM = mode === "drag" ? 0 : 1;
+  const TO = mode === "gift" ? 0 : 1;
+  const draggable = mode === "drag" || mode === "gift";
+
+  const [u, setU] = useState(FROM);
   const [dragging, setDragging] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [wash, setWash] = useState(0);
@@ -76,7 +86,8 @@ export function SparkJourney({
 
     if (!tick) return;
     // A quiet tick at each quarter of the journey — abacus, not applause.
-    const mark = Math.floor(clamped * 4);
+    const travelled = TO === 1 ? clamped : 1 - clamped;
+    const mark = Math.floor(travelled * 4);
     if (mark > marks.current) {
       marks.current = mark;
       buzz(8);
@@ -97,7 +108,7 @@ export function SparkJourney({
       out.push({ x: p.x, y: p.y, u: s });
     }
     samples.current = out;
-    put(mode === "auto" ? 1 : 0, false);
+    put(FROM, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -126,7 +137,8 @@ export function SparkJourney({
 
   // Landing: the haptic, then the green travelling outward from the bead.
   useEffect(() => {
-    if (mode !== "drag" || u < 1 || arrived) return;
+    if (!draggable || arrived) return;
+    if (TO === 1 ? u < 1 : u > 0) return;
     setArrived(true);
     buzz([12, 60, 22]);
     onArrive?.();
@@ -136,6 +148,10 @@ export function SparkJourney({
   // THE CHANGE. Kept in its OWN effect so nothing can cancel it mid-flight.
   useEffect(() => {
     if (!arrived) return;
+    if (mode !== "drag") {
+      onGreen?.();
+      return;
+    }
     let raf = 0;
     const start = performance.now();
     const step = (now: number) => {
@@ -205,7 +221,7 @@ export function SparkJourney({
     grabbed.current = false;
     setDragging(false);
     // A gentle lock-in: within a hair of the destination, it settles there.
-    if (uRef.current > 0.97) put(1);
+    if (TO === 1 ? uRef.current > 0.97 : uRef.current < 0.03) put(TO);
   };
 
   const R = count !== undefined ? 44 : 34;
@@ -236,7 +252,7 @@ export function SparkJourney({
         <>
           {/* A generous invisible grip along the rail, so the bead is easy to
               take hold of without any visible control appearing on the G. */}
-          {mode === "drag" && !arrived ? (
+          {draggable && !arrived ? (
             <path
               d={SPARK_TRACK_D}
               fill="none"

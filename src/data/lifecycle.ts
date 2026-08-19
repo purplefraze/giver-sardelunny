@@ -36,8 +36,9 @@ function save(next: Lifecycle) {
 
 export const lifecycleStore = {
   subscribe(listener: () => void) {
-    hydrate();
     listeners.add(listener);
+    hydrate();
+    listener();
     return () => listeners.delete(listener);
   },
   get() { hydrate(); return state; },

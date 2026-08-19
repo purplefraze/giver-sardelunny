@@ -124,6 +124,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const lifecycle = useLifecycle();
   const [sessionEntered, setSessionEntered] = useState(false);
+  const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already
@@ -243,7 +244,6 @@ function Index() {
     }
   }, [lifecycle.onboardingCompletedAt, me.built]);
 
-  const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /** Conversations in motion, and the ones politely waiting on my answer. */
   const openCount = myConnections(links, ME_ID).filter(isOpen).length;
   const waitingOnMe = needsMyAnswer(links, ME_ID).length;

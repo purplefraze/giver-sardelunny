@@ -296,7 +296,7 @@ function Index() {
                 seats={SEATS}
                 {...(isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
-                {/* MY SPARKS RIDE MY OWN TOP LOOP — and are never shown on anybody else's G. */}
+                /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
                 sparks={me.sparks}
 
                 onTap={() => setEditor({ kind: "about" })}

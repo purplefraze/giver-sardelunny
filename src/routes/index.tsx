@@ -139,14 +139,34 @@ function Index() {
    * FIRST-TIME WORLD EXPLANATION. Giver explains wish / give / trade / borrow
    * once each, from four PERSISTED flags — never component state — then gets
    * out of the way. It is UI only: it creates no items and touches no profile.
+   *
+   * `help` marks an explanation the user asked for on purpose: it sets no flag
+   * and leads nowhere — it explains, then hands the G straight back.
    */
-  const [intro, setIntro] = useState<Category | null>(null);
+  const [intro, setIntro] = useState<{ topic: IntroTopic; help: boolean } | null>(
+    null,
+  );
   const introSeen = useIntroSeen();
+
+  /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
+  const [choose, setChoose] = useState(false);
+  /** The voluntary help area — every explanation, on demand. */
+  const [help, setHelp] = useState(false);
+
+  /**
+   * ONE DOOR INTO A WORLD. First time: explain, then the form. Every time after:
+   * straight to the form. The flag decides, never the caller.
+   */
+  const openWorld = (category: Category) => {
+    setChoose(false);
+    if (introSeen[category]) setEditor({ kind: "category", category });
+    else setIntro({ topic: category, help: false });
+  };
 
   useEffect(() => {
     if (!entered || seat === "giver") return;
     if (introSeen[seat]) return;
-    setIntro(seat);
+    setIntro({ topic: seat, help: false });
   }, [entered, seat, introSeen]);
 
   /**
@@ -167,6 +187,7 @@ function Index() {
     const t = setTimeout(() => setTeach(false), 4200);
     return () => clearTimeout(t);
   }, [entered]);
+
 
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();

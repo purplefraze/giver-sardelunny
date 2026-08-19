@@ -113,7 +113,8 @@ export function profileLoop({
     <>
       {placed.rows.map((row, i) => (
         <text
-          key={`${row.text}-${i}`}
+          /* Position-keyed: one row per slot, never a reused stale node. */
+          key={`${region}-row-${i}`}
           x={origin.x}
           y={origin.y + row.y}
           textAnchor="middle"

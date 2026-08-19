@@ -150,6 +150,8 @@ export function MemberExample({
           key={member.id}
           className={G_PRESENCE}
           showLabels
+          /* ONE SEAT = ONE MODE = ONE SET OF WORDS in the loops. */
+          contentKey={`${member.id}-${seat}`}
           earCut
           overlay={
             <EarSelector

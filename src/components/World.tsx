@@ -33,6 +33,11 @@ type Props = {
    * brings a label back.
    */
   teach?: boolean;
+  /**
+   * THE ONE ACTIVE STATE the loops are holding (e.g. the current mode). Changing
+   * it unmounts the previous state's in-loop words completely.
+   */
+  contentKey?: string;
 
   /** Interactive layer drawn above the Living G (e.g. top-loop selector). */
   overlay?: React.ReactNode;
@@ -52,6 +57,7 @@ export function World({
   onBack,
   active = true,
   teach = false,
+  contentKey,
 
   overlay,
   earCut = false,
@@ -115,6 +121,7 @@ export function World({
         <LivingG
           className={G_PRESENCE}
           showLabels={teach}
+          {...(contentKey === undefined ? {} : { contentKey })}
           overlay={overlay}
           earCut={earCut}
           regions={{

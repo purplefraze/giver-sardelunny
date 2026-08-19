@@ -35,7 +35,11 @@ export type Item = {
   id: string;
   ownerId: string;
   type: ItemType;
+  /** The one line an item reads as. For a trade it is always "offer for want". */
   text: string;
+  /** TRADES HAVE TWO SIDES, stored separately and rendered as one line. */
+  offer?: string;
+  want?: string;
   status: ItemStatus;
   /** 0 = the owner's #1 priority in that type. User-controlled ordering. */
   priority: number;
@@ -51,8 +55,20 @@ export type Item = {
 
 export const ME_ID = "me";
 
-/** Architecture ceiling per person, per type. */
-export const MAX_ACTIVE_PER_TYPE = 5;
+/**
+ * PERMANENT LIMITS. Generosity is never capped; asking is deliberately scarce.
+ */
+export const MAX_ACTIVE: Record<ItemType, number> = {
+  wish: 3,
+  give: Number.POSITIVE_INFINITY,
+  trade: 3,
+  borrow: 3,
+};
+
+/** A TRADE ALWAYS READS AS BOTH OF ITS SIDES — everywhere it appears. */
+export const tradeText = (offer: string, want: string) =>
+  `${offer.trim()} for ${want.trim()}`;
+
 
 /** How much a single sparkle may ever be worth — guardrails, not a ranking. */
 export const BOOST_RULES = {

@@ -2,14 +2,16 @@ import meFallback from "@/assets/me.jpg";
 import type { Member } from "@/data/giver";
 import {
   ITEM_TYPES,
-  MAX_ACTIVE_PER_TYPE,
+  MAX_ACTIVE,
   ME_ID,
   completedItems,
   itemsStore,
   myItems,
+  tradeText,
   type Item,
   type ItemType,
 } from "@/data/items";
+
 import { sparkFlashStore } from "@/data/spark-flash";
 import { buzz } from "@/lib/haptics";
 

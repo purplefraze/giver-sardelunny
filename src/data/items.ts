@@ -195,20 +195,29 @@ export const itemsStore = {
   },
 
   /** CREATE. Belongs to MY list and, being active+published, to community too. */
-  add(ownerId: string, type: ItemType, text: string): Item | null {
+  add(
+    ownerId: string,
+    type: ItemType,
+    text: string,
+    /** TRADES ONLY: the two sides, stored separately, read as one line. */
+    parts?: { offer: string; want: string },
+  ): Item | null {
     const t = text.trim();
     if (!t) return null;
     const s = ensure();
     const mine = s.items.filter(
       (i) => i.ownerId === ownerId && i.type === type && i.status === "active",
     );
-    if (mine.length >= MAX_ACTIVE_PER_TYPE) return null;
+    if (mine.length >= MAX_ACTIVE[type]) return null;
     const now = Date.now();
     const item: Item = {
       id: uid(),
       ownerId,
       type,
       text: t,
+      ...(parts
+        ? { offer: parts.offer.trim(), want: parts.want.trim() }
+        : {}),
       status: "active",
       priority: mine.length,
       published: true,
@@ -219,6 +228,7 @@ export const itemsStore = {
     commit({ ...s, items: [...s.items, item] });
     return item;
   },
+
 
   /** EDIT ONE ITEM — every view that references it updates with it. */
   patch(id: string, fields: Partial<Omit<Item, "id" | "ownerId" | "type">>) {

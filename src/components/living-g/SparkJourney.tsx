@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "./g-path";
+import { SparkBundle } from "./SparkBundle";
 import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
 import { buzz } from "@/lib/haptics";
+
 
 /**
  * THE TRAVELLING SPARK — a bead riding INSIDE the Living G's own stroke, on the

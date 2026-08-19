@@ -210,14 +210,28 @@ function Index() {
     navigate({ search: {}, replace: true });
   }, [navigate, router]);
 
-  const content = MODE_CONTENT[mode];
-
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
-  /** THE ACTIVE MODE'S OWN #1 ITEM — the only mode content the G ever holds. */
+  const items = useItems();
+
+  /** GIVER = ME. The other four seats are activity worlds. */
+  const isProfile = seat === "giver";
+  const mode: Mode = isProfile ? "give" : (seat as Mode);
+  const content = MODE_CONTENT[mode];
+
+  /** MY <type> — the active world's #1 item, in my own priority order. */
   const myMode = me.items[mode][0] ?? null;
-  /** MY GIVE — the bottom loop's permanent content, whatever the mode. */
+  /** COMMUNITY <type> — the same item collection, queried by everyone else. */
+  const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
+  const community = theirs[0]?.text ?? null;
+  /** MY GIVE — what I offer the community, the profile's bottom loop. */
   const myGive = primaryGive(me);
+
+  /** MY LATEST ACTIVITY of ANY type — the profile's middle loop snapshot. */
+  const latest = CATEGORIES.flatMap((c) =>
+    me.records[c].map((i) => ({ type: c, item: i })),
+  ).sort((a, b) => b.item.updatedAt - a.item.updatedAt)[0] ?? null;
+
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">

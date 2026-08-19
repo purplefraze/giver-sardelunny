@@ -29,6 +29,12 @@ const CATEGORY_ASK: Record<Category, string> = {
   borrow: "what would you borrow?",
 };
 
+/** BORROWING HAS TWO SIDES, and giver asks which one you mean. */
+const SIDE_ASK: Record<BorrowSide, string> = {
+  borrow: "what would you like to borrow?",
+  lend: "what are you happy to lend?",
+};
+
 export function CategoryForm({
   category,
   onDone,
@@ -42,6 +48,10 @@ export function CategoryForm({
   const [want, setWant] = useState("");
   /** ONE OPTIONAL, SHORT LINE OF CONTEXT. Never a description box. */
   const [note, setNote] = useState("");
+  /** BORROW OR LEND — asked plainly, never assumed. */
+  const [side, setSide] = useState<BorrowSide>("borrow");
+  /** OPTIONAL PHOTOS. They belong to the item the moment it exists. */
+  const [photos, setPhotos] = useState<string[]>([]);
   const [problem, setProblem] = useState<string | null>(null);
   const colour = `var(--me-${category})`;
   const limit = MAX_PER_CATEGORY[category];
@@ -50,6 +60,23 @@ export function CategoryForm({
   /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
   const cost = category === "wish" ? WISH_COST : 0;
   const broke = cost > 0 && me.sparks < cost;
+  /** PHOTOS HELP FOR REAL THINGS: gives, trades and borrows. Never wishes. */
+  const canPhoto = category !== "wish";
+
+  const pickPhotos = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = async () => {
+      const files = Array.from(input.files ?? []);
+      const shrunk = await Promise.all(files.map(readSmall));
+      setPhotos((prev) => [...prev, ...shrunk.filter(Boolean)].slice(0, 3) as string[]);
+      buzz();
+    };
+    input.click();
+  };
+
 
   const add = () => {
     if (!draft.trim()) return;

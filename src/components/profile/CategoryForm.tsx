@@ -16,7 +16,7 @@ import {
   type BorrowSide,
 } from "@/data/items";
 
-import { buzz } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 /**
  * DESTINATION SCREEN — the editor behind ONE loop of the Living G.
@@ -79,7 +79,7 @@ export function CategoryForm({
       const files = Array.from(input.files ?? []);
       const shrunk = await Promise.all(files.map(readSmall));
       setPhotos((prev) => [...prev, ...shrunk.filter(Boolean)].slice(0, 3) as string[]);
-      buzz();
+      haptics.light();
     };
     input.click();
   };
@@ -89,7 +89,7 @@ export function CategoryForm({
     if (!draft.trim()) return;
     if (category === "trade" && !want.trim()) {
       setProblem("a trade has two sides. what would you like in return?");
-      buzz();
+      haptics.warning();
       return;
     }
     /* ONE ITEM, MANY VIEWS: photos and the borrow/lend side are stored on the
@@ -114,7 +114,7 @@ export function CategoryForm({
           ? `a wish holds ${WISH_COST} sparks until it’s granted. give something to earn more.`
           : `you can have ${limit} at a time — remove one to add another.`,
       );
-      buzz();
+      haptics.warning();
       return;
     }
     setProblem(null);
@@ -122,13 +122,13 @@ export function CategoryForm({
     setWant("");
     setNote("");
     setPhotos([]);
-    buzz();
+    haptics.light();
 
   };
 
   const leave = () => {
     if (draft.trim() && (category !== "trade" || want.trim())) add();
-    buzz();
+    haptics.light();
     onDone();
   };
 
@@ -223,7 +223,8 @@ export function CategoryForm({
                   type="button"
                   aria-label={`move ${item.text} up`}
                   onClick={() => {
-                    buzz();
+                    // A NEW PRIORITY LOCKS IN — felt on the change, not the press.
+                    haptics.light();
                     myProfileStore.moveItem(category, i, -1);
                   }}
                   className="px-2 text-xl font-black"
@@ -236,7 +237,7 @@ export function CategoryForm({
                   type="button"
                   aria-label={`move ${item.text} down`}
                   onClick={() => {
-                    buzz();
+                    haptics.light();
                     myProfileStore.moveItem(category, i, 1);
                   }}
                   className="px-2 text-xl font-black"
@@ -248,7 +249,8 @@ export function CategoryForm({
                 type="button"
                 aria-label={`remove ${item.text}`}
                 onClick={() => {
-                  buzz();
+                  // GONE, GENTLY: a confirmation, never a celebration.
+                  haptics.light();
                   myProfileStore.removeItem(category, i);
                 }}
                 className="px-2 text-xl font-black opacity-45"
@@ -279,7 +281,7 @@ export function CategoryForm({
                     key={s}
                     type="button"
                     onClick={() => {
-                      buzz();
+                      haptics.selection();
                       setSide(s);
                     }}
                     style={{ color: side === s ? colour : "var(--world-ink)" }}

@@ -69,7 +69,9 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * there is no forbidden arc, so every seat can be reached by dragging either
  * way around the loop.
  */
-const SEAT_ANGLE: Record<Mode, number> = {
+const SEAT_ANGLE: Record<Seat, number> = {
+  // ME — dead centre above the middle loop, between wish and give.
+  giver: rad(-90), // 12 o'clock
   // UPPER PAIR — mirrored about the vertical axis through the loop's centre.
   wish: rad(-136), // ~10 o'clock
   give: rad(-44), // ~2 o'clock (canonical home)
@@ -77,6 +79,7 @@ const SEAT_ANGLE: Record<Mode, number> = {
   trade: rad(30), // ~4 o'clock
   borrow: rad(150), // ~8 o'clock
 };
+
 
 const TAU = Math.PI * 2;
 

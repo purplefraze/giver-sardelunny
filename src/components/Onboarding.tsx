@@ -184,10 +184,11 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
     };
   }, [phase, i]);
 
-  // The colour change IS the transition into the community. Nothing in between.
+  /* THE CHANGE IS THE TRANSITION. It holds just long enough to be unmistakably
+     COMPLETE — the green G, the confirmed words — then hands over to the people. */
   useEffect(() => {
     if (!green) return;
-    const t = setTimeout(onDone, 220);
+    const t = setTimeout(onDone, 760);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [green]);
@@ -196,11 +197,17 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
   const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
     lines ? { lines, plan: lines, scale, opacity: fading ? 0 : 1 } : undefined;
 
-  const middle: LoopCopy | undefined = phase === "drag" ? undefined : say(slide?.middle, BRAND);
+  /* ARRIVAL SPEAKS FOR ITSELF: the middle loop confirms the change in words. */
+  const done: LoopCopy | undefined = arrived
+    ? { lines: ["spark", "change."], plan: ["spark", "change."], scale: BRAND, opacity: 1 }
+    : undefined;
+
+  const middle: LoopCopy | undefined =
+    phase === "drag" ? done : say(slide?.middle, BRAND);
 
   /* THE INSTRUCTION STAYS PUT until the sparks reach their destination —
      touching or moving them never takes the guidance away. */
-  const dragLine = "drag the sparks";
+  const dragLine = "slide to spark change";
   const bottom: LoopCopy | undefined =
     phase === "drag"
       ? {
@@ -210,6 +217,7 @@ function OpeningSequence({ onDone }: { onDone: () => void }) {
           opacity: arrived ? 0 : 1,
         }
       : say(slide?.bottom, PHRASE);
+
 
   const small = phase === "word";
 

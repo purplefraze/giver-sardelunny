@@ -146,7 +146,7 @@ export function FullProfile({
                     {items.map((item) => (
                       <li key={item.id} className="flex items-start gap-4">
                         <span className="flex-1 text-2xl font-medium lowercase leading-tight">
-                          {item.text}
+                          {itemLine(item)}
                         </span>
                         {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
                         {member.id === ME_ID ? (

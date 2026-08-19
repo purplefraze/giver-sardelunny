@@ -252,6 +252,16 @@ export const myProfileStore = {
     hydrate();
     savePerson({ ...person, ...fields });
   },
+  replace(fields: Partial<Person>) {
+    hydrate();
+    savePerson({ ...EMPTY_PERSON, ...fields });
+  },
+  reset() {
+    hydrated = true;
+    person = EMPTY_PERSON;
+    if (typeof window !== "undefined") window.localStorage.removeItem(KEY);
+    invalidate();
+  },
 
   /* ---- ITEMS: thin delegation to the one shared item collection. ---- */
   /**

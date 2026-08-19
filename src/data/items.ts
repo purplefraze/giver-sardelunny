@@ -370,6 +370,20 @@ export const itemsStore = {
       boosts: s.boosts.filter((b) => b.itemId !== id),
     });
   },
+  /** Development fixtures still use the real collection and real projections. */
+  replaceMine(items: Item[]) {
+    const s = ensure();
+    commit({
+      ...s,
+      items: [...s.items.filter((item) => item.ownerId !== ME_ID), ...items],
+      boosts: s.boosts.filter((boost) =>
+        !s.items.some((item) => item.ownerId === ME_ID && item.id === boost.itemId),
+      ),
+    });
+  },
+  clearMine() {
+    itemsStore.replaceMine([]);
+  },
 
   /** REORDER = REPRIORITISE. Position #1 is what the Living G advertises. */
   move(ownerId: string, type: ItemType, from: number, delta: number) {

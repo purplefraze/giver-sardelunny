@@ -64,4 +64,14 @@ export const introSeenStore = {
     if (seen[category]) return;
     save({ ...seen, [category]: true });
   },
+  markAllSeen() {
+    hydrate();
+    save({ wish: true, give: true, trade: true, borrow: true });
+  },
+  reset() {
+    hydrated = true;
+    seen = NONE;
+    if (typeof window !== "undefined") window.localStorage.removeItem(KEY);
+    for (const l of listeners) l();
+  },
 };

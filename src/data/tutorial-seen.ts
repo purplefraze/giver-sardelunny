@@ -52,4 +52,10 @@ export const tutorialSeenStore = {
     }
     for (const l of listeners) l();
   },
+  reset() {
+    hydrated = true;
+    seen = false;
+    if (typeof window !== "undefined") window.localStorage.removeItem(KEY);
+    for (const l of listeners) l();
+  },
 };

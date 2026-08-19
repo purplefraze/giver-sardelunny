@@ -16,6 +16,8 @@ import {
   PROFILE_WRAP_FACTOR,
   type LoopTypeRole,
 } from "./type-scale";
+import { BOTTOM_LOOP_INTERIOR } from "./g-path";
+import { widthOf } from "./loop-layout";
 
 /**
  * Profile typography for the Living G loops — SAME engine, SAME tokens and SAME
@@ -76,8 +78,72 @@ const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
 const WRAP_FACTOR: Record<RegionKey, number> = {
   top: PROFILE_WRAP_FACTOR,
   middle: PROFILE_WRAP_FACTOR,
-  bottom: 1.5,
+  bottom: 1.72,
 };
+
+type ProfileRow = {
+  text: string;
+  size: number;
+  role: LoopTypeRole;
+  gap: number;
+  fill?: string;
+};
+
+/** Width of the real lower-loop opening at a row's painted vertical extent. */
+function bottomWidth(y: number, size: number) {
+  const { ry, rx, inset } = BOTTOM_LOOP_INTERIOR;
+  const safeRx = rx - inset;
+  const safeRy = ry - inset;
+  const edge = Math.abs(y) + size * 0.36;
+  if (edge >= safeRy) return 0;
+  return 2 * safeRx * Math.sqrt(1 - (edge * edge) / (safeRy * safeRy));
+}
+
+/**
+ * Shape-aware lower-loop fitter. Wrapping happens first; rows are then placed
+ * against the ellipse chord at their own height. Only the role that overflows
+ * steps down, so a tracked label cannot make the primary answer tiny.
+ */
+function layoutBottom(build: (scales: Record<LoopRole, number>) => ProfileRow[]) {
+  const scales: Record<LoopRole, number> = { primary: 1, secondary: 1, tertiary: 1 };
+  let rows: ProfileRow[] = [];
+  let placed: ReturnType<typeof layoutStack>["rows"] = [];
+
+  for (let attempt = 0; attempt < PROFILE_STEPS.length * 3; attempt += 1) {
+    rows = build(scales);
+    const total = rows.reduce(
+      (sum, row, i) => sum + row.size * 0.9 + (i ? row.gap : 0),
+      0,
+    );
+    let cursor = -total / 2;
+    placed = rows.map((row, i) => {
+      if (i) cursor += row.gap;
+      const y = cursor + row.size * 0.45;
+      cursor += row.size * 0.9;
+      return { text: row.text, size: row.size, role: row.role, y, ...(row.fill ? { fill: row.fill } : {}) };
+    });
+
+    const verticalFits = total <= (BOTTOM_LOOP_INTERIOR.ry - BOTTOM_LOOP_INTERIOR.inset) * 2;
+    const overflow = placed.findIndex(
+      (row) => widthOf(row.text, row.size, row.role) > bottomWidth(row.y, row.size),
+    );
+    if (verticalFits && overflow === -1) break;
+
+    const failingRole: LoopRole = !verticalFits
+      ? "primary"
+      : rows[overflow]?.role === "label"
+        ? "secondary"
+        : rows[overflow]?.role === "detail"
+          ? "tertiary"
+          : "primary";
+    const current = scales[failingRole];
+    const next = PROFILE_STEPS.find((step) => step < current - 0.001);
+    if (next === undefined) break;
+    scales[failingRole] = next;
+  }
+
+  return { rows: placed, scales };
+}
 
 export function profileLoop({
   region,
@@ -103,12 +169,16 @@ export function profileLoop({
    */
   const height = region === "bottom" ? 1.92 : 1.8;
 
-  const build = (step: number) => {
+  const build = (stepOrScales: number | Record<LoopRole, number>) => {
     const max = wrapWidth(region, WRAP_FACTOR[region], inset) * fill;
-    const gap = token.answer * step * 0.06;
-    const lead = token.answer * step * 0.24;
+    const scaleFor = (role: LoopRole) =>
+      typeof stepOrScales === "number" ? stepOrScales : stepOrScales[role];
+    const primaryScale = scaleFor("primary");
+    const gap = token.answer * primaryScale * (region === "bottom" ? 0.035 : 0.06);
+    const lead = token.answer * primaryScale * (region === "bottom" ? 0.12 : 0.24);
     return blocks.flatMap((block, i) => {
       const key = block.role ?? "primary";
+      const step = scaleFor(key);
       const role = AS_ROLE[key];
       const size = Math.max(
         LOOP_MIN_SIZE,
@@ -129,14 +199,31 @@ export function profileLoop({
   // long phrase uses the wide middle of the circle instead of shrinking
   // everything around it.
   let placed = layoutStack(build(1), region, inset, fill, height);
-  for (const step of PROFILE_STEPS) {
-    placed = layoutStack(build(step), region, inset, fill, height);
-    if (placed.fits) break;
+  let bottomScales: Record<LoopRole, number> | null = null;
+  if (region === "bottom") {
+    const result = layoutBottom((scales) => build(scales));
+    placed = { rows: result.rows, fits: true };
+    bottomScales = result.scales;
+  } else {
+    for (const step of PROFILE_STEPS) {
+      placed = layoutStack(build(step), region, inset, fill, height);
+      if (placed.fits) break;
+    }
   }
 
 
   return (
-    <>
+    <g
+      data-profile-loop={region}
+      {...(region === "bottom"
+        ? {
+            "data-interior": `${BOTTOM_LOOP_INTERIOR.rx * 2}x${BOTTOM_LOOP_INTERIOR.ry * 2}`,
+            "data-safe-inset": BOTTOM_LOOP_INTERIOR.inset,
+            "data-usable": `${(BOTTOM_LOOP_INTERIOR.rx - BOTTOM_LOOP_INTERIOR.inset) * 2}x${(BOTTOM_LOOP_INTERIOR.ry - BOTTOM_LOOP_INTERIOR.inset) * 2}`,
+            "data-scales": JSON.stringify(bottomScales),
+          }
+        : {})}
+    >
       {placed.rows.map((row, i) => (
         <text
           /* Position-keyed: one row per slot, never a reused stale node. */
@@ -156,6 +243,6 @@ export function profileLoop({
           {row.text}
         </text>
       ))}
-    </>
+    </g>
   );
 }

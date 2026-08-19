@@ -20,7 +20,7 @@ import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
-import { ME_ID, communityItems, type ItemType } from "@/data/items";
+import { ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
 
 
 
@@ -216,7 +216,8 @@ function Index() {
   const myMode = me.items[mode][0] ?? null;
   /** COMMUNITY <type> — the same item collection, queried by everyone else. */
   const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
-  const community = theirs[0]?.text ?? null;
+  const firstTheirs = theirs[0];
+  const community = firstTheirs ? itemLine(firstTheirs) : null;
   /** MY GIVE — what I offer the community, the profile's bottom loop. */
   const myGive = primaryGive(me);
 
@@ -312,7 +313,7 @@ function Index() {
                         ? [
                             { text: "latest", role: "secondary" as const },
                             {
-                              text: clampField(latest.item.text),
+                              text: clampField(itemLine(latest.item)),
                               role: "primary" as const,
                             },
                             { text: latest.type, role: "tertiary" as const },

@@ -134,6 +134,11 @@ export function layoutStack(
    * type is allowed to use the loop's true width.
    */
   fill = 1,
+  /**
+   * How much of the safe circle's DIAMETER the stack's total height may use.
+   * Below 2 it leaves breathing room above and below the whole group.
+   */
+  heightFactor = 1.9,
 ): { rows: LaidOutRow[]; fits: boolean } {
   const radius = LOOP_SAFE_RADIUS[region] * inset;
   const total = rows.reduce(
@@ -143,7 +148,8 @@ export function layoutStack(
 
   let y = -total / 2;
   const placed: LaidOutRow[] = [];
-  let fits = total <= radius * 1.9;
+  let fits = total <= radius * heightFactor;
+
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i]!;
     if (i > 0) y += row.gap ?? 0;

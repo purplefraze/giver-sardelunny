@@ -39,6 +39,7 @@ export function IntroG({
   onAdvance,
   copyOpacity = 1,
   overlay,
+  stage,
   children,
 }: {
   world: string;
@@ -50,8 +51,15 @@ export function IntroG({
   copyOpacity?: number;
   /** Interactive layer drawn above the artwork (e.g. the travelling spark). */
   overlay?: React.ReactNode;
+  /**
+   * THE CAMERA. A transform applied to the STAGE only (never the paper), so the
+   * very same Living G that spells GIVER can be zoomed into at full size. The
+   * geometry is untouched: only the camera moves.
+   */
+  stage?: React.CSSProperties;
   children?: React.ReactNode;
 }) {
+
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
     if (!copy) return {};
     return {

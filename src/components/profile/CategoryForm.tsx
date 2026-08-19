@@ -4,6 +4,7 @@ import { useMyProfile } from "@/hooks/use-my-profile";
 import {
   CATEGORY_PLURAL,
   MAX_PER_CATEGORY,
+  WISH_COST,
   myProfileStore,
   type Category,
 } from "@/data/my-profile";

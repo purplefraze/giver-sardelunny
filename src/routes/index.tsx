@@ -12,7 +12,8 @@ import { CommunityList } from "@/components/CommunityList";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { primaryGive, CATEGORY_PLURAL, CATEGORIES } from "@/data/my-profile";
+import { primaryGive, CATEGORY_PLURAL, CATEGORIES, myProfileStore } from "@/data/my-profile";
+import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
 import { useItems } from "@/hooks/use-items";
@@ -194,7 +195,13 @@ function Index() {
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
-        <Onboarding onDone={() => setEntered(true)} />
+        <Onboarding
+          onDone={() => {
+            /* The 50 sparks kept from onboarding become a REAL balance, once. */
+            myProfileStore.seedSparks();
+            setEntered(true);
+          }}
+        />
       ) : (
 
 
@@ -306,6 +313,9 @@ function Index() {
 
             }}
           />
+
+          {/* "+10 SPARKS ✨" — quick recognition, never a reward screen. */}
+          <SparkFlash />
 
           {/*
             THE QUIET WAY BACK TO THE EXPLANATION. Nothing shouts; one small

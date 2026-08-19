@@ -4,6 +4,7 @@ import { useMyProfile } from "@/hooks/use-my-profile";
 import {
   CATEGORY_PLURAL,
   MAX_PER_CATEGORY,
+  WISH_COST,
   myProfileStore,
   type Category,
 } from "@/data/my-profile";
@@ -33,12 +34,26 @@ export function CategoryForm({
   const me = useMyProfile();
   const items = me.items[category];
   const [draft, setDraft] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
   const colour = `var(--me-${category})`;
   const full = items.length >= MAX_PER_CATEGORY;
+  /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
+  const cost = category === "wish" ? WISH_COST : 0;
+  const broke = cost > 0 && me.sparks < cost;
 
   const add = () => {
     if (!draft.trim()) return;
-    myProfileStore.addItem(category, draft);
+    const result = myProfileStore.addItem(category, draft);
+    if (!result.ok) {
+      setProblem(
+        result.reason === "sparks"
+          ? `a wish costs ${WISH_COST} sparks. give something to earn more.`
+          : `that’s ${MAX_PER_CATEGORY} already — complete one first.`,
+      );
+      buzz();
+      return;
+    }
+    setProblem(null);
     setDraft("");
     buzz();
   };
@@ -48,6 +63,7 @@ export function CategoryForm({
     buzz();
     onDone();
   };
+
 
   return (
     <div
@@ -64,6 +80,24 @@ export function CategoryForm({
         >
           my {CATEGORY_PLURAL[category]}
         </h1>
+
+        {/* THE ECONOMY, SAID PLAINLY: wishes cost, generosity earns. */}
+        <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-45">
+          {cost
+            ? `${cost} sparks a wish · you have ${me.sparks}`
+            : category === "give"
+              ? `free to offer · ${me.sparks} sparks in your account`
+              : `no sparks needed · you have ${me.sparks}`}
+        </p>
+
+        {problem ? (
+          <p
+            className="mt-3 text-sm font-black lowercase"
+            style={{ color: "var(--me-wish)" }}
+          >
+            {problem}
+          </p>
+        ) : null}
 
         <ul className="mt-8 space-y-4">
           {items.map((item, i) => (
@@ -152,7 +186,8 @@ export function CategoryForm({
             <button
               type="button"
               onClick={add}
-              className="text-xl font-black lowercase"
+              disabled={broke}
+              className="text-xl font-black lowercase disabled:opacity-30"
               style={{ color: colour }}
             >
               add

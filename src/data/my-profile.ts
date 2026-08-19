@@ -10,6 +10,8 @@ import {
   type Item,
   type ItemType,
 } from "@/data/items";
+import { sparkFlashStore } from "@/data/spark-flash";
+import { buzz } from "@/lib/haptics";
 
 /**
  * MY PROFILE — THE SINGLE SOURCE OF TRUTH FOR THE PERSON.
@@ -56,6 +58,12 @@ export type MyProfile = {
   sparkles: number;
   /** The profile-completion reward is given exactly once. */
   sparklesAwarded: boolean;
+  /** SPARKS: spent to wish, earned from completed generosity. */
+  sparks: number;
+  /** The onboarding balance lands exactly once. */
+  sparksSeeded: boolean;
+  /** One key per already-rewarded completed interaction. Never pays twice. */
+  rewarded: string[];
 };
 
 type Person = {
@@ -68,9 +76,18 @@ type Person = {
   built: boolean;
   sparkles: number;
   sparklesAwarded: boolean;
+  sparks: number;
+  sparksSeeded: boolean;
+  rewarded: string[];
 };
 
 const KEY = "giver.my-profile.v1";
+
+/** POSTING A WISH COSTS. COMPLETED GENEROSITY EARNS. Same size, opposite sign. */
+export const WISH_COST = 10;
+export const GENEROSITY_REWARD = 10;
+/** What onboarding leaves in the account: 100 given, 50 gifted onward. */
+export const STARTING_SPARKS = 50;
 
 const EMPTY_PERSON: Person = {
   username: "@you",
@@ -82,7 +99,11 @@ const EMPTY_PERSON: Person = {
   built: false,
   sparkles: 0,
   sparklesAwarded: false,
+  sparks: 0,
+  sparksSeeded: false,
+  rewarded: [],
 };
+
 
 const NO_ITEMS: Record<Category, Item[]> = {
   wish: [],
@@ -174,6 +195,25 @@ function hydrate() {
   }
 }
 
+/**
+ * THE ONE PLACE SPARKS ARE EARNED. Ten sparks from GIVER — never from another
+ * person — for a completed act of generosity, recorded against a key so the
+ * same completed interaction can never pay out twice.
+ */
+function reward(key: string) {
+  hydrate();
+  if (person.rewarded.includes(key)) return;
+  savePerson({
+    ...person,
+    sparks: person.sparks + GENEROSITY_REWARD,
+    rewarded: [...person.rewarded, key],
+  });
+  buzz();
+  sparkFlashStore.show(`+${GENEROSITY_REWARD} sparks ✨`);
+}
+
+
+
 export const myProfileStore = {
   subscribe(listener: () => void) {
     hydrate();
@@ -196,8 +236,23 @@ export const myProfileStore = {
   },
 
   /* ---- ITEMS: thin delegation to the one shared item collection. ---- */
-  addItem(category: Category, text: string) {
-    itemsStore.add(ME_ID, category, text);
+  /**
+   * POSTING. A wish costs 10 sparks; giving, trading and lending are free.
+   * Nothing is created unless the cost can actually be paid.
+   */
+  addItem(
+    category: Category,
+    text: string,
+  ): { ok: boolean; reason?: "sparks" | "full" | "empty" } {
+    hydrate();
+    if (!text.trim()) return { ok: false, reason: "empty" };
+    if (category === "wish" && person.sparks < WISH_COST)
+      return { ok: false, reason: "sparks" };
+    const item = itemsStore.add(ME_ID, category, text);
+    if (!item) return { ok: false, reason: "full" };
+    if (category === "wish")
+      savePerson({ ...person, sparks: person.sparks - WISH_COST });
+    return { ok: true };
   },
   editItem(category: Category, index: number, text: string) {
     const item = myProfileStore.get().records[category][index];
@@ -207,14 +262,42 @@ export const myProfileStore = {
     const item = myProfileStore.get().records[category][index];
     if (item) itemsStore.remove(item.id);
   },
+  /**
+   * COMPLETED GENEROSITY. A give that has actually reached another Giver is a
+   * completed act, and Giver — not the other person — recognises it with 10
+   * sparks. The ledger key makes the reward impossible to collect twice.
+   */
   completeItem(category: Category, index: number) {
     const item = myProfileStore.get().records[category][index];
-    if (item) itemsStore.complete(item.id);
+    if (!item) return;
+    itemsStore.complete(item.id);
+    if (category === "give") reward(`give:${item.id}`);
+  },
+  /**
+   * GRANTING SOMEONE ELSE'S WISH. The wish closes and the granter earns 10
+   * sparks from Giver. Never awarded for offering, messaging or opening it.
+   */
+  grantWish(itemId: string): { ok: boolean; reason?: string } {
+    hydrate();
+    const item = itemsStore.get().items.find((i) => i.id === itemId);
+    if (!item || item.type !== "wish") return { ok: false, reason: "gone" };
+    if (item.ownerId === ME_ID) return { ok: false, reason: "self" };
+    if (item.status !== "active") return { ok: false, reason: "closed" };
+    itemsStore.complete(itemId);
+    reward(`wish:${itemId}`);
+    return { ok: true };
+  },
+  /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */
+  seedSparks() {
+    hydrate();
+    if (person.sparksSeeded) return;
+    savePerson({ ...person, sparks: STARTING_SPARKS, sparksSeeded: true });
   },
   /** REORDER = PRIORITISE. Position #1 is what the Living G shows. */
   moveItem(category: Category, index: number, delta: number) {
     itemsStore.move(ME_ID, category, index, delta);
   },
+
 
   /* ---- SPARKLES: earned, never bought, never awarded for a profile. ---- */
   /** Spend one sparkle on somebody ELSE's active community item. */

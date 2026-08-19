@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
-import { WorldIntro } from "@/components/WorldIntro";
+import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
+import { ChooseWorld } from "@/components/ChooseWorld";
+import { HelpIndex } from "@/components/HelpIndex";
+
 import { introSeenStore } from "@/data/intro-seen";
 import { useIntroSeen } from "@/hooks/use-intro-seen";
 

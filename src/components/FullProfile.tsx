@@ -1,5 +1,7 @@
 import { BackArrow } from "@/components/BackArrow";
-import { connectionsOf, type Member } from "@/data/giver";
+import { connectionsOf, memberById, type Member } from "@/data/giver";
+import { earnedConnectionIds } from "@/data/connections";
+import { useConnections } from "@/hooks/use-connections";
 import { ITEM_TYPES, ME_ID, boostWeight, itemLine, myItems } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
 import { useItems } from "@/hooks/use-items";
@@ -57,7 +59,18 @@ export function FullProfile({
   onOpen?: (id: string) => void;
 }) {
   const state = useItems();
-  const connections = connectionsOf(member.id);
+  const links = useConnections();
+  /*
+    MY OWN connections are earned live: only interactions that reached their
+    completed, mutually verified state ever appear. Sample people carry their
+    own already-earned links.
+  */
+  const connections =
+    member.id === ME_ID
+      ? earnedConnectionIds(links, ME_ID)
+          .map(memberById)
+          .filter((m): m is Member => Boolean(m))
+      : connectionsOf(member.id);
   const done: [string, number][] = [
     ["gifts shared", member.done.gifts],
     ["wishes granted", member.done.wishes],
@@ -181,13 +194,20 @@ export function FullProfile({
           </Section>
         ) : null}
 
-        {/* CONNECTION = me + them = purple. */}
+        {/*
+          CONNECTION = me + them = purple. A connection only exists because a
+          give, wish, trade or borrow was COMPLETED together — never because
+          somebody messaged, followed or looked. Before the first completed act
+          there is nothing here at all, so the section stays away entirely.
+        */}
+        {connections.length ? (
         <Section title="connections">
           <p
             className="text-sm font-medium lowercase"
             style={{ color: "var(--giver-connection)" }}
           >
-            earned through completed gives, granted wishes and trades.
+            people i’ve actually done something with — completed gives, granted
+            wishes, trades and borrows.
           </p>
           <div className="mt-5 flex flex-wrap gap-6">
             {connections.map((person) => (
@@ -212,6 +232,7 @@ export function FullProfile({
             ))}
           </div>
         </Section>
+        ) : null}
       </div>
     </div>
   );

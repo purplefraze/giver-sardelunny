@@ -466,7 +466,11 @@ function Index() {
 
           {/*
             THE S-CURVE IS WHERE PEOPLE MEET. It is the part of the G that joins
-            two loops, so every conversation lives behind this one quiet word.
+            two loops, so every CONVERSATION lives behind this one quiet word.
+            THIS IS NOT A CONNECTIONS CONTROL: connections are earned by
+            completed acts and live in the full profile only. Nothing permanent
+            about them ever sits on the Living G, so this word appears only when
+            a conversation is actually in motion.
           */}
           {intro === null &&
           editor === null &&
@@ -475,7 +479,8 @@ function Index() {
           browse === null &&
           detail === null &&
           talking === null &&
-          !threads ? (
+          !threads &&
+          (openCount > 0 || waitingOnMe > 0) ? (
             <div className="absolute bottom-4 right-6 z-20 flex flex-col items-end gap-1">
               <button
                 type="button"
@@ -485,14 +490,12 @@ function Index() {
                   color: waitingOnMe
                     ? "var(--giver-connection)"
                     : "var(--world-ink)",
-                  opacity: openCount ? 0.9 : 0.4,
+                  opacity: 0.9,
                 }}
               >
                 {waitingOnMe
                   ? `${waitingOnMe} to confirm`
-                  : openCount
-                    ? `connections · ${openCount}`
-                    : "connections"}
+                  : `conversations · ${openCount}`}
               </button>
               {/*
                 NO SEPARATE "COMMUNITY" WORD. Tapping the bottom loop already

@@ -46,7 +46,7 @@ export function ConnectionsList({
       <BackArrow onClick={onClose} label="back to my g" />
 
       <h1 className="text-[13vw] font-black lowercase leading-[0.82] tracking-[-0.055em]">
-        connections
+        conversations
       </h1>
 
       <ul className="mt-8 space-y-6">
@@ -85,8 +85,9 @@ export function ConnectionsList({
 
       {past.length ? (
         <>
+          {/* THE COMPLETED ACT CREATED THE CONNECTION — nothing else does. */}
           <h2 className="mt-14 text-[11px] font-black lowercase tracking-[0.3em] opacity-45">
-            past connections
+            connections · completed together
           </h2>
           <ul className="mt-5 space-y-4">
             {past.map((p) => {

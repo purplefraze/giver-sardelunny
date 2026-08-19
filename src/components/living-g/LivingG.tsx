@@ -420,7 +420,7 @@ export function LivingG({
             // ONE POINTER, ONE PRESS. Everything happens on pointer events, so
             // mouse, touch and stylus travel the same path and no synthetic
             // click is needed (Android suppresses those often enough to matter).
-            style_placeholder_removed
+
             onPointerDown={(e) => {
               if (tapId.current !== null) return;
               tapId.current = e.pointerId;

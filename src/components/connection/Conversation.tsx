@@ -48,7 +48,7 @@ export function Conversation({
         style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
       >
         <BackArrow onClick={onClose} />
-        <p className="text-[9vw] font-black lowercase">no connection here.</p>
+        <p className="g-display">no connection here.</p>
       </div>
     );
 
@@ -88,11 +88,11 @@ export function Conversation({
         />
       </svg>
 
-      <span className="text-[11px] font-black lowercase tracking-[0.3em] opacity-60">
+      <span className="g-meta opacity-70">
         {them ? them.username : "someone"} · {STATE_WORD[c.state]}
       </span>
       <h1
-        className="mt-2 text-[8vw] font-black lowercase leading-[0.9] tracking-[-0.045em]"
+        className="mt-2 g-display-sm"
         style={{ color: ACTIVITY_FILL[c.type] }}
       >
         {item ? itemLine(item) : c.type}
@@ -101,7 +101,7 @@ export function Conversation({
       {/* THE CONVERSATION. It is coordination, not a completion signal. */}
       <ul className="mt-6 flex-1 space-y-4 overflow-y-auto pb-4">
         {messages.length === 0 ? (
-          <li className="text-lg font-medium lowercase opacity-45">
+          <li className="g-body opacity-55">
             say hello. work out the where and the when.
           </li>
         ) : null}
@@ -111,7 +111,7 @@ export function Conversation({
             className={m.fromId === ME_ID ? "text-right" : "text-left"}
           >
             <span
-              className="inline-block max-w-[85%] text-lg font-medium lowercase leading-snug"
+              className="inline-block max-w-[85%] g-body"
               style={{
                 color:
                   m.fromId === ME_ID ? "var(--giver-me)" : "var(--giver-others)",
@@ -149,12 +149,12 @@ export function Conversation({
 
       {/* THE TWO-SIDED ENDING. */}
       {c.state === "verified" ? (
-        <p className="mb-4 text-[6vw] font-black lowercase leading-[0.95]" style={{ color: "var(--giver-generosity)" }}>
+        <p className="mb-4 g-display-sm" style={{ color: "var(--giver-generosity)" }}>
           you both verified it. {earns ? "sparks settled." : "thank you."}
         </p>
       ) : awaitingMe ? (
         <div className="mb-4">
-          <p className="text-[7vw] font-black lowercase leading-[0.92]">
+          <p className="g-display-sm">
             did this actually happen?
           </p>
           <div className="mt-3 flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
@@ -179,7 +179,7 @@ export function Conversation({
           </div>
         </div>
       ) : c.state === "awaiting" ? (
-        <p className="mb-4 text-[13px] font-medium lowercase opacity-55">
+        <p className="mb-4 g-body opacity-65">
           waiting for {them ? them.username : "them"} to confirm it happened.
         </p>
       ) : (
@@ -217,7 +217,7 @@ export function Conversation({
       )}
 
       {c.state === "disputed" ? (
-        <p className="mb-3 text-[13px] font-medium lowercase opacity-60">
+        <p className="mb-3 g-body opacity-65">
           you don’t agree yet. nothing is completed and nothing is paid — keep
           talking, then try again.
         </p>
@@ -225,7 +225,7 @@ export function Conversation({
 
       {/* PRIVACY BY DEFAULT: numbers are never exchanged inside giver. */}
       {calling ? (
-        <p className="mb-3 text-[13px] font-medium lowercase opacity-60">
+        <p className="mb-3 g-body opacity-65">
           giver connects the call for you — neither of you ever sees the other’s
           number. calling arrives with the phone build.
         </p>
@@ -238,7 +238,7 @@ export function Conversation({
             onChange={(e) => setDraft(e.target.value.slice(0, MESSAGE_MAX))}
             rows={2}
             placeholder="say something"
-            className="min-w-0 flex-1 resize-none bg-transparent text-lg font-medium lowercase leading-snug outline-none placeholder:opacity-30"
+            className="min-w-0 flex-1 resize-none bg-transparent g-body outline-none placeholder:opacity-30"
             style={{ color: "var(--world-ink)" }}
           />
           <button

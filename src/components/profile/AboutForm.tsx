@@ -93,23 +93,23 @@ export function AboutForm({
         <dl className="mt-12 flex flex-wrap items-start gap-x-10 gap-y-8">
           <div>
             <dd
-              className="text-6xl font-black leading-none tracking-[-0.05em]"
+              className="text-[3.5rem] font-black leading-none tracking-[-0.05em] tabular-nums"
               style={{ color: "var(--giver-generosity)" }}
             >
               {me.sparks}
             </dd>
-            <dt className="mt-2 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
+            <dt className="mt-2 g-meta">
               sparks
             </dt>
           </div>
           <div>
             <dd
-              className="text-6xl font-black leading-none tracking-[-0.05em]"
+              className="text-[3.5rem] font-black leading-none tracking-[-0.05em] tabular-nums"
               style={{ color: "var(--giver-participation)" }}
             >
               {me.sparkles}
             </dd>
-            <dt className="mt-2 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
+            <dt className="mt-2 g-meta">
               sparkles
             </dt>
           </div>
@@ -128,21 +128,21 @@ export function AboutForm({
           >
             {unread ? (
               <dd
-                className="text-6xl font-black leading-none tracking-[-0.05em]"
+                className="text-[3.5rem] font-black leading-none tracking-[-0.05em] tabular-nums"
                 style={{ color: "var(--giver-connection)" }}
               >
                 {unread}
               </dd>
             ) : null}
             <dt
-              className="text-[11px] font-black lowercase tracking-[0.3em]"
+              className="g-heading"
               style={{ marginTop: unread ? "0.5rem" : "3.25rem", opacity: 0.5 }}
             >
               messages
             </dt>
           </button>
         </dl>
-        <p className="mt-3 text-[11px] font-black lowercase tracking-[0.3em] opacity-35">
+        <p className="mt-3 g-meta opacity-40">
           private to you
         </p>
 
@@ -180,14 +180,14 @@ export function AboutForm({
         <button
           type="button"
           onClick={save}
-          className="mt-16 text-left text-[13vw] font-black lowercase leading-[0.85] tracking-[-0.055em] transition-transform active:scale-[0.98]"
+          className="mt-16 text-left g-display transition-transform active:scale-[0.98]"
           style={{ color: "var(--giver-participation)" }}
         >
           back
           <br />
           to my g
         </button>
-        <p className="mt-6 text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
+        <p className="mt-6 g-meta">
           everything saves as you go
         </p>
 
@@ -199,7 +199,7 @@ export function AboutForm({
               buzz();
               onHelp();
             }}
-            className="mt-10 text-left text-[11px] font-black lowercase tracking-[0.3em] opacity-55"
+            className="mt-10 text-left g-meta opacity-70"
           >
             learn how giver works
           </button>
@@ -251,7 +251,7 @@ function Field({
 }) {
   return (
     <label className={multiline ? "mt-10 flex flex-col gap-2" : "flex flex-col gap-2"}>
-      <span className="text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
+      <span className="g-meta">
         {label}
       </span>
       {multiline ? (
@@ -260,7 +260,7 @@ function Field({
           onChange={(e) => onChange(e.target.value.slice(0, 240))}
           placeholder={placeholder}
           rows={3}
-          className="resize-none border-b border-current/25 bg-transparent pb-2 text-xl font-medium lowercase leading-snug outline-none placeholder:opacity-30"
+          className="resize-none border-b border-current/25 bg-transparent pb-2 g-lede outline-none placeholder:opacity-30"
         />
       ) : (
         <input

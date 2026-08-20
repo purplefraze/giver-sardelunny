@@ -116,7 +116,7 @@ export function ActivityDetail({
       </p>
 
       {item.note ? (
-        <p className="mt-3 text-lg font-medium lowercase leading-snug opacity-65">
+        <p className="mt-3 g-body opacity-70">
           {item.note}
         </p>
       ) : null}
@@ -138,14 +138,14 @@ export function ActivityDetail({
       <div className="mt-8 flex flex-col items-start gap-4 pb-4">
 
         {status === "completed" ? (
-          <p className="text-[6vw] font-black lowercase leading-[0.95] opacity-40">
+          <p className="g-display-sm opacity-45">
             this one already happened.
           </p>
         ) : (
           <button
             type="button"
             onClick={step}
-            className="text-left text-[9vw] font-black lowercase leading-[0.92] tracking-[-0.045em]"
+            className="text-left g-display-sm"
             style={{ color: ACTIVITY_FILL[item.type] }}
           >
             {mine ? "open the conversation" : INTENT_WORD[item.type]}

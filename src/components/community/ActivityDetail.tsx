@@ -53,7 +53,7 @@ export function ActivityDetail({
         style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
       >
         <BackArrow onClick={onClose} />
-        <p className="text-[9vw] font-black lowercase leading-[0.9]">this one is gone.</p>
+        <p className="g-display">this one is gone</p>
       </div>
     );
 
@@ -78,13 +78,13 @@ export function ActivityDetail({
   return (
     <div
       data-world="community"
-      className="relative flex h-full w-full flex-col overflow-y-auto px-6 pb-10 pt-16"
+      className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onClose} label="back to community" />
 
       <span
-        className="text-[11px] font-black lowercase tracking-[0.3em]"
+        className="g-heading"
         style={{ color: ACTIVITY_FILL[item.type] }}
       >
         {/* WHAT THIS IS, SAID EXACTLY: borrowing and lending are not the same. */}
@@ -95,14 +95,14 @@ export function ActivityDetail({
             : item.type}
       </span>
       <h1
-        className="mt-2 text-[12vw] font-black lowercase leading-[0.88] tracking-[-0.05em]"
+        className="g-display mt-4"
         style={{ color: ACTIVITY_FILL[item.type] }}
       >
         {itemLine(item)}
       </h1>
 
       {/* WHO POSTED IT, RIGHT NEXT TO WHAT IT IS. No hunting. */}
-      <p className="mt-3 text-[13px] font-medium lowercase opacity-55">
+      <p className="g-meta mt-5">
         {owner ? owner.username : "someone"}
         {item.distanceKm === undefined ? "" : ` · ${item.distanceKm} km away`}
         {" · "}
@@ -116,7 +116,7 @@ export function ActivityDetail({
       </p>
 
       {item.note ? (
-        <p className="mt-3 text-lg font-medium lowercase leading-snug opacity-65">
+        <p className="mt-3 g-body opacity-70">
           {item.note}
         </p>
       ) : null}
@@ -138,14 +138,14 @@ export function ActivityDetail({
       <div className="mt-8 flex flex-col items-start gap-4 pb-4">
 
         {status === "completed" ? (
-          <p className="text-[6vw] font-black lowercase leading-[0.95] opacity-40">
+          <p className="g-display-sm opacity-45">
             this one already happened.
           </p>
         ) : (
           <button
             type="button"
             onClick={step}
-            className="text-left text-[9vw] font-black lowercase leading-[0.92] tracking-[-0.045em]"
+            className="text-left g-display-sm"
             style={{ color: ACTIVITY_FILL[item.type] }}
           >
             {mine ? "open the conversation" : INTENT_WORD[item.type]}

@@ -461,3 +461,120 @@
   }
 }
 
+
+/* ---------------------------------------------------------------
+   GIVER EDITORIAL SYSTEM v1.0 — the typographic hierarchy every
+   INFORMATION screen outside the Living G must use. The Living G and
+   everything drawn inside its loops is untouched by this block.
+
+   Five registers, dramatic contrast between them, nothing in between:
+     g-display  major statements / moments
+     g-heading  section headings — strong, compact
+     g-name     names, usernames, categories — identifiable, secondary
+     g-body     descriptions and details — lighter, highly readable
+     g-meta     distance, time, sparks, status — small and restrained
+   --------------------------------------------------------------- */
+
+:root {
+  --edit-gutter: 1.75rem; /* one page gutter, everywhere */
+  --edit-rule: color-mix(in oklab, var(--world-ink, var(--giver-ink)) 16%, transparent);
+}
+
+/* MAJOR STATEMENT — the loudest thing a screen is allowed to say. */
+@utility g-display {
+  font-family: var(--giver-font);
+  font-weight: 900;
+  font-size: clamp(2.6rem, 13.5vw, 4.6rem);
+  line-height: 0.84;
+  letter-spacing: -0.055em;
+  text-transform: lowercase;
+  text-wrap: balance;
+}
+
+/* A quieter statement — used when a major statement already owns the screen. */
+@utility g-display-sm {
+  font-family: var(--giver-font);
+  font-weight: 900;
+  font-size: clamp(1.85rem, 8vw, 2.9rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  text-transform: lowercase;
+}
+
+/* SECTION HEADING — strong, compact, spaced like a masthead rule. */
+@utility g-heading {
+  font-family: var(--giver-font);
+  font-weight: 900;
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.34em;
+  text-transform: lowercase;
+}
+
+/* NAME / USERNAME / CATEGORY — clearly identifiable, clearly secondary. */
+@utility g-name {
+  font-family: var(--giver-font);
+  font-weight: 800;
+  font-size: 1.0625rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: lowercase;
+}
+
+/* DESCRIPTION / DETAIL — the readable register. Light, never bold. */
+@utility g-body {
+  font-family: var(--giver-font);
+  font-weight: 400;
+  font-size: 1.0625rem;
+  line-height: 1.42;
+  letter-spacing: -0.005em;
+  text-transform: lowercase;
+}
+
+@utility g-lede {
+  font-family: var(--giver-font);
+  font-weight: 400;
+  font-size: 1.3125rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  text-transform: lowercase;
+}
+
+/* METADATA — distance, time, sparks, status. Restrained by contract. */
+@utility g-meta {
+  font-family: var(--giver-font);
+  font-weight: 700;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  letter-spacing: 0.26em;
+  text-transform: lowercase;
+  opacity: 0.55;
+}
+
+/* EDITORIAL FURNITURE — hairlines and page gutters instead of cards. */
+@utility g-rule {
+  border-top: 1px solid var(--edit-rule);
+}
+
+@utility g-page {
+  padding-left: max(var(--edit-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--edit-gutter), env(safe-area-inset-right));
+}
+
+@utility g-page-top {
+  padding-top: calc(env(safe-area-inset-top) + 3.75rem);
+}
+
+@utility g-page-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 2.5rem);
+}
+
+/* An index number in the margin — editorial counting, not a badge. */
+@utility g-index {
+  font-family: var(--giver-font);
+  font-weight: 700;
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.4;
+}

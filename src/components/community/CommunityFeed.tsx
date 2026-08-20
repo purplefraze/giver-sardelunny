@@ -53,17 +53,16 @@ export function CommunityFeed({
   return (
     <div
       data-world="community"
-      className="relative flex h-full w-full flex-col overflow-hidden px-6 pb-8 pt-16"
+      className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-hidden"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      <h1 className="text-[13vw] font-black lowercase leading-[0.82] tracking-[-0.055em]">
-        community
-      </h1>
+      <h1 className="g-display">community</h1>
+      <p className="g-meta mt-3">everything moving near you right now</p>
 
       {/* FILTERS ARE WORDS, NOT CHIPS OR ICONS. */}
-      <div className="mt-6 flex flex-wrap items-baseline gap-x-4 gap-y-2 text-[13px] font-black lowercase tracking-[0.2em]">
+      <div className="g-rule mt-7 flex flex-wrap items-baseline gap-x-5 gap-y-2 pt-4 text-[13px] font-black lowercase tracking-[0.18em]">
         <button
           type="button"
           onClick={() => setType(null)}
@@ -84,7 +83,7 @@ export function CommunityFeed({
         ))}
       </div>
 
-      <div className="mt-3 flex gap-4 text-[11px] font-black lowercase tracking-[0.28em] opacity-45">
+      <div className="mt-3 flex gap-5 text-[10px] font-black lowercase tracking-[0.26em] opacity-45">
         {(["latest", "nearby"] as Sort[]).map((s) => (
           <button
             key={s}
@@ -97,41 +96,46 @@ export function CommunityFeed({
         ))}
       </div>
 
-      <ul className="mt-8 flex-1 space-y-7 overflow-y-auto pb-10">
+      <ul className="mt-7 flex-1 overflow-y-auto pb-10">
         {list.length === 0 ? (
-          <li className="opacity-60">nothing here yet. yours could be first.</li>
+          <li className="g-lede opacity-55">
+            nothing here yet — yours could be the first
+          </li>
         ) : null}
-        {list.map((item) => {
+        {list.map((item, index) => {
           const owner = memberById(item.ownerId);
           const status = activityStatus(links, item.id, item.status);
           return (
-            <li key={item.id}>
+            <li key={item.id} className={index === 0 ? undefined : "g-rule"}>
               <button
                 type="button"
-                className="block w-full text-left"
+                className="block w-full py-7 text-left"
                 onClick={() => {
                   buzz();
                   onOpen(item.id);
                 }}
               >
-                <span
-                  className="block text-[11px] font-black lowercase tracking-[0.3em]"
-                  style={{ color: ACTIVITY_FILL[item.type] }}
-                >
-                  {item.type}
+                <span className="flex items-baseline justify-between gap-4">
+                  <span
+                    className="g-heading"
+                    style={{ color: ACTIVITY_FILL[item.type] }}
+                  >
+                    {item.type}
+                  </span>
+                  <span className="g-index">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                 </span>
                 <span
-                  className="mt-1 block text-[7.4vw] font-black lowercase leading-[0.94] tracking-[-0.04em]"
+                  className="g-display-sm mt-3 block"
                   style={{ color: ACTIVITY_FILL[item.type] }}
                 >
                   {itemLine(item)}
                 </span>
                 {item.note ? (
-                  <span className="mt-1 block text-[13px] font-medium lowercase opacity-55">
-                    {item.note}
-                  </span>
+                  <span className="g-body mt-3 block opacity-65">{item.note}</span>
                 ) : null}
-                <span className="mt-2 block text-[12px] font-medium lowercase opacity-45">
+                <span className="g-meta mt-4 block">
                   {owner ? owner.username : "someone"}
                   {item.distanceKm === undefined ? "" : ` · ${item.distanceKm} km`}
                   {status === "connecting" ? " · connecting" : ""}

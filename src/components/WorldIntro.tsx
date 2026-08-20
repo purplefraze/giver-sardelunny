@@ -135,11 +135,11 @@ export function WorldIntro({
       type="button"
       onClick={next}
       data-world={category === "sparks" ? "profile" : category}
-      className="relative flex h-full w-full flex-col justify-center px-7 pb-24 pt-16 text-left"
+      className="g-page relative flex h-full w-full flex-col justify-center pb-24 pt-16 text-left"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <span
-        className="absolute left-7 top-6 text-[11px] font-black lowercase tracking-[0.3em]"
+        className="absolute left-7 top-6 g-heading"
         style={{ color: colour }}
       >
         {category}
@@ -167,7 +167,7 @@ export function WorldIntro({
       </div>
 
 
-      <span className="absolute inset-x-7 bottom-10 text-[11px] font-black lowercase tracking-[0.3em] opacity-45">
+      <span className="absolute inset-x-7 bottom-10 g-meta">
         {!last
           ? "tap to continue"
           : help || category === "sparks"

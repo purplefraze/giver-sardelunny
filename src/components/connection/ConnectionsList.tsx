@@ -40,38 +40,36 @@ export function ConnectionsList({
   return (
     <div
       data-world="connection"
-      className="relative flex h-full w-full flex-col overflow-y-auto px-6 pb-10 pt-16"
+      className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      <h1 className="text-[13vw] font-black lowercase leading-[0.82] tracking-[-0.055em]">
-        conversations
-      </h1>
+      <h1 className="g-display">conversations</h1>
 
-      <ul className="mt-8 space-y-6">
+      <ul className="mt-8">
         {open.length === 0 ? (
-          <li className="opacity-55">nothing in motion right now.</li>
+          <li className="g-lede opacity-55">nothing in motion right now</li>
         ) : null}
-        {open.map((c) => {
+        {open.map((c, index) => {
           const them = memberById(otherParty(c, ME_ID));
           return (
-            <li key={c.id}>
+            <li key={c.id} className={index === 0 ? undefined : "g-rule"}>
               <button
                 type="button"
-                className="block w-full text-left"
+                className="block w-full py-6 text-left"
                 onClick={() => {
                   buzz();
                   onOpen(c.id);
                 }}
               >
                 <span
-                  className="block text-[6.8vw] font-black lowercase leading-[0.95] tracking-[-0.04em]"
+                  className="g-display-sm block"
                   style={{ color: ACTIVITY_FILL[c.type] }}
                 >
                   {line(c.itemId, c.type)}
                 </span>
-                <span className="mt-1 block text-[12px] font-medium lowercase opacity-50">
+                <span className="g-meta mt-3 block">
                   {them ? them.username : "someone"} · {STATE_WORD[c.state]}
                   {c.state === "awaiting" && c.claimedBy !== ME_ID
                     ? " · needs your answer"
@@ -86,14 +84,14 @@ export function ConnectionsList({
       {past.length ? (
         <>
           {/* THE COMPLETED ACT CREATED THE CONNECTION — nothing else does. */}
-          <h2 className="mt-14 text-[11px] font-black lowercase tracking-[0.3em] opacity-45">
+          <h2 className="g-rule g-heading mt-14 pt-5 opacity-45">
             connections · completed together
           </h2>
           <ul className="mt-5 space-y-4">
             {past.map((p) => {
               const them = memberById(p.withId);
               return (
-                <li key={p.id} className="text-lg font-medium lowercase leading-snug">
+                <li key={p.id} className="g-body">
                   <span style={{ color: ACTIVITY_FILL[p.type] }}>{p.text}</span>
                   <span className="opacity-45">
                     {them ? ` — ${them.username}` : ""}

@@ -142,14 +142,14 @@ export function CategoryForm({
 
       <div className="px-7 pb-20 pt-20">
         <h1
-          className="text-[13vw] font-black lowercase leading-[0.85] tracking-[-0.055em]"
+          className="g-display"
           style={{ color: colour }}
         >
           my {CATEGORY_PLURAL[category]}
         </h1>
 
         {/* THE ECONOMY, SAID PLAINLY: wishes cost, generosity earns. */}
-        <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-45">
+        <p className="mt-3 g-meta">
           {cost
             ? `${cost} sparks stay with each wish until it’s granted · 3 at a time · you have ${me.sparks}`
             : unlimited
@@ -189,9 +189,9 @@ export function CategoryForm({
                       )
                     }
                     aria-label="offering"
-                    className="w-full border-b border-current/20 bg-transparent pb-1 text-xl font-medium lowercase outline-none"
+                    className="w-full border-b border-current/20 bg-transparent pb-1 g-lede outline-none"
                   />
-                  <p className="text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
+                  <p className="g-meta">
                     for
                   </p>
                   <input
@@ -204,7 +204,7 @@ export function CategoryForm({
                       )
                     }
                     aria-label="in return"
-                    className="w-full border-b border-current/20 bg-transparent pb-1 text-xl font-medium lowercase outline-none"
+                    className="w-full border-b border-current/20 bg-transparent pb-1 g-lede outline-none"
                   />
                 </div>
               ) : (
@@ -213,7 +213,7 @@ export function CategoryForm({
                   onChange={(e) =>
                     myProfileStore.editItem(category, i, e.target.value.slice(0, 40))
                   }
-                  className="min-w-0 flex-1 border-b border-current/20 bg-transparent pb-1 text-xl font-medium lowercase outline-none"
+                  className="min-w-0 flex-1 border-b border-current/20 bg-transparent pb-1 g-lede outline-none"
                 />
               )}
 
@@ -262,13 +262,13 @@ export function CategoryForm({
         </ul>
 
         {records.length ? (
-          <p className="mt-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-40">
+          <p className="mt-3 g-meta">
             #1 is your priority
           </p>
         ) : null}
 
         {full ? (
-          <p className="mt-8 text-[11px] font-black lowercase tracking-[0.28em] opacity-40">
+          <p className="mt-8 g-meta">
             that’s {limit} — remove one to add another
           </p>
         ) : (
@@ -303,7 +303,7 @@ export function CategoryForm({
               placeholder={
                 category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]
               }
-              className="w-full border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
+              className="w-full border-b border-current/25 bg-transparent pb-1 g-lede outline-none placeholder:opacity-35"
             />
 
             {category === "trade" ? (
@@ -314,11 +314,11 @@ export function CategoryForm({
                   if (e.key === "Enter") add();
                 }}
                 placeholder="what would you like in return?"
-                className="w-full border-b border-current/25 bg-transparent pb-1 text-xl font-medium lowercase outline-none placeholder:opacity-35"
+                className="w-full border-b border-current/25 bg-transparent pb-1 g-lede outline-none placeholder:opacity-35"
               />
             ) : null}
             {/* SHORT AND SWEET, VISIBLY SO. */}
-            <p className="text-[11px] font-black lowercase tracking-[0.28em] opacity-35">
+            <p className="g-meta opacity-40">
               keep it short and sweet · {ACTIVITY_MAX - draft.length} left
             </p>
             <input
@@ -327,7 +327,7 @@ export function CategoryForm({
               placeholder="anything else we should know? (optional)"
               className="w-full border-b border-current/15 bg-transparent pb-1 text-base font-medium lowercase outline-none placeholder:opacity-30"
             />
-            <p className="text-[11px] font-black lowercase tracking-[0.28em] opacity-30">
+            <p className="g-meta opacity-35">
               {NOTE_MAX - note.length} left
             </p>
 
@@ -359,7 +359,7 @@ export function CategoryForm({
                 <button
                   type="button"
                   onClick={pickPhotos}
-                  className="text-[11px] font-black lowercase tracking-[0.28em] opacity-55"
+                  className="g-meta opacity-70"
                 >
                   {photos.length ? "add another photo" : "add a photo (optional)"}
                 </button>
@@ -383,14 +383,14 @@ export function CategoryForm({
         <button
           type="button"
           onClick={leave}
-          className="mt-16 text-left text-[12vw] font-black lowercase leading-[0.85] tracking-[-0.055em] transition-transform active:scale-[0.98]"
+          className="mt-16 text-left g-display transition-transform active:scale-[0.98]"
           style={{ color: "var(--giver-participation)" }}
         >
           back
           <br />
           to my g
         </button>
-        <p className="mt-6 text-[11px] font-black lowercase tracking-[0.3em] opacity-40">
+        <p className="mt-6 g-meta">
           everything saves as you go
         </p>
       </div>

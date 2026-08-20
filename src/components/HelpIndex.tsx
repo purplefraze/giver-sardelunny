@@ -26,14 +26,12 @@ export function HelpIndex({
   return (
     <div
       data-world="profile"
-      className="relative flex h-full w-full flex-col justify-center px-7 pb-16 pt-20"
+      className="g-page g-page-bottom relative flex h-full w-full flex-col justify-center"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      <h1 className="text-[12vw] font-black lowercase leading-[0.88] tracking-[-0.055em]">
-        how giver works
-      </h1>
+      <h1 className="g-display">how giver works</h1>
 
       <div className="mt-10 flex flex-col items-start gap-4">
         {TOPICS.map(({ topic, label, colour }) => (
@@ -44,7 +42,7 @@ export function HelpIndex({
               buzz();
               onOpen(topic);
             }}
-            className="text-left text-[7.4vw] font-black lowercase leading-[0.98] tracking-[-0.045em]"
+            className="g-display-sm text-left"
             style={{ color: colour }}
           >
             {label}

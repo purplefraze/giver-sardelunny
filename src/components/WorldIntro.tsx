@@ -135,7 +135,7 @@ export function WorldIntro({
       type="button"
       onClick={next}
       data-world={category === "sparks" ? "profile" : category}
-      className="relative flex h-full w-full flex-col justify-center px-7 pb-24 pt-16 text-left"
+      className="g-page relative flex h-full w-full flex-col justify-center pb-24 pt-16 text-left"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <span

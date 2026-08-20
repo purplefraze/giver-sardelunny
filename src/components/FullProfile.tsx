@@ -36,11 +36,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-11">
-      <h2 className="text-[11px] font-black lowercase tracking-[0.34em] opacity-45">
-        {title}
-      </h2>
-      <div className="mt-4">{children}</div>
+    <section className="g-rule mt-12 pt-5">
+      <h2 className="g-heading opacity-45">{title}</h2>
+      <div className="mt-5">{children}</div>
     </section>
   );
 }
@@ -93,38 +91,26 @@ export function FullProfile({
     >
       <BackArrow onClick={onBack} label={`back to ${member.name}`} />
 
-      <div className="px-7 pb-24 pt-20">
+      <div className="g-page g-page-top g-page-bottom">
         {/* HEADER — photo, username, distance, member since. Nothing more. */}
         <header className="flex flex-col items-start">
           <img
             src={member.photo}
             alt={`${member.username}, ${member.byDay} by day`}
-            className="h-28 w-28 rounded-full object-cover"
+            className="h-32 w-32 rounded-full object-cover"
           />
-          <h1 className="mt-5 text-[13vw] font-black lowercase leading-[0.85] tracking-[-0.05em]">
-            {member.username}
-          </h1>
-          <p className="mt-3 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
-            {member.distance}
-          </p>
-          <p className="mt-1 text-[11px] font-black lowercase tracking-[0.3em] opacity-50">
-            member of giver since {member.since}
-          </p>
+          <h1 className="g-display mt-6">{member.username}</h1>
+          <p className="g-meta mt-4">{member.distance}</p>
+          <p className="g-meta mt-1">member of giver since {member.since}</p>
         </header>
 
         <Section title={world === "me" ? "about me" : "about them"}>
           <ul className="space-y-2">
-            <li className="text-2xl font-medium lowercase leading-tight">
-              {member.byDay} by day
-            </li>
-            <li className="text-2xl font-medium lowercase leading-tight">
-              {member.byNight} by night
-            </li>
-            <li className="text-2xl font-medium lowercase leading-tight">
-              {member.weekend} by weekend
-            </li>
+            <li className="g-lede">{member.byDay} by day</li>
+            <li className="g-lede">{member.byNight} by night</li>
+            <li className="g-lede">{member.weekend} by weekend</li>
           </ul>
-          <p className="mt-6 text-xl font-medium lowercase leading-snug opacity-75">
+          <p className="g-body mt-6 opacity-70">
             {member.aboutMe}
           </p>
         </Section>
@@ -133,10 +119,10 @@ export function FullProfile({
           <dl className="grid grid-cols-2 gap-y-6">
             {done.map(([label, count]) => (
               <div key={label}>
-                <dd className="text-5xl font-black leading-none tracking-[-0.04em]">
+                <dd className="text-[3.25rem] font-black leading-none tracking-[-0.05em] tabular-nums">
                   {count}
                 </dd>
-                <dt className="mt-2 text-[11px] font-black lowercase tracking-[0.26em] opacity-50">
+                <dt className="g-meta mt-2">
                   {label}
                 </dt>
               </div>
@@ -150,7 +136,7 @@ export function FullProfile({
               {activeGroups.map(({ key, items }) => (
                 <div key={key}>
                   <p
-                    className="text-[11px] font-black lowercase tracking-[0.3em]"
+                    className="g-heading"
                     style={{ color: `var(--mode-${key})` }}
                   >
                     {CATEGORY_LABEL[key]}
@@ -158,7 +144,7 @@ export function FullProfile({
                   <ul className="mt-2 space-y-4">
                     {items.map((item) => (
                       <li key={item.id} className="flex items-start gap-4">
-                        <span className="flex-1 text-2xl font-medium lowercase leading-tight">
+                        <span className="g-lede flex-1">
                           {itemLine(item)}
                         </span>
                         {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
@@ -203,7 +189,7 @@ export function FullProfile({
         {connections.length ? (
         <Section title="connections">
           <p
-            className="text-sm font-medium lowercase"
+            className="g-body"
             style={{ color: "var(--giver-connection)" }}
           >
             people i’ve actually done something with — completed gives, granted
@@ -225,7 +211,7 @@ export function FullProfile({
                   alt={person.username}
                   className="h-16 w-16 rounded-full object-cover"
                 />
-                <span className="text-[10px] font-black lowercase tracking-[0.2em] opacity-60">
+                <span className="g-meta text-center">
                   {person.username}
                 </span>
               </button>

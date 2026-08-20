@@ -19,14 +19,12 @@ export function ChooseWorld({
   return (
     <div
       data-world="profile"
-      className="relative flex h-full w-full flex-col justify-center px-7 pb-16 pt-20"
+      className="g-page g-page-bottom relative flex h-full w-full flex-col justify-center"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onCancel} label="back to my g" />
 
-      <h1 className="text-[11vw] font-black lowercase leading-[0.88] tracking-[-0.055em]">
-        what would you like to do?
-      </h1>
+      <h1 className="g-display">what would you like to do?</h1>
 
       <div className="mt-12 flex flex-col items-start gap-5">
         {CATEGORIES.map((category) => (
@@ -37,7 +35,7 @@ export function ChooseWorld({
               buzz();
               onChoose(category);
             }}
-            className="text-[13vw] font-black lowercase leading-[0.9] tracking-[-0.055em]"
+            className="g-display"
             style={{ color: `var(--me-${category})` }}
           >
             {category}

@@ -297,7 +297,7 @@ export function AboutForm({
                   key={rule.label}
                   className="g-meta"
                   style={{
-                    color: ok ? "var(--giver-give, var(--giver-me))" : undefined,
+                    color: ok ? "var(--mode-give)" : undefined,
                     opacity: ok ? 0.9 : 0.4,
                   }}
                 >

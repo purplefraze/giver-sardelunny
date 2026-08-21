@@ -63,6 +63,12 @@ export type Item = {
    * "lend" = I am willing to lend something out. Never the same copy.
    */
   side?: BorrowSide;
+  /**
+   * STRUCTURED DETAILS — where, when, how long, plus context-specific answers.
+   * Optional everywhere; they exist so people do not have to message to find
+   * out the basics.
+   */
+  details?: ItemDetails;
   /** Where available — community discovery may sort or filter on it later. */
   distanceKm?: number;
   /** Cheap denormalised counter; the truth is the boost ledger. */
@@ -91,8 +97,118 @@ export const ME_ID = "me";
  * SHORT AND SWEET, ENFORCED. An activity is a headline, not a description:
  * one glanceable line, plus at most one short line of extra context.
  */
-export const ACTIVITY_MAX = 40;
-export const NOTE_MAX = 50;
+export const ACTIVITY_MAX = 50;
+export const NOTE_MAX = 100;
+
+/** Per-type room. A give may say a little more; asks stay terse. */
+export const TITLE_MAX: Record<ItemType, number> = {
+  wish: 40,
+  give: 50,
+  trade: 40,
+  borrow: 40,
+};
+
+export const NOTE_MAX_FOR: Record<ItemType, number> = {
+  wish: 50,
+  give: 100,
+  trade: 50,
+  borrow: 50,
+};
+
+/**
+ * A COUNTDOWN IS A WARNING, NOT A METER. It stays hidden until the end is
+ * actually in sight.
+ */
+export const TITLE_COUNTDOWN_AT = 10;
+export const NOTE_COUNTDOWN_AT = 40;
+
+/**
+ * STRUCTURED DETAILS — enough for somebody to decide without messaging, never
+ * a form. Everything is optional, and nothing is ever an exact home address.
+ */
+export type ItemDetails = {
+  /** neighbourhood / general area, "online" or "flexible". Never an address. */
+  where?: string | undefined;
+  /** days of the week, in order, e.g. ["tues", "thurs"]. */
+  days?: string[] | undefined;
+  /** a time or time range: "evenings", "7 pm". */
+  time?: string | undefined;
+  /** a date or date range, where it matters. */
+  date?: string | undefined;
+  /** one time · recurring · flexible. */
+  cadence?: string | undefined;
+  /** approximate duration: "1 hour". */
+  duration?: string | undefined;
+  /** context-specific answers (subject, level, format...). */
+  extras?: Record<string, string> | undefined;
+};
+
+export const DAY_NAMES = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"];
+
+export const WHERE_OPTIONS = ["online", "flexible"];
+export const CADENCE_OPTIONS = ["one time", "recurring", "flexible"];
+export const TIME_OPTIONS = ["mornings", "afternoons", "evenings", "flexible"];
+export const DURATION_OPTIONS = ["30 min", "1 hour", "2 hours", "flexible"];
+
+/**
+ * THE SCANNABLE FACTS OF ONE ITEM, in one order, everywhere they appear. Only
+ * what exists is ever shown — no empty labels, no placeholders.
+ */
+export function detailBits(item: Item): string[] {
+  const d = item.details;
+  if (!d) return [];
+  const out: string[] = [];
+  if (d.days?.length) out.push(d.days.join(" + "));
+  if (d.date) out.push(d.date);
+  if (d.time) out.push(d.time);
+  if (d.duration) out.push(d.duration);
+  if (d.cadence && d.cadence !== "flexible") out.push(d.cadence);
+  if (d.where) out.push(d.where);
+  for (const value of Object.values(d.extras ?? {}))
+    if (value.trim()) out.push(value.trim());
+  return out;
+}
+
+/**
+ * CONTEXT-SPECIFIC QUESTIONS. A give only ever asks what makes sense for that
+ * kind of give — tutoring is asked about subject and level, a meal is not.
+ */
+export const CONTEXT_FIELDS: {
+  match: RegExp;
+  fields: { key: string; ask: string }[];
+}[] = [
+  {
+    match: /tutor|lesson|teach|class|coach|math|science|language/i,
+    fields: [
+      { key: "subject", ask: "subject" },
+      { key: "level", ask: "level / grade" },
+    ],
+  },
+  {
+    match: /dinner|meal|lunch|food|cook|bake|seat/i,
+    fields: [
+      { key: "people", ask: "how many people" },
+      { key: "diet", ask: "dietary notes" },
+    ],
+  },
+  {
+    match: /ride|lift|drive|move|haul|deliver/i,
+    fields: [
+      { key: "from", ask: "general area (from)" },
+      { key: "to", ask: "general area (to)" },
+    ],
+  },
+  {
+    match: /repair|fix|paint|build|garden|clean|help/i,
+    fields: [{ key: "kind", ask: "what kind of work" }],
+  },
+];
+
+export const contextFieldsFor = (text: string) =>
+  CONTEXT_FIELDS.find((c) => c.match.test(text))?.fields ?? [];
+
+/** A WISH LIVES SEVEN DAYS. After that its sparks come home. */
+export const WISH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * PERMANENT LIMITS. Generosity is never capped; asking is deliberately scarce.
@@ -173,6 +289,25 @@ const parseKm = (distance: string) => {
 };
 
 /**
+ * SEEDED DETAILS EXIST FOR THE SAME REASON REAL ONES DO: so community can be
+ * scanned and understood without opening anything. Deterministic, never random.
+ */
+function seedDetails(type: ItemType, mi: number, i: number): ItemDetails {
+  const daySets = [["tues", "thurs"], ["sat"], ["sun"], ["mon", "wed", "fri"]];
+  const places = ["online", "west end", "flexible", "north side"];
+  const times = ["evenings", "7 pm", "afternoons", "mornings"];
+  const spans = ["one time", "recurring", "flexible"];
+  const k = (mi + i) % 4;
+  return {
+    days: daySets[k % daySets.length]!,
+    time: times[k % times.length]!,
+    where: places[(k + i) % places.length]!,
+    cadence: spans[(mi + i) % spans.length]!,
+    ...(type === "give" ? { duration: DURATION_OPTIONS[k % DURATION_OPTIONS.length]! } : {}),
+  };
+}
+
+/**
  * The sample community starts out as REAL items, so my items and theirs live
  * in one collection from the first render. Seeded once, then persisted.
  */
@@ -198,12 +333,27 @@ function seedItems(): Item[] {
           createdAt: now - (mi + 1) * 86400000 - i * 3600000,
           updatedAt: now - (mi + 1) * 86400000 - i * 3600000,
           ...(km === undefined ? {} : { distanceKm: km }),
+          details: seedDetails(type, mi, i),
           boostCount: 0,
         });
       });
     });
   });
   return out;
+}
+
+/**
+ * OLDER SAMPLE ITEMS PREDATE STRUCTURED DETAILS. They are the same items, so
+ * they are filled in place rather than replaced — nobody's own items are ever
+ * touched.
+ */
+function withSeedDetails(item: Item): Item {
+  if (item.details || !item.id.startsWith("seed-")) return item;
+  const parts = item.id.split("-");
+  const memberId = parts[1] ?? "";
+  const index = Number(parts[3] ?? 0) || 0;
+  const mi = Math.max(0, MEMBERS.findIndex((m) => m.id === memberId));
+  return { ...item, details: seedDetails(item.type, mi, index) };
 }
 
 function read(): ItemsState {
@@ -213,7 +363,7 @@ function read(): ItemsState {
     if (!raw) return { items: seedItems(), boosts: [], seeded: true };
     const parsed = JSON.parse(raw) as Partial<ItemsState>;
     return {
-      items: parsed.items ?? seedItems(),
+      items: (parsed.items ?? seedItems()).map(withSeedDetails),
       boosts: parsed.boosts ?? [],
       seeded: true,
     };
@@ -283,9 +433,9 @@ export const itemsStore = {
     parts?: { offer: string; want: string },
     note?: string,
     /** PHOTOS AND THE BORROW/LEND SIDE ride on the SAME underlying record. */
-    extra?: { photos?: string[]; side?: BorrowSide },
+    extra?: { photos?: string[]; side?: BorrowSide; details?: ItemDetails },
   ): Item | null {
-    const t = text.trim().slice(0, ACTIVITY_MAX);
+    const t = text.trim().slice(0, TITLE_MAX[type]);
     if (!t) return null;
     const s = ensure();
     const mine = s.items.filter(
@@ -302,9 +452,14 @@ export const itemsStore = {
       ...(parts
         ? { offer: parts.offer.trim(), want: parts.want.trim() }
         : {}),
-      ...(note && note.trim() ? { note: note.trim().slice(0, NOTE_MAX) } : {}),
+      ...(note && note.trim()
+        ? { note: note.trim().slice(0, NOTE_MAX_FOR[type]) }
+        : {}),
       ...(photos.length ? { photos } : {}),
       ...(type === "borrow" ? { side: extra?.side ?? "borrow" } : {}),
+      ...(extra?.details && Object.keys(extra.details).length
+        ? { details: extra.details }
+        : {}),
       status: "active",
       priority: mine.length,
       published: true,

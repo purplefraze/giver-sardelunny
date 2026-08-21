@@ -3,9 +3,9 @@ import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
 import {
   ACTIVITY_FILL,
-  ITEM_TYPES,
   ME_ID,
   communityItems,
+  detailBits,
   itemLine,
   type ItemType,
 } from "@/data/items";
@@ -21,34 +21,60 @@ import { buzz } from "@/lib/haptics";
  * owners posted, never copies — because discovering the mix is what makes the
  * place feel alive. Filters narrow it; they never split it into four apps.
  *
- * NOTHING DISAPPEARS BECAUSE SOMEONE IS INTERESTED. An activity someone has
- * stepped forward on stays right here, honestly labelled "connecting".
+ * IT READS LIKE AN EDITORIAL MAP, NOT A SOCIAL FEED: no sequence numbers, no
+ * cards, dense enough to scan, with just enough structured fact under each
+ * headline to decide whether it is worth opening.
+ *
+ * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
+ * opens the person.
  */
 
-type Sort = "latest" | "nearby";
+type Sort = "nearby" | "latest" | "popular";
+
+const SORTS: Sort[] = ["nearby", "latest", "popular"];
+
+/** GIVE COMES FIRST. Community leads with generosity, then asks. */
+const FILTERS: ItemType[] = ["give", "wish", "trade", "borrow"];
+
+/**
+ * ONE LINE, WHEREVER POSSIBLE. The headline scales inside a controlled range
+ * by length — confident, never tiny.
+ */
+function headlineSize(text: string): string {
+  const n = text.length;
+  if (n <= 14) return "8.6vw";
+  if (n <= 20) return "7.4vw";
+  if (n <= 28) return "6.2vw";
+  if (n <= 38) return "5.2vw";
+  return "4.6vw";
+}
 
 export function CommunityFeed({
   initialType = null,
   onOpen,
+  onOpenProfile,
   onClose,
 }: {
   initialType?: ItemType | null;
   onOpen: (itemId: string) => void;
+  /** THE PERSON IS THEIR OWN DESTINATION. */
+  onOpenProfile?: (ownerId: string) => void;
   onClose: () => void;
 }) {
   const items = useItems();
   const links = useConnections();
   const [type, setType] = useState<ItemType | null>(initialType);
-  const [sort, setSort] = useState<Sort>("latest");
+  const [sort, setSort] = useState<Sort>("nearby");
 
   const list = communityItems(items, {
     ...(type ? { type } : {}),
     excludeOwnerId: ME_ID,
-  }).sort((a, b) =>
-    sort === "latest"
-      ? b.createdAt - a.createdAt
-      : (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999),
-  );
+  }).sort((a, b) => {
+    if (sort === "latest") return b.createdAt - a.createdAt;
+    if (sort === "popular")
+      return b.boostWeight - a.boostWeight || b.createdAt - a.createdAt;
+    return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
+  });
 
   return (
     <div
@@ -58,19 +84,23 @@ export function CommunityFeed({
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      <h1 className="g-display">community</h1>
-      <p className="g-meta mt-3">everything moving near you right now</p>
+      {/* COMMUNITY SPEAKS IN BLACK. Blue stays its identity accent. */}
+      <h1 className="g-display" style={{ color: "var(--giver-ink)" }}>
+        community
+      </h1>
+      <p className="g-meta mt-2 opacity-55">it’s all happening. near you. right now.</p>
 
-      {/* FILTERS ARE WORDS, NOT CHIPS OR ICONS. */}
-      <div className="g-rule mt-7 flex flex-wrap items-baseline gap-x-5 gap-y-2 pt-4 text-[13px] font-black lowercase tracking-[0.18em]">
+      {/* FILTERS ARE WORDS, NOT CHIPS OR ICONS. ALL · GIVE · WISH · TRADE · BORROW */}
+      <div className="g-rule mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-2 pt-3 text-[13px] font-black lowercase tracking-[0.16em]">
         <button
           type="button"
           onClick={() => setType(null)}
           className={type === null ? "opacity-100" : "opacity-35"}
+          style={{ color: "var(--giver-ink)" }}
         >
-          everything
+          all
         </button>
-        {ITEM_TYPES.map((t) => (
+        {FILTERS.map((t) => (
           <button
             key={t}
             type="button"
@@ -83,20 +113,24 @@ export function CommunityFeed({
         ))}
       </div>
 
-      <div className="mt-3 flex gap-5 text-[10px] font-black lowercase tracking-[0.26em] opacity-45">
-        {(["latest", "nearby"] as Sort[]).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setSort(s)}
-            className={sort === s ? "opacity-100" : undefined}
-          >
-            {s}
-          </button>
+      {/* ONE COMPACT SORT CONTROL: NEARBY · LATEST · POPULAR */}
+      <div className="mt-2.5 flex items-baseline gap-3 text-[10px] font-black lowercase tracking-[0.24em] opacity-45">
+        {SORTS.map((s, i) => (
+          <span key={s} className="flex items-baseline gap-3">
+            {i === 0 ? null : <span className="opacity-30">·</span>}
+            <button
+              type="button"
+              onClick={() => setSort(s)}
+              className={sort === s ? "opacity-100" : undefined}
+              style={sort === s ? { color: "var(--giver-others)" } : undefined}
+            >
+              {s}
+            </button>
+          </span>
         ))}
       </div>
 
-      <ul className="mt-7 flex-1 overflow-y-auto pb-10">
+      <ul className="mt-4 flex-1 overflow-y-auto pb-8">
         {list.length === 0 ? (
           <li className="g-lede opacity-55">
             nothing here yet — yours could be the first
@@ -105,42 +139,55 @@ export function CommunityFeed({
         {list.map((item, index) => {
           const owner = memberById(item.ownerId);
           const status = activityStatus(links, item.id, item.status);
+          const line = itemLine(item);
+          const facts = [
+            item.distanceKm === undefined ? null : `${item.distanceKm} km`,
+            ...detailBits(item),
+            status === "connecting" ? "connecting" : null,
+          ].filter(Boolean) as string[];
           return (
-            <li key={item.id} className={index === 0 ? undefined : "g-rule"}>
+            <li
+              key={item.id}
+              className={index === 0 ? "pb-3.5" : "g-rule py-3.5"}
+            >
+              <span
+                className="g-heading block"
+                style={{ color: ACTIVITY_FILL[item.type] }}
+              >
+                {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
+              </span>
+
+              {/* THE HEADLINE OPENS THE ACTIVITY. */}
               <button
                 type="button"
-                className="block w-full py-7 text-left"
+                className="mt-1 block w-full truncate text-left font-black lowercase leading-[0.95] tracking-[-0.03em]"
+                style={{
+                  color: ACTIVITY_FILL[item.type],
+                  fontSize: headlineSize(line),
+                }}
                 onClick={() => {
                   buzz();
                   onOpen(item.id);
                 }}
               >
-                <span className="flex items-baseline justify-between gap-4">
-                  <span
-                    className="g-heading"
-                    style={{ color: ACTIVITY_FILL[item.type] }}
-                  >
-                    {item.type}
-                  </span>
-                  <span className="g-index">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </span>
-                <span
-                  className="g-display-sm mt-3 block"
-                  style={{ color: ACTIVITY_FILL[item.type] }}
-                >
-                  {itemLine(item)}
-                </span>
-                {item.note ? (
-                  <span className="g-body mt-3 block opacity-65">{item.note}</span>
-                ) : null}
-                <span className="g-meta mt-4 block">
-                  {owner ? owner.username : "someone"}
-                  {item.distanceKm === undefined ? "" : ` · ${item.distanceKm} km`}
-                  {status === "connecting" ? " · connecting" : ""}
-                </span>
+                {line}
               </button>
+
+              {/* ENOUGH TO DECIDE WITHOUT OPENING IT. */}
+              <p className="mt-1.5 g-meta opacity-55">
+                <button
+                  type="button"
+                  onClick={() => {
+                    buzz();
+                    if (owner) onOpenProfile?.(owner.id);
+                  }}
+                  className="font-black underline decoration-current/40 underline-offset-4"
+                  style={{ color: "var(--giver-others)" }}
+                >
+                  {owner ? owner.username : "someone"}
+                </button>
+                {facts.length ? ` · ${facts.join(" · ")}` : ""}
+              </p>
             </li>
           );
         })}

@@ -128,13 +128,17 @@ export const STARTING_SPARKS = 50;
 const EMPTY_PERSON: Person = {
   username: "@you",
   photo: null,
+  photoSource: null,
+  photoCrop: null,
   aboutMe: "",
   byDay: "",
   byNight: "",
   weekend: "",
   birthday: "",
   gender: "",
+  password: "",
   built: false,
+
   sparkles: 0,
   sparklesAwarded: false,
   sparks: 0,

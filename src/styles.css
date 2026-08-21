@@ -485,8 +485,8 @@
   font-family: var(--giver-font);
   font-weight: 900;
   font-size: clamp(2.6rem, 13.5vw, 4.6rem);
-  line-height: 0.98;
-  padding-bottom: 0.06em;
+  line-height: 0.9;
+  padding-bottom: 0.08em;
   letter-spacing: -0.055em;
   text-transform: lowercase;
   text-wrap: balance;
@@ -497,8 +497,8 @@
   font-family: var(--giver-font);
   font-weight: 900;
   font-size: clamp(1.85rem, 8vw, 2.9rem);
-  line-height: 1.02;
-  padding-bottom: 0.06em;
+  line-height: 0.96;
+  padding-bottom: 0.08em;
   letter-spacing: -0.045em;
   text-transform: lowercase;
 }

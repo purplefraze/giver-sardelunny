@@ -175,11 +175,17 @@ function Index() {
    * conversation both people verify ever settles sparks.
    */
   const [browse, setBrowse] = useState<{ type: ItemType | null } | null>(null);
+  /**
+   * SEARCH IS THE TOP LOOP, AND ONLY ON MY OWN G. It opens already scoped to the
+   * toggle's world, so the content type is never asked for twice.
+   */
+  const [search, setSearch] = useState<ItemType | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
   /** THE PERSON IS THEIR OWN DESTINATION: @username opens who they are. */
   const [person, setPerson] = useState<string | null>(null);
+
   /**
    * THE COMMUNITY DOOR, WHEN IT IS STILL SHUT. Not an error and not a warning —
    * one question, asked once, with the way to open it right underneath.

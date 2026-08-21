@@ -399,7 +399,7 @@ export function CategoryForm({
         {problem ? (
           <p
             className="mt-3 text-sm font-black lowercase"
-            style={{ color: "var(--me-wish)" }}
+            style={{ color: colour }}
           >
             {problem}
           </p>

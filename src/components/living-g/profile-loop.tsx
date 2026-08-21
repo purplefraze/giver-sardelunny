@@ -233,13 +233,16 @@ export function profileLoop({
           textAnchor="middle"
           dominantBaseline="middle"
           fill={row.fill ?? LOOP_TEXT_FILL}
-          className="font-black lowercase"
+          className="lowercase"
           style={{
-            fontSize: row.size,
-            letterSpacing: LOOP_ROLE_STYLE[row.role].tracking,
-            opacity: LOOP_ROLE_STYLE[row.role].opacity,
+            ...gType(
+              row.role === "label" ? "label" : "statement",
+              row.size,
+              LOOP_ROLE_STYLE[row.role].opacity,
+            ),
           }}
         >
+
           {row.text}
         </text>
       ))}

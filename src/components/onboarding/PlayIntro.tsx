@@ -34,7 +34,7 @@ type Phase = "quiet" | "brand" | "spark" | "split" | "gift";
 
 /** Type sizes in the G's own units (576 wide) — small, fixed, never crammed. */
 const BRAND = 92;
-const META = 27;
+const META = 24;
 const LINE = 33;
 
 /** How long a casual, repeated touch is answered for. */

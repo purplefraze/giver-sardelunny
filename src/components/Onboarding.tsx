@@ -29,7 +29,16 @@ const ROLE_COLOUR: Record<Member["world"], string> = {
   borrowing: "var(--giver-others)",
 };
 
-export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void }) {
+export function Onboarding({
+  onDone,
+}: {
+  /**
+   * TWO PATHS OUT OF THE OPENING. `earned` is true only when the person
+   * genuinely completed the spark interaction — the sparks are never awarded
+   * because an animation played.
+   */
+  onDone: (result: { gaveTo: string | null; earned: boolean }) => void;
+}) {
   const [stage, setStage] = useState<Stage>("opening");
   const [who, setWho] = useState(0);
   const [chosen, setChosen] = useState<Member | null>(null);
@@ -42,8 +51,13 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   if (stage === "opening") {
     return (
       <PlayIntro
-        onDone={() => {
+        onDone={(earned) => {
           buzz();
+          /* PATH B: the spark interaction was left unfinished. My G opens, quietly. */
+          if (!earned) {
+            onDone({ gaveTo: null, earned: false });
+            return;
+          }
           setWho(0);
           setStage("meet");
         }}
@@ -76,7 +90,12 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
   }
 
   if (stage === "celebrate" && chosen) {
-    return <FirstGenerosity username={chosen.username} onDone={() => onDone(chosen.name)} />;
+    return (
+      <FirstGenerosity
+        username={chosen.username}
+        onDone={() => onDone({ gaveTo: chosen.name, earned: true })}
+      />
+    );
   }
 
   // The first act of generosity. Not optional: one of the four, or nothing.
@@ -212,8 +231,6 @@ function ChooseRecipient({
  * semantic colours are exactly as approved; only the timing changed.
  */
 function FirstGenerosity({ username, onDone }: { username: string; onDone: () => void }) {
-  const [asked, setAsked] = useState(false);
-  const [allowed, setAllowed] = useState<boolean | null>(null);
   /** ONE landing for the whole composition. */
   const [landed, setLanded] = useState(false);
 
@@ -224,20 +241,6 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
     }, 90);
     return () => clearTimeout(t);
   }, []);
-
-  if (asked) {
-    return (
-      <MessagingConsent
-        username={username}
-        allowed={allowed}
-        onAnswer={(yes) => {
-          buzz();
-          setAllowed(yes);
-        }}
-        onDone={onDone}
-      />
-    );
-  }
 
   return (
     <div
@@ -262,22 +265,15 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
         <p className="mt-7 max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.92] tracking-[-0.045em]">
           you just made your first act of generosity on giver
         </p>
-        <p className="mt-7 max-w-[14ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em]">
-          give yourself a pat on the back
-        </p>
         <p className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
           50 sparks have now been given to {username}
         </p>
-        {/* BOTH HALVES OF THE GIFT: 50 given away, 50 now yours to use. */}
-        <p className="mt-5 text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
-          and
-        </p>
-        <p className="mt-2 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
-          50 sparks have now been added to your account
+        <p className="mt-5 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
+          and 50 sparks are yours
         </p>
       </div>
 
-      {/* The Giver call to action, in Giver's own language — part of the same beat. */}
+      {/* The way onward, in Giver's own language — part of the same beat. */}
       <div
         className="absolute inset-x-0 bottom-0 flex justify-end px-7"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
@@ -286,7 +282,7 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
           type="button"
           onClick={() => {
             buzz();
-            setAsked(true);
+            onDone();
           }}
           className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
           style={{
@@ -298,101 +294,6 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
           let&apos;s giver
         </button>
       </div>
-    </div>
-  );
-}
-
-
-/** Messaging is a permission, so Giver asks. "not now" costs nothing. */
-function MessagingConsent({
-  username,
-  allowed,
-  onAnswer,
-  onDone,
-}: {
-  username: string;
-  allowed: boolean | null;
-  onAnswer: (yes: boolean) => void;
-  onDone: () => void;
-}) {
-  const { shown } = useSpeech(2, 1300, 900);
-
-  return (
-    <div
-      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
-      style={{ background: "var(--giver-paper)", color: "var(--giver-ink)" }}
-    >
-      <Spoken
-        show={shown >= 1}
-        className="max-w-[14ch] text-[8.5vw] font-black lowercase leading-[0.94] tracking-[-0.045em]"
-      >
-        {username} might want to say thanks.
-      </Spoken>
-
-      {allowed === null ? (
-        <Spoken
-          show={shown >= 2}
-          className="mt-8 max-w-[13ch] text-[10.5vw] font-black lowercase leading-[0.9] tracking-[-0.05em]"
-          style={{ color: "var(--giver-generosity)" }}
-        >
-          okay if they message you?
-        </Spoken>
-      ) : (
-        <Spoken
-          show
-          className="mt-8 max-w-[15ch] text-[7vw] font-black lowercase leading-[0.95] tracking-[-0.04em] opacity-70"
-        >
-          {allowed
-            ? `you can now message each other`
-            : `no messages for now. ${username} still felt it.`}
-        </Spoken>
-      )}
-
-      <div
-        className="mt-12 flex items-baseline gap-9"
-        style={{
-          opacity: allowed === null && shown >= 2 ? 1 : 0,
-          transition: "opacity 700ms cubic-bezier(0.32,0,0.24,1)",
-          pointerEvents: allowed === null && shown >= 2 ? "auto" : "none",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => onAnswer(true)}
-          className="text-[9vw] font-black lowercase leading-none tracking-[-0.05em] transition-transform active:scale-95"
-          style={{ color: "var(--giver-generosity)" }}
-        >
-          yes
-        </button>
-        <button
-          type="button"
-          onClick={() => onAnswer(false)}
-          className="text-[6.5vw] font-black lowercase leading-none tracking-[-0.04em] opacity-70 transition-transform active:scale-95"
-        >
-          not now
-        </button>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => {
-          buzz();
-          onDone();
-        }}
-        className="absolute inset-x-0 bottom-0 mx-auto w-fit text-center text-[10vw] font-black lowercase leading-[0.88] tracking-[-0.05em] transition-transform active:scale-95"
-        style={{
-          paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))",
-          /* GIVER'S OWN GUIDANCE = PARTICIPATION = ORANGE. */
-          color: "var(--giver-participation)",
-          opacity: allowed === null ? 0 : 1,
-          transition: "opacity 800ms cubic-bezier(0.32,0,0.24,1)",
-          pointerEvents: allowed === null ? "none" : "auto",
-        }}
-      >
-        let's build
-        <br />
-        your profile
-      </button>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { SparkBundle } from "./SparkBundle";
 import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
 import { haptics } from "@/lib/haptics";
 
-
 /**
  * THE TRAVELLING SPARK — a bead riding INSIDE the Living G's own stroke, on the
  * rail measured off the canonical geometry (see spark-track.ts).
@@ -40,6 +39,10 @@ type Sample = { x: number; y: number; u: number };
 export function SparkJourney({
   mode = "drag",
   count,
+  bob = false,
+  colour = "var(--giver-generosity)",
+  grabColour,
+  wash: washOn = true,
   onStart,
   onArrive,
   onGreen,
@@ -53,6 +56,17 @@ export function SparkJourney({
   mode?: "auto" | "drag" | "gift";
   /** How many Sparks this bundle carries — shown inside the bundle. */
   count?: number;
+  /**
+   * CURIOSITY, NOT INSTRUCTION. The bundle drifts along the rail by itself,
+   * reaches an end, rebounds and comes back — until a finger takes hold of it.
+   * No arrows, no destination, no copy: the motion is the whole invitation.
+   */
+  bob?: boolean;
+  /** Its resting colour, and what a successful catch turns it into. */
+  colour?: string;
+  grabColour?: string;
+  /** Whether the landing washes the whole G in green. */
+  wash?: boolean;
   /** The user has taken hold of the bundle. */
   onStart?: () => void;
   /** The spark has reached the end of its journey. */
@@ -60,7 +74,6 @@ export function SparkJourney({
   /** The green has finished resolving through the whole G. */
   onGreen?: () => void;
 }) {
-
   const uid = useId().replace(/:/g, "");
   const rail = useRef<SVGPathElement | null>(null);
   const samples = useRef<Sample[]>([]);
@@ -70,6 +83,8 @@ export function SparkJourney({
   const crossed = useRef<boolean | null>(null);
   /** Live progress, so the drag can stay local without a stale closure. */
   const uRef = useRef(0);
+  /** Where the bundle was when the finger first caught it. */
+  const caught = useRef(0);
 
   const [at, setAt] = useState({ x: 0, y: 0, ready: false });
   /** Where this journey begins and ends on the shared rail. */
@@ -79,6 +94,8 @@ export function SparkJourney({
 
   const [u, setU] = useState(FROM);
   const [dragging, setDragging] = useState(false);
+  /** Once touched, the drifting stops for good and the colour answers. */
+  const [held, setHeld] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [wash, setWash] = useState(0);
 
@@ -105,7 +122,6 @@ export function SparkJourney({
       crossed.current = past;
       haptics.medium();
     }
-
   };
 
   // The rail, sampled once, so a finger can be projected onto it precisely.
@@ -149,9 +165,31 @@ export function SparkJourney({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, at.ready]);
 
+  /**
+   * THE DRIFT. Left alone, the bundle simply travels the G's own rail: out, a
+   * gentle rebound, back again, for as long as it takes. Nothing is explained.
+   */
+  useEffect(() => {
+    if (!bob || !at.ready || held || arrived) return;
+    let raf = 0;
+    const start = performance.now();
+    const SPAN = 0.68;
+    const CYCLE = 7200;
+    const step = (now: number) => {
+      const t = ((now - start) % CYCLE) / CYCLE;
+      /* One smooth out-and-back, eased at both ends: never a mechanical loop. */
+      const swing = t < 0.5 ? ease(t * 2) : ease((1 - t) * 2);
+      put(swing * SPAN, false);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [bob, at.ready, held, arrived]);
+
   // Landing: the haptic, then the green travelling outward from the bead.
   useEffect(() => {
     if (!draggable || arrived) return;
+    if (!held && bob) return;
     if (TO === 1 ? u < 1 : u > 0) return;
     setArrived(true);
     /* THE LANDING. The strongest, most meaningful haptic in the whole app: the
@@ -164,10 +202,11 @@ export function SparkJourney({
   // THE CHANGE. Kept in its OWN effect so nothing can cancel it mid-flight.
   useEffect(() => {
     if (!arrived) return;
-    if (mode !== "drag") {
+    if (mode !== "drag" || !washOn) {
       onGreen?.();
       return;
     }
+
     let raf = 0;
     const start = performance.now();
     const step = (now: number) => {
@@ -226,7 +265,10 @@ export function SparkJourney({
     if (activeId.current !== null) return;
     activeId.current = e.pointerId;
     grabbed.current = true;
+    caught.current = uRef.current;
+    setHeld(true);
     setDragging(true);
+
     // CAPTURE: the slide survives the finger straying off the rail's grip, and
     // keeps receiving moves right through the loops and the S-curve.
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -278,12 +320,13 @@ export function SparkJourney({
     grabbed.current = false;
     setDragging(false);
     const travelled = TO === 1 ? uRef.current : 1 - uRef.current;
+    /* A MERE TOUCH IS NOT A DRAG: a bundle caught mid-drift and let go without
+       being moved stays exactly where the finger found it. */
+    const moved = Math.abs(uRef.current - caught.current) > 0.02;
     // A gentle lock-in near the end; a confident finish from halfway onward.
     if (travelled > 0.97) put(TO);
-    else if (travelled > 0.5) complete();
+    else if (moved && travelled > 0.5) complete();
   };
-
-
 
   const R = count !== undefined ? 44 : 34;
 
@@ -347,7 +390,6 @@ export function SparkJourney({
             </>
           ) : null}
 
-
           {/* THE SPARKS. A bundle of light, riding inside the stroke. */}
           <g
             pointerEvents="none"
@@ -358,6 +400,7 @@ export function SparkJourney({
             }}
           >
             <g
+              className="[&_circle]:transition-[fill] [&_circle]:duration-[600ms] [&_path]:transition-[fill] [&_path]:duration-[600ms]"
               style={{
                 transform: `scale(${dragging ? 1.08 : 1})`,
                 transition: "transform 220ms cubic-bezier(0.22,1,0.36,1)",
@@ -365,12 +408,12 @@ export function SparkJourney({
             >
               <SparkBundle
                 r={R}
-                colour="var(--giver-generosity)"
+                colour={held && grabColour ? grabColour : colour}
+
                 {...(count !== undefined ? { count } : {})}
               />
             </g>
           </g>
-
         </>
       ) : null}
     </g>

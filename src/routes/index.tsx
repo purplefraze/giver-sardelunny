@@ -314,9 +314,9 @@ function Index() {
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
-          onDone={() => {
-            /* The 50 sparks kept from onboarding become a REAL balance, once. */
-            myProfileStore.seedSparks();
+          onDone={({ earned }) => {
+            /* SPARKS FOLLOW THE COMPLETED INTERACTION, never the animation. */
+            if (earned) myProfileStore.seedSparks();
             /* ONBOARDING IS OVER FOR GOOD: reloading can never replay it. */
             lifecycleStore.complete();
             setSessionEntered(true);

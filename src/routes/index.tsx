@@ -226,6 +226,9 @@ function Index() {
   const [detail, setDetail] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
+  /** SPARKS AND SPARKLES ARE HISTORIES, opened from my own photo's toggle. */
+  const [history, setHistory] = useState<Currency | null>(null);
+
   /** THE PERSON IS THEIR OWN DESTINATION: @username opens who they are. */
   const [person, setPerson] = useState<string | null>(null);
 

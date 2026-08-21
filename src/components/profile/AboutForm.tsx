@@ -58,7 +58,7 @@ export function AboutForm({
 
   const cycleUtility = () => {
     haptics.selection();
-    setUtility(UTILITIES[(UTILITIES.indexOf(utility) + 1) % UTILITIES.length]);
+    setUtility(UTILITIES[(UTILITIES.indexOf(utility) + 1) % UTILITIES.length]!);
   };
 
   const pickPhoto = () => {

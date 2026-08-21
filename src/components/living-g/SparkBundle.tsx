@@ -47,7 +47,12 @@ export function SparkBundle({
         <circle r={r * 1.9} fill={colour} opacity={0.07} />
         <circle r={r * 1.45} fill={colour} opacity={0.12} />
         <circle r={r * 1.16} fill={colour} opacity={0.2} />
-        <circle r={r} fill={colour} />
+        <circle
+          r={r}
+          fill={colour}
+          stroke={stroke}
+          strokeWidth={stroke ? r * 0.08 : undefined}
+        />
       </g>
 
       {/* THE MOTES. Tiny sparks turning slowly around the bundle. */}

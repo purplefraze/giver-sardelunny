@@ -417,28 +417,25 @@ export function EarSelector({
 
 
       {/*
-        THE WORD "GIVER" LIVES UNDERNEATH THE TOGGLE — one element, one place,
-        seated at the 12 o'clock giver position. It is painted BEFORE the
-        assembly, so when the toggle arrives there it physically covers it.
-        Nothing moves, fades or duplicates: the layering does the work.
+        MY G AT 12 O'CLOCK — A DOT, NOT A LABEL.
+        When the toggle is elsewhere, the destination is stated by ONE small RED
+        dot: a place exists there, and nothing more is said. The moment the
+        toggle arrives, the dot is physically covered by the piece itself, which
+        then reads "my g" in its own negative space. No second circle, no extra
+        control, no duplicated toggle.
       */}
       {seats.includes("giver") ? (
-        <text
-          x={at(SEAT_ANGLE.giver, TRACK_R).x}
-          y={at(SEAT_ANGLE.giver, TRACK_R).y}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="var(--world-ink)"
-          className="font-black lowercase"
+        <circle
+          cx={at(SEAT_ANGLE.giver, TRACK_R).x}
+          cy={at(SEAT_ANGLE.giver, TRACK_R).y}
+          r={11}
+          fill="var(--giver-me)"
           pointerEvents="none"
           style={{
-            fontSize: WORD_SIZE,
-            letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-            opacity: 0.6,
+            opacity: mode === "giver" ? 0 : 0.95,
+            transition: "opacity 200ms ease-out",
           }}
-        >
-          giver
-        </text>
+        />
       ) : null}
 
       {/*

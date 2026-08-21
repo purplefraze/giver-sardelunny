@@ -167,14 +167,17 @@ function LoopRow({
       textAnchor="middle"
       dominantBaseline="middle"
       fill={LOOP_TEXT_FILL}
-      className="font-black lowercase"
+      className="lowercase"
       style={{
-        fontSize: row.size,
-        letterSpacing: LOOP_ROLE_STYLE[row.role].tracking,
-        opacity: live && shown ? LOOP_ROLE_STYLE[row.role].opacity : 0,
+        ...gType(
+          row.role === "label" ? "label" : "statement",
+          row.size,
+          live && shown ? LOOP_ROLE_STYLE[row.role].opacity : 0,
+        ),
         transition: `opacity ${LOOP_WORD_MS}ms ${LOOP_WORD_EASE}`,
       }}
     >
+
       {/* One unbroken word. A question mark is part of the word — never a
           separately positioned tspan, which is what used to detach it. */}
       {row.text}

@@ -294,8 +294,14 @@ function Index() {
   const mode: Mode = isProfile ? "give" : (seat as Mode);
   const content = MODE_CONTENT[mode];
 
-  /** MY <type> — the active world's #1 item, in my own priority order. */
-  const myMode = me.items[mode][0] ?? null;
+  /**
+   * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
+   * "mine" means the one I touched last, not a ranked list.
+   */
+  const myRecent =
+    [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+  const myMode = myRecent ? itemLine(myRecent) : null;
+
   /** COMMUNITY <type> — the same item collection, queried by everyone else. */
   const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
   const firstTheirs = theirs[0];

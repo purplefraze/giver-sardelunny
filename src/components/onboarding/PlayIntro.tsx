@@ -103,7 +103,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
    * content, and never counts toward the spark interaction.
    */
   const [seat, setSeat] = useState<Mode>("give");
-  const [played, setPlayed] = useState(false);
+  
   const [taps, setTaps] = useState(0);
   /** A transient answer to a casual touch, once the G has already spoken. */
   const [tickle, setTickle] = useState(false);

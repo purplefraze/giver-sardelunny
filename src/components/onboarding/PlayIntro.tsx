@@ -235,7 +235,6 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               bob
               wash={false}
               colour="var(--giver-participation)"
-              grabColour="var(--giver-connection)"
               onArrive={() => {
                 haptics.success();
                 setPhase("split");
@@ -243,15 +242,16 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
             />
           ) : null}
 
-          {/* THE HALVES. The purple half is already the person's own. */}
-          {phase === "split" ? <SparkSplit step="give" /> : null}
+          {/* THE HALVES. Green stays mine; purple is for the Giver I will choose. */}
+          {phase === "split" ? <SparkSplit step="gift" /> : null}
           {phase === "gift" ? (
             <>
               <SparkSplit step="held" />
               <SparkJourney
                 mode="drag"
                 count={50}
-                colour="var(--giver-generosity)"
+                colour="var(--giver-connection)"
+                washColour="var(--giver-connection)"
                 onGreen={done}
               />
             </>

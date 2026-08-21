@@ -385,22 +385,25 @@ export function EarSelector({
 
   return (
     <g>
-      {/* Subtle destination hints, seated on the track itself. Never a drawn ring. */}
+      {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
+          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          dot as every other inactive destination — its hue is red, nothing else
+          about it is louder. The moment the toggle arrives it disappears under
+          the piece itself, which then reads "my g". */}
       {seats.map((m) => {
-        /* MY G STATES ITSELF WITH ITS OWN RED DOT, below — never a rim hint. */
-        if (m === "giver") return null;
         const hint = at(SEAT_ANGLE[m], RIM_R + 16);
         const active = mode === m && !dragging;
         // On a person's screen the seats TELL THEIR STORY: a seat they have
         // taken part in reads in that mode's own colour, a little stronger.
-        const told = history?.includes(m) ?? false;
+        const told = m === "giver" ? false : (history?.includes(m) ?? false);
+        const isMe = m === "giver";
         return (
           <circle
             key={m}
             cx={hint.x}
             cy={hint.y}
             r={told ? 8 : 5}
-            fill={told ? MODE_COLOUR[m] : "var(--world-g)"}
+            fill={isMe ? "var(--giver-me)" : told ? MODE_COLOUR[m] : "var(--world-g)"}
             pointerEvents="none"
             style={{
               opacity:
@@ -408,7 +411,9 @@ export function EarSelector({
                   ? 0
                   : told
                     ? 0.85
-                    : 0.22,
+                    : isMe
+                      ? 0.32
+                      : 0.22,
 
               transition: "opacity 200ms ease-out",
             }}
@@ -416,28 +421,6 @@ export function EarSelector({
         );
       })}
 
-
-      {/*
-        MY G AT 12 O'CLOCK — A DOT, NOT A LABEL.
-        When the toggle is elsewhere, the destination is stated by ONE small RED
-        dot: a place exists there, and nothing more is said. The moment the
-        toggle arrives, the dot is physically covered by the piece itself, which
-        then reads "my g" in its own negative space. No second circle, no extra
-        control, no duplicated toggle.
-      */}
-      {seats.includes("giver") ? (
-        <circle
-          cx={at(SEAT_ANGLE.giver, TRACK_R).x}
-          cy={at(SEAT_ANGLE.giver, TRACK_R).y}
-          r={11}
-          fill="var(--giver-me)"
-          pointerEvents="none"
-          style={{
-            opacity: mode === "giver" ? 0 : 0.95,
-            transition: "opacity 200ms ease-out",
-          }}
-        />
-      ) : null}
 
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,

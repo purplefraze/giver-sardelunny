@@ -57,6 +57,9 @@ export type MyProfile = {
   byDay: string;
   byNight: string;
   weekend: string;
+  /** IDENTITY, KEPT SHORT: an ISO date and one chosen word. */
+  birthday: string;
+  gender: string;
   /** PROJECTION of my active items, in my own priority order. Read-only. */
   items: Record<Category, string[]>;
   /** The same items, with ids — for editing, completing and reordering. */
@@ -90,6 +93,8 @@ type Person = {
   byDay: string;
   byNight: string;
   weekend: string;
+  birthday: string;
+  gender: string;
   built: boolean;
   sparkles: number;
   sparklesAwarded: boolean;
@@ -115,6 +120,8 @@ const EMPTY_PERSON: Person = {
   byDay: "",
   byNight: "",
   weekend: "",
+  birthday: "",
+  gender: "",
   built: false,
   sparkles: 0,
   sparklesAwarded: false,

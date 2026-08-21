@@ -55,6 +55,23 @@ const CATEGORY_ASK: Record<Category, string> = {
   borrow: "what would you borrow?",
 };
 
+/**
+ * THE ONE LINE UNDER THE TITLE. Said once, never repeated by the input below
+ * it: the question belongs to the field, the invitation belongs to the page.
+ */
+const CATEGORY_CALL: Record<Category, string> = {
+  wish: "what do you wish for?",
+  give: "are you a giver?",
+  trade: "what are you offering?",
+  borrow: "what would you borrow?",
+};
+
+/** ONE SHORT HUMAN LINE. Only where it adds something the labels cannot. */
+const CATEGORY_TAGLINE: Partial<Record<Category, string>> = {
+  give: "give what you can. make someone happy.",
+};
+
+
 /** BORROWING HAS TWO SIDES, and giver asks which one you mean. */
 const SIDE_ASK: Record<BorrowSide, string> = {
   borrow: "what would you like to borrow?",
@@ -133,7 +150,9 @@ function Field({
           className="min-w-0 flex-1 truncate pb-[0.12em] text-right text-[13px] font-black lowercase leading-[1.25] tracking-[0.02em]"
           style={{ color: summary ? colour : "var(--world-ink)" }}
         >
-          {summary || <span className="opacity-30">add</span>}
+          {summary || (
+            <span style={{ color: "var(--giver-action)", opacity: 0.85 }}>add</span>
+          )}
         </span>
       </button>
       {open ? (
@@ -203,8 +222,12 @@ export function CategoryForm({
       .join(" · ") || undefined;
   const longSummary =
     [details.cadence, details.duration].filter(Boolean).join(" · ") || undefined;
-  /** A BRIGHT WAY BACK — electric, never muddy. */
-  const wayBack = `var(--mode-${category}-complement)`;
+  /**
+   * PINK IS THE COLOUR OF AN ACTION WHILE CREATING — add a photo, add a
+   * detail. The mode colour stays the identity of the thing being made, so a
+   * saved give is always green and never pink.
+   */
+  const action = "var(--giver-action)";
 
   /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
      sense as the give is described is quietly dropped, never corrected aloud. */
@@ -387,14 +410,18 @@ export function CategoryForm({
           my {CATEGORY_PLURAL[category]}
         </h1>
         <p className="g-body mt-2 max-w-[24ch]" style={{ color: colour }}>
-          {CATEGORY_ASK[category]}
+          {CATEGORY_CALL[category]}
         </p>
-        {/* THE ECONOMY, SAID PLAINLY — and never on a give. */}
-        <p className="mt-3 g-meta">
+        {/* THE ECONOMY, IN AS FEW WORDS AS IT TAKES. Nothing is explained twice. */}
+        <p className="mt-2 g-meta">
           {cost
             ? `${cost} sparks stay with each wish for 7 days · 3 at a time · you have ${me.sparks}`
-            : `no sparks needed · ${limit} at a time`}
+            : "no sparks needed"}
         </p>
+        {CATEGORY_TAGLINE[category] ? (
+          <p className="mt-1 g-meta opacity-45">{CATEGORY_TAGLINE[category]}</p>
+        ) : null}
+
 
         {problem ? (
           <p
@@ -479,7 +506,7 @@ export function CategoryForm({
                       type="button"
                       onClick={() => pickPhotos(item.id)}
                       className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                      style={{ color: wayBack }}
+                      style={{ color: action }}
                     >
                       + add photo
                     </button>
@@ -596,7 +623,7 @@ export function CategoryForm({
                   type="button"
                   onClick={() => pickPhotos()}
                   className="shrink-0 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                  style={{ color: wayBack }}
+                  style={{ color: action }}
                 >
                   + add photo
                 </button>
@@ -807,7 +834,7 @@ export function CategoryForm({
                   type="button"
                   onClick={() => pickPhotos()}
                   className="text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                  style={{ color: wayBack }}
+                  style={{ color: action }}
                 >
                   add another
                 </button>
@@ -845,7 +872,7 @@ export function CategoryForm({
           type="button"
           onClick={leave}
           className="whitespace-nowrap text-[13px] font-black lowercase tracking-[0.16em] transition-transform active:scale-95"
-          style={{ color: "var(--giver-ink, #000)" }}
+          style={{ color: "var(--giver-me)" }}
         >
           ← back to my g
         </button>

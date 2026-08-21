@@ -161,6 +161,16 @@
   --giver-participation: oklch(0.72 0.2 48); /* ORANGE — me + community */
   --giver-generosity: oklch(0.72 0.21 140); /* GREEN — others + community */
 
+  /* ---- ONE SECONDARY ACTION COLOUR + THE THREE PRIVATE UTILITIES ----
+     PINK is never a meaning of its own: it is the colour of an ACTION you can
+     take while building something (add a photo, add a detail). The mode colour
+     stays the identity of the thing being made. */
+  --giver-action: oklch(0.7 0.23 350); /* PINK — an action while creating */
+  --giver-sparks: var(--giver-connection); /* PURPLE — my own sparks */
+  --giver-sparkles: var(--giver-action); /* PINK — sparkles */
+  --giver-messages: var(--giver-me); /* RED — my messages */
+
+
   /* One approved bright complementary in-loop type colour per semantic. */
   --giver-me-complement: oklch(0.62 0.15 195); /* red -> electric turquoise */
   --giver-others-complement: oklch(0.68 0.17 70); /* blue -> bright amber */

@@ -21,7 +21,7 @@ export function SparkBalance({ onPress }: { onPress?: () => void }) {
     >
       <span
         className="text-[13px] font-black lowercase tracking-[0.22em]"
-        style={{ color: "var(--giver-generosity)" }}
+        style={{ color: "var(--giver-sparks)" }}
       >
         {me.sparks} ✨
       </span>

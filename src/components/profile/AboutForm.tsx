@@ -1,14 +1,36 @@
+import { useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { myProfileStore } from "@/data/my-profile";
 import { buzz } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 /**
  * DESTINATION SCREEN — the deeper profile information behind the TOP LOOP.
- * You arrive here from the Living G, edit, and leave again. Nothing about this
- * screen sits underneath the G: it replaces it for as long as you are editing.
- * Every keystroke commits to the single source of truth immediately.
+ * You arrive here from the Living G, edit, and leave again.
+ *
+ * ONE COMPACT PAGE, NOT A LONG FORM. Every keystroke commits to the single
+ * source of truth immediately, so there is no save step and no dead space
+ * between sections: photo, about, birthday, gender, by day, by night, anything
+ * else. Nothing more.
+ *
+ * THE PRIVATE UTILITIES LIVE ON THE PHOTO. Sparks, sparkles and messages used
+ * to be three large counters lengthening the page; they are now one miniature
+ * toggle attached to the photo circle — a quiet echo of the Living G's own
+ * control. Sparks are PURPLE, sparkles PINK, messages RED.
  */
+
+const UTILITIES = ["sparks", "sparkles", "messages"] as const;
+type Utility = (typeof UTILITIES)[number];
+
+const UTILITY_COLOUR: Record<Utility, string> = {
+  sparks: "var(--giver-sparks)",
+  sparkles: "var(--giver-sparkles)",
+  messages: "var(--giver-messages)",
+};
+
+const GENDERS = ["male", "female", "prefer not to say"] as const;
+
 export function AboutForm({
   onDone,
   onHelp,
@@ -26,7 +48,18 @@ export function AboutForm({
   firstSetup?: boolean;
 }) {
   const me = useMyProfile();
+  const [utility, setUtility] = useState<Utility>("sparks");
 
+  const value: Record<Utility, string> = {
+    sparks: String(me.sparks),
+    sparkles: String(me.sparkles),
+    messages: unread ? String(unread) : "—",
+  };
+
+  const cycleUtility = () => {
+    haptics.selection();
+    setUtility(UTILITIES[(UTILITIES.indexOf(utility) + 1) % UTILITIES.length]!);
+  };
 
   const pickPhoto = () => {
     const input = document.createElement("input");
@@ -60,109 +93,146 @@ export function AboutForm({
     >
       <BackArrow onClick={save} label="back to my g" />
 
-      <div className="px-7 pb-20 pt-20">
-        <button
-          type="button"
-          onClick={() => {
-            buzz();
-            pickPhoto();
-          }}
-          className="flex items-center gap-5 text-left transition-transform active:scale-[0.98]"
-        >
-          {me.photo ? (
-            <img
-              src={me.photo}
-              alt="my profile photo"
-              className="h-24 w-24 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              className="flex h-24 w-24 items-center justify-center rounded-full text-5xl font-black"
-              style={{ border: "2px solid currentColor", opacity: 0.55 }}
-            >
-              +
-            </span>
-          )}
-          <span className="text-2xl font-black lowercase tracking-[-0.02em]">
-            {me.photo ? "change photo" : "add a photo"}
-          </span>
-        </button>
-
-        {/*
-          THE PERMANENT HOME OF MY BALANCES. Sparks and sparkles live here and
-          nowhere else — they are mine, private, and never on display on the
-          Living G itself. Nobody else ever sees these numbers.
-        */}
-        {!firstSetup ? <dl className="mt-12 flex flex-wrap items-start gap-x-10 gap-y-8">
-          <div>
-            <dd
-              className="text-[3.5rem] font-black leading-none tracking-[-0.05em] tabular-nums"
-              style={{ color: "var(--giver-generosity)" }}
-            >
-              {me.sparks}
-            </dd>
-            <dt className="mt-2 g-meta">
-              sparks
-            </dt>
-          </div>
-          <div>
-            <dd
-              className="text-[3.5rem] font-black leading-none tracking-[-0.05em] tabular-nums"
-              style={{ color: "var(--giver-participation)" }}
-            >
-              {me.sparkles}
-            </dd>
-            <dt className="mt-2 g-meta">
-              sparkles
-            </dt>
-          </div>
-          {/*
-            MY MESSAGES SIT WITH MY BALANCES: one compact, private account
-            area. The count appears ONLY when something is unread — never a
-            zero. Nobody else ever sees any of these three numbers.
-          */}
+      <div className="px-7 pb-14 pt-16">
+        {/* PHOTO + ITS ONE TINY UTILITY TOGGLE. */}
+        <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={() => {
               buzz();
-              onMessages?.();
+              pickPhoto();
             }}
-            className="text-left transition-transform active:scale-[0.98]"
+            className="relative shrink-0 transition-transform active:scale-[0.98]"
+            aria-label={me.photo ? "change photo" : "add a photo"}
           >
-            {unread ? (
-              <dd
-                className="text-[3.5rem] font-black leading-none tracking-[-0.05em] tabular-nums"
-                style={{ color: "var(--giver-connection)" }}
+            {me.photo ? (
+              <img
+                src={me.photo}
+                alt="my profile photo"
+                className="h-20 w-20 rounded-full object-cover"
+              />
+            ) : (
+              /* MATHEMATICALLY CENTRED PLUS: a flex box with no line-height of
+                 its own, so the glyph sits on the exact centre of the circle. */
+              <span
+                className="flex h-20 w-20 items-center justify-center rounded-full"
+                style={{ border: "2px solid var(--giver-me)" }}
               >
-                {unread}
-              </dd>
-            ) : null}
-            <dt
-              className="g-heading"
-              style={{ marginTop: unread ? "0.5rem" : "3.25rem", opacity: 0.5 }}
-            >
-              messages
-            </dt>
+                <span
+                  className="block text-[2rem] font-black leading-none"
+                  style={{ color: "var(--giver-me)", transform: "translateY(-0.03em)" }}
+                >
+                  +
+                </span>
+              </span>
+            )}
           </button>
-        </dl> : null}
-        {!firstSetup ? <p className="mt-3 g-meta opacity-40">
-          private to you
-        </p> : null}
 
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                pickPhoto();
+              }}
+              className="block text-left text-lg font-black lowercase leading-none tracking-[-0.02em]"
+              style={{ color: "var(--giver-me)" }}
+            >
+              {me.photo ? "change photo" : "add a photo"}
+            </button>
 
+            {!firstSetup ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (utility === "messages" && onMessages) {
+                    buzz();
+                    onMessages();
+                    return;
+                  }
+                  cycleUtility();
+                }}
+                onDoubleClick={cycleUtility}
+                className="mt-2.5 flex items-center gap-2 text-left"
+                aria-label={`${utility}: ${value[utility]} — tap to cycle`}
+              >
+                {/* THE MINIATURE TOGGLE: three seats, one tiny travelling dot. */}
+                <span className="flex items-center gap-1">
+                  {UTILITIES.map((u) => (
+                    <span
+                      key={u}
+                      className="block rounded-full"
+                      style={{
+                        width: u === utility ? 7 : 4,
+                        height: u === utility ? 7 : 4,
+                        background: UTILITY_COLOUR[u],
+                        opacity: u === utility ? 1 : 0.28,
+                        transition: "all 180ms ease-out",
+                      }}
+                    />
+                  ))}
+                </span>
+                <span
+                  className="text-2xl font-black leading-none tracking-[-0.04em] tabular-nums"
+                  style={{ color: UTILITY_COLOUR[utility] }}
+                >
+                  {value[utility]}
+                </span>
+                <span className="g-meta opacity-45">{utility}</span>
+              </button>
+            ) : null}
+          </div>
+        </div>
 
-        <div className="mt-12">
+        <div className="mt-7 space-y-5">
           <Field
             label="about me"
             value={me.aboutMe}
             onChange={(v) => myProfileStore.patch({ aboutMe: v })}
-            placeholder="a couple of honest lines"
-            multiline
+            placeholder="in ten words or less"
+            limit={80}
           />
-        </div>
 
+          {/* BIRTHDAY — the phone's own date picker, kept small. */}
+          <label className="flex items-baseline justify-between gap-4">
+            <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
+              birthday
+            </span>
+            <input
+              type="date"
+              value={me.birthday ?? ""}
+              onChange={(e) => myProfileStore.patch({ birthday: e.target.value })}
+              className="flex-1 border-b bg-transparent pb-1 text-right text-base font-black lowercase outline-none"
+              style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
+            />
+          </label>
 
-        <div className="mt-10 space-y-8">
+          {/* GENDER — three words, one selected. Never a dropdown. */}
+          <div className="flex flex-col gap-1.5">
+            <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
+              gender
+            </span>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+              {GENDERS.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => {
+                    haptics.selection();
+                    myProfileStore.patch({ gender: g });
+                  }}
+                  className="text-[13px] font-black lowercase tracking-[0.14em] transition-opacity"
+                  style={{
+                    color: me.gender === g ? "var(--giver-me)" : "var(--world-ink)",
+                    opacity: me.gender === g ? 1 : 0.4,
+                  }}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Field
             label="by day"
             value={me.byDay}
@@ -174,25 +244,22 @@ export function AboutForm({
             onChange={(v) => myProfileStore.patch({ byNight: v })}
           />
           <Field
-            label="by weekend"
+            label="anything else we should know? (optional)"
             value={me.weekend}
             onChange={(v) => myProfileStore.patch({ weekend: v })}
+            limit={80}
           />
         </div>
 
         <button
           type="button"
           onClick={save}
-          className="mt-16 text-left g-display transition-transform active:scale-[0.98]"
-          style={{ color: "var(--giver-participation)" }}
+          className="mt-8 text-left text-2xl font-black lowercase leading-none tracking-[-0.03em] transition-transform active:scale-[0.98]"
+          style={{ color: "var(--giver-me)" }}
         >
-          back
-          <br />
-          to my g
+          ← back to my g
         </button>
-        <p className="mt-6 g-meta">
-          everything saves as you go
-        </p>
+        <p className="mt-2.5 g-meta opacity-40">everything saves as you go</p>
 
         {/* LEARN HOW, WHENEVER YOU LIKE. Never a nag, always here. */}
         {onHelp && !firstSetup ? (
@@ -202,12 +269,11 @@ export function AboutForm({
               buzz();
               onHelp();
             }}
-            className="mt-10 text-left g-meta opacity-70"
+            className="mt-6 text-left g-meta opacity-60"
           >
             learn how giver works
           </button>
         ) : null}
-
       </div>
     </div>
   );
@@ -238,41 +304,32 @@ async function shrink(dataUrl: string, max = 512): Promise<string> {
   }
 }
 
-/** One short-form field. Auto-saves on every keystroke. */
+/** One field: label left, answer right. Compact by construction. */
 function Field({
   label,
   value,
   onChange,
   placeholder = "—",
-  multiline = false,
+  limit = 26,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  multiline?: boolean;
+  limit?: number;
 }) {
   return (
-    <label className={multiline ? "mt-10 flex flex-col gap-2" : "flex flex-col gap-2"}>
-      <span className="g-meta">
+    <label className="flex flex-col gap-1.5">
+      <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
         {label}
       </span>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value.slice(0, 240))}
-          placeholder={placeholder}
-          rows={3}
-          className="resize-none border-b border-current/25 bg-transparent pb-2 g-lede outline-none placeholder:opacity-30"
-        />
-      ) : (
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value.slice(0, 26))}
-          placeholder={placeholder}
-          className="border-b border-current/25 bg-transparent pb-2 text-[7vw] font-black lowercase leading-none tracking-[-0.04em] outline-none placeholder:opacity-30"
-        />
-      )}
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value.slice(0, limit))}
+        placeholder={placeholder}
+        className="w-full border-b bg-transparent pb-1 text-xl font-black lowercase leading-tight tracking-[-0.03em] outline-none placeholder:opacity-30"
+        style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
+      />
     </label>
   );
 }

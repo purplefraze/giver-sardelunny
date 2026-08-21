@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "./g-path";
 import { SparkBundle } from "./SparkBundle";
-import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
+import { SPARK_TRACK_D } from "./spark-track";
 import { haptics } from "@/lib/haptics";
 
 /**
@@ -107,7 +106,6 @@ export function SparkJourney({
   /** Once touched, the drifting stops for good and the colour answers. */
   const [held, setHeld] = useState(false);
   const [arrived, setArrived] = useState(false);
-  const [wash, setWash] = useState(0);
 
   /** Where on the rail is progress u? Straight from the path itself. */
   const put = (next: number, tick = true) => {

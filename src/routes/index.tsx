@@ -12,6 +12,8 @@ import { useIntroSeen } from "@/hooks/use-intro-seen";
 
 
 import { CommunityFeed } from "@/components/community/CommunityFeed";
+import { FullProfile } from "@/components/FullProfile";
+import { memberById } from "@/data/giver";
 import { ActivityDetail } from "@/components/community/ActivityDetail";
 import { Conversation } from "@/components/connection/Conversation";
 import { ConnectionsList } from "@/components/connection/ConnectionsList";
@@ -172,6 +174,8 @@ function Index() {
   const [detail, setDetail] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
+  /** THE PERSON IS THEIR OWN DESTINATION: @username opens who they are. */
+  const [person, setPerson] = useState<string | null>(null);
 
   /**
    * ONE DOOR INTO A WORLD. First time: explain, then the form. Every time after:
@@ -235,6 +239,11 @@ function Index() {
   const me = useMyProfile();
   const items = useItems();
   const links = useConnections();
+
+  /* SEVEN DAYS AND THE SPARKS COME HOME: expire stale wishes on every entry. */
+  useEffect(() => {
+    myProfileStore.sweepWishes();
+  }, []);
 
   /* Migrate an existing completed prototype profile into the explicit lifecycle. */
   useEffect(() => {
@@ -481,6 +490,7 @@ function Index() {
               <CommunityFeed
                 initialType={browse.type}
                 onOpen={(itemId) => setDetail(itemId)}
+                onOpenProfile={(ownerId) => setPerson(ownerId)}
                 onClose={() => setBrowse(null)}
               />
             ) : null}
@@ -496,6 +506,22 @@ function Index() {
                 }}
                 onClose={() => setDetail(null)}
               />
+            ) : null}
+          </Screen>
+
+          {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
+          <Screen open={person !== null}>
+            {person ? (
+              (() => {
+                const member = memberById(person);
+                return member ? (
+                  <FullProfile
+                    member={member}
+                    onBack={() => setPerson(null)}
+                    onOpen={(id) => setPerson(id)}
+                  />
+                ) : null;
+              })()
             ) : null}
           </Screen>
 

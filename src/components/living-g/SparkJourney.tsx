@@ -85,6 +85,9 @@ export function SparkJourney({
   const crossed = useRef<boolean | null>(null);
   /** Live progress, so the drag can stay local without a stale closure. */
   const uRef = useRef(0);
+  /** Where the bundle was when the finger first caught it. */
+  const caught = useRef(0);
+
 
   const [at, setAt] = useState({ x: 0, y: 0, ready: false });
   /** Where this journey begins and ends on the shared rail. */

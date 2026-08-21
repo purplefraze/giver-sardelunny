@@ -122,14 +122,18 @@ export function MemberExample({
         { text: "nothing right now", role: "tertiary" },
       ];
 
-  /** THE BOTTOM LOOP: the person, never their activity. Stable in every world. */
+  /**
+   * THE BOTTOM LOOP: the person, never their activity. Stable in every world —
+   * and always BLACK. The personal description never borrows the activity
+   * colour: upper loop = activity colour, lower loop = ink.
+   */
   const about: LoopBlock[] = [
-    { text: "by day", role: "secondary" },
-    { text: member.byDay, role: "primary" },
-    { text: "by night", role: "secondary", lead: true },
-    { text: member.byNight, role: "primary" },
-    { text: "weekends", role: "secondary", lead: true },
-    { text: member.weekend, role: "primary" },
+    { text: "by day", role: "secondary", fill: INK },
+    { text: member.byDay, role: "primary", fill: INK },
+    { text: "by night", role: "secondary", lead: true, fill: INK },
+    { text: member.byNight, role: "primary", fill: INK },
+    { text: "weekends", role: "secondary", lead: true, fill: INK },
+    { text: member.weekend, role: "primary", fill: INK },
   ];
 
   const open = (d: Exclude<Deep, null>) => () => {

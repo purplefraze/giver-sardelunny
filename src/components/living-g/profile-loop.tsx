@@ -106,8 +106,11 @@ function bottomWidth(y: number, size: number) {
  * against the ellipse chord at their own height. Only the role that overflows
  * steps down, so a tracked label cannot make the primary answer tiny.
  */
-function layoutBottom(build: (scales: Record<LoopRole, number>) => ProfileRow[]) {
-  const scales: Record<LoopRole, number> = { primary: 1, secondary: 1, tertiary: 1 };
+function layoutBottom(
+  build: (scales: Record<LoopRole, number>) => ProfileRow[],
+  cap: Record<LoopRole, number> = { primary: 1, secondary: 1, tertiary: 1 },
+) {
+  const scales: Record<LoopRole, number> = { ...cap };
   let rows: ProfileRow[] = [];
   let placed: ReturnType<typeof layoutStack>["rows"] = [];
 
@@ -147,31 +150,20 @@ function layoutBottom(build: (scales: Record<LoopRole, number>) => ProfileRow[])
   return { rows: placed, scales };
 }
 
-export function profileLoop({
-  region,
-  blocks,
-  lift = 0,
-}: {
-  /** Accepted for API compatibility; centring always uses the loop centre. */
-  anchor?: Anchor;
-  region: RegionKey;
-  blocks: LoopBlock[];
-  lift?: number;
-}) {
+/**
+ * VERTICAL BREATHING ROOM. The bottom loop carries three label+answer pairs, so
+ * the whole group is held to a smaller share of the loop's height, well clear of
+ * the S-curve above and the stroke below.
+ */
+const LOOP_HEIGHT = (region: RegionKey) => (region === "bottom" ? 1.92 : 1.8);
+
+/** The row builder for one loop's stack — shared by every profile, everywhere. */
+function makeBuild(region: RegionKey, blocks: LoopBlock[]) {
   const token = PROFILE_TYPE[region];
   const inset = PROFILE_SAFE_INSET[region];
-  const origin = loopOrigin(region, lift);
-
   const fill = PROFILE_FILL[region];
 
-  /**
-   * VERTICAL BREATHING ROOM. The bottom loop carries three label+answer pairs,
-   * so the whole group is held to a smaller share of the loop's height, well
-   * clear of the S-curve above and the stroke below.
-   */
-  const height = region === "bottom" ? 1.92 : 1.8;
-
-  const build = (stepOrScales: number | Record<LoopRole, number>) => {
+  return (stepOrScales: number | Record<LoopRole, number>) => {
     const max = wrapWidth(region, WRAP_FACTOR[region], inset) * fill;
     const scaleFor = (role: LoopRole) =>
       typeof stepOrScales === "number" ? stepOrScales : stepOrScales[role];
@@ -197,6 +189,48 @@ export function profileLoop({
       }));
     });
   };
+}
+
+/**
+ * GIULIA IS THE MASTER REFERENCE. Her lower-loop stack decides the LARGEST size
+ * any personal-profile stack may use: a shorter answer is never allowed to grow
+ * into the spare room. Longer copy may still step DOWN from here, never up — so
+ * every profile reads as one locked design system holding different words.
+ */
+const REFERENCE_BOTTOM: LoopBlock[] = [
+  { text: "by day", role: "secondary" },
+  { text: "chemistry teacher", role: "primary" },
+  { text: "by night", role: "secondary", lead: true },
+  { text: "choir soprano", role: "primary" },
+  { text: "weekends", role: "secondary", lead: true },
+  { text: "long bike rides", role: "primary" },
+];
+
+let referenceCap: Record<LoopRole, number> | null = null;
+
+function bottomCap() {
+  if (!referenceCap) {
+    referenceCap = layoutBottom(makeBuild("bottom", REFERENCE_BOTTOM)).scales;
+  }
+  return referenceCap;
+}
+
+export function profileLoop({
+  region,
+  blocks,
+  lift = 0,
+}: {
+  /** Accepted for API compatibility; centring always uses the loop centre. */
+  anchor?: Anchor;
+  region: RegionKey;
+  blocks: LoopBlock[];
+  lift?: number;
+}) {
+  const inset = PROFILE_SAFE_INSET[region];
+  const origin = loopOrigin(region, lift);
+  const fill = PROFILE_FILL[region];
+  const height = LOOP_HEIGHT(region);
+  const build = makeBuild(region, blocks);
 
   // ONE scale for the whole stack, stepped down only inside the allowed flex.
   // The stack is measured against the loop's TRUE negative space (fill), so a
@@ -205,7 +239,7 @@ export function profileLoop({
   let placed = layoutStack(build(1), region, inset, fill, height);
   let bottomScales: Record<LoopRole, number> | null = null;
   if (region === "bottom") {
-    const result = layoutBottom((scales) => build(scales));
+    const result = layoutBottom(build, bottomCap());
     placed = { rows: result.rows, fits: true };
     bottomScales = result.scales;
   } else {
@@ -214,6 +248,8 @@ export function profileLoop({
       if (placed.fits) break;
     }
   }
+
+
 
 
   return (

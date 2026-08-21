@@ -1,7 +1,6 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "./g-path";
+import { useEffect, useRef, useState } from "react";
 import { SparkBundle } from "./SparkBundle";
-import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
+import { SPARK_TRACK_D } from "./spark-track";
 import { haptics } from "@/lib/haptics";
 
 /**
@@ -84,7 +83,6 @@ export function SparkJourney({
   /** The wash has finished resolving through the whole G. */
   onGreen?: () => void;
 }) {
-  const uid = useId().replace(/:/g, "");
   const rail = useRef<SVGPathElement | null>(null);
   const samples = useRef<Sample[]>([]);
   const total = useRef(1);
@@ -107,7 +105,6 @@ export function SparkJourney({
   /** Once touched, the drifting stops for good and the colour answers. */
   const [held, setHeld] = useState(false);
   const [arrived, setArrived] = useState(false);
-  const [wash, setWash] = useState(0);
 
   /** Where on the rail is progress u? Straight from the path itself. */
   const put = (next: number, tick = true) => {
@@ -209,7 +206,15 @@ export function SparkJourney({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, u, arrived]);
 
-  // THE CHANGE. Kept in its OWN effect so nothing can cancel it mid-flight.
+  /**
+   * THE CHANGE — ONE G, ONE TOGGLE, ONE COLOUR.
+   *
+   * The landing recolours the LIVING G ITSELF by moving the world's own colour
+   * token on the live world container. The existing stroke and the ONE existing
+   * toggle (both painted with --world-g) turn together, wherever that toggle
+   * happens to be sitting. No second G, no second ear, no cloned selector is
+   * ever drawn, and the toggle is never moved to meet the sparks.
+   */
   useEffect(() => {
     if (!arrived) return;
     if (mode !== "drag" || !washOn) {
@@ -217,16 +222,15 @@ export function SparkJourney({
       return;
     }
 
-    let raf = 0;
-    const start = performance.now();
-    const step = (now: number) => {
-      const k = Math.min(1, (now - start) / WASH_MS);
-      setWash(ease(k));
-      if (k < 1) raf = requestAnimationFrame(step);
-      else onGreen?.();
+    const world = rail.current?.closest<HTMLElement>("[data-world]") ?? null;
+    world?.style.setProperty("--world-g", washColour);
+
+    const t = setTimeout(() => onGreen?.(), WASH_MS);
+    return () => {
+      clearTimeout(t);
+      /* Back to the correct post-animation colour: the token is simply released. */
+      world?.style.removeProperty("--world-g");
     };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arrived]);
 
@@ -345,22 +349,9 @@ export function SparkJourney({
       {/* The rail. Present, measured, and completely invisible. */}
       <path ref={rail} d={SPARK_TRACK_D} fill="none" stroke="none" />
 
-      {/* GREEN RESOLVING OUTWARD from where the spark landed. */}
-      {wash > 0 ? (
-        <>
-          <defs>
-            <mask id={`${uid}-wash`} maskUnits="userSpaceOnUse">
-              <rect x="-400" y="-400" width="1600" height="2000" fill="#000" />
-              <circle cx={SPARK_END.x} cy={SPARK_END.y} r={wash * 1750} fill="#fff" />
-            </mask>
-          </defs>
-          <g mask={`url(#${uid}-wash)`} pointerEvents="none">
-            <g transform={LIVING_G_TRANSFORM} fill={washColour}>
-              <path d={LIVING_G_PATH} />
-            </g>
-          </g>
-        </>
-      ) : null}
+      {/* NOTHING IS DRAWN FOR THE LANDING COLOUR: the one real G and its one
+          real toggle change together through the world's own colour token. */}
+
 
       {at.ready ? (
         <>

@@ -273,21 +273,23 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
             "opacity 460ms cubic-bezier(0.32,0,0.24,1), transform 620ms cubic-bezier(0.22,1,0.36,1)",
         }}
       >
-        <p
-          className="text-[16vw] font-black lowercase leading-[0.88] tracking-[-0.055em]"
-          style={{ color: "var(--giver-generosity)" }}
-        >
+        {/* ONE SYSTEM, TWO REGISTERS — exactly as a profile reads: a small
+            tracked label, then the statement, then quiet metered lines. */}
+        <p className="g-heading" style={{ color: "var(--giver-generosity)" }}>
+          your first give
+        </p>
+        <p className="g-display mt-4" style={{ color: "var(--giver-generosity)" }}>
           congrats
         </p>
-        <p className="mt-7 max-w-[13ch] text-[8.5vw] font-black lowercase leading-[0.92] tracking-[-0.045em]">
+        <p className="g-display-sm mt-6 max-w-[15ch]">
           you just made your first act of generosity on giver
         </p>
-        <p className="mt-7 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
-          50 sparks have now been given to {username}
-        </p>
-        <p className="mt-5 max-w-[16ch] text-[5.6vw] font-black lowercase leading-[0.98] tracking-[-0.03em] opacity-70">
-          and 50 sparks are yours
-        </p>
+        <div className="g-rule mt-9 max-w-[24ch] pt-5">
+          <p className="g-name max-w-[26ch]">
+            50 sparks have now been given to {username}
+          </p>
+          <p className="g-name mt-2 max-w-[26ch] opacity-60">and 50 sparks are yours</p>
+        </div>
       </div>
 
       {/* The way onward, in Giver's own language — part of the same beat. */}
@@ -301,7 +303,7 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
             buzz();
             onDone();
           }}
-          className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+          className="g-display-sm transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
           style={{
             color: "var(--giver-generosity)",
             opacity: landed ? 1 : 0,

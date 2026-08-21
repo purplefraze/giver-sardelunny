@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import {
@@ -193,6 +193,21 @@ export function CategoryForm({
   /** A BRIGHT WAY BACK — electric, never muddy. */
   const wayBack = "var(--giver-me-complement)";
 
+  /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
+     sense as the give is described is quietly dropped, never corrected aloud. */
+  useEffect(() => {
+    if (
+      details.where &&
+      !whereOptions.includes(details.where) &&
+      !ASKS_AREA[kind]
+    )
+      setDetails((prev) => ({ ...prev, where: undefined }));
+    if (details.where === "online" && !whereOptions.includes("online"))
+      setDetails((prev) => ({ ...prev, where: undefined }));
+    if (details.duration && !ASKS_DURATION[kind])
+      setDetails((prev) => ({ ...prev, duration: undefined }));
+  }, [kind, details.where, details.duration, whereOptions]);
+
   const setDetail = (patch: Partial<ItemDetails>) =>
     setDetails((prev) => ({ ...prev, ...patch }));
 
@@ -287,7 +302,7 @@ export function CategoryForm({
     >
       <BackArrow onClick={leave} label="back to my g" />
 
-      <div className="g-page pb-14 pt-16">
+      <div className="g-page pb-[8.5rem] pt-16">
         {/* GIVING IS AN INVITATION, NOT AN INVENTORY. */}
         {category === "give" ? (
           <>

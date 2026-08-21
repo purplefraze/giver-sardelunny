@@ -342,6 +342,20 @@ function seedItems(): Item[] {
   return out;
 }
 
+/**
+ * OLDER SAMPLE ITEMS PREDATE STRUCTURED DETAILS. They are the same items, so
+ * they are filled in place rather than replaced — nobody's own items are ever
+ * touched.
+ */
+function withSeedDetails(item: Item): Item {
+  if (item.details || !item.id.startsWith("seed-")) return item;
+  const parts = item.id.split("-");
+  const memberId = parts[1] ?? "";
+  const index = Number(parts[3] ?? 0) || 0;
+  const mi = Math.max(0, MEMBERS.findIndex((m) => m.id === memberId));
+  return { ...item, details: seedDetails(item.type, mi, index) };
+}
+
 function read(): ItemsState {
   if (typeof window === "undefined") return EMPTY;
   try {
@@ -349,7 +363,7 @@ function read(): ItemsState {
     if (!raw) return { items: seedItems(), boosts: [], seeded: true };
     const parsed = JSON.parse(raw) as Partial<ItemsState>;
     return {
-      items: parsed.items ?? seedItems(),
+      items: (parsed.items ?? seedItems()).map(withSeedDetails),
       boosts: parsed.boosts ?? [],
       seeded: true,
     };

@@ -640,6 +640,25 @@ export const itemsStore = {
     itemsStore.setStatus(id, "completed");
   },
 
+  /**
+   * THE WINDOW CLOSES BY ITSELF. Anything whose availability day has passed
+   * leaves circulation quietly and keeps every word it was given.
+   */
+  sweepAvailability(now = Date.now()) {
+    const s = ensure();
+    const stale = s.items.filter(
+      (i) => i.status === "active" && itemExpired(i, now),
+    );
+    if (!stale.length) return;
+    const ids = new Set(stale.map((i) => i.id));
+    let items = s.items.map((i) =>
+      ids.has(i.id) ? { ...i, status: "archived" as ItemStatus, updatedAt: now } : i,
+    );
+    for (const item of stale) items = reindex(items, item.ownerId, item.type);
+    commit({ ...s, items });
+  },
+
+
   remove(id: string) {
     const s = ensure();
     const item = s.items.find((i) => i.id === id);

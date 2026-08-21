@@ -338,18 +338,17 @@ function Index() {
   /** PRIVATE TO ME: how many conversations have something waiting inside. */
   const unread = unreadCount(links, ME_ID);
 
-  /** GIVER = ME. The other four seats are activity worlds. */
-  const isProfile = seat === "giver";
-  const mode: Mode = isProfile ? "give" : (seat as Mode);
+  /** THE TOGGLE IS THE WORLD: wish | give | trade | borrow. */
+  const mode: Mode = seat;
   const content = MODE_CONTENT[mode];
 
   /**
    * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
    *
    * Until the profile exists the G holds NOTHING: no photo, no latest, no
-   * community, no placeholder. Only "my g" in the top loop, and the toggle,
-   * which is free to travel every mode and recolour the whole G. Any tap on
-   * the G itself leads to one place: set up your profile.
+   * community, no placeholder. Only the toggle, free to travel every mode and
+   * recolour the whole G. Any tap on the G leads to one place: set up your
+   * profile.
    */
   const firstArrival =
     Boolean(lifecycle.onboardingCompletedAt) &&
@@ -357,13 +356,12 @@ function Index() {
   const setup = () => setEditor({ kind: "about" });
 
   /**
-   * MY G IS NOT A CONTENT MODE. During first use the toggle only travels the
-   * four worlds; My G is entered intentionally by touching the G, and the G
-   * itself shifts to red and says "my g" before profile setup opens.
+   * TOP = ME. MY G is not a content type and never a toggle seat: it is the
+   * top loop, and it opens my own profile — or, before it exists, its setup.
    */
-  const enterMyG = () => {
-    if (seat !== "giver") setSeat("giver");
-    window.setTimeout(setup, 460);
+  const openMyG = () => {
+    if (firstArrival || !me.built) setup();
+    else setEditor({ kind: "about" });
   };
 
 
@@ -376,21 +374,14 @@ function Index() {
     [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
   const myMode = myRecent ? itemLine(myRecent) : null;
 
-  /** COMMUNITY <type> — the same item collection, queried by everyone else. */
+  /** COMMUNI-G <type> — the same item collection, queried by everyone else. */
   const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
   const firstTheirs = theirs[0];
   const community = firstTheirs ? itemLine(firstTheirs) : null;
-  /** MY GIVE — what I offer the community, the profile's bottom loop. */
-  const myGive = primaryGive(me);
 
   /** NEVER A LIST INSIDE THE G: one item, then how much more there is. */
   const more = (count: number) =>
     count > 1 ? [{ text: `+${count - 1} more`, role: "tertiary" as const }] : [];
-
-  /** MY LATEST ACTIVITY of ANY type — the profile's middle loop snapshot. */
-  const latest = CATEGORIES.flatMap((c) =>
-    me.records[c].map((i) => ({ type: c, item: i })),
-  ).sort((a, b) => b.item.updatedAt - a.item.updatedAt)[0] ?? null;
 
 
 

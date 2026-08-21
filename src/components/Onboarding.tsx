@@ -303,7 +303,7 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
             buzz();
             onDone();
           }}
-          className="text-[7vw] font-black lowercase leading-none tracking-[-0.045em] transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
+          className="g-display-sm transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0,0.24,1)] active:opacity-60"
           style={{
             color: "var(--giver-generosity)",
             opacity: landed ? 1 : 0,

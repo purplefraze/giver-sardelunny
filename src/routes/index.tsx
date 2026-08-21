@@ -405,7 +405,7 @@ function Index() {
               />
             }
 
-            teach={teach}
+            teach={firstArrival ? false : teach}
             regions={{
               top: {
                 label: "",

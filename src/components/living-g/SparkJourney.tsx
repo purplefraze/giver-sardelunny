@@ -400,7 +400,7 @@ export function SparkJourney({
             }}
           >
             <g
-              className="[&_circle]:transition-[fill] [&_circle]:duration-[600ms] [&_path]:transition-[fill] [&_path]:duration-[600ms]"
+              className="[&_circle]:transition-[fill] [&_circle]:duration-[90ms] [&_path]:transition-[fill] [&_path]:duration-[90ms]"
               style={{
                 transform: `scale(${dragging ? 1.08 : 1})`,
                 transition: "transform 220ms cubic-bezier(0.22,1,0.36,1)",
@@ -408,7 +408,10 @@ export function SparkJourney({
             >
               <SparkBundle
                 r={R}
-                colour={held && grabColour ? grabColour : colour}
+                /* TOUCH IS THE ONLY THING THAT COLOURS IT: the bundle rests in
+                   its own colour, answers the finger while it is physically
+                   held, and returns the instant the finger lifts. */
+                colour={dragging && grabColour ? grabColour : colour}
 
                 {...(count !== undefined ? { count } : {})}
               />

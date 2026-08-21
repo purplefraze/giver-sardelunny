@@ -4,6 +4,7 @@ import { SparkSplit } from "@/components/onboarding/SparkSplit";
 import { IntroG } from "@/components/onboarding/IntroG";
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
 import type { RegionKey } from "@/components/living-g/LivingG";
+import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
 import { buzz, haptics } from "@/lib/haptics";
 
 /**
@@ -40,8 +41,11 @@ const LINE = 33;
 /** How long a casual, repeated touch is answered for. */
 const TICKLE_MS = 2600;
 
-/** How long a person may explore the drifting sparks before My G opens. */
-const PATIENCE_MS = 30000;
+/**
+ * How long a person may explore the drifting sparks before My G opens quietly.
+ * Three unhurried minutes: no countdown, no hint, no nudge.
+ */
+const PATIENCE_MS = 180000;
 
 const FADE = "opacity 900ms cubic-bezier(0.32,0,0.24,1)";
 
@@ -89,6 +93,13 @@ function Line({
 
 export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
   const [phase, setPhase] = useState<Phase>("quiet");
+  /**
+   * THE TOGGLE IS PURE PLAY HERE. Moving it only recolours the whole Living G
+   * in that territory's canonical colour — it never navigates, never reveals
+   * content, and never counts toward the spark interaction.
+   */
+  const [seat, setSeat] = useState<Mode>("give");
+  const [played, setPlayed] = useState(false);
   const [taps, setTaps] = useState(0);
   /** A transient answer to a casual touch, once the G has already spoken. */
   const [tickle, setTickle] = useState(false);
@@ -203,7 +214,9 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
 
   return (
     <IntroG
-      world={phase === "split" || phase === "gift" ? "gift" : "welcome"}
+      /* TERRITORY COLOUR WINS ONCE THE PERSON HAS PLAYED WITH THE TOGGLE. */
+      world={played ? seat : phase === "split" || phase === "gift" ? "gift" : "welcome"}
+      earCut
       press={press}
       overlay={
         <>
@@ -216,7 +229,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               count={100}
               bob
               wash={false}
-              colour="var(--world-ink)"
+              colour="var(--giver-participation)"
               grabColour="var(--giver-connection)"
               onArrive={() => {
                 haptics.success();
@@ -238,6 +251,16 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               />
             </>
           ) : null}
+
+          {/* THE EXISTING TOGGLE, FULLY PLAYABLE — the G answers in colour. */}
+          <EarSelector
+            mode={seat}
+            seats={MODES}
+            onChange={(next) => {
+              setPlayed(true);
+              setSeat(next as Mode);
+            }}
+          />
         </>
       }
     />

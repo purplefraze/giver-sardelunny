@@ -41,6 +41,7 @@ export function IntroG({
   stage,
   weight = "normal",
   press,
+  earCut = false,
   children,
 }: {
   world: string;
@@ -65,6 +66,8 @@ export function IntroG({
   stage?: React.CSSProperties;
   /** LOGO WEIGHT ONLY: thicken the Living G so it balances heavy type. */
   weight?: "normal" | "heavy";
+  /** Remove the artwork's static ear when a live selector rides the rim. */
+  earCut?: boolean;
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
@@ -117,6 +120,7 @@ export function IntroG({
                 className={G_PRESENCE}
                 showLabels={false}
                 weight={weight}
+                earCut={earCut}
                 {...(overlay ? { overlay } : {})}
                 regions={{
                   ...region("top", top),

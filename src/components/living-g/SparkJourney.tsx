@@ -167,9 +167,32 @@ export function SparkJourney({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, at.ready]);
 
+  /**
+   * THE DRIFT. Left alone, the bundle simply travels the G's own rail: out, a
+   * gentle rebound, back again, for as long as it takes. Nothing is explained.
+   */
+  useEffect(() => {
+    if (!bob || !at.ready || held || arrived) return;
+    let raf = 0;
+    const start = performance.now();
+    const SPAN = 0.68;
+    const CYCLE = 7200;
+    const step = (now: number) => {
+      const t = ((now - start) % CYCLE) / CYCLE;
+      /* One smooth out-and-back, eased at both ends: never a mechanical loop. */
+      const swing = t < 0.5 ? ease(t * 2) : ease((1 - t) * 2);
+      put(swing * SPAN, false);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bob, at.ready, held, arrived]);
+
   // Landing: the haptic, then the green travelling outward from the bead.
   useEffect(() => {
     if (!draggable || arrived) return;
+    if (!held && bob) return;
     if (TO === 1 ? u < 1 : u > 0) return;
     setArrived(true);
     /* THE LANDING. The strongest, most meaningful haptic in the whole app: the
@@ -182,10 +205,11 @@ export function SparkJourney({
   // THE CHANGE. Kept in its OWN effect so nothing can cancel it mid-flight.
   useEffect(() => {
     if (!arrived) return;
-    if (mode !== "drag") {
+    if (mode !== "drag" || !washOn) {
       onGreen?.();
       return;
     }
+
     let raf = 0;
     const start = performance.now();
     const step = (now: number) => {

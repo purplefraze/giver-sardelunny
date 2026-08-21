@@ -24,9 +24,10 @@ export { LOOP_TEXT_FILL, LOOP_ROLE_STYLE };
 export const WIDTH_RATIO: Record<LoopTypeRole, number> = {
   action: 0.58,
   message: 0.58,
-  label: 0.72, // tracked-out label
+  label: 0.84, // the wide 0.26em tracked label
   detail: 0.58,
 };
+
 
 /** Narrow glyphs, so a phrase like "started..." is not measured as if it were all o's. */
 const NARROW: Record<string, number> = {

@@ -111,8 +111,6 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
   const [told, setTold] = useState(0);
   const finished = useRef(false);
 
-  (window as any).__phase = phase;
-  useEffect(() => { console.log("PHASE", phase); }, [phase]);
   const mid = LOOP_CENTRE.middle;
   const bot = LOOP_CENTRE.bottom;
 

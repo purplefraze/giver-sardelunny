@@ -16,11 +16,14 @@ export function SparkBundle({
   count,
   colour = "var(--giver-generosity)",
   opacity = 1,
+  stroke,
 }: {
   r?: number;
   count?: number;
   colour?: string;
   opacity?: number;
+  /** A hairline outline keeps the bundle legible when it lands on a same-colour stroke. */
+  stroke?: string;
 }) {
   const uid = useId().replace(/:/g, "");
   const motes = 7;

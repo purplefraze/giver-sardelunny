@@ -43,6 +43,7 @@ export function SparkJourney({
   colour = "var(--giver-generosity)",
   grabColour,
   wash: washOn = true,
+  requireFull = false,
   washColour = "var(--giver-generosity)",
   onStart,
   onArrive,
@@ -68,6 +69,12 @@ export function SparkJourney({
   grabColour?: string;
   /** Whether the landing washes the whole G in the bundle's colour. */
   wash?: boolean;
+  /**
+   * NO SHORTCUT. With this set, a release is never finished for the person: the
+   * bundle only lands when the finger has genuinely carried it to the true end
+   * of the stroke. Nothing advances because the sparks were merely close.
+   */
+  requireFull?: boolean;
   /** The colour that resolves outward from a successful landing. */
   washColour?: string;
   /** The user has taken hold of the bundle. */
@@ -327,8 +334,8 @@ export function SparkJourney({
        being moved stays exactly where the finger found it. */
     const moved = Math.abs(uRef.current - caught.current) > 0.02;
     // A gentle lock-in near the end; a confident finish from halfway onward.
-    if (travelled > 0.97) put(TO);
-    else if (moved && travelled > 0.5) complete();
+    if (travelled > 0.985) put(TO);
+    else if (!requireFull && moved && travelled > 0.5) complete();
   };
 
   const R = count !== undefined ? 44 : 34;

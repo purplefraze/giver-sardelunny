@@ -33,7 +33,7 @@ import { buzz, haptics } from "@/lib/haptics";
  * the stroke, the travelling sparks or itself.
  */
 
-type Phase = "quiet" | "brand" | "spark" | "split" | "gift";
+type Phase = "quiet" | "brand" | "spark" | "collect" | "rise" | "gift";
 
 /** Type sizes in the G's own units (576 wide) — small, fixed, never crammed. */
 const BRAND = 92;
@@ -133,14 +133,27 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
     return () => clearTimeout(t);
   }, [phase, onDone]);
 
-  /* THE 100 HAS LANDED: the halves separate, and each one is named. */
+  /**
+   * THE 100 HAS LANDED. The sequence reads: gather in the middle loop -> shoot
+   * from there into whichever loop the toggle actually occupies -> settle in its
+   * negative space. The middle-loop beat is never skipped.
+   */
   useEffect(() => {
-    if (phase !== "split") return;
+    if (phase !== "collect") return;
+    const r = setTimeout(() => setPhase("rise"), 900);
     const a = setTimeout(() => setTold(1), 700);
-    const b = setTimeout(() => setTold(2), 2100);
-    const c = setTimeout(() => setPhase("gift"), 3600);
     return () => {
+      clearTimeout(r);
       clearTimeout(a);
+    };
+  }, [phase]);
+
+  /* THE GREEN HALF IS HOME: the purple half is named and handed to the finger. */
+  useEffect(() => {
+    if (phase !== "rise") return;
+    const b = setTimeout(() => setTold(2), 1200);
+    const c = setTimeout(() => setPhase("gift"), 2700);
+    return () => {
       clearTimeout(b);
       clearTimeout(c);
     };
@@ -234,23 +247,26 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               count={100}
               bob
               wash={false}
-              colour="var(--giver-participation)"
-              grabColour="var(--giver-connection)"
+              /* GIVER -> ME IS GREEN, and stays green while it is moved: the
+                 colour is the sparks' relationship, not their position. */
+              colour="var(--giver-generosity)"
               onArrive={() => {
                 haptics.success();
-                setPhase("split");
+                setPhase("collect");
               }}
             />
           ) : null}
 
-          {/* THE HALVES. Green stays mine; purple is for the Giver I will choose. */}
-          {phase === "split" ? <SparkSplit step="gift" seat={seat} /> : null}
           {phase === "gift" ? (
             <>
-              <SparkSplit step="held" seat={seat} />
               <SparkJourney
                 mode="drag"
                 count={50}
+                /* ALIVE, BUT NEVER SELF-COMPLETING: the purple half drifts its
+                   allowed stretch of the rail and stops short. Only a finger
+                   carried all the way to the true end of the stroke gives. */
+                bob
+                requireFull
                 colour="var(--giver-connection)"
                 washColour="var(--giver-connection)"
                 onGreen={done}
@@ -266,6 +282,17 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               setSeat(next as Mode);
             }}
           />
+
+          {/* THE HALVES, drawn LAST so my green 50 read inside the toggle loop's
+              own negative space rather than beneath the selector itself. ONE
+              mounted instance throughout, so the middle-loop -> toggle-loop
+              flight is a real animation and never a jump cut. */}
+          {phase === "collect" || phase === "rise" || phase === "gift" ? (
+            <SparkSplit
+              step={phase === "collect" ? "collect" : phase === "rise" ? "rise" : "held"}
+              seat={seat}
+            />
+          ) : null}
         </>
       }
     />

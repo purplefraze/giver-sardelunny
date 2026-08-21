@@ -70,10 +70,15 @@ function ride(
 const MID_FROM = 52; // lower-right of the bowl: where the journey begins
 const MID_TO = -298; // = 62°, the spine junction, one full turn later
 const BOT_FROM = -84; // where the spine meets the lower loop
-// Nearly the whole circumference of the lower loop: from the entrance, round
-// the top, down the left, across the bottom, up the right, to the upper-right
-// destination (-408 = -48 one full turn later).
-const BOT_TO = -408;
+/**
+ * THE TRUE TERMINUS OF THE LOWER LOOP'S INK. Ray-cast against the canonical
+ * filled path along this very rail (isPointInFill, 0.25° steps): the last angle
+ * whose stroke-centre point is still inside the G is -424.75°. Beyond it the
+ * rail would leave the coloured stroke and cross the loop's white opening, so
+ * the sparks stop exactly here — no unused stroke left, no white space entered.
+ * MEASURED, NEVER GUESSED: no hand-tuned percentage of the path length.
+ */
+const BOT_TO = -424.75;
 
 
 function build() {

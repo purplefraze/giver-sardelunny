@@ -340,12 +340,16 @@ export function CategoryForm({
           {records.map((item, i) => (
             <li key={item.id} className="g-rule pt-4 first:border-0 first:pt-0">
               <div className="flex items-start gap-3">
-                <span
-                  className="w-5 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em] opacity-45"
-                  style={{ color: colour }}
-                >
-                  {i + 1}
-                </span>
+                {/* GIVING IS NOT A RANKED QUEUE — only scarce asks are numbered. */}
+                {category === "give" ? null : (
+                  <span
+                    className="w-5 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em] opacity-45"
+                    style={{ color: colour }}
+                  >
+                    {i + 1}
+                  </span>
+                )}
+
 
                 {/* ONE TRADE = ONE RECORD, two inputs, one set of controls. */}
                 {category === "trade" ? (

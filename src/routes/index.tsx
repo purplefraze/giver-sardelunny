@@ -59,7 +59,17 @@ function readFirstUseSeat(): Mode | null {
   }
 }
 import { useItems } from "@/hooks/use-items";
-import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
+import {
+  ACTIVITY_FILL,
+  ME_ID,
+  communityItems,
+  itemLine,
+  itemsStore,
+  type ItemType,
+} from "@/data/items";
+import { LedgerHistory } from "@/components/history/LedgerHistory";
+import type { Currency } from "@/data/ledger";
+
 
 import { World } from "@/components/World";
 import { cn } from "@/lib/utils";

@@ -19,7 +19,7 @@ import {
 
 
 import { ledgerStore } from "@/data/ledger";
-import { hashPassword, normaliseHandle, publishEligibility } from "@/data/account";
+import { hashPassword, publishEligibility } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 

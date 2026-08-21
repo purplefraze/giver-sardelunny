@@ -151,6 +151,88 @@ export const TIME_OPTIONS = ["mornings", "afternoons", "evenings", "flexible"];
 export const DURATION_OPTIONS = ["30 min", "1 hour", "2 hours", "flexible"];
 
 /**
+ * ASK LESS, UNDERSTAND MORE. What kind of thing this is decides which
+ * questions are even worth asking. A sourdough starter can never be "online";
+ * an object being given away has no duration.
+ */
+export type GiveKind =
+  | "object"
+  | "food"
+  | "skill"
+  | "experience"
+  | "help"
+  | "digital";
+
+const KIND_MATCH: { kind: GiveKind; match: RegExp }[] = [
+  {
+    kind: "food",
+    match:
+      /sourdough|starter|bread|jam|meal|dinner|lunch|soup|cake|bake|preserve|honey|eggs|veg|produce|food|coffee|seed/i,
+  },
+  {
+    kind: "digital",
+    match: /online|remote|cv|resume|website|spreadsheet|code|design review|admin|form|zoom|call/i,
+  },
+  {
+    kind: "skill",
+    match:
+      /tutor|lesson|teach|class|coach|language|conversation|math|science|chemistry|guitar|music|photograph|translat|mentor|advice|practice/i,
+  },
+  {
+    kind: "experience",
+    match: /dinner party|walk|hike|swim|film|cinema|concert|company|hour|club|game|tour|ride along/i,
+  },
+  {
+    kind: "help",
+    match:
+      /help|ride|lift|drive|move|haul|deliver|repair|fix|paint|build|garden|clean|sit|walking|watering|shop/i,
+  },
+  {
+    kind: "object",
+    match:
+      /tent|projector|waders|ladder|drill|bike|book|jars|boxes|chair|table|clothes|coat|shoes|toys|plant|tool|jar|kit/i,
+  },
+];
+
+export function classifyKind(text: string): GiveKind {
+  return KIND_MATCH.find((k) => k.match.test(text))?.kind ?? "help";
+}
+
+/** WHERE — never an exact home address, and never "online" for a real thing. */
+const PHYSICAL_WHERE = ["nearby pickup", "in person", "flexible"];
+const REMOTE_WHERE = ["online", "in person", "flexible"];
+
+export const WHERE_FOR: Record<GiveKind, string[]> = {
+  object: PHYSICAL_WHERE,
+  food: PHYSICAL_WHERE,
+  skill: REMOTE_WHERE,
+  digital: ["online", "flexible"],
+  experience: ["in person", "flexible"],
+  help: ["in person", "nearby pickup", "online", "flexible"],
+};
+
+/** An area can only be named where meeting in person is possible at all. */
+export const ASKS_AREA: Record<GiveKind, boolean> = {
+  object: true,
+  food: true,
+  skill: true,
+  digital: false,
+  experience: true,
+  help: true,
+};
+
+/** HOW LONG only where a duration means anything. */
+export const ASKS_DURATION: Record<GiveKind, boolean> = {
+  object: false,
+  food: false,
+  skill: true,
+  digital: true,
+  experience: true,
+  help: true,
+};
+
+
+/**
  * THE SCANNABLE FACTS OF ONE ITEM, in one order, everywhere they appear. Only
  * what exists is ever shown — no empty labels, no placeholders.
  */

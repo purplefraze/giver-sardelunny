@@ -342,23 +342,65 @@ export const myProfileStore = {
     note?: string,
     /** PHOTOS + BORROW/LEND SIDE — stored on the one real item, not a copy. */
     extra?: { photos?: string[]; side?: BorrowSide; details?: ItemDetails },
-  ): { ok: boolean; reason?: "sparks" | "full" | "empty"; id?: string } {
+  ): {
+    ok: boolean;
+    reason?: "sparks" | "full" | "empty" | "account";
+    say?: string;
+    id?: string;
+  } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };
     if (category === "wish" && person.sparks < WISH_COST)
       return { ok: false, reason: "sparks" };
+    /*
+      18+ AND A REAL ACCOUNT BEFORE ANYTHING IS PUBLISHED. The answer is only
+      ever "not yet": the caller keeps its draft, word for word.
+    */
+    const allowed = myProfileStore.canPublish();
+    if (!allowed.ok) return { ok: false, reason: "account", say: allowed.say };
     const item = itemsStore.add(ME_ID, category, text, parts, note, extra);
     if (!item) return { ok: false, reason: "full" };
     /* A WISH RESERVES ITS SPARKS. They leave the balance but are not spent:
        they belong to the wish until it is granted and verified, or withdrawn. */
-    if (category === "wish")
+    if (category === "wish") {
       savePerson({
         ...person,
         sparks: person.sparks - WISH_COST,
         reserved: { ...person.reserved, [item.id]: WISH_COST },
       });
+      ledgerStore.record({
+        currency: "spark",
+        kind: "reserved",
+        amount: -WISH_COST,
+        say: `held for your wish · ${text.trim()}`,
+        itemId: item.id,
+      });
+    }
     return { ok: true, id: item.id };
   },
+
+  /** IS THIS ACCOUNT ALLOWED TO PUBLISH? One answer, asked from everywhere. */
+  canPublish() {
+    hydrate();
+    return publishEligibility({
+      username: person.username,
+      birthday: person.birthday,
+      passwordSet: Boolean(person.password),
+    });
+  },
+
+  /** THE PASSWORD IS SALTED, HASHED AND FORGOTTEN. */
+  async setPassword(plain: string) {
+    hydrate();
+    savePerson({ ...person, password: await hashPassword(plain) });
+  },
+
+  /** THE CHOSEN CROP IS THE PHOTO, EVERYWHERE — with the original kept. */
+  setPhoto(cropped: string, source: string, crop: PhotoCrop) {
+    hydrate();
+    savePerson({ ...person, photo: cropped, photoSource: source, photoCrop: crop });
+  },
+
 
   editItem(category: Category, index: number, text: string) {
     const item = myProfileStore.get().records[category][index];

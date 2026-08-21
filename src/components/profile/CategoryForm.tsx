@@ -387,7 +387,7 @@ export function CategoryForm({
           my {CATEGORY_PLURAL[category]}
         </h1>
         <p className="g-body mt-2 max-w-[24ch]" style={{ color: colour }}>
-          {PROMPT[category]}
+          {CATEGORY_ASK[category]}
         </p>
         {/* THE ECONOMY, SAID PLAINLY — and never on a give. */}
         <p className="mt-3 g-meta">

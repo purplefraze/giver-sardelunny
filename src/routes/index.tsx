@@ -44,7 +44,8 @@ import { World } from "@/components/World";
 import { cn } from "@/lib/utils";
 import { DevControls } from "@/components/DevControls";
 import { lifecycleStore } from "@/data/lifecycle";
-import { seedDevelopmentProfileOnce } from "@/data/dev-fixture";
+import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
+import { initializeFirstUse } from "@/data/first-use";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
 /**
@@ -130,9 +131,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  /* Preview fixtures must exist before the first store snapshots are read;
-     seeding in an effect briefly rendered an obsolete blank/onboarding state. */
-  seedDevelopmentProfileOnce();
+  /* A populated current-user fixture used to be injected here automatically.
+     Remove that legacy state once; development profiles are now explicit only. */
+  removeLegacyAutomaticProfile();
   const lifecycle = useLifecycle();
   const [sessionEntered, setSessionEntered] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
@@ -268,7 +269,7 @@ function Index() {
   /* Migrate an existing completed prototype profile into the explicit lifecycle. */
   useEffect(() => {
     if (!lifecycle.onboardingCompletedAt && me.built && !import.meta.env.DEV) {
-      lifecycleStore.complete();
+      lifecycleStore.migrateCompletedProfile();
     }
   }, [lifecycle.onboardingCompletedAt, me.built]);
 
@@ -345,10 +346,9 @@ function Index() {
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
           onDone={({ earned }) => {
-            /* SPARKS FOLLOW THE COMPLETED INTERACTION, never the animation. */
-            if (earned) myProfileStore.seedSparks();
-            /* ONBOARDING IS OVER FOR GOOD: reloading can never replay it. */
-            lifecycleStore.complete();
+            /* A NEW PERSON GETS A CLEAN, IDEMPOTENT HANDOVER. Sample people and
+               their community records are never projected into this profile. */
+            initializeFirstUse(earned);
             setSessionEntered(true);
           }}
         />
@@ -386,8 +386,8 @@ function Index() {
                 {...(!firstArrival && isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
                 {...(!firstArrival && isProfile && unread ? { badge: unread } : {})}
-                /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
-                sparks={me.sparks}
+                /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
+                {...(!firstArrival ? { sparks: me.sparks } : {})}
 
                 /*
                   TOP LOOP = SEARCH THIS WORLD, on my own G only. On the profile
@@ -732,7 +732,7 @@ function Index() {
                   setThreads(true);
                 }}
                 onDone={() => {
-                  if (!lifecycle.onboardingCompletedAt) lifecycleStore.complete();
+                  lifecycleStore.completeProfileSetup();
                   setEditor(null);
                 }}
                 onHelp={() => {

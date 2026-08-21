@@ -2,7 +2,7 @@ import mePhoto from "@/assets/me.jpg";
 import { introSeenStore } from "@/data/intro-seen";
 import { itemsStore, ME_ID, tradeText, type Item } from "@/data/items";
 import { lifecycleStore } from "@/data/lifecycle";
-import { myProfileStore } from "@/data/my-profile";
+import { STARTING_SPARKS, myProfileStore } from "@/data/my-profile";
 import { tutorialSeenStore } from "@/data/tutorial-seen";
 
 const CHOICE_KEY = "giver.dev-state-chosen.v1";
@@ -38,7 +38,7 @@ export function seedDevelopmentProfile() {
     built: true,
     sparkles: 6,
     sparklesAwarded: true,
-    sparks: 80,
+    sparks: STARTING_SPARKS,
     sparksSeeded: true,
     reserved: {},
     rewarded: [],

@@ -6,6 +6,7 @@ import { SparkSplit, type SplitStep } from "@/components/onboarding/SparkSplit";
 import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
 import { MemberExample } from "@/components/onboarding/MemberExample";
 import { MEMBERS, type Member } from "@/data/giver";
+import { STARTING_SPARKS } from "@/data/my-profile";
 import { buzz, haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +68,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
    * ONE BUNDLE, ONE BALANCE. The 50 Give sparks from the intro follow the user
    * from person to person; they are only ever spent once.
    */
-  const [sparks, setSparks] = useState<number | null>(50);
+  const [sparks, setSparks] = useState<number | null>(STARTING_SPARKS);
 
   if (stage === "opening") {
     return (

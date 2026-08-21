@@ -740,20 +740,30 @@ export function CategoryForm({
           </div>
         )}
 
-        {/* THE WAY BACK IS A LINK, NOT A MONUMENT. */}
-        <div className="g-rule mt-9 flex items-baseline justify-between pt-4">
-          <button
-            type="button"
-            onClick={leave}
-            className="text-[15px] font-black lowercase tracking-[0.16em] transition-transform active:scale-95"
-            style={{ color: wayBack }}
-          >
-            ← back to my g
-          </button>
-          <span className="g-meta opacity-35">everything saves as you go</span>
-        </div>
+        <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
+      </div>
+
+      {/* THE WAY BACK IS ALWAYS THERE — one small line, never over content. */}
+      <div
+        className="g-page fixed bottom-0 left-0 right-0 z-30 border-t"
+        style={{
+          background: "var(--giver-paper, #fff)",
+          borderColor: "var(--edit-rule)",
+          paddingTop: "0.85rem",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 0.85rem)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={leave}
+          className="whitespace-nowrap text-[13px] font-black lowercase tracking-[0.16em] transition-transform active:scale-95"
+          style={{ color: "var(--giver-ink, #000)" }}
+        >
+          ← back to my g
+        </button>
       </div>
     </div>
+
   );
 }
 

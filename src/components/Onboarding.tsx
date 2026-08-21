@@ -277,29 +277,27 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
             tracked label, then the statement, then quiet metered lines.
             COLOUR = MEANING: black voice, green generosity, purple the
             connection just made, yellow the other person. */}
-        <p className="g-heading" style={{ color: "var(--giver-ink)" }}>
-          your first <span style={{ color: "var(--giver-generosity)" }}>give</span>
+        <p className="g-heading" style={{ color: "var(--giver-generosity)" }}>
+          your first give
         </p>
-        <p className="g-display mt-4" style={{ color: "var(--giver-connection)" }}>
+        <p className="g-display mt-4" style={{ color: "var(--giver-participation)" }}>
           congrats
         </p>
-        <p className="g-display-sm mt-6 max-w-[15ch]" style={{ color: "var(--giver-generosity)" }}>
-          you just made your first act of generosity{" "}
-          <span style={{ color: "var(--giver-ink)" }}>on</span>{" "}
+        <p className="g-display-sm mt-6 max-w-[15ch]" style={{ color: "var(--giver-ink)" }}>
+          you just made your first act of{" "}
+          <span style={{ color: "var(--giver-generosity)" }}>generosity</span> on{" "}
           <span style={{ color: "var(--giver-generosity)" }}>giver</span>
         </p>
         <div className="g-rule mt-9 max-w-[24ch] pt-5">
           <p className="g-name max-w-[26ch]" style={{ color: "var(--giver-ink)" }}>
-            50 sparks have now been given to{" "}
-            <span style={{ color: "var(--giver-community)" }}>{username}</span>
+            <span style={{ color: "var(--giver-connection)" }}>50 sparks</span> have now been
+            given to <span style={{ color: "var(--giver-community)" }}>{username}</span>
           </p>
-          <p
-            className="g-name mt-2 max-w-[26ch]"
-            style={{ color: "var(--giver-generosity)" }}
-          >
-            and 50 sparks are yours
+          <p className="g-name mt-2 max-w-[26ch]" style={{ color: "var(--giver-ink)" }}>
+            and <span style={{ color: "var(--giver-connection)" }}>50 sparks</span> are yours
           </p>
         </div>
+
       </div>
 
       {/* The way onward, in Giver's own language — part of the same beat. */}

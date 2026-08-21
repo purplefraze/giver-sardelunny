@@ -300,6 +300,19 @@ function Index() {
   const content = MODE_CONTENT[mode];
 
   /**
+   * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
+   *
+   * Until the profile exists the G holds NOTHING: no photo, no latest, no
+   * community, no placeholder. Only "my g" in the top loop, and the toggle,
+   * which is free to travel every mode and recolour the whole G. Any tap on
+   * the G itself leads to one place: set up your profile.
+   */
+  const firstArrival = !me.built;
+  const setup = () => setEditor({ kind: "about" });
+
+
+
+  /**
    * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
    * "mine" means the one I touched last, not a ranked list.
    */

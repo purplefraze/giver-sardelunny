@@ -284,10 +284,15 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
           />
 
           {/* THE HALVES, drawn LAST so my green 50 read inside the toggle loop's
-              own negative space rather than beneath the selector itself. */}
-          {phase === "collect" ? <SparkSplit step="collect" seat={seat} /> : null}
-          {phase === "rise" ? <SparkSplit step="rise" seat={seat} /> : null}
-          {phase === "gift" ? <SparkSplit step="held" seat={seat} /> : null}
+              own negative space rather than beneath the selector itself. ONE
+              mounted instance throughout, so the middle-loop -> toggle-loop
+              flight is a real animation and never a jump cut. */}
+          {phase === "collect" || phase === "rise" || phase === "gift" ? (
+            <SparkSplit
+              step={phase === "collect" ? "collect" : phase === "rise" ? "rise" : "held"}
+              seat={seat}
+            />
+          ) : null}
         </>
       }
     />

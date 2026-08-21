@@ -107,7 +107,9 @@ export function MemberExample({
   const items = myItems(itemState, seat, member.id).map(itemLine);
   const activity: LoopBlock[] = items.length
     ? [
-        { text: WORLD_LABEL[seat], role: "secondary" },
+        /* EVERY element of the activity — label, item and "+N" — reads from the
+           ONE activity colour map, so the label can never default to purple. */
+        { text: WORLD_LABEL[seat], role: "secondary", fill: ACTIVITY_FILL[seat] },
         { text: items[0]!, role: "primary", fill: ACTIVITY_FILL[seat] },
         ...(items.length > 1
           ? [
@@ -121,8 +123,8 @@ export function MemberExample({
           : []),
       ]
     : [
-        { text: WORLD_LABEL[seat], role: "secondary" },
-        { text: "nothing right now", role: "tertiary" },
+        { text: WORLD_LABEL[seat], role: "secondary", fill: ACTIVITY_FILL[seat] },
+        { text: "nothing right now", role: "tertiary", fill: ACTIVITY_FILL[seat] },
       ];
 
   /**

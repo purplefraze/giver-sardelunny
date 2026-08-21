@@ -352,22 +352,9 @@ export function SparkJourney({
       {/* The rail. Present, measured, and completely invisible. */}
       <path ref={rail} d={SPARK_TRACK_D} fill="none" stroke="none" />
 
-      {/* GREEN RESOLVING OUTWARD from where the spark landed. */}
-      {wash > 0 ? (
-        <>
-          <defs>
-            <mask id={`${uid}-wash`} maskUnits="userSpaceOnUse">
-              <rect x="-400" y="-400" width="1600" height="2000" fill="#000" />
-              <circle cx={SPARK_END.x} cy={SPARK_END.y} r={wash * 1750} fill="#fff" />
-            </mask>
-          </defs>
-          <g mask={`url(#${uid}-wash)`} pointerEvents="none">
-            <g transform={LIVING_G_TRANSFORM} fill={washColour}>
-              <path d={LIVING_G_PATH} />
-            </g>
-          </g>
-        </>
-      ) : null}
+      {/* NOTHING IS DRAWN FOR THE LANDING COLOUR: the one real G and its one
+          real toggle change together through the world's own colour token. */}
+
 
       {at.ready ? (
         <>

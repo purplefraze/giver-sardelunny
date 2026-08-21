@@ -251,6 +251,14 @@ function reward(key: string) {
     sparks: person.sparks + GENEROSITY_REWARD,
     rewarded: [...person.rewarded, key],
   });
+  ledgerStore.record({
+    id: `earn:${key}`,
+    currency: "spark",
+    kind: "earned",
+    amount: GENEROSITY_REWARD,
+    say: "giver recognised an act of generosity",
+  });
+
   // GIVER RECOGNISING GENEROSITY: brief, warm, unmistakably an arrival.
   haptics.success();
   sparkFlashStore.show(`+${GENEROSITY_REWARD} sparks ✨`);

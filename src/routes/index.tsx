@@ -494,7 +494,9 @@ function Index() {
                 label: "",
                 panelTitle: isProfile ? "my gives" : content.community.title,
                 panelBody: null,
-                onPress: isProfile
+                onPress: firstArrival
+                  ? /* NOTHING BUT PROFILE SETUP EXISTS YET. */ setup
+                  : isProfile
                   ? /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
                     () => openWorld("give")
                   : /* BOTTOM = THE COMMUNITY — open only to givers. */
@@ -510,7 +512,11 @@ function Index() {
                   profileLoop({
                     anchor,
                     region: "bottom",
-                    blocks: isProfile
+                    /* FIRST ARRIVAL: the bottom loop holds nothing at all. */
+                    blocks: firstArrival
+                      ? []
+                      : isProfile
+
                       ? myGive
                         ? [
                             { text: "gives", role: "secondary" as const },

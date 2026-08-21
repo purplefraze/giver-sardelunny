@@ -63,6 +63,12 @@ export type Item = {
    * "lend" = I am willing to lend something out. Never the same copy.
    */
   side?: BorrowSide;
+  /**
+   * STRUCTURED DETAILS — where, when, how long, plus context-specific answers.
+   * Optional everywhere; they exist so people do not have to message to find
+   * out the basics.
+   */
+  details?: ItemDetails;
   /** Where available — community discovery may sort or filter on it later. */
   distanceKm?: number;
   /** Cheap denormalised counter; the truth is the boost ledger. */

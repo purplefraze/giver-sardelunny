@@ -107,6 +107,27 @@ function Choice({
   );
 }
 
+/**
+ * REMOVING AN ANSWER IS AN ACTION, NOT A FAILURE. Pink, small, and always
+ * available beside anything optional that has been filled in.
+ */
+function Clear({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        haptics.light();
+        onPress();
+      }}
+      className="text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
+      style={{ color: "var(--giver-action)" }}
+    >
+      {label}
+    </button>
+  );
+}
+
+
 function Line({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">

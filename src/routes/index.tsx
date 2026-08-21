@@ -10,9 +10,7 @@ import { HelpIndex } from "@/components/HelpIndex";
 import { introSeenStore } from "@/data/intro-seen";
 import { useIntroSeen } from "@/hooks/use-intro-seen";
 
-
 import { CommunityFeed } from "@/components/community/CommunityFeed";
-
 
 import { CommunityLocked } from "@/components/community/CommunityLocked";
 import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";
@@ -63,8 +61,6 @@ function readFirstUseSeat(): Mode | null {
 import { useItems } from "@/hooks/use-items";
 import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
 
-
-
 import { World } from "@/components/World";
 import { cn } from "@/lib/utils";
 import { DevControls } from "@/components/DevControls";
@@ -99,25 +95,18 @@ const MODE_CONTENT: Record<
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
     community: { title: "communi-g wishes" },
-
   },
   give: {
     mine: {
       title: "my gives",
-      body: (
-        <p className="opacity-70">
-          share something you have, know, or can do.
-        </p>
-      ),
+      body: <p className="opacity-70">share something you have, know, or can do.</p>,
     },
     community: { title: "communi-g gives" },
   },
   trade: {
     mine: {
       title: "my trades",
-      body: (
-        <p className="opacity-70">offer something, ask for something back.</p>
-      ),
+      body: <p className="opacity-70">offer something, ask for something back.</p>,
     },
     community: { title: "communi-g trades" },
   },
@@ -129,9 +118,6 @@ const MODE_CONTENT: Record<
     community: { title: "communi-g borrows" },
   },
 };
-
-
-
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -168,7 +154,6 @@ function Index() {
     if (remembered && !lifecycleStore.get().profileSetupCompletedAt) {
       setSeatState(remembered);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [sessionEntered, setSessionEntered] = useState(false);
@@ -181,7 +166,6 @@ function Index() {
   const [editor, setEditor] = useState<
     { kind: "about" } | { kind: "category"; category: Category } | null
   >(null);
-
 
   /**
    * THE ONE SOURCE OF TRUTH for the toggle: wish | give | trade | borrow.
@@ -204,9 +188,7 @@ function Index() {
    * `help` marks an explanation the user asked for on purpose: it sets no flag
    * and leads nowhere — it explains, then hands the G straight back.
    */
-  const [intro, setIntro] = useState<{ topic: IntroTopic; help: boolean } | null>(
-    null,
-  );
+  const [intro, setIntro] = useState<{ topic: IntroTopic; help: boolean } | null>(null);
   const introSeen = useIntroSeen();
 
   /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
@@ -263,9 +245,7 @@ function Index() {
     if (!entered || !myProfileStore.get().built) return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entered, seat]);
-
 
   /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
@@ -294,9 +274,6 @@ function Index() {
     }, 4200);
     return () => clearTimeout(t);
   }, [entered]);
-
-
-
 
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
@@ -350,8 +327,7 @@ function Index() {
    * profile.
    */
   const firstArrival =
-    Boolean(lifecycle.onboardingCompletedAt) &&
-    !lifecycle.profileSetupCompletedAt;
+    Boolean(lifecycle.onboardingCompletedAt) && !lifecycle.profileSetupCompletedAt;
   const setup = () => setEditor({ kind: "about" });
 
   /**
@@ -363,14 +339,11 @@ function Index() {
     else setEditor({ kind: "about" });
   };
 
-
-
   /**
    * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
    * "mine" means the one I touched last, not a ranked list.
    */
-  const myRecent =
-    [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+  const myRecent = [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
   const myMode = myRecent ? itemLine(myRecent) : null;
 
   /** COMMUNI-G <type> — the same item collection, queried by everyone else. */
@@ -381,8 +354,6 @@ function Index() {
   /** NEVER A LIST INSIDE THE G: one item, then how much more there is. */
   const more = (count: number) =>
     count > 1 ? [{ text: `+${count - 1} more`, role: "tertiary" as const }] : [];
-
-
 
   /* Persisted lifecycle/profile state is browser-owned. Render neither the
      onboarding nor My G until it is hydrated, preventing a stale server frame
@@ -412,9 +383,6 @@ function Index() {
           }}
         />
       ) : (
-
-
-
         <>
           {/*
             THE WORKSPACE — one Living G, always yours.
@@ -432,7 +400,6 @@ function Index() {
               !choose &&
               !help &&
               browse === null &&
-
               !locked &&
               detail === null &&
               talking === null &&
@@ -451,7 +418,6 @@ function Index() {
 
                 /* TOP = ME. The small loop is MY G — never search, in any mode. */
                 onTap={openMyG}
-
               />
             }
 
@@ -500,8 +466,6 @@ function Index() {
                             : { text: `add a ${mode}`, role: "primary" as const },
                           ...(myMode ? more(me.items[mode].length) : []),
                         ],
-
-
                   }),
               },
               /*
@@ -545,10 +509,8 @@ function Index() {
                               : { text: "nothing yet", role: "tertiary" as const },
                           ...(canCommunity && community ? more(theirs.length) : []),
                         ],
-
                   }),
               },
-
             }}
           />
 
@@ -576,7 +538,6 @@ function Index() {
             </button>
           ) : null}
 
-
           {/*
             MY G STAYS CLEAN. There is NO permanent messages control anywhere
             around the Living G: messages are private account information and
@@ -586,7 +547,6 @@ function Index() {
             waiting inside.
             NO SEPARATE "COMMUNITY" WORD either — the bottom loop is that door.
           */}
-
 
           {/* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */}
           <Screen open={locked}>
@@ -619,8 +579,6 @@ function Index() {
             the expanded Communi-G, where the whole community already is.
           */}
 
-
-
           <Screen open={detail !== null}>
             {detail ? (
               <ActivityDetail
@@ -636,46 +594,35 @@ function Index() {
 
           {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
           <Screen open={person !== null}>
-            {person ? (
-              (() => {
-                const member = memberById(person);
-                return member ? (
-                  <FullProfile
-                    member={member}
-                    onBack={() => setPerson(null)}
-                    onOpen={(id) => setPerson(id)}
-                  />
-                ) : null;
-              })()
-            ) : null}
+            {person
+              ? (() => {
+                  const member = memberById(person);
+                  return member ? (
+                    <FullProfile
+                      member={member}
+                      onBack={() => setPerson(null)}
+                      onOpen={(id) => setPerson(id)}
+                    />
+                  ) : null;
+                })()
+              : null}
           </Screen>
 
           <Screen open={talking !== null}>
             {talking ? (
-              <Conversation
-                connectionId={talking}
-                onClose={() => setTalking(null)}
-              />
+              <Conversation connectionId={talking} onClose={() => setTalking(null)} />
             ) : null}
           </Screen>
 
           <Screen open={threads}>
             {threads ? (
-              <ConnectionsList
-                onOpen={(id) => setTalking(id)}
-                onClose={() => setThreads(false)}
-              />
+              <ConnectionsList onOpen={(id) => setTalking(id)} onClose={() => setThreads(false)} />
             ) : null}
           </Screen>
 
           {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
           <Screen open={choose}>
-            {choose ? (
-              <ChooseWorld
-                onChoose={openWorld}
-                onCancel={() => setChoose(false)}
-              />
-            ) : null}
+            {choose ? <ChooseWorld onChoose={openWorld} onCancel={() => setChoose(false)} /> : null}
           </Screen>
 
           {/* THE VOLUNTARY HELP AREA — explanations only, no flags, no forms. */}
@@ -705,8 +652,6 @@ function Index() {
             ) : null}
           </Screen>
 
-
-
           {/*
             THE EDITOR DESTINATIONS. One screen at a time, above the G — never
             beneath it. Leaving returns to the same seat, already updated.
@@ -729,16 +674,10 @@ function Index() {
                   setHelp(true);
                 }}
               />
-
             ) : editor?.kind === "category" ? (
-              <CategoryForm
-                category={editor.category}
-                onDone={() => setEditor(null)}
-              />
+              <CategoryForm category={editor.category} onDone={() => setEditor(null)} />
             ) : null}
           </Screen>
-
-
         </>
       )}
     </main>

@@ -76,8 +76,7 @@ export function CommunityFeed({
     .filter((item) => (needle ? itemLine(item).toLowerCase().includes(needle) : true))
     .sort((a, b) => {
       if (sort === "latest") return b.createdAt - a.createdAt;
-      if (sort === "popular")
-        return b.boostWeight - a.boostWeight || b.createdAt - a.createdAt;
+      if (sort === "popular") return b.boostWeight - a.boostWeight || b.createdAt - a.createdAt;
       return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
     });
 
@@ -93,7 +92,9 @@ export function CommunityFeed({
       <h1 className="g-display" style={{ color: "var(--giver-ink)" }}>
         communi-g
       </h1>
-      <p className="g-meta mt-2 whitespace-nowrap opacity-55">it’s all happening near you, right now.</p>
+      <p className="g-meta mt-2 whitespace-nowrap opacity-55">
+        it’s all happening near you, right now.
+      </p>
 
       {/* SEARCH — a line, never a bar: no box, no icon, no button. */}
       <input
@@ -146,9 +147,7 @@ export function CommunityFeed({
 
       <ul className="mt-4 flex-1 overflow-y-auto pb-8">
         {list.length === 0 ? (
-          <li className="g-lede opacity-55">
-            nothing here yet — yours could be the first
-          </li>
+          <li className="g-lede opacity-55">nothing here yet — yours could be the first</li>
         ) : null}
         {list.map((item, index) => {
           const owner = memberById(item.ownerId);
@@ -160,14 +159,8 @@ export function CommunityFeed({
             status === "connecting" ? "connecting" : null,
           ].filter(Boolean) as string[];
           return (
-            <li
-              key={item.id}
-              className={index === 0 ? "pb-3.5" : "g-rule py-3.5"}
-            >
-              <span
-                className="g-heading block"
-                style={{ color: ACTIVITY_FILL[item.type] }}
-              >
+            <li key={item.id} className={index === 0 ? "pb-3.5" : "g-rule py-3.5"}>
+              <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
                 {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
               </span>
 

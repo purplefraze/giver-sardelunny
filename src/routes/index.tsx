@@ -561,7 +561,12 @@ function Index() {
             the profile, where it belongs. Sparks are no longer printed here:
             they ride my own top profile loop (see EarSelector).
           */}
-          {!tutorialSeen && intro === null && editor === null && !choose && !help ? (
+          {!firstArrival &&
+          !tutorialSeen &&
+          intro === null &&
+          editor === null &&
+          !choose &&
+          !help ? (
             <button
               type="button"
               onClick={() =>

@@ -192,22 +192,10 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
       </Line>
 
       {/* THE SPLIT, EXPLAINED BY THE NUMBERS THEMSELVES. */}
-      <Line
-        show={told >= 1}
-        x={bot.x}
-        y={bot.y - LINE * 0.8}
-        size={LINE}
-        opacity={0.9}
-      >
+      <Line show={told >= 1} x={bot.x} y={bot.y - LINE * 0.8} size={LINE} opacity={0.9}>
         50 sparks for you
       </Line>
-      <Line
-        show={told >= 2}
-        x={bot.x}
-        y={bot.y + LINE * 0.8}
-        size={LINE}
-        opacity={0.62}
-      >
+      <Line show={told >= 2} x={bot.x} y={bot.y + LINE * 0.8} size={LINE} opacity={0.62}>
         50 sparks for you to gift
       </Line>
     </g>

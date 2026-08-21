@@ -4,7 +4,6 @@ import { SparkBundle } from "./SparkBundle";
 import { SPARK_END, SPARK_TRACK_D } from "./spark-track";
 import { haptics } from "@/lib/haptics";
 
-
 /**
  * THE TRAVELLING SPARK — a bead riding INSIDE the Living G's own stroke, on the
  * rail measured off the canonical geometry (see spark-track.ts).
@@ -75,7 +74,6 @@ export function SparkJourney({
   /** The green has finished resolving through the whole G. */
   onGreen?: () => void;
 }) {
-
   const uid = useId().replace(/:/g, "");
   const rail = useRef<SVGPathElement | null>(null);
   const samples = useRef<Sample[]>([]);
@@ -87,7 +85,6 @@ export function SparkJourney({
   const uRef = useRef(0);
   /** Where the bundle was when the finger first caught it. */
   const caught = useRef(0);
-
 
   const [at, setAt] = useState({ x: 0, y: 0, ready: false });
   /** Where this journey begins and ends on the shared rail. */
@@ -101,7 +98,6 @@ export function SparkJourney({
   const [held, setHeld] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [wash, setWash] = useState(0);
-
 
   /** Where on the rail is progress u? Straight from the path itself. */
   const put = (next: number, tick = true) => {
@@ -126,7 +122,6 @@ export function SparkJourney({
       crossed.current = past;
       haptics.medium();
     }
-
   };
 
   // The rail, sampled once, so a finger can be projected onto it precisely.
@@ -189,7 +184,6 @@ export function SparkJourney({
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bob, at.ready, held, arrived]);
 
   // Landing: the haptic, then the green travelling outward from the bead.
@@ -334,9 +328,6 @@ export function SparkJourney({
     else if (moved && travelled > 0.5) complete();
   };
 
-
-
-
   const R = count !== undefined ? 44 : 34;
 
   return (
@@ -399,7 +390,6 @@ export function SparkJourney({
             </>
           ) : null}
 
-
           {/* THE SPARKS. A bundle of light, riding inside the stroke. */}
           <g
             pointerEvents="none"
@@ -424,7 +414,6 @@ export function SparkJourney({
               />
             </g>
           </g>
-
         </>
       ) : null}
     </g>

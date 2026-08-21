@@ -34,14 +34,17 @@ import type { Category } from "@/data/my-profile";
 import { primaryGive, CATEGORY_PLURAL, CATEGORIES, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
 
-/** FIRST USE: the toggle offers the four content worlds only — My G is separate. */
-const MODES_ONLY = ["wish", "give", "trade", "borrow"] as const;
+/**
+ * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
+ * MY G and COMMUNI-G are not content types: they are the top and bottom loops.
+ */
+const MODES_ONLY = MODES;
 
 const FIRST_USE_SEAT_KEY = "giver.first-use.seat";
 
-function rememberFirstUseSeat(seat: Seat) {
+function rememberFirstUseSeat(seat: Mode) {
   try {
     window.localStorage.setItem(FIRST_USE_SEAT_KEY, seat);
   } catch {
@@ -49,10 +52,10 @@ function rememberFirstUseSeat(seat: Seat) {
   }
 }
 
-function readFirstUseSeat(): Seat | null {
+function readFirstUseSeat(): Mode | null {
   try {
     const raw = window.localStorage.getItem(FIRST_USE_SEAT_KEY);
-    return raw && (MODES_ONLY as readonly string[]).includes(raw) ? (raw as Seat) : null;
+    return raw && (MODES_ONLY as readonly string[]).includes(raw) ? (raw as Mode) : null;
   } catch {
     return null;
   }

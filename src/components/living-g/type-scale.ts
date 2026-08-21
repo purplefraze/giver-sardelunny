@@ -129,10 +129,11 @@ export const PROFILE_TYPE: Record<
      anybody's G: it STARTS large and uses the loop's negative space, stepping
      down through PROFILE_STEPS only when a genuinely long line needs the room —
      so it can never cross or touch the stroke. */
-  middle: { answer: 96, label: 40, detail: 60 },
+  middle: { answer: 74, label: 30, detail: 46 },
   /* Derived from the lower loop's measured opening, not the smaller middle
-     loop token. The fitter may step these down, but begins at poster scale. */
-  bottom: { answer: 130, label: 42, detail: 64 },
+     loop token. CONFIDENT, NEVER CROWDED: the same relationship "kindness is
+     currency" holds to its loop — the G stays the dominant object. */
+  bottom: { answer: 88, label: 32, detail: 50 },
 };
 
 

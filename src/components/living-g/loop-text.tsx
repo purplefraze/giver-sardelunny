@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { gType } from "./g-type";
 import type { Anchor, RegionKey } from "./LivingG";
+
 import {
   LOOP_ROLE_STYLE,
   LOOP_TEXT_FILL,

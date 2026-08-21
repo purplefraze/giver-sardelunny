@@ -570,12 +570,10 @@ function Index() {
           !help ? (
             <button
               type="button"
-              onClick={() =>
-                isProfile ? setHelp(true) : setIntro({ topic: mode, help: true })
-              }
+              onClick={() => setIntro({ topic: mode, help: true })}
               className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
             >
-              {isProfile ? "how giver works" : `what’s ${mode}?`}
+              {`what’s ${mode}?`}
             </button>
           ) : null}
 

@@ -268,10 +268,10 @@ function Index() {
 
   /* Migrate an existing completed prototype profile into the explicit lifecycle. */
   useEffect(() => {
-    if (!lifecycle.onboardingCompletedAt && me.built && !import.meta.env.DEV) {
+    if (!lifecycle.profileSetupCompletedAt && me.built) {
       lifecycleStore.migrateCompletedProfile();
     }
-  }, [lifecycle.onboardingCompletedAt, me.built]);
+  }, [lifecycle.profileSetupCompletedAt, me.built]);
 
   /**
    * THE CARDINAL GIVER RULE: one active give of my own is the key to the
@@ -308,7 +308,9 @@ function Index() {
    * which is free to travel every mode and recolour the whole G. Any tap on
    * the G itself leads to one place: set up your profile.
    */
-  const firstArrival = !me.built;
+  const firstArrival =
+    Boolean(lifecycle.onboardingCompletedAt) &&
+    !lifecycle.profileSetupCompletedAt;
   const setup = () => setEditor({ kind: "about" });
 
 
@@ -727,6 +729,7 @@ function Index() {
             {editor?.kind === "about" ? (
               <AboutForm
                 unread={unread}
+                firstSetup={firstArrival}
                 onMessages={() => {
                   setEditor(null);
                   setThreads(true);

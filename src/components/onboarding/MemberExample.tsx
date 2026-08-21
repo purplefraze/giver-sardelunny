@@ -73,7 +73,7 @@ export function MemberExample({
    */
   sparks?: number;
   /** The user walked their sparks up this person's rail: they chose them. */
-  onGive?: () => void;
+  onGive?: (mode: Mode) => void;
   onBack: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -190,7 +190,7 @@ export function MemberExample({
                   key={member.id}
                   mode="gift"
                   count={sparks}
-                  onArrive={() => onGive?.()}
+                  onArrive={() => onGive?.(seat)}
                 />
               ) : null}
               <EarSelector

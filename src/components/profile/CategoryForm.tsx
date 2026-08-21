@@ -151,7 +151,7 @@ function Field({
           style={{ color: summary ? colour : "var(--world-ink)" }}
         >
           {summary || (
-            <span style={{ color: action, opacity: 0.85 }}>add</span>
+            <span style={{ color: "var(--giver-action)", opacity: 0.85 }}>add</span>
           )}
         </span>
       </button>

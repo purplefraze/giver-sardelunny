@@ -235,6 +235,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               bob
               wash={false}
               colour="var(--giver-participation)"
+              grabColour="var(--giver-connection)"
               onArrive={() => {
                 haptics.success();
                 setPhase("split");

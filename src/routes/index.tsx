@@ -721,6 +721,15 @@ function Index() {
                   setEditor(null);
                   setThreads(true);
                 }}
+                onSparks={() => {
+                  setEditor(null);
+                  setHistory("spark");
+                }}
+                onSparkles={() => {
+                  setEditor(null);
+                  setHistory("sparkle");
+                }}
+
                 onDone={() => {
                   lifecycleStore.completeProfileSetup();
                   setEditor(null);

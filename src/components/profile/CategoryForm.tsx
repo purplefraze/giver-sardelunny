@@ -729,19 +729,70 @@ export function CategoryForm({
                         ? details.time
                         : ""
                     }
-                    onChange={(e) => setDetail({ time: e.target.value })}
+                    onChange={(e) => setDetail({ time: e.target.value || undefined })}
                     aria-label="exact time"
                     className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
                   />
                   <input
                     type="date"
                     value={details.date ?? ""}
-                    onChange={(e) => setDetail({ date: e.target.value })}
+                    onChange={(e) => setDetail({ date: e.target.value || undefined })}
                     aria-label="date"
                     className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
                   />
                 </div>
+
+                {/*
+                  DATE AND TIME ARE OPTIONAL, SO THEY MUST ALSO BE REMOVABLE.
+                  Clearing one is a small pink action, never a warning, and it
+                  puts the give straight back to "no fixed time".
+                */}
+                {details.date || details.time || details.days?.length ? (
+                  <div className="flex w-full flex-wrap items-baseline gap-x-5 gap-y-1.5 pt-1">
+                    {details.time ? (
+                      <Clear
+                        label="clear time"
+                        onPress={() => setDetail({ time: undefined })}
+                      />
+                    ) : null}
+                    {details.date ? (
+                      <Clear
+                        label="clear date"
+                        onPress={() => setDetail({ date: undefined })}
+                      />
+                    ) : null}
+                    {details.days?.length ? (
+                      <Clear
+                        label="clear days"
+                        onPress={() => setDetail({ days: undefined })}
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {/*
+                  AVAILABLE UNTIL — the honest end of an offer. Optional, and
+                  when the day passes the give leaves the community by itself
+                  and waits in your history. Nothing is ever deleted.
+                */}
+                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-1">
+                  <span className="g-meta opacity-45">available until</span>
+                  <input
+                    type="date"
+                    value={details.until ?? ""}
+                    onChange={(e) => setDetail({ until: e.target.value || undefined })}
+                    aria-label="available until"
+                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                  />
+                  {details.until ? (
+                    <Clear
+                      label="always available"
+                      onPress={() => setDetail({ until: undefined })}
+                    />
+                  ) : null}
+                </div>
               </Field>
+
 
               <Field
                 label="how long"

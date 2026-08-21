@@ -1,163 +1,257 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SparkJourney } from "@/components/living-g/SparkJourney";
 import { SparkSplit } from "@/components/onboarding/SparkSplit";
-import { IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
+import { IntroG } from "@/components/onboarding/IntroG";
+import { LOOP_CENTRE } from "@/components/living-g/g-path";
 import type { RegionKey } from "@/components/living-g/LivingG";
 import { buzz, haptics } from "@/lib/haptics";
 
 /**
  * THE FIRST MINUTE OF GIVER — DISCOVERY, NOT EXPLANATION.
  *
- * Nothing is announced. One enormous Living G sits on the paper and simply
- * waits. Touching it is the whole interface: the loop that was touched answers,
- * playfully, in its own negative space. Only after the G has been played with
- * does it say its own name, hand over 100 sparks, and ask to be given away.
+ * The screen opens on the Living G alone. No welcome, no instruction, no
+ * invitation to touch it: curiosity is trusted. Touching the G makes it answer,
+ * twice, in one complete phrase each time. On the third touch it names itself.
+ * Then a bundle of 100 sparks simply begins travelling its stroke, out and back,
+ * for as long as it takes — nothing says what to do with it.
  *
- *   play   the G alone; a touched loop replies ("hey" / "that tickles")
- *   name   it finally introduces itself: giver / kindness is currency
- *   sparks 100 sparks arrive on its stroke
- *   drag   the person walks the sparks along the stroke themselves
- *   split  50 to wish with · 50 to give away
+ *   quiet  the G, alone, silent
+ *   brand  giver · kindness as currency
+ *   spark  100 sparks drifting the G's own rail until a finger catches them
+ *   split  the landing: 50 rise to the top loop, 50 stay to be given
+ *   gift   the remaining 50, waiting to be moved into the giving loop
  *
- * The Living G's geometry, scale, loops, swell and haptics are untouched: this
- * is only what the loops SAY, and when.
+ * TWO PATHS. Complete the spark interaction and the richer onboarding follows.
+ * Linger past roughly thirty seconds and Giver quietly opens My G instead —
+ * no failure, no explanation, no countdown.
+ *
+ * TYPOGRAPHY IS QUIET. Copy is set small and centred in the loops' own interior
+ * negative space, in the G's own coordinate system, so it can never collide with
+ * the stroke, the travelling sparks or itself.
  */
 
-type Phase = "play" | "name" | "sparks" | "drag" | "split";
+type Phase = "quiet" | "brand" | "spark" | "split" | "gift";
 
-/** A word alone in the middle loop; supporting language in the bottom loop. */
-const BRAND = 0.9;
-const PHRASE = 0.8;
+/** Type sizes in the G's own units (576 wide) — small, fixed, never crammed. */
+const BRAND = 92;
+const META = 27;
+const LINE = 33;
 
-/**
- * WHAT A TOUCHED LOOP SAYS. One reply per touch, in order — the G is being
- * discovered, so it reacts rather than instructs. After the last reply it is
- * ready to say its name.
- */
-const REPLIES: { middle: string[]; bottom?: string[] }[] = [
-  { middle: ["hey"] },
-  { middle: ["that tickles"] },
-  { middle: ["again?"], bottom: ["you like touching things"] },
-  { middle: ["okay okay"], bottom: ["i'll tell you my name"] },
-];
+/** How long a casual, repeated touch is answered for. */
+const TICKLE_MS = 2600;
 
-/** How long the G waits, quietly, before it dares to hint at being touched. */
-const HINT_MS = 3600;
+/** How long a person may explore the drifting sparks before My G opens. */
+const PATIENCE_MS = 30000;
 
-export function PlayIntro({ onDone }: { onDone: () => void }) {
-  const [phase, setPhase] = useState<Phase>("play");
-  /** How many times the G has been touched, and where it was touched last. */
-  const [touches, setTouches] = useState(0);
-  const [where, setWhere] = useState<RegionKey>("middle");
-  const [hint, setHint] = useState(false);
-  const [arrived, setArrived] = useState(false);
+const FADE = "opacity 900ms cubic-bezier(0.32,0,0.24,1)";
 
-  /* THE ONLY INVITATION: after a long, patient pause, one small word. */
+function Line({
+  show,
+  x,
+  y,
+  size,
+  colour = "var(--world-ink)",
+  track = "-0.045em",
+  weight = 900,
+  opacity = 1,
+  children,
+}: {
+  show: boolean;
+  x: number;
+  y: number;
+  size: number;
+  colour?: string;
+  track?: string;
+  weight?: number;
+  opacity?: number;
+  children: string;
+}) {
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fill={colour}
+      style={{
+        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+        fontWeight: weight,
+        fontSize: size,
+        letterSpacing: track,
+        opacity: show ? opacity : 0,
+        transition: FADE,
+      }}
+    >
+      {children}
+    </text>
+  );
+}
+
+export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
+  const [phase, setPhase] = useState<Phase>("quiet");
+  const [taps, setTaps] = useState(0);
+  /** A transient answer to a casual touch, once the G has already spoken. */
+  const [tickle, setTickle] = useState(false);
+  /** The split, told in two quiet statements. */
+  const [told, setTold] = useState(0);
+  const finished = useRef(false);
+
+  const mid = LOOP_CENTRE.middle;
+  const bot = LOOP_CENTRE.bottom;
+
+  /* THE BRAND SETTLES, THEN THE SPARKS APPEAR. Nothing is announced. */
   useEffect(() => {
-    if (phase !== "play" || touches > 0) return;
-    const t = setTimeout(() => setHint(true), HINT_MS);
+    if (phase !== "brand") return;
+    const t = setTimeout(() => setPhase("spark"), 2000);
     return () => clearTimeout(t);
-  }, [phase, touches]);
+  }, [phase]);
 
-  /* A COMPLETE THOUGHT, THEN THE NEXT. The split resolves into the people. */
+  /* THE FALLBACK. Each half of the spark interaction is given its own unhurried
+     window; if the person is still exploring after it, My G simply opens. */
   useEffect(() => {
-    if (phase !== "split") return;
-    const t = setTimeout(onDone, 2600);
+    if (phase !== "spark" && phase !== "gift") return;
+    const t = setTimeout(() => {
+      if (finished.current) return;
+      finished.current = true;
+      onDone(false);
+    }, PATIENCE_MS);
     return () => clearTimeout(t);
   }, [phase, onDone]);
 
-  const touch = (region: RegionKey) => () => {
-    if (phase !== "play") return;
+  /* THE 100 HAS LANDED: the halves separate, and each one is named. */
+  useEffect(() => {
+    if (phase !== "split") return;
+    const a = setTimeout(() => setTold(1), 700);
+    const b = setTimeout(() => setTold(2), 2100);
+    const c = setTimeout(() => setPhase("gift"), 3600);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+      clearTimeout(c);
+    };
+  }, [phase]);
+
+  /* A CASUAL TOUCH IS STILL ANSWERED — but never with new onboarding copy. */
+  useEffect(() => {
+    if (!tickle) return;
+    const t = setTimeout(() => setTickle(false), TICKLE_MS);
+    return () => clearTimeout(t);
+  }, [tickle]);
+
+  const touch = (_region: RegionKey) => () => {
     buzz();
-    setHint(false);
-    setWhere(region);
-    setTouches((n) => {
-      const next = n + 1;
-      if (next >= REPLIES.length) setPhase("name");
-      return next;
-    });
+    if (phase === "quiet") {
+      const next = taps + 1;
+      setTaps(next);
+      if (next >= 3) setPhase("brand");
+      return;
+    }
+    setTickle(true);
   };
 
-  const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
-    lines ? { lines, plan: lines, scale } : undefined;
+  const press: Partial<Record<RegionKey, () => void>> = {
+    top: touch("top"),
+    middle: touch("middle"),
+    bottom: touch("bottom"),
+  };
 
-  /** The reply belongs to the loop that was touched, never to the whole G. */
-  const reply = touches > 0 ? REPLIES[Math.min(touches, REPLIES.length) - 1]! : undefined;
+  const done = () => {
+    if (finished.current) return;
+    finished.current = true;
+    onDone(true);
+  };
 
-  let middle: LoopCopy | undefined;
-  let bottom: LoopCopy | undefined;
+  /** THE WORDS. One phrase at a time, whole, centred in its own quiet space. */
+  const copy = (
+    <g pointerEvents="none">
+      {/* THE TICKLES — each one a complete phrase, never scattered. */}
+      <Line show={phase === "quiet" && taps === 1} x={bot.x} y={bot.y} size={LINE} opacity={0.85}>
+        hey, that tickles!
+      </Line>
+      <Line show={phase === "quiet" && taps === 2} x={bot.x} y={bot.y} size={LINE} opacity={0.85}>
+        ha ha, that tickles.
+      </Line>
+      <Line show={tickle} x={bot.x} y={bot.y - LINE * 3} size={LINE} opacity={0.5}>
+        hey, that tickles.
+      </Line>
 
-  if (phase === "play") {
-    /* The touched loop answers; if it was the top loop, the middle speaks for
-       it, because words never live inside the small circle. */
-    const answer = reply?.middle;
-    if (where === "bottom") {
-      bottom = say(answer, PHRASE);
-      middle = say(reply?.bottom, BRAND);
-    } else {
-      middle = say(answer, BRAND);
-      bottom = say(reply?.bottom, PHRASE);
-    }
-    if (!reply && hint) bottom = { lines: ["touch me"], plan: ["touch me"], scale: PHRASE, opacity: 0.5 };
-  } else if (phase === "name") {
-    middle = say(["giver"], BRAND);
-    bottom = say(["kindness is", "currency"], PHRASE);
-  } else if (phase === "sparks") {
-    middle = say(["giver"], BRAND);
-    bottom = say(["here's", "100 sparks"], PHRASE);
-  } else if (phase === "drag") {
-    middle = arrived ? say(["giver"], BRAND) : undefined;
-    bottom = arrived
-      ? undefined
-      : { lines: ["slide to spark change"], plan: ["slide to spark change"], scale: PHRASE };
-  } else {
-    middle = { lines: ["50", "to wish with"], plan: ["50", "to wish with"], scale: BRAND, hero: true };
-    bottom = { lines: ["50", "to give away"], plan: ["50", "to give away"], scale: PHRASE, hero: true };
-  }
+      {/* THE NAME. One word, alone, in the middle loop's own negative space. */}
+      <Line show={phase !== "quiet"} x={mid.x} y={mid.y} size={BRAND}>
+        giver
+      </Line>
+      <Line
+        show={phase === "brand" || phase === "spark"}
+        x={bot.x}
+        y={bot.y}
+        size={META}
+        weight={700}
+        track="0.26em"
+        opacity={0.62}
+      >
+        kindness as currency
+      </Line>
 
-  /* TAPPING ANYWHERE ONLY MOVES THE STORY ON once the G has spoken. */
-  const advance =
-    phase === "name"
-      ? () => {
-          buzz();
-          setPhase("sparks");
-        }
-      : phase === "sparks"
-        ? () => {
-            buzz();
-            setPhase("drag");
-          }
-        : undefined;
+      {/* THE SPLIT, EXPLAINED BY THE NUMBERS THEMSELVES. */}
+      <Line
+        show={told >= 1 && phase !== "quiet"}
+        x={bot.x}
+        y={bot.y - LINE * 0.8}
+        size={LINE}
+        opacity={0.9}
+      >
+        50 sparks for you
+      </Line>
+      <Line
+        show={told >= 2}
+        x={bot.x}
+        y={bot.y + LINE * 0.8}
+        size={LINE}
+        opacity={0.62}
+      >
+        50 sparks for you to gift
+      </Line>
+    </g>
+  );
 
   return (
     <IntroG
-      world={phase === "split" ? "gift" : "welcome"}
-      {...(middle ? { middle } : {})}
-      {...(bottom ? { bottom } : {})}
-      {...(advance ? { onAdvance: advance } : {})}
-      {...(phase === "play" || phase === "name"
-        ? { press: { top: touch("top"), middle: touch("middle"), bottom: touch("bottom") } }
-        : {})}
-      {...(phase === "sparks"
-        ? { overlay: <SparkSplit step="hundred" /> }
-        : phase === "drag"
-          ? {
-              overlay: (
-                <>
-                  <SparkSplit step="held" />
-                  <SparkJourney
-                    mode="drag"
-                    count={100}
-                    onArrive={() => {
-                      setArrived(true);
-                      haptics.success();
-                    }}
-                    onGreen={() => setPhase("split")}
-                  />
-                </>
-              ),
-            }
-          : {})}
+      world={phase === "split" || phase === "gift" ? "gift" : "welcome"}
+      press={press}
+      overlay={
+        <>
+          {copy}
+
+          {/* THE HUNDRED, DRIFTING THE G'S OWN RAIL UNTIL IT IS CAUGHT. */}
+          {phase === "spark" ? (
+            <SparkJourney
+              mode="gift"
+              count={100}
+              bob
+              wash={false}
+              colour="var(--world-ink)"
+              grabColour="var(--giver-connection)"
+              onArrive={() => {
+                haptics.success();
+                setPhase("split");
+              }}
+            />
+          ) : null}
+
+          {/* THE HALVES. The purple half is already the person's own. */}
+          {phase === "split" ? <SparkSplit step="give" /> : null}
+          {phase === "gift" ? (
+            <>
+              <SparkSplit step="held" />
+              <SparkJourney
+                mode="drag"
+                count={50}
+                colour="var(--giver-generosity)"
+                onGreen={done}
+              />
+            </>
+          ) : null}
+        </>
+      }
     />
   );
 }

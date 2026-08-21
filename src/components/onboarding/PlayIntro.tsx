@@ -249,12 +249,8 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
             />
           ) : null}
 
-          {/* THE HALVES. Green stays mine; purple is for the Giver I will choose. */}
-          {phase === "collect" ? <SparkSplit step="collect" seat={seat} /> : null}
-          {phase === "rise" ? <SparkSplit step="rise" seat={seat} /> : null}
           {phase === "gift" ? (
             <>
-              <SparkSplit step="held" seat={seat} />
               <SparkJourney
                 mode="drag"
                 count={50}

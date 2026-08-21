@@ -209,7 +209,15 @@ export function SparkJourney({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, u, arrived]);
 
-  // THE CHANGE. Kept in its OWN effect so nothing can cancel it mid-flight.
+  /**
+   * THE CHANGE — ONE G, ONE TOGGLE, ONE COLOUR.
+   *
+   * The landing recolours the LIVING G ITSELF by moving the world's own colour
+   * token on the live world container. The existing stroke and the ONE existing
+   * toggle (both painted with --world-g) turn together, wherever that toggle
+   * happens to be sitting. No second G, no second ear, no cloned selector is
+   * ever drawn, and the toggle is never moved to meet the sparks.
+   */
   useEffect(() => {
     if (!arrived) return;
     if (mode !== "drag" || !washOn) {
@@ -217,16 +225,15 @@ export function SparkJourney({
       return;
     }
 
-    let raf = 0;
-    const start = performance.now();
-    const step = (now: number) => {
-      const k = Math.min(1, (now - start) / WASH_MS);
-      setWash(ease(k));
-      if (k < 1) raf = requestAnimationFrame(step);
-      else onGreen?.();
+    const world = rail.current?.closest<HTMLElement>("[data-world]") ?? null;
+    world?.style.setProperty("--world-g", washColour);
+
+    const t = setTimeout(() => onGreen?.(), WASH_MS);
+    return () => {
+      clearTimeout(t);
+      /* Back to the correct post-animation colour: the token is simply released. */
+      world?.style.removeProperty("--world-g");
     };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arrived]);
 

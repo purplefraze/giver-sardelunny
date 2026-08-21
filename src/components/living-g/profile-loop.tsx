@@ -150,31 +150,20 @@ function layoutBottom(
   return { rows: placed, scales };
 }
 
-export function profileLoop({
-  region,
-  blocks,
-  lift = 0,
-}: {
-  /** Accepted for API compatibility; centring always uses the loop centre. */
-  anchor?: Anchor;
-  region: RegionKey;
-  blocks: LoopBlock[];
-  lift?: number;
-}) {
+/**
+ * VERTICAL BREATHING ROOM. The bottom loop carries three label+answer pairs, so
+ * the whole group is held to a smaller share of the loop's height, well clear of
+ * the S-curve above and the stroke below.
+ */
+const LOOP_HEIGHT = (region: RegionKey) => (region === "bottom" ? 1.92 : 1.8);
+
+/** The row builder for one loop's stack — shared by every profile, everywhere. */
+function makeBuild(region: RegionKey, blocks: LoopBlock[]) {
   const token = PROFILE_TYPE[region];
   const inset = PROFILE_SAFE_INSET[region];
-  const origin = loopOrigin(region, lift);
-
   const fill = PROFILE_FILL[region];
 
-  /**
-   * VERTICAL BREATHING ROOM. The bottom loop carries three label+answer pairs,
-   * so the whole group is held to a smaller share of the loop's height, well
-   * clear of the S-curve above and the stroke below.
-   */
-  const height = region === "bottom" ? 1.92 : 1.8;
-
-  const build = (stepOrScales: number | Record<LoopRole, number>) => {
+  return (stepOrScales: number | Record<LoopRole, number>) => {
     const max = wrapWidth(region, WRAP_FACTOR[region], inset) * fill;
     const scaleFor = (role: LoopRole) =>
       typeof stepOrScales === "number" ? stepOrScales : stepOrScales[role];

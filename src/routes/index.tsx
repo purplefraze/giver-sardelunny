@@ -35,6 +35,9 @@ import { primaryGive, CATEGORY_PLURAL, CATEGORIES, myProfileStore } from "@/data
 import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
+
+/** FIRST USE: the toggle offers the four content worlds only — My G is separate. */
+const MODES_ONLY = ["wish", "give", "trade", "borrow"] as const;
 import { useItems } from "@/hooks/use-items";
 import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
 
@@ -315,6 +318,16 @@ function Index() {
     !lifecycle.profileSetupCompletedAt;
   const setup = () => setEditor({ kind: "about" });
 
+  /**
+   * MY G IS NOT A CONTENT MODE. During first use the toggle only travels the
+   * four worlds; My G is entered intentionally by touching the G, and the G
+   * itself shifts to red and says "my g" before profile setup opens.
+   */
+  const enterMyG = () => {
+    if (seat !== "giver") setSeat("giver");
+    window.setTimeout(setup, 460);
+  };
+
 
 
   /**
@@ -361,7 +374,9 @@ function Index() {
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
-          onDone={({ earned }) => {
+          onDone={({ earned, mode: gifted }) => {
+            /* CONTINUITY: my first G opens in the exact mode I just gave in. */
+            if (gifted) setSeat(gifted);
             /* A NEW PERSON GETS A CLEAN, IDEMPOTENT HANDOVER. Sample people and
                their community records are never projected into this profile. */
             initializeFirstUse(earned);
@@ -398,7 +413,7 @@ function Index() {
               <EarSelector
                 mode={seat}
                 onChange={setSeat}
-                seats={SEATS}
+                seats={firstArrival && seat !== "giver" ? MODES_ONLY : SEATS}
                 {...(!firstArrival && isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
                 {...(!firstArrival && isProfile && unread ? { badge: unread } : {})}
@@ -412,7 +427,7 @@ function Index() {
                 */
                 onTap={() =>
                   firstArrival
-                    ? setup()
+                    ? enterMyG()
                     : isProfile
                       ? setEditor({ kind: "about" })
                       : setSearch(mode as ItemType)
@@ -429,7 +444,7 @@ function Index() {
                 panelBody: null,
                 onPress: () =>
                   firstArrival
-                    ? setup()
+                    ? enterMyG()
                     : isProfile
                       ? setEditor({ kind: "about" })
                       : setSearch(mode as ItemType),
@@ -452,7 +467,7 @@ function Index() {
                 */
                 onPress: () => {
                   if (firstArrival) {
-                    setup();
+                    enterMyG();
                     return;
                   }
                   if (isProfile && !latest) {
@@ -511,7 +526,7 @@ function Index() {
                 panelTitle: isProfile ? "my gives" : content.community.title,
                 panelBody: null,
                 onPress: firstArrival
-                  ? /* NOTHING BUT PROFILE SETUP EXISTS YET. */ setup
+                  ? /* THE G SHIFTS INTO MY G, THEN SETUP OPENS. */ enterMyG
                   : isProfile
                   ? /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
                     () => openWorld("give")

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import {
@@ -17,7 +17,10 @@ import {
   TIME_OPTIONS,
   TITLE_COUNTDOWN_AT,
   TITLE_MAX,
-  WHERE_OPTIONS,
+  ASKS_AREA,
+  ASKS_DURATION,
+  WHERE_FOR,
+  classifyKind,
   contextFieldsFor,
   detailBits,
   itemsStore,
@@ -46,7 +49,7 @@ import { haptics } from "@/lib/haptics";
 
 const CATEGORY_ASK: Record<Category, string> = {
   wish: "what do you wish for?",
-  give: "what can you give?",
+  give: "what can you give today?",
   trade: "what are you offering?",
   borrow: "what would you borrow?",
 };
@@ -95,6 +98,52 @@ function Line({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
+/**
+ * A COMPACT FIELD — one word, its answer beside it, and its choices only while
+ * it is open. Never a settings row, never every option at once.
+ */
+function Field({
+  label,
+  summary,
+  open,
+  colour,
+  onToggle,
+  children,
+}: {
+  label: string;
+  summary?: string | undefined;
+  open: boolean;
+  colour: string;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="g-rule py-3.5">
+      <button
+        type="button"
+        onClick={() => {
+          haptics.selection();
+          onToggle();
+        }}
+        className="flex w-full items-baseline justify-between gap-4 text-left"
+      >
+        <span className="g-meta opacity-40">{label}</span>
+        <span
+          className="min-w-0 flex-1 truncate pb-[0.12em] text-right text-[13px] font-black lowercase leading-[1.25] tracking-[0.02em]"
+          style={{ color: summary ? colour : "var(--world-ink)" }}
+        >
+          {summary || <span className="opacity-30">add</span>}
+        </span>
+      </button>
+      {open ? (
+        <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function CategoryForm({
   category,
   onDone,
@@ -115,6 +164,8 @@ export function CategoryForm({
   /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */
   const [details, setDetails] = useState<ItemDetails>({});
   const [problem, setProblem] = useState<string | null>(null);
+  /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
+  const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
   const colour = `var(--me-${category})`;
   const limit = MAX_PER_CATEGORY[category];
   const unlimited = !Number.isFinite(limit);
@@ -130,8 +181,32 @@ export function CategoryForm({
   const noteLeft = noteMax - note.length;
   /** ONLY THE QUESTIONS THAT MAKE SENSE for this kind of thing. */
   const extraFields = contextFieldsFor(draft);
+  /** WHAT KIND OF THING THIS IS decides which metadata is even offered. */
+  const kind = classifyKind(draft);
+  const whereOptions = WHERE_FOR[kind];
+  const whenSummary =
+    [details.days?.length ? details.days.join(" + ") : null, details.date, details.time]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+  const longSummary =
+    [details.cadence, details.duration].filter(Boolean).join(" · ") || undefined;
   /** A BRIGHT WAY BACK — electric, never muddy. */
   const wayBack = "var(--giver-me-complement)";
+
+  /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
+     sense as the give is described is quietly dropped, never corrected aloud. */
+  useEffect(() => {
+    if (
+      details.where &&
+      !whereOptions.includes(details.where) &&
+      !ASKS_AREA[kind]
+    )
+      setDetails((prev) => ({ ...prev, where: undefined }));
+    if (details.where === "online" && !whereOptions.includes("online"))
+      setDetails((prev) => ({ ...prev, where: undefined }));
+    if (details.duration && !ASKS_DURATION[kind])
+      setDetails((prev) => ({ ...prev, duration: undefined }));
+  }, [kind, details.where, details.duration, whereOptions]);
 
   const setDetail = (patch: Partial<ItemDetails>) =>
     setDetails((prev) => ({ ...prev, ...patch }));
@@ -227,16 +302,15 @@ export function CategoryForm({
     >
       <BackArrow onClick={leave} label="back to my g" />
 
-      <div className="g-page pb-14 pt-16">
+      <div className="g-page pb-[8.5rem] pt-16">
         {/* GIVING IS AN INVITATION, NOT AN INVENTORY. */}
         {category === "give" ? (
           <>
             <h1 className="g-display" style={{ color: colour }}>
               are you a giver?
             </h1>
-            <p className="g-display-sm mt-2 opacity-80">what can you give today?</p>
             <p className="g-meta mt-3 opacity-50">
-              give what you can · give what you’ve got · someone will be happy
+              give what you can · give what you want · make someone happy
             </p>
           </>
         ) : (
@@ -266,12 +340,16 @@ export function CategoryForm({
           {records.map((item, i) => (
             <li key={item.id} className="g-rule pt-4 first:border-0 first:pt-0">
               <div className="flex items-start gap-3">
-                <span
-                  className="w-5 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em] opacity-45"
-                  style={{ color: colour }}
-                >
-                  {i + 1}
-                </span>
+                {/* GIVING IS NOT A RANKED QUEUE — only scarce asks are numbered. */}
+                {category === "give" ? null : (
+                  <span
+                    className="w-5 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em] opacity-45"
+                    style={{ color: colour }}
+                  >
+                    {i + 1}
+                  </span>
+                )}
+
 
                 {/* ONE TRADE = ONE RECORD, two inputs, one set of controls. */}
                 {category === "trade" ? (
@@ -405,7 +483,12 @@ export function CategoryForm({
         {full ? (
           <p className="mt-7 g-meta">that’s {limit} — remove one to add another</p>
         ) : (
-          <div className="g-rule mt-7 space-y-4 pt-5">
+          <div
+            className={`mt-7 space-y-4 ${
+              category === "give" && records.length === 0 ? "" : "g-rule pt-5"
+            }`}
+          >
+
             {/* BORROW OR LEND — one plain question, two honest answers. */}
             {category === "borrow" ? (
               <div className="flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
@@ -468,77 +551,101 @@ export function CategoryForm({
               <p className="g-meta opacity-45">{titleLeft} characters left</p>
             ) : null}
 
-            {/* WHERE · WHEN · HOW LONG — tapped, never typed out in full. */}
-            <div className="space-y-3.5">
-              <Line label="where">
-                {WHERE_OPTIONS.map((w) => (
+            {/* WHERE · WHEN · HOW LONG — three quiet words. One opens at a
+                time, and only the questions this kind of give deserves. */}
+            <div className="space-y-0">
+              <Field
+                label="where"
+                summary={details.where}
+                open={open === "where"}
+                colour={colour}
+                onToggle={() => setOpen(open === "where" ? null : "where")}
+              >
+                {whereOptions.map((w) => (
                   <Choice
                     key={w}
                     label={w}
                     colour={colour}
                     on={details.where === w}
-                    onPress={() =>
-                      setDetail({ where: details.where === w ? undefined : w })
+                    onPress={() => {
+                      setDetail({ where: details.where === w ? undefined : w });
+                      setOpen(null);
+                    }}
+                  />
+                ))}
+                {ASKS_AREA[kind] ? (
+                  <input
+                    value={
+                      details.where && !whereOptions.includes(details.where)
+                        ? details.where
+                        : ""
                     }
+                    onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
+                    placeholder="neighbourhood / area"
+                    aria-label="neighbourhood or general area"
+                    className="w-40 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
                   />
-                ))}
-                <input
-                  value={
-                    details.where && !WHERE_OPTIONS.includes(details.where)
-                      ? details.where
-                      : ""
-                  }
-                  onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
-                  placeholder="neighbourhood / area"
-                  aria-label="neighbourhood or general area"
-                  className="w-40 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
-                />
-              </Line>
+                ) : null}
+              </Field>
 
-              <Line label="when">
-                {DAY_NAMES.map((d) => (
-                  <Choice
-                    key={d}
-                    label={d}
-                    colour={colour}
-                    on={Boolean(details.days?.includes(d))}
-                    onPress={() => toggleDay(d)}
-                  />
-                ))}
-              </Line>
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
-                {TIME_OPTIONS.map((t) => (
-                  <Choice
-                    key={t}
-                    label={t}
-                    colour={colour}
-                    on={details.time === t}
-                    onPress={() =>
-                      setDetail({ time: details.time === t ? undefined : t })
+              <Field
+                label="when"
+                summary={whenSummary}
+                open={open === "when"}
+                colour={colour}
+                onToggle={() => setOpen(open === "when" ? null : "when")}
+              >
+                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5">
+                  {DAY_NAMES.map((d) => (
+                    <Choice
+                      key={d}
+                      label={d}
+                      colour={colour}
+                      on={Boolean(details.days?.includes(d))}
+                      onPress={() => toggleDay(d)}
+                    />
+                  ))}
+                </div>
+                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5">
+                  {TIME_OPTIONS.map((t) => (
+                    <Choice
+                      key={t}
+                      label={t}
+                      colour={colour}
+                      on={details.time === t}
+                      onPress={() =>
+                        setDetail({ time: details.time === t ? undefined : t })
+                      }
+                    />
+                  ))}
+                  <input
+                    type="time"
+                    value={
+                      details.time && /^\d{2}:\d{2}$/.test(details.time)
+                        ? details.time
+                        : ""
                     }
+                    onChange={(e) => setDetail({ time: e.target.value })}
+                    aria-label="exact time"
+                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
                   />
-                ))}
-                <input
-                  type="time"
-                  value={
-                    details.time && /^\d{2}:\d{2}$/.test(details.time)
-                      ? details.time
-                      : ""
-                  }
-                  onChange={(e) => setDetail({ time: e.target.value })}
-                  aria-label="exact time"
-                  className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
-                />
-                <input
-                  type="date"
-                  value={details.date ?? ""}
-                  onChange={(e) => setDetail({ date: e.target.value })}
-                  aria-label="date"
-                  className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
-                />
-              </div>
+                  <input
+                    type="date"
+                    value={details.date ?? ""}
+                    onChange={(e) => setDetail({ date: e.target.value })}
+                    aria-label="date"
+                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                  />
+                </div>
+              </Field>
 
-              <Line label="how long">
+              <Field
+                label="how long"
+                summary={longSummary}
+                open={open === "long"}
+                colour={colour}
+                onToggle={() => setOpen(open === "long" ? null : "long")}
+              >
                 {CADENCE_OPTIONS.map((c) => (
                   <Choice
                     key={c}
@@ -550,22 +657,26 @@ export function CategoryForm({
                     }
                   />
                 ))}
-                {DURATION_OPTIONS.map((d) => (
-                  <Choice
-                    key={d}
-                    label={d}
-                    colour={colour}
-                    on={details.duration === d}
-                    onPress={() =>
-                      setDetail({ duration: details.duration === d ? undefined : d })
-                    }
-                  />
-                ))}
-              </Line>
+                {ASKS_DURATION[kind]
+                  ? DURATION_OPTIONS.map((d) => (
+                      <Choice
+                        key={d}
+                        label={d}
+                        colour={colour}
+                        on={details.duration === d}
+                        onPress={() =>
+                          setDetail({
+                            duration: details.duration === d ? undefined : d,
+                          })
+                        }
+                      />
+                    ))
+                  : null}
+              </Field>
 
               {/* ONLY WHAT MAKES SENSE FOR THIS KIND OF THING. */}
               {extraFields.length ? (
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4">
                   {extraFields.map((field) => (
                     <input
                       key={field.key}
@@ -586,6 +697,7 @@ export function CategoryForm({
                 </div>
               ) : null}
             </div>
+
 
             {/* SHORT AND SWEET — said under the field, not above it. */}
             <div className="space-y-1">
@@ -647,20 +759,30 @@ export function CategoryForm({
           </div>
         )}
 
-        {/* THE WAY BACK IS A LINK, NOT A MONUMENT. */}
-        <div className="g-rule mt-9 flex items-baseline justify-between pt-4">
-          <button
-            type="button"
-            onClick={leave}
-            className="text-[15px] font-black lowercase tracking-[0.16em] transition-transform active:scale-95"
-            style={{ color: wayBack }}
-          >
-            ← back to my g
-          </button>
-          <span className="g-meta opacity-35">everything saves as you go</span>
-        </div>
+        <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
+      </div>
+
+      {/* THE WAY BACK IS ALWAYS THERE — one small line, never over content. */}
+      <div
+        className="g-page fixed bottom-0 left-0 right-0 z-30 border-t"
+        style={{
+          background: "var(--giver-paper, #fff)",
+          borderColor: "var(--edit-rule)",
+          paddingTop: "0.85rem",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 0.85rem)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={leave}
+          className="whitespace-nowrap text-[13px] font-black lowercase tracking-[0.16em] transition-transform active:scale-95"
+          style={{ color: "var(--giver-ink, #000)" }}
+        >
+          ← back to my g
+        </button>
       </div>
     </div>
+
   );
 }
 

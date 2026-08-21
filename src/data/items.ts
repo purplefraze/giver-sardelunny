@@ -151,6 +151,88 @@ export const TIME_OPTIONS = ["mornings", "afternoons", "evenings", "flexible"];
 export const DURATION_OPTIONS = ["30 min", "1 hour", "2 hours", "flexible"];
 
 /**
+ * ASK LESS, UNDERSTAND MORE. What kind of thing this is decides which
+ * questions are even worth asking. A sourdough starter can never be "online";
+ * an object being given away has no duration.
+ */
+export type GiveKind =
+  | "object"
+  | "food"
+  | "skill"
+  | "experience"
+  | "help"
+  | "digital";
+
+const KIND_MATCH: { kind: GiveKind; match: RegExp }[] = [
+  {
+    kind: "food",
+    match:
+      /sourdough|starter|bread|jam|meal|dinner|lunch|soup|cake|bake|preserve|honey|eggs|veg|produce|food|coffee|seed/i,
+  },
+  {
+    kind: "digital",
+    match: /online|remote|cv|resume|website|spreadsheet|code|design review|admin|form|zoom|call/i,
+  },
+  {
+    kind: "skill",
+    match:
+      /tutor|lesson|teach|class|coach|language|conversation|math|science|chemistry|guitar|music|photograph|translat|mentor|advice|practice/i,
+  },
+  {
+    kind: "experience",
+    match: /dinner party|walk|hike|swim|film|cinema|concert|company|hour|club|game|tour|ride along/i,
+  },
+  {
+    kind: "help",
+    match:
+      /help|ride|lift|drive|move|haul|deliver|repair|fix|paint|build|garden|clean|sit|walking|watering|shop/i,
+  },
+  {
+    kind: "object",
+    match:
+      /tent|projector|waders|ladder|drill|bike|book|jars|boxes|chair|table|clothes|coat|shoes|toys|plant|tool|jar|kit/i,
+  },
+];
+
+export function classifyKind(text: string): GiveKind {
+  return KIND_MATCH.find((k) => k.match.test(text))?.kind ?? "help";
+}
+
+/** WHERE — never an exact home address, and never "online" for a real thing. */
+const PHYSICAL_WHERE = ["nearby pickup", "in person", "flexible"];
+const REMOTE_WHERE = ["online", "in person", "flexible"];
+
+export const WHERE_FOR: Record<GiveKind, string[]> = {
+  object: PHYSICAL_WHERE,
+  food: PHYSICAL_WHERE,
+  skill: REMOTE_WHERE,
+  digital: ["online", "flexible"],
+  experience: ["in person", "flexible"],
+  help: ["in person", "nearby pickup", "online", "flexible"],
+};
+
+/** An area can only be named where meeting in person is possible at all. */
+export const ASKS_AREA: Record<GiveKind, boolean> = {
+  object: true,
+  food: true,
+  skill: true,
+  digital: false,
+  experience: true,
+  help: true,
+};
+
+/** HOW LONG only where a duration means anything. */
+export const ASKS_DURATION: Record<GiveKind, boolean> = {
+  object: false,
+  food: false,
+  skill: true,
+  digital: true,
+  experience: true,
+  help: true,
+};
+
+
+/**
  * THE SCANNABLE FACTS OF ONE ITEM, in one order, everywhere they appear. Only
  * what exists is ever shown — no empty labels, no placeholders.
  */
@@ -290,22 +372,35 @@ const parseKm = (distance: string) => {
 
 /**
  * SEEDED DETAILS EXIST FOR THE SAME REASON REAL ONES DO: so community can be
- * scanned and understood without opening anything. Deterministic, never random.
+ * scanned and understood without opening anything. Deterministic, never random,
+ * and never nonsense — a sourdough starter is picked up nearby, not "online".
  */
-function seedDetails(type: ItemType, mi: number, i: number): ItemDetails {
+function seedDetails(text: string, mi: number, i: number): ItemDetails {
+  const kind = classifyKind(text);
   const daySets = [["tues", "thurs"], ["sat"], ["sun"], ["mon", "wed", "fri"]];
-  const places = ["online", "west end", "flexible", "north side"];
+  const areas = ["west end", "north side", "nearby pickup", "in person"];
   const times = ["evenings", "7 pm", "afternoons", "mornings"];
   const spans = ["one time", "recurring", "flexible"];
   const k = (mi + i) % 4;
+  const wheres = WHERE_FOR[kind];
+  const where = wheres[k % wheres.length]!;
+  const cadence = spans[(mi + i) % spans.length]!;
+  const flexible = where === "flexible" && cadence === "recurring";
   return {
-    days: daySets[k % daySets.length]!,
-    time: times[k % times.length]!,
-    where: places[(k + i) % places.length]!,
-    cadence: spans[(mi + i) % spans.length]!,
-    ...(type === "give" ? { duration: DURATION_OPTIONS[k % DURATION_OPTIONS.length]! } : {}),
+    /* A FLEXIBLE, RECURRING THING DOES NOT CLAIM FIXED DAYS. */
+    ...(flexible ? {} : { days: daySets[k % daySets.length]! }),
+    ...(flexible ? {} : { time: times[k % times.length]! }),
+    where:
+      where === "in person" || where === "nearby pickup"
+        ? (areas[(k + i) % areas.length] ?? where)
+        : where,
+    cadence,
+    ...(ASKS_DURATION[kind]
+      ? { duration: DURATION_OPTIONS[k % DURATION_OPTIONS.length]! }
+      : {}),
   };
 }
+
 
 /**
  * The sample community starts out as REAL items, so my items and theirs live
@@ -333,7 +428,7 @@ function seedItems(): Item[] {
           createdAt: now - (mi + 1) * 86400000 - i * 3600000,
           updatedAt: now - (mi + 1) * 86400000 - i * 3600000,
           ...(km === undefined ? {} : { distanceKm: km }),
-          details: seedDetails(type, mi, i),
+          details: seedDetails(text, mi, i),
           boostCount: 0,
         });
       });
@@ -348,13 +443,21 @@ function seedItems(): Item[] {
  * touched.
  */
 function withSeedDetails(item: Item): Item {
-  if (item.details || !item.id.startsWith("seed-")) return item;
+  /* DEMO ITEMS ARE ALWAYS RE-DERIVED, so old nonsense combinations heal. */
+  if (!item.id.startsWith("seed-")) return item;
   const parts = item.id.split("-");
   const memberId = parts[1] ?? "";
   const index = Number(parts[3] ?? 0) || 0;
   const mi = Math.max(0, MEMBERS.findIndex((m) => m.id === memberId));
-  return { ...item, details: seedDetails(item.type, mi, index) };
+  const heal = (s: string) => s.replace(/^italian lessons(?= for )/, "language lessons");
+  return {
+    ...item,
+    text: heal(item.text),
+    ...(item.offer ? { offer: heal(item.offer) } : {}),
+    details: seedDetails(item.text, mi, index),
+  };
 }
+
 
 function read(): ItemsState {
   if (typeof window === "undefined") return EMPTY;

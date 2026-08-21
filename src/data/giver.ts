@@ -104,7 +104,7 @@ export const MEMBERS: Member[] = [
         "sourdough starter, endless",
       ],
       trade: [
-        "italian lessons for photography",
+        "language lessons for photography",
         "cake baking for bike repair",
         "chemistry help for guitar lessons",
       ],

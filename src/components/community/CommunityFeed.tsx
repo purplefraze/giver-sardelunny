@@ -88,7 +88,7 @@ export function CommunityFeed({
       <h1 className="g-display" style={{ color: "var(--giver-ink)" }}>
         community
       </h1>
-      <p className="g-meta mt-2 opacity-55">it’s all happening. near you. right now.</p>
+      <p className="g-meta mt-2 whitespace-nowrap opacity-55">it’s all happening near you, right now.</p>
 
       {/* FILTERS ARE WORDS, NOT CHIPS OR ICONS. ALL · GIVE · WISH · TRADE · BORROW */}
       <div className="g-rule mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-2 pt-3 text-[13px] font-black lowercase tracking-[0.16em]">
@@ -160,7 +160,7 @@ export function CommunityFeed({
               {/* THE HEADLINE OPENS THE ACTIVITY. */}
               <button
                 type="button"
-                className="mt-1 block w-full truncate text-left font-black lowercase leading-[0.95] tracking-[-0.03em]"
+                className="g-post mt-1 block w-full overflow-hidden text-ellipsis whitespace-nowrap text-left"
                 style={{
                   color: ACTIVITY_FILL[item.type],
                   fontSize: headlineSize(line),

@@ -172,10 +172,14 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-  const [seat, setSeatState] = useState<Seat>("give");
+    /* MY G IS A SEAT; SEARCH IS RESERVED AND UNREACHABLE, so it can never be
+     held here. */
+  const [seat, setSeatState] = useState<Mode | "giver">("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
+    /* SEARCH IS RESERVED, NOT BUILT: the toggle cannot come to rest there. */
+    if (next === "search") return;
     setSeatState(next);
     /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
        remembered as the first-use mode. */
@@ -412,7 +416,7 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={activity ?? "me"}
+            world={activity ?? "profile"}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={

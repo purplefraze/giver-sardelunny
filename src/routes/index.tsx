@@ -135,6 +135,8 @@ function Index() {
      Remove that legacy state once; development profiles are now explicit only. */
   removeLegacyAutomaticProfile();
   const lifecycle = useLifecycle();
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [sessionEntered, setSessionEntered] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /**
@@ -340,6 +342,18 @@ function Index() {
   ).sort((a, b) => b.item.updatedAt - a.item.updatedAt)[0] ?? null;
 
 
+
+  /* Persisted lifecycle/profile state is browser-owned. Render neither the
+     onboarding nor My G until it is hydrated, preventing a stale server frame
+     from flashing or surviving as the first post-onboarding screen. */
+  if (!hydrated) {
+    return (
+      <main
+        className="mx-auto h-[100dvh] w-full max-w-[520px]"
+        style={{ background: "var(--giver-paper)" }}
+      />
+    );
+  }
 
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">

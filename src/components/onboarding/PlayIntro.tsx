@@ -33,7 +33,7 @@ import { buzz, haptics } from "@/lib/haptics";
  * the stroke, the travelling sparks or itself.
  */
 
-type Phase = "quiet" | "brand" | "spark" | "split" | "gift";
+type Phase = "quiet" | "brand" | "spark" | "collect" | "rise" | "gift";
 
 /** Type sizes in the G's own units (576 wide) — small, fixed, never crammed. */
 const BRAND = 92;
@@ -135,7 +135,11 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
 
   /* THE 100 HAS LANDED: the halves separate, and each one is named. */
   useEffect(() => {
-    if (phase !== "split") return;
+    if (phase !== "collect") return;
+    /* THE SEQUENCE READS: land -> gather in the middle loop -> shoot into the
+       loop the toggle is actually in -> settle there. The middle-loop step is
+       never skipped. */
+    const r = setTimeout(() => setPhase("rise"), 900);
     const a = setTimeout(() => setTold(1), 700);
     const b = setTimeout(() => setTold(2), 2100);
     const c = setTimeout(() => setPhase("gift"), 3600);
@@ -143,6 +147,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
       clearTimeout(a);
       clearTimeout(b);
       clearTimeout(c);
+      clearTimeout(r);
     };
   }, [phase]);
 
@@ -234,23 +239,30 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               count={100}
               bob
               wash={false}
-              colour="var(--giver-participation)"
-              grabColour="var(--giver-connection)"
+              /* GIVER -> ME IS GREEN, and stays green while it is moved: the
+                 colour is the sparks' relationship, not their position. */
+              colour="var(--giver-generosity)"
               onArrive={() => {
                 haptics.success();
-                setPhase("split");
+                setPhase("collect");
               }}
             />
           ) : null}
 
           {/* THE HALVES. Green stays mine; purple is for the Giver I will choose. */}
-          {phase === "split" ? <SparkSplit step="gift" seat={seat} /> : null}
+          {phase === "collect" ? <SparkSplit step="collect" seat={seat} /> : null}
+          {phase === "rise" ? <SparkSplit step="rise" seat={seat} /> : null}
           {phase === "gift" ? (
             <>
               <SparkSplit step="held" seat={seat} />
               <SparkJourney
                 mode="drag"
                 count={50}
+                /* ALIVE, BUT NEVER SELF-COMPLETING: the purple half drifts its
+                   allowed stretch of the rail and stops short. Only a finger
+                   carried all the way to the true end of the stroke gives. */
+                bob
+                requireFull
                 colour="var(--giver-connection)"
                 washColour="var(--giver-connection)"
                 onGreen={done}

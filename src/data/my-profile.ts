@@ -460,6 +460,15 @@ export const myProfileStore = {
       reserved,
       sparks: refund ? person.sparks + held : person.sparks,
     });
+    ledgerStore.record({
+      currency: "spark",
+      kind: refund ? "returned" : "spent",
+      amount: refund ? held : 0,
+      say: refund
+        ? "your wish came home — sparks returned"
+        : "your wish was granted — sparks passed on",
+      itemId,
+    });
   },
 
   /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */
@@ -467,6 +476,20 @@ export const myProfileStore = {
     hydrate();
     if (person.sparksSeeded) return;
     savePerson({ ...person, sparks: STARTING_SPARKS, sparksSeeded: true });
+    ledgerStore.record({
+      id: "seed:received",
+      currency: "spark",
+      kind: "received",
+      amount: STARTING_SPARKS * 2,
+      say: "giver welcomed you with 100 sparks",
+    });
+    ledgerStore.record({
+      id: "seed:gifted",
+      currency: "spark",
+      kind: "gifted",
+      amount: -STARTING_SPARKS,
+      say: "you gifted 50 sparks onward — your first give",
+    });
   },
   /** REORDER = PRIORITISE. Position #1 is what the Living G shows. */
   moveItem(category: Category, index: number, delta: number) {
@@ -482,8 +505,16 @@ export const myProfileStore = {
     const result = itemsStore.boost(itemId, ME_ID);
     if (!result.ok) return result;
     savePerson({ ...person, sparkles: person.sparkles - 1 });
+    ledgerStore.record({
+      currency: "sparkle",
+      kind: "spent",
+      amount: -1,
+      say: "you helped somebody else get seen",
+      itemId,
+    });
     return { ok: true };
   },
+
 };
 
 /** Sparks currently held inside my open wishes — visible, never hidden. */

@@ -1,65 +1,98 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { myProfileStore } from "@/data/my-profile";
+import {
+  ADULT_AGE,
+  HANDLE_MESSAGE,
+  PASSWORD_RULES,
+  ageFrom,
+  birthdayLabel,
+  checkHandle,
+  displayHandle,
+  normaliseHandle,
+  passwordStrongEnough,
+  type HandleCheck,
+} from "@/data/account";
+import { PhotoCropper } from "@/components/profile/PhotoCropper";
+import {
+  ProfilePhotoToggle,
+  type PhotoSeat,
+} from "@/components/profile/ProfilePhotoToggle";
 import { buzz } from "@/lib/haptics";
 import { haptics } from "@/lib/haptics";
 
 /**
- * DESTINATION SCREEN — the deeper profile information behind the TOP LOOP.
- * You arrive here from the Living G, edit, and leave again.
+ * MY G — THE ACCOUNT AND THE PERSON, ON ONE COMPACT PAGE.
  *
- * ONE COMPACT PAGE, NOT A LONG FORM. Every keystroke commits to the single
- * source of truth immediately, so there is no save step and no dead space
- * between sections: photo, about, birthday, gender, by day, by night, anything
- * else. Nothing more.
+ * Giver asks for almost nothing, but an ACCOUNT is real: a username, a date of
+ * birth and a password are required, marked with *, and everything else is
+ * genuinely optional. Publishing a give needs 18+, and that is said here, once,
+ * plainly — never as an alarm.
  *
- * THE PRIVATE UTILITIES LIVE ON THE PHOTO. Sparks, sparkles and messages used
- * to be three large counters lengthening the page; they are now one miniature
- * toggle attached to the photo circle — a quiet echo of the Living G's own
- * control. Sparks are PURPLE, sparkles PINK, messages RED.
+ * THE PRIVATE UTILITIES LIVE ON THE PHOTO ITSELF: one miniature Living-G-style
+ * toggle riding the rim of my photo circle. 1:30 messages (RED), 3:00 sparks
+ * (PURPLE), 4:30 sparkles (PINK). First tap selects, second tap opens that
+ * history. There are no large counters anywhere.
  */
 
-const UTILITIES = ["sparks", "sparkles", "messages"] as const;
-type Utility = (typeof UTILITIES)[number];
+const GENDERS = ["male", "female", "non-binary", "prefer not to say"] as const;
 
-const UTILITY_COLOUR: Record<Utility, string> = {
-  sparks: "var(--giver-sparks)",
-  sparkles: "var(--giver-sparkles)",
-  messages: "var(--giver-messages)",
-};
-
-const GENDERS = ["male", "female", "prefer not to say"] as const;
+const PHOTO = 112;
 
 export function AboutForm({
   onDone,
   onHelp,
   onMessages,
+  onSparks,
+  onSparkles,
   unread = 0,
   firstSetup = false,
 }: {
   onDone: () => void;
   /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
   onHelp?: () => void;
-  /** MY INBOX LIVES HERE, beside my balances — private account information. */
+  /** THE THREE HISTORY PORTALS behind my photo's own toggle. */
   onMessages?: () => void;
+  onSparks?: () => void;
+  onSparkles?: () => void;
   unread?: number;
   /** A new person's setup is identity only; account furniture comes afterwards. */
   firstSetup?: boolean;
 }) {
   const me = useMyProfile();
-  const [utility, setUtility] = useState<Utility>("sparks");
+  const [handleState, setHandleState] = useState<HandleCheck>({ state: "empty" });
+  const [pass, setPass] = useState("");
+  const [again, setAgain] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [cropping, setCropping] = useState<string | null>(null);
+  const dateRef = useRef<HTMLInputElement | null>(null);
 
-  const value: Record<Utility, string> = {
-    sparks: String(me.sparks),
-    sparkles: String(me.sparkles),
-    messages: unread ? String(unread) : "—",
-  };
+  const handle = normaliseHandle(me.username);
+  const age = ageFrom(me.birthday);
+  const adult = age !== null && age >= ADULT_AGE;
 
-  const cycleUtility = () => {
-    haptics.selection();
-    setUtility(UTILITIES[(UTILITIES.indexOf(utility) + 1) % UTILITIES.length]!);
-  };
+  /* AVAILABILITY IS CHECKED WHILE YOU TYPE, and never blocks the typing. */
+  useEffect(() => {
+    let alive = true;
+    if (!handle || handle === "you") {
+      setHandleState({ state: "empty" });
+      return;
+    }
+    const timer = setTimeout(() => {
+      void checkHandle(handle).then((r) => alive && setHandleState(r));
+    }, 260);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [handle]);
+
+  /* A PASSWORD IS SAVED THE MOMENT IT IS REAL — hashed, never stored plainly. */
+  useEffect(() => {
+    if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
+    void myProfileStore.setPassword(pass);
+  }, [pass, again]);
 
   const pickPhoto = () => {
     const input = document.createElement("input");
@@ -70,20 +103,28 @@ export function AboutForm({
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async () => {
-        /* Shrunk before saving so the photo always fits alongside the words. */
-        const photo = await shrink(String(reader.result));
-        myProfileStore.patch({ photo });
+        /* Shrunk first, then positioned: the crop is always the last word. */
+        setCropping(await shrink(String(reader.result)));
       };
       reader.readAsDataURL(file);
     };
     input.click();
   };
 
+  const openSeat = (seat: PhotoSeat) => {
+    if (seat === "messages") onMessages?.();
+    if (seat === "sparks") onSparks?.();
+    if (seat === "sparkles") onSparkles?.();
+  };
+
   const save = () => {
     buzz();
-    myProfileStore.patch({ built: true });
+    myProfileStore.patch({ built: true, username: displayHandle(me.username) });
     onDone();
   };
+
+  const passwordSet = Boolean(me.password);
+  const matches = pass.length > 0 && pass === again;
 
   return (
     <div
@@ -94,41 +135,51 @@ export function AboutForm({
       <BackArrow onClick={save} label="back to my g" />
 
       <div className="px-7 pb-14 pt-16">
-        {/* PHOTO + ITS ONE TINY UTILITY TOGGLE. */}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              buzz();
-              pickPhoto();
-            }}
-            className="relative shrink-0 transition-transform active:scale-[0.98]"
-            aria-label={me.photo ? "change photo" : "add a photo"}
-          >
-            {me.photo ? (
-              <img
-                src={me.photo}
-                alt="my profile photo"
-                className="h-20 w-20 rounded-full object-cover"
-              />
-            ) : (
-              /* MATHEMATICALLY CENTRED PLUS: a flex box with no line-height of
-                 its own, so the glyph sits on the exact centre of the circle. */
-              <span
-                className="flex h-20 w-20 items-center justify-center rounded-full"
-                style={{ border: "2px solid var(--giver-me)" }}
-              >
+        {/* PHOTO + ITS ONE PHYSICAL UTILITY TOGGLE ON THE RIM. */}
+        <div className="flex items-start gap-5">
+          <div className="relative shrink-0" style={{ width: PHOTO, height: PHOTO }}>
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                if (me.photoSource) setCropping(me.photoSource);
+                else pickPhoto();
+              }}
+              className="block h-full w-full transition-transform active:scale-[0.98]"
+              aria-label={me.photo ? "reposition photo" : "add a photo"}
+            >
+              {me.photo ? (
+                <img
+                  src={me.photo}
+                  alt="my profile photo"
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                /* MATHEMATICALLY CENTRED PLUS — a flex box with no line-height. */
                 <span
-                  className="block text-[2rem] font-black leading-none"
-                  style={{ color: "var(--giver-me)", transform: "translateY(-0.03em)" }}
+                  className="flex h-full w-full items-center justify-center rounded-full"
+                  style={{ border: "2px solid var(--giver-me)" }}
                 >
-                  +
+                  <span
+                    className="block text-[2.4rem] font-black leading-none"
+                    style={{ color: "var(--giver-me)", transform: "translateY(-0.03em)" }}
+                  >
+                    +
+                  </span>
                 </span>
-              </span>
-            )}
-          </button>
+              )}
+            </button>
 
-          <div className="min-w-0">
+            {!firstSetup ? (
+              <ProfilePhotoToggle
+                size={PHOTO}
+                counts={{ messages: unread, sparks: me.sparks, sparkles: me.sparkles }}
+                onOpen={openSeat}
+              />
+            ) : null}
+          </div>
+
+          <div className="min-w-0 pt-1">
             <button
               type="button"
               onClick={() => {
@@ -140,51 +191,162 @@ export function AboutForm({
             >
               {me.photo ? "change photo" : "add a photo"}
             </button>
-
-            {!firstSetup ? (
+            {me.photoSource ? (
               <button
                 type="button"
                 onClick={() => {
-                  if (utility === "messages" && onMessages) {
-                    buzz();
-                    onMessages();
-                    return;
-                  }
-                  cycleUtility();
+                  buzz();
+                  setCropping(me.photoSource);
                 }}
-                onDoubleClick={cycleUtility}
-                className="mt-2.5 flex items-center gap-2 text-left"
-                aria-label={`${utility}: ${value[utility]} — tap to cycle`}
+                className="mt-2 block text-left g-meta opacity-55"
               >
-                {/* THE MINIATURE TOGGLE: three seats, one tiny travelling dot. */}
-                <span className="flex items-center gap-1">
-                  {UTILITIES.map((u) => (
-                    <span
-                      key={u}
-                      className="block rounded-full"
-                      style={{
-                        width: u === utility ? 7 : 4,
-                        height: u === utility ? 7 : 4,
-                        background: UTILITY_COLOUR[u],
-                        opacity: u === utility ? 1 : 0.28,
-                        transition: "all 180ms ease-out",
-                      }}
-                    />
-                  ))}
-                </span>
-                <span
-                  className="text-2xl font-black leading-none tracking-[-0.04em] tabular-nums"
-                  style={{ color: UTILITY_COLOUR[utility] }}
-                >
-                  {value[utility]}
-                </span>
-                <span className="g-meta opacity-45">{utility}</span>
+                reposition
               </button>
+            ) : null}
+            {!firstSetup ? (
+              <p className="mt-3 g-meta opacity-35">tap a dot, tap again to open</p>
             ) : null}
           </div>
         </div>
 
-        <div className="mt-7 space-y-5">
+        {/* ---- REQUIRED: THE ACCOUNT ITSELF. ---- */}
+        <p className="mt-10 g-heading" style={{ color: "var(--giver-me)" }}>
+          your account
+        </p>
+        <p className="mt-2 g-meta opacity-40">* required</p>
+
+        <div className="mt-5 space-y-5">
+          <Field
+            label="username / handle *"
+            value={handle}
+            onChange={(v) => myProfileStore.patch({ username: normaliseHandle(v) })}
+            placeholder="yourname"
+            prefix="@"
+            limit={20}
+            note={
+              handleState.state === "free"
+                ? HANDLE_MESSAGE.free
+                : handleState.state === "taken"
+                  ? HANDLE_MESSAGE.taken
+                  : handleState.state === "short"
+                    ? HANDLE_MESSAGE.short
+                    : "lowercase, no spaces"
+            }
+            noteColour={
+              handleState.state === "taken" ? "var(--giver-action)" : undefined
+            }
+          />
+
+          {/* BIRTHDAY — THE ANSWER BELONGS TO ITS OWN LABEL, right beside it. */}
+          <div className="flex flex-col gap-1.5">
+            <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
+              birthday / dob *
+            </span>
+            <div
+              className="relative flex items-baseline gap-3 border-b pb-1"
+              style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.selection();
+                  dateRef.current?.showPicker?.();
+                  dateRef.current?.focus();
+                }}
+                className="text-left text-xl font-black lowercase leading-tight tracking-[-0.03em]"
+                style={{ opacity: me.birthday ? 1 : 0.3 }}
+              >
+                {birthdayLabel(me.birthday) || "choose your date of birth"}
+              </button>
+              <input
+                ref={dateRef}
+                type="date"
+                value={me.birthday ?? ""}
+                onChange={(e) => myProfileStore.patch({ birthday: e.target.value })}
+                aria-label="date of birth"
+                className="absolute inset-0 h-full w-full opacity-0"
+              />
+            </div>
+            <span
+              className="g-meta"
+              style={{
+                color: age !== null && !adult ? "var(--giver-action)" : undefined,
+                opacity: 0.6,
+              }}
+            >
+              {age === null
+                ? `you must be ${ADULT_AGE} or older to publish a give`
+                : adult
+                  ? `${age} — you can publish gives`
+                  : `${age} — gives can be written and saved, not published yet`}
+            </span>
+          </div>
+
+          <Secret
+            label="password *"
+            value={pass}
+            onChange={setPass}
+            show={showPass}
+            placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
+          />
+          <div className="space-y-1.5">
+            {PASSWORD_RULES.map((rule) => {
+              const ok = rule.test(pass);
+              return (
+                <p
+                  key={rule.label}
+                  className="g-meta"
+                  style={{
+                    color: ok ? "var(--mode-give)" : undefined,
+                    opacity: ok ? 0.9 : 0.4,
+                  }}
+                >
+                  {ok ? "✓" : "·"} {rule.label}
+                </p>
+              );
+            })}
+          </div>
+
+          <Secret
+            label="confirm password *"
+            value={again}
+            onChange={setAgain}
+            show={showPass}
+            placeholder="again, exactly"
+          />
+          <div className="flex items-baseline gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                haptics.selection();
+                setShowPass((s) => !s);
+              }}
+              className="g-meta"
+              style={{ color: "var(--giver-action)" }}
+            >
+              {showPass ? "hide" : "show"}
+            </button>
+            <span className="g-meta opacity-50">
+              {!pass && passwordSet
+                ? "password saved"
+                : !pass
+                  ? ""
+                  : matches
+                    ? passwordStrongEnough(pass)
+                      ? "saved"
+                      : "nearly — see above"
+                    : "these two don’t match yet"}
+            </span>
+          </div>
+        </div>
+
+        {/* ---- OPTIONAL: THE PERSON. ---- */}
+        <p className="mt-12 g-heading" style={{ color: "var(--giver-me)" }}>
+          about you
+        </p>
+        <p className="mt-2 g-meta opacity-40">all optional</p>
+
+        <div className="mt-5 space-y-5">
           <Field
             label="about me"
             value={me.aboutMe}
@@ -193,21 +355,7 @@ export function AboutForm({
             limit={80}
           />
 
-          {/* BIRTHDAY — the phone's own date picker, kept small. */}
-          <label className="flex items-baseline justify-between gap-4">
-            <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
-              birthday
-            </span>
-            <input
-              type="date"
-              value={me.birthday ?? ""}
-              onChange={(e) => myProfileStore.patch({ birthday: e.target.value })}
-              className="flex-1 border-b bg-transparent pb-1 text-right text-base font-black lowercase outline-none"
-              style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
-            />
-          </label>
-
-          {/* GENDER — three words, one selected. Never a dropdown. */}
+          {/* GENDER — a few words, one selected. Never a dropdown. */}
           <div className="flex flex-col gap-1.5">
             <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
               gender
@@ -219,7 +367,7 @@ export function AboutForm({
                   type="button"
                   onClick={() => {
                     haptics.selection();
-                    myProfileStore.patch({ gender: g });
+                    myProfileStore.patch({ gender: me.gender === g ? "" : g });
                   }}
                   className="text-[13px] font-black lowercase tracking-[0.14em] transition-opacity"
                   style={{
@@ -244,7 +392,7 @@ export function AboutForm({
             onChange={(v) => myProfileStore.patch({ byNight: v })}
           />
           <Field
-            label="anything else we should know? (optional)"
+            label="anything else we should know?"
             value={me.weekend}
             onChange={(v) => myProfileStore.patch({ weekend: v })}
             limit={80}
@@ -254,7 +402,7 @@ export function AboutForm({
         <button
           type="button"
           onClick={save}
-          className="mt-8 text-left text-2xl font-black lowercase leading-none tracking-[-0.03em] transition-transform active:scale-[0.98]"
+          className="mt-9 text-left text-2xl font-black lowercase leading-none tracking-[-0.03em] transition-transform active:scale-[0.98]"
           style={{ color: "var(--giver-me)" }}
         >
           ← back to my g
@@ -275,6 +423,19 @@ export function AboutForm({
           </button>
         ) : null}
       </div>
+
+      {/* THE CIRCLE IS CHOSEN BY HAND — drag to move, pinch to zoom. */}
+      {cropping ? (
+        <PhotoCropper
+          source={cropping}
+          initial={me.photoCrop}
+          onCancel={() => setCropping(null)}
+          onConfirm={(cropped, crop) => {
+            myProfileStore.setPhoto(cropped, cropping, crop);
+            setCropping(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -283,7 +444,7 @@ export function AboutForm({
  * A photo must never cost the words. We redraw it small before it is stored,
  * so the whole profile keeps fitting in persistent storage.
  */
-async function shrink(dataUrl: string, max = 512): Promise<string> {
+async function shrink(dataUrl: string, max = 900): Promise<string> {
   try {
     const img = new Image();
     await new Promise<void>((resolve, reject) => {
@@ -304,19 +465,67 @@ async function shrink(dataUrl: string, max = 512): Promise<string> {
   }
 }
 
-/** One field: label left, answer right. Compact by construction. */
+/** One field: its label, then its own answer directly beneath it. */
 function Field({
   label,
   value,
   onChange,
   placeholder = "—",
   limit = 26,
+  prefix,
+  note,
+  noteColour,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   limit?: number;
+  prefix?: string;
+  note?: string;
+  noteColour?: string | undefined;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
+        {label}
+      </span>
+      <span
+        className="flex items-baseline border-b pb-1"
+        style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
+      >
+        {prefix ? (
+          <span className="text-xl font-black leading-tight opacity-45">{prefix}</span>
+        ) : null}
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value.slice(0, limit))}
+          placeholder={placeholder}
+          className="min-w-0 flex-1 bg-transparent text-xl font-black lowercase leading-tight tracking-[-0.03em] outline-none placeholder:opacity-30"
+        />
+      </span>
+      {note ? (
+        <span className="g-meta" style={{ color: noteColour, opacity: 0.55 }}>
+          {note}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
+/** A password field. Same type as everything else; never a special widget. */
+function Secret({
+  label,
+  value,
+  onChange,
+  show,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  placeholder: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
@@ -324,10 +533,12 @@ function Field({
         {label}
       </span>
       <input
+        type={show ? "text" : "password"}
         value={value}
-        onChange={(e) => onChange(e.target.value.slice(0, limit))}
+        autoComplete="new-password"
+        onChange={(e) => onChange(e.target.value.slice(0, 64))}
         placeholder={placeholder}
-        className="w-full border-b bg-transparent pb-1 text-xl font-black lowercase leading-tight tracking-[-0.03em] outline-none placeholder:opacity-30"
+        className="w-full border-b bg-transparent pb-1 text-xl font-black leading-tight tracking-[-0.03em] outline-none placeholder:font-medium placeholder:lowercase placeholder:opacity-30"
         style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
       />
     </label>

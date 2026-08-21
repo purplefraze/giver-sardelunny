@@ -18,6 +18,8 @@ import {
 } from "@/data/items";
 
 
+import { ledgerStore } from "@/data/ledger";
+import { hashPassword, publishEligibility } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 
@@ -50,9 +52,15 @@ export const SETUP_PER_CATEGORY = 3;
 
 
 
+/** HOW THE CHOSEN CIRCLE SITS OVER THE ORIGINAL PICTURE. */
+export type PhotoCrop = { x: number; y: number; zoom: number };
+
 export type MyProfile = {
   username: string;
   photo: string | null;
+  /** The untouched picture, kept so the crop can always be reopened. */
+  photoSource: string | null;
+  photoCrop: PhotoCrop | null;
   aboutMe: string;
   byDay: string;
   byNight: string;
@@ -60,6 +68,8 @@ export type MyProfile = {
   /** IDENTITY, KEPT SHORT: an ISO date and one chosen word. */
   birthday: string;
   gender: string;
+  /** SALTED AND HASHED. The typed password is never stored anywhere. */
+  password: string;
   /** PROJECTION of my active items, in my own priority order. Read-only. */
   items: Record<Category, string[]>;
   /** The same items, with ids — for editing, completing and reordering. */
@@ -89,12 +99,15 @@ export type MyProfile = {
 type Person = {
   username: string;
   photo: string | null;
+  photoSource: string | null;
+  photoCrop: PhotoCrop | null;
   aboutMe: string;
   byDay: string;
   byNight: string;
   weekend: string;
   birthday: string;
   gender: string;
+  password: string;
   built: boolean;
   sparkles: number;
   sparklesAwarded: boolean;
@@ -103,6 +116,7 @@ type Person = {
   sparksSeeded: boolean;
   rewarded: string[];
 };
+
 
 
 const KEY = "giver.my-profile.v1";
@@ -116,13 +130,17 @@ export const STARTING_SPARKS = 50;
 const EMPTY_PERSON: Person = {
   username: "@you",
   photo: null,
+  photoSource: null,
+  photoCrop: null,
   aboutMe: "",
   byDay: "",
   byNight: "",
   weekend: "",
   birthday: "",
   gender: "",
+  password: "",
   built: false,
+
   sparkles: 0,
   sparklesAwarded: false,
   sparks: 0,
@@ -235,6 +253,14 @@ function reward(key: string) {
     sparks: person.sparks + GENEROSITY_REWARD,
     rewarded: [...person.rewarded, key],
   });
+  ledgerStore.record({
+    id: `earn:${key}`,
+    currency: "spark",
+    kind: "earned",
+    amount: GENEROSITY_REWARD,
+    say: "giver recognised an act of generosity",
+  });
+
   // GIVER RECOGNISING GENEROSITY: brief, warm, unmistakably an arrival.
   haptics.success();
   sparkFlashStore.show(`+${GENEROSITY_REWARD} sparks ✨`);
@@ -316,23 +342,67 @@ export const myProfileStore = {
     note?: string,
     /** PHOTOS + BORROW/LEND SIDE — stored on the one real item, not a copy. */
     extra?: { photos?: string[]; side?: BorrowSide; details?: ItemDetails },
-  ): { ok: boolean; reason?: "sparks" | "full" | "empty"; id?: string } {
+  ): {
+    ok: boolean;
+    reason?: "sparks" | "full" | "empty" | "account";
+    say?: string;
+    id?: string;
+  } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };
     if (category === "wish" && person.sparks < WISH_COST)
       return { ok: false, reason: "sparks" };
+    /*
+      18+ AND A REAL ACCOUNT BEFORE ANYTHING IS PUBLISHED. The answer is only
+      ever "not yet": the caller keeps its draft, word for word.
+    */
+    const allowed =
+      category === "give" ? myProfileStore.canPublish() : ({ ok: true } as const);
+    if (!allowed.ok) return { ok: false, reason: "account", say: allowed.say };
+
     const item = itemsStore.add(ME_ID, category, text, parts, note, extra);
     if (!item) return { ok: false, reason: "full" };
     /* A WISH RESERVES ITS SPARKS. They leave the balance but are not spent:
        they belong to the wish until it is granted and verified, or withdrawn. */
-    if (category === "wish")
+    if (category === "wish") {
       savePerson({
         ...person,
         sparks: person.sparks - WISH_COST,
         reserved: { ...person.reserved, [item.id]: WISH_COST },
       });
+      ledgerStore.record({
+        currency: "spark",
+        kind: "reserved",
+        amount: -WISH_COST,
+        say: `held for your wish · ${text.trim()}`,
+        itemId: item.id,
+      });
+    }
     return { ok: true, id: item.id };
   },
+
+  /** IS THIS ACCOUNT ALLOWED TO PUBLISH? One answer, asked from everywhere. */
+  canPublish() {
+    hydrate();
+    return publishEligibility({
+      username: person.username,
+      birthday: person.birthday,
+      passwordSet: Boolean(person.password),
+    });
+  },
+
+  /** THE PASSWORD IS SALTED, HASHED AND FORGOTTEN. */
+  async setPassword(plain: string) {
+    hydrate();
+    savePerson({ ...person, password: await hashPassword(plain) });
+  },
+
+  /** THE CHOSEN CROP IS THE PHOTO, EVERYWHERE — with the original kept. */
+  setPhoto(cropped: string, source: string, crop: PhotoCrop) {
+    hydrate();
+    savePerson({ ...person, photo: cropped, photoSource: source, photoCrop: crop });
+  },
+
 
   editItem(category: Category, index: number, text: string) {
     const item = myProfileStore.get().records[category][index];
@@ -390,6 +460,15 @@ export const myProfileStore = {
       reserved,
       sparks: refund ? person.sparks + held : person.sparks,
     });
+    ledgerStore.record({
+      currency: "spark",
+      kind: refund ? "returned" : "spent",
+      amount: refund ? held : 0,
+      say: refund
+        ? "your wish came home — sparks returned"
+        : "your wish was granted — sparks passed on",
+      itemId,
+    });
   },
 
   /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */
@@ -397,6 +476,20 @@ export const myProfileStore = {
     hydrate();
     if (person.sparksSeeded) return;
     savePerson({ ...person, sparks: STARTING_SPARKS, sparksSeeded: true });
+    ledgerStore.record({
+      id: "seed:received",
+      currency: "spark",
+      kind: "received",
+      amount: STARTING_SPARKS * 2,
+      say: "giver welcomed you with 100 sparks",
+    });
+    ledgerStore.record({
+      id: "seed:gifted",
+      currency: "spark",
+      kind: "gifted",
+      amount: -STARTING_SPARKS,
+      say: "you gifted 50 sparks onward — your first give",
+    });
   },
   /** REORDER = PRIORITISE. Position #1 is what the Living G shows. */
   moveItem(category: Category, index: number, delta: number) {
@@ -412,8 +505,16 @@ export const myProfileStore = {
     const result = itemsStore.boost(itemId, ME_ID);
     if (!result.ok) return result;
     savePerson({ ...person, sparkles: person.sparkles - 1 });
+    ledgerStore.record({
+      currency: "sparkle",
+      kind: "spent",
+      amount: -1,
+      say: "you helped somebody else get seen",
+      itemId,
+    });
     return { ok: true };
   },
+
 };
 
 /** Sparks currently held inside my open wishes — visible, never hidden. */

@@ -135,6 +135,8 @@ export type ItemDetails = {
   time?: string | undefined;
   /** a date or date range, where it matters. */
   date?: string | undefined;
+  /** THE LAST DAY THIS IS AVAILABLE. Optional, and always removable. */
+  until?: string | undefined;
   /** one time · recurring · flexible. */
   cadence?: string | undefined;
   /** approximate duration: "1 hour". */
@@ -142,6 +144,27 @@ export type ItemDetails = {
   /** context-specific answers (subject, level, format...). */
   extras?: Record<string, string> | undefined;
 };
+
+/**
+ * AVAILABILITY IS OPTIONAL, AND WHEN IT EXISTS IT IS HONEST.
+ *
+ * A give with no date and no closing day stays available for as long as its
+ * owner keeps it. A give with either one stops being offered to the community
+ * the moment that day is over — it is never deleted, it simply leaves
+ * circulation and stays in the person's own history.
+ */
+export function availabilityEnd(item: Item): number | null {
+  const day = item.details?.until ?? item.details?.date;
+  if (!day) return null;
+  const end = new Date(`${day}T23:59:59`);
+  return Number.isNaN(end.getTime()) ? null : end.getTime();
+}
+
+export function itemExpired(item: Item, now = Date.now()): boolean {
+  const end = availabilityEnd(item);
+  return end !== null && now > end;
+}
+
 
 export const DAY_NAMES = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"];
 
@@ -617,6 +640,25 @@ export const itemsStore = {
     itemsStore.setStatus(id, "completed");
   },
 
+  /**
+   * THE WINDOW CLOSES BY ITSELF. Anything whose availability day has passed
+   * leaves circulation quietly and keeps every word it was given.
+   */
+  sweepAvailability(now = Date.now()) {
+    const s = ensure();
+    const stale = s.items.filter(
+      (i) => i.status === "active" && itemExpired(i, now),
+    );
+    if (!stale.length) return;
+    const ids = new Set(stale.map((i) => i.id));
+    let items = s.items.map((i) =>
+      ids.has(i.id) ? { ...i, status: "archived" as ItemStatus, updatedAt: now } : i,
+    );
+    for (const item of stale) items = reindex(items, item.ownerId, item.type);
+    commit({ ...s, items });
+  },
+
+
   remove(id: string) {
     const s = ensure();
     const item = s.items.find((i) => i.id === id);
@@ -715,6 +757,20 @@ export function completedItems(
     (i) => i.ownerId === ownerId && i.type === type && i.status === "completed",
   );
 }
+
+/** EVERYTHING NO LONGER OFFERED: completed together, or simply past. */
+export function pastItems(state: ItemsState, type: ItemType, ownerId = ME_ID) {
+  return state.items
+    .filter(
+      (i) =>
+        i.ownerId === ownerId &&
+        i.type === type &&
+        (i.status === "completed" || i.status === "archived"),
+    )
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+
 
 /**
  * COMMUNITY DISCOVERY — the same items, queried. Deliberately UNRANKED: the

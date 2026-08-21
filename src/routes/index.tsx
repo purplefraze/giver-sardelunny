@@ -59,7 +59,17 @@ function readFirstUseSeat(): Mode | null {
   }
 }
 import { useItems } from "@/hooks/use-items";
-import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
+import {
+  ACTIVITY_FILL,
+  ME_ID,
+  communityItems,
+  itemLine,
+  itemsStore,
+  type ItemType,
+} from "@/data/items";
+import { LedgerHistory } from "@/components/history/LedgerHistory";
+import type { Currency } from "@/data/ledger";
+
 
 import { World } from "@/components/World";
 import { cn } from "@/lib/utils";
@@ -216,6 +226,9 @@ function Index() {
   const [detail, setDetail] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
+  /** SPARKS AND SPARKLES ARE HISTORIES, opened from my own photo's toggle. */
+  const [history, setHistory] = useState<Currency | null>(null);
+
   /** THE PERSON IS THEIR OWN DESTINATION: @username opens who they are. */
   const [person, setPerson] = useState<string | null>(null);
 
@@ -290,7 +303,10 @@ function Index() {
   /* SEVEN DAYS AND THE SPARKS COME HOME: expire stale wishes on every entry. */
   useEffect(() => {
     myProfileStore.sweepWishes();
+    /* AND ANY OFFER WHOSE DAY HAS PASSED LEAVES CIRCULATION BY ITSELF. */
+    itemsStore.sweepAvailability();
   }, []);
+
 
   /* Migrate an existing completed prototype profile into the explicit lifecycle. */
   useEffect(() => {
@@ -660,6 +676,18 @@ function Index() {
             ) : null}
           </Screen>
 
+          {/*
+            SPARKS AND SPARKLES ARE STORIES, NOT COUNTERS. Each is its own
+            history portal, reached from the toggle on my own photo.
+          */}
+          <Screen open={history !== null}>
+            {history ? (
+              <LedgerHistory currency={history} onClose={() => setHistory(null)} />
+            ) : null}
+          </Screen>
+
+
+
           {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
           <Screen open={choose}>
             {choose ? <ChooseWorld onChoose={openWorld} onCancel={() => setChoose(false)} /> : null}
@@ -705,6 +733,15 @@ function Index() {
                   setEditor(null);
                   setThreads(true);
                 }}
+                onSparks={() => {
+                  setEditor(null);
+                  setHistory("spark");
+                }}
+                onSparkles={() => {
+                  setEditor(null);
+                  setHistory("sparkle");
+                }}
+
                 onDone={() => {
                   lifecycleStore.completeProfileSetup();
                   setEditor(null);

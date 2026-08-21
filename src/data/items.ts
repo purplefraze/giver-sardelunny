@@ -128,19 +128,19 @@ export const NOTE_COUNTDOWN_AT = 40;
  */
 export type ItemDetails = {
   /** neighbourhood / general area, "online" or "flexible". Never an address. */
-  where?: string;
+  where?: string | undefined;
   /** days of the week, in order, e.g. ["tues", "thurs"]. */
-  days?: string[];
+  days?: string[] | undefined;
   /** a time or time range: "evenings", "7 pm". */
-  time?: string;
+  time?: string | undefined;
   /** a date or date range, where it matters. */
-  date?: string;
+  date?: string | undefined;
   /** one time · recurring · flexible. */
-  cadence?: string;
+  cadence?: string | undefined;
   /** approximate duration: "1 hour". */
-  duration?: string;
+  duration?: string | undefined;
   /** context-specific answers (subject, level, format...). */
-  extras?: Record<string, string>;
+  extras?: Record<string, string> | undefined;
 };
 
 export const DAY_NAMES = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"];

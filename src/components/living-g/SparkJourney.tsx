@@ -323,10 +323,14 @@ export function SparkJourney({
     grabbed.current = false;
     setDragging(false);
     const travelled = TO === 1 ? uRef.current : 1 - uRef.current;
+    /* A MERE TOUCH IS NOT A DRAG: a bundle caught mid-drift and let go without
+       being moved stays exactly where the finger found it. */
+    const moved = Math.abs(uRef.current - caught.current) > 0.02;
     // A gentle lock-in near the end; a confident finish from halfway onward.
     if (travelled > 0.97) put(TO);
-    else if (travelled > 0.5) complete();
+    else if (moved && travelled > 0.5) complete();
   };
+
 
 
 

@@ -153,23 +153,32 @@ export function CategoryForm({
   onDone: () => void;
 }) {
   const me = useMyProfile();
-  const records = me.records[category];
-  const [draft, setDraft] = useState("");
-  const [want, setWant] = useState("");
+  /* THE DRAFT SURVIVES LEAVING AND RELOADING — it is persisted, not held. */
+  const stored = useRef(draftsStore.get(category)).current;
+  const [draft, setDraft] = useState(stored.text);
+  const [want, setWant] = useState(stored.want);
   /** ONE OPTIONAL, SHORT LINE OF CONTEXT. Never a description box. */
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(stored.note);
   /** BORROW OR LEND — asked plainly, never assumed. */
-  const [side, setSide] = useState<BorrowSide>("borrow");
+  const [side, setSide] = useState<BorrowSide>(stored.side);
   /** OPTIONAL PHOTOS. They belong to the item the moment it exists. */
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>(stored.photos);
   /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */
-  const [details, setDetails] = useState<ItemDetails>({});
+  const [details, setDetails] = useState<ItemDetails>(stored.details);
   const [problem, setProblem] = useState<string | null>(null);
+  /**
+   * THE ONE RECORD THIS DRAFT IS ALREADY SAVED AS. Once the draft is complete
+   * enough to be real it becomes an Item, and every later keystroke edits THAT
+   * record — so there is never a second copy and Back is never the save button.
+   */
+  const [liveId, setLiveId] = useState<string | null>(stored.liveId);
   /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
   const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
   const colour = `var(--me-${category})`;
   const limit = MAX_PER_CATEGORY[category];
   const unlimited = !Number.isFinite(limit);
+  /* THE RECORD BEING TYPED IS SHOWN IN THE FIELD, NOT TWICE IN THE LIST. */
+  const records = me.records[category].filter((i) => i.id !== liveId);
   const full = records.length >= limit;
   /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
   const cost = category === "wish" ? WISH_COST : 0;

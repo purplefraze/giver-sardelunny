@@ -29,12 +29,17 @@ export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
 /**
- * THE FIFTH SEAT: GIVER = ME. It sits at 12 o'clock, dead above the middle
- * loop's centre — the profile state, not another activity category. Screens
- * that only speak activity (other people's Gs) keep the four-seat track.
+ * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
+ * activities: GIVER = ME at 12 o'clock, and SEARCH at 6 o'clock (the community,
+ * explored). Both are LOCKED until the person has a profile and one active give
+ * of their own, so onboarding only ever offers MODES.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow"] as const;
+export const SEATS = ["giver", "wish", "give", "trade", "borrow", "search"] as const;
 export type Seat = (typeof SEATS)[number];
+
+/** Every seat on the wire, in travel order. Search is reserved, not built yet. */
+export const FULL_SEATS = ["search", "borrow", "wish", "giver", "give", "trade"] as const;
+
 
 
 type P = { x: number; y: number };

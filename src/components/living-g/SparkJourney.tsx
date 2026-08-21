@@ -43,6 +43,7 @@ export function SparkJourney({
   colour = "var(--giver-generosity)",
   grabColour,
   wash: washOn = true,
+  washColour = "var(--giver-generosity)",
   onStart,
   onArrive,
   onGreen,

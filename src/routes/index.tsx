@@ -10,9 +10,7 @@ import { HelpIndex } from "@/components/HelpIndex";
 import { introSeenStore } from "@/data/intro-seen";
 import { useIntroSeen } from "@/hooks/use-intro-seen";
 
-
 import { CommunityFeed } from "@/components/community/CommunityFeed";
-import { ModeSearch } from "@/components/search/ModeSearch";
 
 import { CommunityLocked } from "@/components/community/CommunityLocked";
 import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";
@@ -31,17 +29,20 @@ import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { primaryGive, CATEGORY_PLURAL, CATEGORIES, myProfileStore } from "@/data/my-profile";
+import { CATEGORY_PLURAL, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
 
-/** FIRST USE: the toggle offers the four content worlds only — My G is separate. */
-const MODES_ONLY = ["wish", "give", "trade", "borrow"] as const;
+/**
+ * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
+ * MY G and COMMUNI-G are not content types: they are the top and bottom loops.
+ */
+const MODES_ONLY = MODES;
 
 const FIRST_USE_SEAT_KEY = "giver.first-use.seat";
 
-function rememberFirstUseSeat(seat: Seat) {
+function rememberFirstUseSeat(seat: Mode) {
   try {
     window.localStorage.setItem(FIRST_USE_SEAT_KEY, seat);
   } catch {
@@ -49,18 +50,16 @@ function rememberFirstUseSeat(seat: Seat) {
   }
 }
 
-function readFirstUseSeat(): Seat | null {
+function readFirstUseSeat(): Mode | null {
   try {
     const raw = window.localStorage.getItem(FIRST_USE_SEAT_KEY);
-    return raw && (MODES_ONLY as readonly string[]).includes(raw) ? (raw as Seat) : null;
+    return raw && (MODES_ONLY as readonly string[]).includes(raw) ? (raw as Mode) : null;
   } catch {
     return null;
   }
 }
 import { useItems } from "@/hooks/use-items";
 import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
-
-
 
 import { World } from "@/components/World";
 import { cn } from "@/lib/utils";
@@ -95,40 +94,30 @@ const MODE_CONTENT: Record<
       title: "my wishes",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
-    community: { title: "community wishes" },
-
+    community: { title: "communi-g wishes" },
   },
   give: {
     mine: {
       title: "my gives",
-      body: (
-        <p className="opacity-70">
-          share something you have, know, or can do.
-        </p>
-      ),
+      body: <p className="opacity-70">share something you have, know, or can do.</p>,
     },
-    community: { title: "community gives" },
+    community: { title: "communi-g gives" },
   },
   trade: {
     mine: {
       title: "my trades",
-      body: (
-        <p className="opacity-70">offer something, ask for something back.</p>
-      ),
+      body: <p className="opacity-70">offer something, ask for something back.</p>,
     },
-    community: { title: "community trades" },
+    community: { title: "communi-g trades" },
   },
   borrow: {
     mine: {
       title: "my borrows",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
-    community: { title: "community borrows" },
+    community: { title: "communi-g borrows" },
   },
 };
-
-
-
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -165,7 +154,6 @@ function Index() {
     if (remembered && !lifecycleStore.get().profileSetupCompletedAt) {
       setSeatState(remembered);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [sessionEntered, setSessionEntered] = useState(false);
@@ -179,17 +167,17 @@ function Index() {
     { kind: "about" } | { kind: "category"; category: Category } | null
   >(null);
 
-
   /**
-   * THE ONE SOURCE OF TRUTH for the toggle: giver | wish | give | trade | borrow.
-   * "giver" is ME (profile); the other four are activity worlds.
+   * THE ONE SOURCE OF TRUTH for the toggle: wish | give | trade | borrow.
+   * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
+   * middle = mine, bottom = everyone).
    */
-  const [seat, setSeatState] = useState<Seat>("giver");
+  const [seat, setSeatState] = useState<Mode>("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
-  const setSeat = (next: Seat) => {
+  const setSeat = (next: Mode) => {
     setSeatState(next);
-    if (next !== "giver") rememberFirstUseSeat(next);
+    rememberFirstUseSeat(next);
   };
 
   /**
@@ -200,9 +188,7 @@ function Index() {
    * `help` marks an explanation the user asked for on purpose: it sets no flag
    * and leads nowhere — it explains, then hands the G straight back.
    */
-  const [intro, setIntro] = useState<{ topic: IntroTopic; help: boolean } | null>(
-    null,
-  );
+  const [intro, setIntro] = useState<{ topic: IntroTopic; help: boolean } | null>(null);
   const introSeen = useIntroSeen();
 
   /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
@@ -221,7 +207,6 @@ function Index() {
    * SEARCH IS THE TOP LOOP, AND ONLY ON MY OWN G. It opens already scoped to the
    * toggle's world, so the content type is never asked for twice.
    */
-  const [search, setSearch] = useState<ItemType | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
@@ -257,12 +242,10 @@ function Index() {
   useEffect(() => {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
-    if (!entered || seat === "giver" || !myProfileStore.get().built) return;
+    if (!entered || !myProfileStore.get().built) return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entered, seat]);
-
 
   /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
@@ -291,9 +274,6 @@ function Index() {
     }, 4200);
     return () => clearTimeout(t);
   }, [entered]);
-
-
-
 
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
@@ -334,61 +314,46 @@ function Index() {
   /** PRIVATE TO ME: how many conversations have something waiting inside. */
   const unread = unreadCount(links, ME_ID);
 
-  /** GIVER = ME. The other four seats are activity worlds. */
-  const isProfile = seat === "giver";
-  const mode: Mode = isProfile ? "give" : (seat as Mode);
+  /** THE TOGGLE IS THE WORLD: wish | give | trade | borrow. */
+  const mode: Mode = seat;
   const content = MODE_CONTENT[mode];
 
   /**
    * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
    *
    * Until the profile exists the G holds NOTHING: no photo, no latest, no
-   * community, no placeholder. Only "my g" in the top loop, and the toggle,
-   * which is free to travel every mode and recolour the whole G. Any tap on
-   * the G itself leads to one place: set up your profile.
+   * community, no placeholder. Only the toggle, free to travel every mode and
+   * recolour the whole G. Any tap on the G leads to one place: set up your
+   * profile.
    */
   const firstArrival =
-    Boolean(lifecycle.onboardingCompletedAt) &&
-    !lifecycle.profileSetupCompletedAt;
+    Boolean(lifecycle.onboardingCompletedAt) && !lifecycle.profileSetupCompletedAt;
   const setup = () => setEditor({ kind: "about" });
 
   /**
-   * MY G IS NOT A CONTENT MODE. During first use the toggle only travels the
-   * four worlds; My G is entered intentionally by touching the G, and the G
-   * itself shifts to red and says "my g" before profile setup opens.
+   * TOP = ME. MY G is not a content type and never a toggle seat: it is the
+   * top loop, and it opens my own profile — or, before it exists, its setup.
    */
-  const enterMyG = () => {
-    if (seat !== "giver") setSeat("giver");
-    window.setTimeout(setup, 460);
+  const openMyG = () => {
+    if (firstArrival || !me.built) setup();
+    else setEditor({ kind: "about" });
   };
-
-
 
   /**
    * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
    * "mine" means the one I touched last, not a ranked list.
    */
-  const myRecent =
-    [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+  const myRecent = [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
   const myMode = myRecent ? itemLine(myRecent) : null;
 
-  /** COMMUNITY <type> — the same item collection, queried by everyone else. */
+  /** COMMUNI-G <type> — the same item collection, queried by everyone else. */
   const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
   const firstTheirs = theirs[0];
   const community = firstTheirs ? itemLine(firstTheirs) : null;
-  /** MY GIVE — what I offer the community, the profile's bottom loop. */
-  const myGive = primaryGive(me);
 
   /** NEVER A LIST INSIDE THE G: one item, then how much more there is. */
   const more = (count: number) =>
     count > 1 ? [{ text: `+${count - 1} more`, role: "tertiary" as const }] : [];
-
-  /** MY LATEST ACTIVITY of ANY type — the profile's middle loop snapshot. */
-  const latest = CATEGORIES.flatMap((c) =>
-    me.records[c].map((i) => ({ type: c, item: i })),
-  ).sort((a, b) => b.item.updatedAt - a.item.updatedAt)[0] ?? null;
-
-
 
   /* Persisted lifecycle/profile state is browser-owned. Render neither the
      onboarding nor My G until it is hydrated, preventing a stale server frame
@@ -418,25 +383,23 @@ function Index() {
           }}
         />
       ) : (
-
-
-
         <>
-          {/* THE WORKSPACE — one Living G, always yours. The seat is its state. */}
+          {/*
+            THE WORKSPACE — one Living G, always yours.
+            TOP = ME (my g) · MIDDLE = MINE · BOTTOM = EVERYONE (communi-g).
+            The toggle answers WHAT; the loops answer WHOSE.
+          */}
           <World
-            /* GIVER = my profile (red); the four modes keep their own colours. */
-            world={isProfile ? "profile" : mode}
+            /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
+            world={mode}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
-            /* "giver" is drawn inside the G, under the toggle — see EarSelector. */
             active={
               editor === null &&
               intro === null &&
               !choose &&
               !help &&
               browse === null &&
-              search === null &&
-
               !locked &&
               detail === null &&
               talking === null &&
@@ -446,70 +409,40 @@ function Index() {
             overlay={
               <EarSelector
                 mode={seat}
-                onChange={setSeat}
-                seats={firstArrival && seat !== "giver" ? MODES_ONLY : SEATS}
-                {...(!firstArrival && isProfile && me.photo ? { photo: me.photo } : {})}
-                {...(isProfile ? { word: "my g" } : {})}
-                {...(!firstArrival && isProfile && unread ? { badge: unread } : {})}
+                onChange={(next) => setSeat(next as Mode)}
+                seats={MODES_ONLY}
+                {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
+                {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
                 /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
                 {...(!firstArrival ? { sparks: me.sparks } : {})}
 
-                /*
-                  TOP LOOP = SEARCH THIS WORLD, on my own G only. On the profile
-                  seat the G represents ME, so the top loop stays my information.
-                  BEFORE THE PROFILE EXISTS every tap leads to setting it up.
-                */
-                onTap={() =>
-                  firstArrival
-                    ? enterMyG()
-                    : isProfile
-                      ? setEditor({ kind: "about" })
-                      : setSearch(mode as ItemType)
-                }
-
+                /* TOP = ME. The small loop is MY G — never search, in any mode. */
+                onTap={openMyG}
               />
             }
 
             teach={firstArrival ? false : teach}
             regions={{
+              /* TOP LOOP = MY G. Sacred, permanent, mine — or its setup. */
               top: {
                 label: "",
-                panelTitle: isProfile ? "more information" : `search ${mode}s`,
+                panelTitle: "my g",
                 panelBody: null,
-                onPress: () =>
-                  firstArrival
-                    ? enterMyG()
-                    : isProfile
-                      ? setEditor({ kind: "about" })
-                      : setSearch(mode as ItemType),
+                onPress: openMyG,
               },
 
               /*
-                MIDDLE LOOP:
-                  giver = MY LATEST ACTIVITY of any type
-                  mode  = MY <type>
-                Tapping opens that item's own editor screen; saving returns to
-                this exact seat with the loop already showing the new content.
+                MIDDLE LOOP = MINE, in the toggle's world. Tapping opens that
+                item's own editor; saving returns to this exact seat with the
+                loop already showing the new content.
               */
               middle: {
                 label: "",
-                panelTitle: isProfile ? "latest activity" : content.mine.title,
+                panelTitle: content.mine.title,
                 panelBody: null,
-                /*
-                  AN EMPTY MIDDLE LOOP NEVER ASSUMES A WISH. With no activity
-                  yet, it asks the question and offers the four worlds.
-                */
                 onPress: () => {
                   if (firstArrival) {
-                    enterMyG();
-                    return;
-                  }
-                  if (isProfile && !latest) {
-                    setChoose(true);
-                    return;
-                  }
-                  if (isProfile) {
-                    openWorld(latest!.type);
+                    setup();
                     return;
                   }
                   setEditor({ kind: "category", category: mode });
@@ -522,19 +455,6 @@ function Index() {
                     /* FIRST ARRIVAL: the middle loop holds nothing at all. */
                     blocks: firstArrival
                       ? []
-                      : isProfile
-                      ? latest
-                        ? [
-                            { text: "latest", role: "secondary" as const },
-                            {
-                              /* THE ACTIVITY SPEAKS ITS WORLD'S COLOUR. */
-                              text: clampField(itemLine(latest.item)),
-                              role: "primary" as const,
-                              fill: ACTIVITY_FILL[latest.type],
-                            },
-                            { text: latest.type, role: "tertiary" as const },
-                          ]
-                      : /* TRULY EMPTY until real activity exists. */ []
                       : [
                           { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                           myMode
@@ -546,26 +466,19 @@ function Index() {
                             : { text: `add a ${mode}`, role: "primary" as const },
                           ...(myMode ? more(me.items[mode].length) : []),
                         ],
-
-
                   }),
               },
               /*
-                BOTTOM LOOP:
-                  giver = MY GIVES — what I offer the community (tap to edit)
-                  mode  = COMMUNITY <type> (tap to browse)
+                BOTTOM LOOP = EVERYONE. COMMUNI-G, already filtered to the
+                toggle's world; the mixed community lives one word away inside.
               */
               bottom: {
                 label: "",
-                panelTitle: isProfile ? "my gives" : content.community.title,
+                panelTitle: content.community.title,
                 panelBody: null,
                 onPress: firstArrival
-                  ? /* THE G SHIFTS INTO MY G, THEN SETUP OPENS. */ enterMyG
-                  : isProfile
-                  ? /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
-                    () => openWorld("give")
-                  : /* BOTTOM = THE COMMUNITY — open only to givers. */
-                    () => {
+                  ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
+                  : () => {
                       if (!canCommunity) {
                         setLocked(true);
                         return;
@@ -580,23 +493,9 @@ function Index() {
                     /* FIRST ARRIVAL: the bottom loop holds nothing at all. */
                     blocks: firstArrival
                       ? []
-                      : isProfile
-
-                      ? myGive
-                        ? [
-                            { text: "gives", role: "secondary" as const },
-                            {
-                              /* MY GIVES ARE ALWAYS GREEN. */
-                              text: clampField(myGive),
-                              role: "primary" as const,
-                              fill: ACTIVITY_FILL.give,
-                            },
-                            ...more(me.items.give.length),
-                          ]
-                        : /* TRULY EMPTY until a give exists. */ []
                       : [
                           {
-                            text: `community ${CATEGORY_PLURAL[mode]}`,
+                            text: `communi-g ${CATEGORY_PLURAL[mode]}`,
                             role: "secondary" as const,
                           },
                           !canCommunity
@@ -610,10 +509,8 @@ function Index() {
                               : { text: "nothing yet", role: "tertiary" as const },
                           ...(canCommunity && community ? more(theirs.length) : []),
                         ],
-
                   }),
               },
-
             }}
           />
 
@@ -634,15 +531,12 @@ function Index() {
           !help ? (
             <button
               type="button"
-              onClick={() =>
-                isProfile ? setHelp(true) : setIntro({ topic: mode, help: true })
-              }
+              onClick={() => setIntro({ topic: mode, help: true })}
               className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
             >
-              {isProfile ? "how giver works" : `what’s ${mode}?`}
+              {`what’s ${mode}?`}
             </button>
           ) : null}
-
 
           {/*
             MY G STAYS CLEAN. There is NO permanent messages control anywhere
@@ -653,7 +547,6 @@ function Index() {
             waiting inside.
             NO SEPARATE "COMMUNITY" WORD either — the bottom loop is that door.
           */}
-
 
           {/* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */}
           <Screen open={locked}>
@@ -682,21 +575,9 @@ function Index() {
           </Screen>
 
           {/*
-            THE TOP LOOP'S SEARCH. Already scoped to the toggle's world, and only
-            ever reachable from my own Living G — never from someone else's.
+            SEARCH IS NOT A LOOP AND NEVER A BAR ON THE LIVING G: it lives inside
+            the expanded Communi-G, where the whole community already is.
           */}
-          <Screen open={search !== null}>
-            {search ? (
-              <ModeSearch
-                mode={search}
-                onOpen={(itemId) => setDetail(itemId)}
-                onOpenProfile={(ownerId) => setPerson(ownerId)}
-                onClose={() => setSearch(null)}
-              />
-            ) : null}
-          </Screen>
-
-
 
           <Screen open={detail !== null}>
             {detail ? (
@@ -713,46 +594,35 @@ function Index() {
 
           {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
           <Screen open={person !== null}>
-            {person ? (
-              (() => {
-                const member = memberById(person);
-                return member ? (
-                  <FullProfile
-                    member={member}
-                    onBack={() => setPerson(null)}
-                    onOpen={(id) => setPerson(id)}
-                  />
-                ) : null;
-              })()
-            ) : null}
+            {person
+              ? (() => {
+                  const member = memberById(person);
+                  return member ? (
+                    <FullProfile
+                      member={member}
+                      onBack={() => setPerson(null)}
+                      onOpen={(id) => setPerson(id)}
+                    />
+                  ) : null;
+                })()
+              : null}
           </Screen>
 
           <Screen open={talking !== null}>
             {talking ? (
-              <Conversation
-                connectionId={talking}
-                onClose={() => setTalking(null)}
-              />
+              <Conversation connectionId={talking} onClose={() => setTalking(null)} />
             ) : null}
           </Screen>
 
           <Screen open={threads}>
             {threads ? (
-              <ConnectionsList
-                onOpen={(id) => setTalking(id)}
-                onClose={() => setThreads(false)}
-              />
+              <ConnectionsList onOpen={(id) => setTalking(id)} onClose={() => setThreads(false)} />
             ) : null}
           </Screen>
 
           {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
           <Screen open={choose}>
-            {choose ? (
-              <ChooseWorld
-                onChoose={openWorld}
-                onCancel={() => setChoose(false)}
-              />
-            ) : null}
+            {choose ? <ChooseWorld onChoose={openWorld} onCancel={() => setChoose(false)} /> : null}
           </Screen>
 
           {/* THE VOLUNTARY HELP AREA — explanations only, no flags, no forms. */}
@@ -782,8 +652,6 @@ function Index() {
             ) : null}
           </Screen>
 
-
-
           {/*
             THE EDITOR DESTINATIONS. One screen at a time, above the G — never
             beneath it. Leaving returns to the same seat, already updated.
@@ -806,16 +674,10 @@ function Index() {
                   setHelp(true);
                 }}
               />
-
             ) : editor?.kind === "category" ? (
-              <CategoryForm
-                category={editor.category}
-                onDone={() => setEditor(null)}
-              />
+              <CategoryForm category={editor.category} onDone={() => setEditor(null)} />
             ) : null}
           </Screen>
-
-
         </>
       )}
     </main>

@@ -238,9 +238,15 @@ export function CategoryForm({
   const kind = classifyKind(draft);
   const whereOptions = WHERE_FOR[kind];
   const whenSummary =
-    [details.days?.length ? details.days.join(" + ") : null, details.date, details.time]
+    [
+      details.days?.length ? details.days.join(" + ") : null,
+      details.date,
+      details.time,
+      details.until ? `until ${details.until}` : null,
+    ]
       .filter(Boolean)
       .join(" · ") || undefined;
+
   const longSummary =
     [details.cadence, details.duration].filter(Boolean).join(" · ") || undefined;
   /**

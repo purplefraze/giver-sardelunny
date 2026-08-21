@@ -40,6 +40,10 @@ type Sample = { x: number; y: number; u: number };
 export function SparkJourney({
   mode = "drag",
   count,
+  bob = false,
+  colour = "var(--giver-generosity)",
+  grabColour,
+  wash: washOn = true,
   onStart,
   onArrive,
   onGreen,
@@ -53,6 +57,17 @@ export function SparkJourney({
   mode?: "auto" | "drag" | "gift";
   /** How many Sparks this bundle carries — shown inside the bundle. */
   count?: number;
+  /**
+   * CURIOSITY, NOT INSTRUCTION. The bundle drifts along the rail by itself,
+   * reaches an end, rebounds and comes back — until a finger takes hold of it.
+   * No arrows, no destination, no copy: the motion is the whole invitation.
+   */
+  bob?: boolean;
+  /** Its resting colour, and what a successful catch turns it into. */
+  colour?: string;
+  grabColour?: string;
+  /** Whether the landing washes the whole G in green. */
+  wash?: boolean;
   /** The user has taken hold of the bundle. */
   onStart?: () => void;
   /** The spark has reached the end of its journey. */
@@ -79,8 +94,11 @@ export function SparkJourney({
 
   const [u, setU] = useState(FROM);
   const [dragging, setDragging] = useState(false);
+  /** Once touched, the drifting stops for good and the colour answers. */
+  const [held, setHeld] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [wash, setWash] = useState(0);
+
 
   /** Where on the rail is progress u? Straight from the path itself. */
   const put = (next: number, tick = true) => {

@@ -164,10 +164,10 @@ export function MemberExample({
           the handle are a single centred group — never split, never separately
           centred, never inside a loop.
         */}
-        <span className="text-[13px] font-black lowercase tracking-[0.34em] opacity-70">
+        <span className="text-[12px] font-bold lowercase tracking-[0.26em] opacity-70">
           meet {member.username}
         </span>
-        <span className="text-[10px] font-black lowercase tracking-[0.28em] opacity-45">
+        <span className="text-[10px] font-bold lowercase tracking-[0.26em] opacity-40">
           {member.distance}
         </span>
       </div>

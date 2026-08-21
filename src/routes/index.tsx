@@ -261,7 +261,7 @@ function Index() {
   useEffect(() => {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
-    if (!entered || seat === "giver" || !myProfileStore.get().built) return;
+    if (!entered || !myProfileStore.get().built) return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
     // eslint-disable-next-line react-hooks/exhaustive-deps

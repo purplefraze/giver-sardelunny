@@ -31,7 +31,7 @@ import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { primaryGive, CATEGORY_PLURAL, CATEGORIES, myProfileStore } from "@/data/my-profile";
+import { CATEGORY_PLURAL, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
@@ -98,7 +98,7 @@ const MODE_CONTENT: Record<
       title: "my wishes",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
-    community: { title: "community wishes" },
+    community: { title: "communi-g wishes" },
 
   },
   give: {
@@ -110,7 +110,7 @@ const MODE_CONTENT: Record<
         </p>
       ),
     },
-    community: { title: "community gives" },
+    community: { title: "communi-g gives" },
   },
   trade: {
     mine: {
@@ -119,14 +119,14 @@ const MODE_CONTENT: Record<
         <p className="opacity-70">offer something, ask for something back.</p>
       ),
     },
-    community: { title: "community trades" },
+    community: { title: "communi-g trades" },
   },
   borrow: {
     mine: {
       title: "my borrows",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
-    community: { title: "community borrows" },
+    community: { title: "communi-g borrows" },
   },
 };
 
@@ -225,7 +225,6 @@ function Index() {
    * SEARCH IS THE TOP LOOP, AND ONLY ON MY OWN G. It opens already scoped to the
    * toggle's world, so the content type is never asked for twice.
    */
-  const [search, setSearch] = useState<ItemType | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);

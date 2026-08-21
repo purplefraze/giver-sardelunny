@@ -184,15 +184,16 @@ function Index() {
 
 
   /**
-   * THE ONE SOURCE OF TRUTH for the toggle: giver | wish | give | trade | borrow.
-   * "giver" is ME (profile); the other four are activity worlds.
+   * THE ONE SOURCE OF TRUTH for the toggle: wish | give | trade | borrow.
+   * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
+   * middle = mine, bottom = everyone).
    */
-  const [seat, setSeatState] = useState<Seat>("giver");
+  const [seat, setSeatState] = useState<Mode>("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
-  const setSeat = (next: Seat) => {
+  const setSeat = (next: Mode) => {
     setSeatState(next);
-    if (next !== "giver") rememberFirstUseSeat(next);
+    rememberFirstUseSeat(next);
   };
 
   /**

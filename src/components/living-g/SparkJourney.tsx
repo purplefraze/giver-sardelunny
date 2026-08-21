@@ -348,7 +348,7 @@ export function SparkJourney({
             </mask>
           </defs>
           <g mask={`url(#${uid}-wash)`} pointerEvents="none">
-            <g transform={LIVING_G_TRANSFORM} fill="var(--giver-generosity)">
+            <g transform={LIVING_G_TRANSFORM} fill={washColour}>
               <path d={LIVING_G_PATH} />
             </g>
           </g>

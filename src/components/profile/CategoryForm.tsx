@@ -249,27 +249,43 @@ export function CategoryForm({
     input.click();
   };
 
-  const add = () => {
-    if (!draft.trim()) return;
-    if (category === "trade" && !want.trim()) {
-      setProblem("a trade has two sides. what would you like in return?");
-      haptics.warning();
+  /** The structured details, with empty answers dropped. */
+  const cleanDetails = (): ItemDetails => ({
+    ...details,
+    ...(details.days?.length ? {} : { days: undefined }),
+  });
+
+  const hasDetails = (d: ItemDetails) =>
+    Object.values(d).some((v) => (Array.isArray(v) ? v.length : Boolean(v)));
+
+  /** REAL ENOUGH TO BE A RECORD: a title, and for a trade, both sides. */
+  const complete =
+    draft.trim().length >= 3 && (category !== "trade" || want.trim().length >= 2);
+
+  /**
+   * AUTOSAVE, ONCE. The first time a draft is complete it becomes exactly ONE
+   * record (a wish holds its sparks at that single moment); after that every
+   * change patches that same record, so no screen ever holds a stale copy and
+   * nothing is created twice by a rerender, a reopen or a reload.
+   */
+  const save = () => {
+    if (!complete) return;
+    const cleaned = cleanDetails();
+    if (liveId) {
+      itemsStore.patch(liveId, {
+        text: category === "trade" ? tradeText(draft, want) : draft,
+        ...(category === "trade" ? { offer: draft, want } : {}),
+        ...(note.trim() ? { note: note.trim() } : { note: undefined }),
+        ...(photos.length ? { photos } : { photos: undefined }),
+        ...(category === "borrow" ? { side } : {}),
+        ...(hasDetails(cleaned) ? { details: cleaned } : { details: undefined }),
+      });
       return;
     }
-    /* ONE ITEM, MANY VIEWS: photos, the borrow/lend side and the structured
-       details are stored on the real record, so every screen reads one truth. */
-    const cleaned: ItemDetails = {
-      ...details,
-      ...(details.days?.length ? {} : { days: undefined }),
-    };
     const extra = {
       ...(photos.length ? { photos } : {}),
       ...(category === "borrow" ? { side } : {}),
-      ...(Object.values(cleaned).some((v) =>
-        Array.isArray(v) ? v.length : Boolean(v),
-      )
-        ? { details: cleaned }
-        : {}),
+      ...(hasDetails(cleaned) ? { details: cleaned } : {}),
     };
     const result =
       category === "trade"
@@ -287,23 +303,68 @@ export function CategoryForm({
           ? `a wish holds ${WISH_COST} sparks until it’s granted. give something to earn more.`
           : `you can have ${limit} at a time — remove one to add another.`,
       );
-      haptics.warning();
       return;
     }
     setProblem(null);
+    setLiveId(result.id ?? null);
+  };
+
+  /* SAVING IS CONTINUOUS, briefly debounced so we do not write per keystroke. */
+  useEffect(() => {
+    if (!complete) return;
+    const t = window.setTimeout(save, 600);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [complete, draft, want, note, side, photos, details, liveId]);
+
+  /* THE DRAFT ITSELF IS PERSISTED, so leaving mid-sentence loses nothing. */
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (!draft && !want && !note && !photos.length && !hasDetails(details)) {
+        draftsStore.clear(category);
+        return;
+      }
+      draftsStore.set(category, {
+        text: draft,
+        want,
+        note,
+        side,
+        photos,
+        details,
+        liveId,
+      });
+    }, 250);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, draft, want, note, side, photos, details, liveId]);
+
+  /** START A FRESH ONE. What was typed is already saved; the field simply clears. */
+  const add = () => {
+    if (!draft.trim()) return;
+    if (category === "trade" && !want.trim()) {
+      setProblem("a trade has two sides. what would you like in return?");
+      haptics.warning();
+      return;
+    }
+    save();
+    setProblem(null);
+    setLiveId(null);
     setDraft("");
     setWant("");
     setNote("");
     setPhotos([]);
     setDetails({});
+    draftsStore.clear(category);
     haptics.light();
   };
 
+  /* BACK IS NOT THE SAVE BUTTON. It only flushes the pending debounce. */
   const leave = () => {
-    if (draft.trim() && (category !== "trade" || want.trim())) add();
+    save();
     haptics.light();
     onDone();
   };
+
 
   return (
     <div

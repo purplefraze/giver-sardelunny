@@ -50,9 +50,15 @@ export const SETUP_PER_CATEGORY = 3;
 
 
 
+/** HOW THE CHOSEN CIRCLE SITS OVER THE ORIGINAL PICTURE. */
+export type PhotoCrop = { x: number; y: number; zoom: number };
+
 export type MyProfile = {
   username: string;
   photo: string | null;
+  /** The untouched picture, kept so the crop can always be reopened. */
+  photoSource: string | null;
+  photoCrop: PhotoCrop | null;
   aboutMe: string;
   byDay: string;
   byNight: string;
@@ -60,6 +66,8 @@ export type MyProfile = {
   /** IDENTITY, KEPT SHORT: an ISO date and one chosen word. */
   birthday: string;
   gender: string;
+  /** SALTED AND HASHED. The typed password is never stored anywhere. */
+  password: string;
   /** PROJECTION of my active items, in my own priority order. Read-only. */
   items: Record<Category, string[]>;
   /** The same items, with ids — for editing, completing and reordering. */
@@ -89,12 +97,15 @@ export type MyProfile = {
 type Person = {
   username: string;
   photo: string | null;
+  photoSource: string | null;
+  photoCrop: PhotoCrop | null;
   aboutMe: string;
   byDay: string;
   byNight: string;
   weekend: string;
   birthday: string;
   gender: string;
+  password: string;
   built: boolean;
   sparkles: number;
   sparklesAwarded: boolean;
@@ -103,6 +114,7 @@ type Person = {
   sparksSeeded: boolean;
   rewarded: string[];
 };
+
 
 
 const KEY = "giver.my-profile.v1";

@@ -1,4 +1,6 @@
+import { G_LABEL, G_STATEMENT } from "./g-type";
 import { LOOP_SAFE_RADIUS } from "./g-path";
+
 
 /**
  * ONE universal typography scale for everything that lives inside a Living G

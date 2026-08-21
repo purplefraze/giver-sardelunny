@@ -10,8 +10,10 @@ import {
   itemLine,
   splitTrade,
   tradeText,
+  WISH_TTL_MS,
   type BorrowSide,
   type Item,
+  type ItemDetails,
   type ItemType,
 } from "@/data/items";
 
@@ -233,11 +235,40 @@ function reward(key: string) {
 
 
 
+/**
+ * SEVEN DAYS, THEN THE SPARKS COME HOME.
+ *
+ * A wish stays in circulation for a week. If nobody grants it, the wish leaves
+ * circulation, its ten reserved sparks are returned in full and the active wish
+ * slot is freed. Nothing about this applies to gives.
+ */
+function sweepExpiredWishes() {
+  hydrate();
+  const now = Date.now();
+  const stale = itemsStore
+    .get()
+    .items.filter(
+      (i) =>
+        i.ownerId === ME_ID &&
+        i.type === "wish" &&
+        i.status === "active" &&
+        now - i.createdAt > WISH_TTL_MS,
+    );
+  for (const wish of stale) {
+    myProfileStore.releaseWish(wish.id, true);
+    itemsStore.setStatus(wish.id, "archived");
+  }
+}
+
 export const myProfileStore = {
   subscribe(listener: () => void) {
     hydrate();
     listeners.add(listener);
     return () => listeners.delete(listener);
+  },
+  /** Expire any wish older than seven days and refund its sparks. */
+  sweepWishes() {
+    sweepExpiredWishes();
   },
   get(): MyProfile {
     hydrate();
@@ -277,7 +308,7 @@ export const myProfileStore = {
     /** OPTIONAL, SHORT: anything else the other person should know. */
     note?: string,
     /** PHOTOS + BORROW/LEND SIDE — stored on the one real item, not a copy. */
-    extra?: { photos?: string[]; side?: BorrowSide },
+    extra?: { photos?: string[]; side?: BorrowSide; details?: ItemDetails },
   ): { ok: boolean; reason?: "sparks" | "full" | "empty"; id?: string } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };

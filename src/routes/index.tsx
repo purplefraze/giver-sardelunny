@@ -383,21 +383,25 @@ function Index() {
                 mode={seat}
                 onChange={setSeat}
                 seats={SEATS}
-                {...(isProfile && me.photo ? { photo: me.photo } : {})}
+                {...(!firstArrival && isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
-                {...(isProfile && unread ? { badge: unread } : {})}
+                {...(!firstArrival && isProfile && unread ? { badge: unread } : {})}
                 /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
                 sparks={me.sparks}
 
                 /*
                   TOP LOOP = SEARCH THIS WORLD, on my own G only. On the profile
                   seat the G represents ME, so the top loop stays my information.
+                  BEFORE THE PROFILE EXISTS every tap leads to setting it up.
                 */
                 onTap={() =>
-                  isProfile
-                    ? setEditor({ kind: "about" })
-                    : setSearch(mode as ItemType)
+                  firstArrival
+                    ? setup()
+                    : isProfile
+                      ? setEditor({ kind: "about" })
+                      : setSearch(mode as ItemType)
                 }
+
               />
             }
 

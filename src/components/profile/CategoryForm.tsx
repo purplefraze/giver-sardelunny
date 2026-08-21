@@ -174,7 +174,9 @@ export function CategoryForm({
   const [liveId, setLiveId] = useState<string | null>(stored.liveId);
   /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
   const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
-  const colour = `var(--me-${category})`;
+  /* THE FORM IS THE COLOUR OF WHAT IT MAKES: wish purple, give green,
+     trade orange, borrow blue. It never inherits profile red. */
+  const colour = `var(--activity-${category})`;
   const limit = MAX_PER_CATEGORY[category];
   const unlimited = !Number.isFinite(limit);
   /* THE RECORD BEING TYPED IS SHOWN IN THE FIELD, NOT TWICE IN THE LIST. */
@@ -202,7 +204,7 @@ export function CategoryForm({
   const longSummary =
     [details.cadence, details.duration].filter(Boolean).join(" · ") || undefined;
   /** A BRIGHT WAY BACK — electric, never muddy. */
-  const wayBack = "var(--giver-me-complement)";
+  const wayBack = `var(--mode-${category}-complement)`;
 
   /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
      sense as the give is described is quietly dropped, never corrected aloud. */
@@ -368,41 +370,36 @@ export function CategoryForm({
 
   return (
     <div
-      data-world="profile"
+      data-world={category}
       className="relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={leave} label="back to my g" />
 
       <div className="g-page pb-[8.5rem] pt-16">
-        {/* GIVING IS AN INVITATION, NOT AN INVENTORY. */}
-        {category === "give" ? (
-          <>
-            <h1 className="g-display" style={{ color: colour }}>
-              are you a giver?
-            </h1>
-            <p className="g-meta mt-3 opacity-50">
-              give what you can · give what you want · make someone happy
-            </p>
-          </>
-        ) : (
-          <>
-            <h1 className="g-display" style={{ color: colour }}>
-              my {CATEGORY_PLURAL[category]}
-            </h1>
-            {/* THE ECONOMY, SAID PLAINLY — and never on a give. */}
-            <p className="mt-3 g-meta">
-              {cost
-                ? `${cost} sparks stay with each wish for 7 days · 3 at a time · you have ${me.sparks}`
-                : `no sparks needed · ${limit} at a time`}
-            </p>
-          </>
-        )}
+        {/*
+          ONE TYPOGRAPHY SYSTEM, EVERYWHERE. The old oversized "add a give"
+          display type is gone: a creation screen states itself in the shared
+          heading register, in its own semantic colour, and lets the content
+          below be the loudest thing on the page.
+        */}
+        <h1 className="g-heading" style={{ color: colour }}>
+          my {CATEGORY_PLURAL[category]}
+        </h1>
+        <p className="g-body mt-2 max-w-[24ch]" style={{ color: colour }}>
+          {CATEGORY_ASK[category]}
+        </p>
+        {/* THE ECONOMY, SAID PLAINLY — and never on a give. */}
+        <p className="mt-3 g-meta">
+          {cost
+            ? `${cost} sparks stay with each wish for 7 days · 3 at a time · you have ${me.sparks}`
+            : `no sparks needed · ${limit} at a time`}
+        </p>
 
         {problem ? (
           <p
             className="mt-3 text-sm font-black lowercase"
-            style={{ color: "var(--me-wish)" }}
+            style={{ color: colour }}
           >
             {problem}
           </p>

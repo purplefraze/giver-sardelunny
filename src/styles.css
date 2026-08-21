@@ -154,7 +154,7 @@
                 red+yellow = orange = participation
                 blue+yellow = green = generosity / giver
      These six tokens are the ONLY source of colour meaning in Giver. */
-  --giver-me: oklch(0.58 0.23 27); /* RED — me, my identity, my profile */
+  --giver-me: oklch(0.64 0.28 26); /* BRIGHT CHERRY RED — me, my identity, my profile */
   --giver-others: oklch(0.58 0.19 250); /* BLUE — another person */
   --giver-community: oklch(0.86 0.19 95); /* YELLOW — the collective */
   --giver-connection: oklch(0.55 0.24 300); /* PURPLE — me + others */
@@ -191,6 +191,17 @@
   --activity-give: var(--mode-give);
   --activity-trade: var(--mode-trade);
   --activity-borrow: var(--mode-borrow);
+
+  /* ---- MY OWN ACTIVITY = THE ACTIVITY'S OWN COLOUR ----
+     These used to be four shades of profile red. A creation form, an
+     explanation or a record of MINE now carries the colour of WHAT it is:
+     wish purple, give green, trade orange, borrow blue. Profile red belongs
+     to identity only, and never to an activity. */
+  --me-wish: var(--activity-wish);
+  --me-give: var(--activity-give);
+  --me-trade: var(--activity-trade);
+  --me-borrow: var(--activity-borrow);
+  --me-profile: var(--giver-me);
 
 
   /* Compatibility aliases — every one resolves to a semantic token above. */
@@ -350,26 +361,14 @@
 }
 
 
-/* ---- ME — my own profile and my own information: RED. ---- */
+/* ---- ME — my own profile and my own information: BRIGHT RED. ---- */
 [data-world="me"],
 [data-world="profile"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-me);
-  --world-ink: oklch(0.42 0.19 27);
+  --world-ink: oklch(0.52 0.25 26); /* bright cherry red ink, still readable */
   --world-text: var(--giver-me-complement);
   --world-accent: var(--giver-community);
-}
-
-/* ---- MY OWN RED FAMILY ----
-   NOT four new semantics: four shades of RED = ME, used only inside my own
-   profile management so I can scan my wishes, gives, trades and borrows at a
-   glance. All four stay unmistakably red. */
-[data-world="me"],
-[data-world="profile"] {
-  --me-give: var(--giver-me); /* classic vivid giver red */
-  --me-wish: oklch(0.72 0.15 22); /* softer, lighter red */
-  --me-trade: oklch(0.64 0.27 30); /* bright, electric red */
-  --me-borrow: oklch(0.44 0.16 30); /* deep auburn red */
 }
 
 

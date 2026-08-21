@@ -32,7 +32,7 @@ import type { Category } from "@/data/my-profile";
 import { CATEGORY_PLURAL, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
 
 /**
  * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
@@ -172,12 +172,18 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-  const [seat, setSeatState] = useState<Mode>("give");
+    /* MY G IS A SEAT; SEARCH IS RESERVED AND UNREACHABLE, so it can never be
+     held here. */
+  const [seat, setSeatState] = useState<Mode | "giver">("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
-  const setSeat = (next: Mode) => {
+  const setSeat = (next: Seat) => {
+    /* SEARCH IS RESERVED, NOT BUILT: the toggle cannot come to rest there. */
+    if (next === "search") return;
     setSeatState(next);
-    rememberFirstUseSeat(next);
+    /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
+       remembered as the first-use mode. */
+    if (next !== "giver") rememberFirstUseSeat(next);
   };
 
   /**
@@ -243,6 +249,7 @@ function Index() {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
+    if (seat === "giver") return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
   }, [entered, seat]);
@@ -314,8 +321,14 @@ function Index() {
   /** PRIVATE TO ME: how many conversations have something waiting inside. */
   const unread = unreadCount(links, ME_ID);
 
-  /** THE TOGGLE IS THE WORLD: wish | give | trade | borrow. */
-  const mode: Mode = seat;
+  /**
+   * THE TOGGLE IS THE WORLD: wish | give | trade | borrow — plus MY G, the one
+   * destination seat at 12 o'clock. `mode` is the activity world, and it is
+   * null while the toggle is sitting on My G.
+   */
+  const activity: Mode | null = seat === "giver" ? null : seat;
+  /* The last activity world still owns the loops' grammar when My G is held. */
+  const mode: Mode = activity ?? "give";
   const content = MODE_CONTENT[mode];
 
   /**
@@ -328,15 +341,27 @@ function Index() {
    */
   const firstArrival =
     Boolean(lifecycle.onboardingCompletedAt) && !lifecycle.profileSetupCompletedAt;
-  const setup = () => setEditor({ kind: "about" });
+  const setup = () => {
+    /* DISCOVERY UNLOCKS MY G — the moment profile setup opens, and forever. */
+    lifecycleStore.discoverProfile();
+    setEditor({ kind: "about" });
+  };
+
+  /**
+   * MY G AT 12 O'CLOCK, ONCE IT HAS BEEN FOUND. Before the discovery there is
+   * nothing there; afterwards the seat exists permanently, whether or not a
+   * single field was ever filled in. SEARCH (6 o'clock) stays unbuilt.
+   */
+  const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
+    ? (["giver", ...MODES_ONLY] as const)
+    : MODES_ONLY;
 
   /**
    * TOP = ME. MY G is not a content type and never a toggle seat: it is the
    * top loop, and it opens my own profile — or, before it exists, its setup.
    */
   const openMyG = () => {
-    if (firstArrival || !me.built) setup();
-    else setEditor({ kind: "about" });
+    setup();
   };
 
   /**
@@ -391,7 +416,7 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={mode}
+            world={activity ?? "profile"}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -409,8 +434,8 @@ function Index() {
             overlay={
               <EarSelector
                 mode={seat}
-                onChange={(next) => setSeat(next as Mode)}
-                seats={MODES_ONLY}
+                onChange={(next) => setSeat(next)}
+                seats={myGSeats}
                 {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
                 {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
                 /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
@@ -441,6 +466,10 @@ function Index() {
                 panelTitle: content.mine.title,
                 panelBody: null,
                 onPress: () => {
+                  if (activity === null) {
+                    openMyG();
+                    return;
+                  }
                   if (firstArrival) {
                     setup();
                     return;
@@ -452,20 +481,24 @@ function Index() {
                   profileLoop({
                     anchor,
                     region: "middle",
-                    /* FIRST ARRIVAL: the middle loop holds nothing at all. */
-                    blocks: firstArrival
-                      ? []
-                      : [
-                          { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
-                          myMode
-                            ? {
-                                text: clampField(myMode),
-                                role: "primary" as const,
-                                fill: ACTIVITY_FILL[mode as ItemType],
-                              }
-                            : { text: `add a ${mode}`, role: "primary" as const },
-                          ...(myMode ? more(me.items[mode].length) : []),
-                        ],
+                    /*
+                      EMPTY MEANS VISUALLY EMPTY. With nothing of mine in this
+                      world, the loop holds NOTHING: no label, no "add a …", no
+                      prompt, no invented content. The words only ever describe
+                      something that actually exists.
+                    */
+                    blocks:
+                      activity === null || !myMode
+                        ? []
+                        : [
+                            { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
+                            {
+                              text: clampField(myMode),
+                              role: "primary" as const,
+                              fill: ACTIVITY_FILL[mode as ItemType],
+                            },
+                            ...more(me.items[mode].length),
+                          ],
                   }),
               },
               /*
@@ -476,39 +509,45 @@ function Index() {
                 label: "",
                 panelTitle: content.community.title,
                 panelBody: null,
-                onPress: firstArrival
-                  ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
-                  : () => {
-                      if (!canCommunity) {
-                        setLocked(true);
-                        return;
-                      }
-                      setBrowse({ type: mode as ItemType });
-                    },
+                onPress:
+                  activity === null
+                    ? openMyG
+                    : firstArrival
+                      ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
+                      : () => {
+                          if (!canCommunity) {
+                            setLocked(true);
+                            return;
+                          }
+                          setBrowse({ type: mode as ItemType });
+                        },
 
                 render: (anchor) =>
                   profileLoop({
                     anchor,
                     region: "bottom",
-                    /* FIRST ARRIVAL: the bottom loop holds nothing at all. */
-                    blocks: firstArrival
-                      ? []
-                      : [
-                          {
-                            text: `communi-g ${CATEGORY_PLURAL[mode]}`,
-                            role: "secondary" as const,
-                          },
-                          !canCommunity
-                            ? { text: "are you a giver?", role: "primary" as const }
-                            : community
-                              ? {
-                                  text: clampField(community),
-                                  role: "primary" as const,
-                                  fill: ACTIVITY_FILL[mode as ItemType],
-                                }
-                              : { text: "nothing yet", role: "tertiary" as const },
-                          ...(canCommunity && community ? more(theirs.length) : []),
-                        ],
+                    /*
+                      COMMUNITY CONTENT OR NOTHING. Until the community is truly
+                      open AND there is something in this world to show, the
+                      bottom loop stays empty — never a question, never filler.
+                      The label itself carries the activity's own colour.
+                    */
+                    blocks:
+                      activity === null || !canCommunity || !community
+                        ? []
+                        : [
+                            {
+                              text: `communi-g ${CATEGORY_PLURAL[mode]}`,
+                              role: "secondary" as const,
+                              fill: ACTIVITY_FILL[mode as ItemType],
+                            },
+                            {
+                              text: clampField(community),
+                              role: "primary" as const,
+                              fill: ACTIVITY_FILL[mode as ItemType],
+                            },
+                            ...more(theirs.length),
+                          ],
                   }),
               },
             }}
@@ -524,6 +563,7 @@ function Index() {
             they ride my own top profile loop (see EarSelector).
           */}
           {!firstArrival &&
+          activity !== null &&
           !tutorialSeen &&
           intro === null &&
           editor === null &&

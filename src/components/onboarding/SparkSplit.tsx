@@ -7,15 +7,16 @@ import { SparkBundle } from "@/components/living-g/SparkBundle";
  *
  *   hundred  one bundle of 100 Sparks in the middle loop — GREEN, because they
  *            came straight from Giver and nothing has been exchanged yet
- *   collect  the hundred has divided: 50 GREEN (mine) and 50 PURPLE (to gift)
- *            both gathered in the middle loop
- *   rise     the green 50 shoot out of the middle loop into the toggle loop
+ *   collect  the hundred has divided: BOTH halves are now PURPLE — 50 mine and
+ *            50 to gift — gathered together in the middle loop
+ *   rise     my purple 50 shoot out of the middle loop into the toggle loop
  *            wherever the toggle actually is right now
- *   held     the green 50 live in that loop's negative space; the purple 50 are
- *            the draggable bundle owned by SparkJourney
+ *   held     my purple 50 live in that loop's negative space; the other purple
+ *            50 are the draggable bundle owned by SparkJourney
  *
- * COLOUR IS RELATIONSHIP, NOT POSITION. Giver -> me is green and stays green;
- * only the half being prepared for another person turns purple.
+ * COLOUR IS THE CURRENCY'S STATE. 100 arrives GREEN, straight from Giver's own
+ * generosity. The instant it splits, both halves become PURPLE: sparks are now
+ * spendable currency — the energy behind wishes and person-to-person giving.
  */
 export type SplitStep = "hundred" | "collect" | "rise" | "held";
 
@@ -68,14 +69,14 @@ export function SparkSplit({ step, seat }: { step: SplitStep; seat: Seat }) {
           <SparkBundle
             r={26}
             count={50}
-            colour="var(--giver-generosity)"
+            colour="var(--giver-connection)"
             stroke="var(--world-bg)"
           />
         </g>
       </g>
 
-      {/* THE GIFT HALF. It stays in the middle loop and becomes PURPLE: it is
-          now being prepared for a person-to-person give. */}
+      {/* THE GIFT HALF. It stays in the middle loop, PURPLE like its twin, and
+          is the half prepared for a person-to-person give. */}
       <g
         transform={`translate(${mid.x} ${mid.y})`}
         style={{

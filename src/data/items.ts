@@ -354,7 +354,7 @@ export const BOOST_RULES = {
   maxPerPersonPerItem: 3,
 };
 
-type ItemsState = { items: Item[]; boosts: Boost[]; seeded: boolean };
+export type ItemsState = { items: Item[]; boosts: Boost[]; seeded: boolean };
 
 const KEY = "giver.items.v1";
 

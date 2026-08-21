@@ -428,7 +428,7 @@ function seedItems(): Item[] {
           createdAt: now - (mi + 1) * 86400000 - i * 3600000,
           updatedAt: now - (mi + 1) * 86400000 - i * 3600000,
           ...(km === undefined ? {} : { distanceKm: km }),
-          details: seedDetails(type, mi, i),
+          details: seedDetails(text, mi, i),
           boostCount: 0,
         });
       });
@@ -443,12 +443,13 @@ function seedItems(): Item[] {
  * touched.
  */
 function withSeedDetails(item: Item): Item {
-  if (item.details || !item.id.startsWith("seed-")) return item;
+  /* DEMO ITEMS ARE ALWAYS RE-DERIVED, so old nonsense combinations heal. */
+  if (!item.id.startsWith("seed-")) return item;
   const parts = item.id.split("-");
   const memberId = parts[1] ?? "";
   const index = Number(parts[3] ?? 0) || 0;
   const mi = Math.max(0, MEMBERS.findIndex((m) => m.id === memberId));
-  return { ...item, details: seedDetails(item.type, mi, index) };
+  return { ...item, details: seedDetails(item.text, mi, index) };
 }
 
 function read(): ItemsState {

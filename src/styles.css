@@ -154,7 +154,7 @@
                 red+yellow = orange = participation
                 blue+yellow = green = generosity / giver
      These six tokens are the ONLY source of colour meaning in Giver. */
-  --giver-me: oklch(0.58 0.23 27); /* RED — me, my identity, my profile */
+  --giver-me: oklch(0.64 0.28 26); /* BRIGHT CHERRY RED — me, my identity, my profile */
   --giver-others: oklch(0.58 0.19 250); /* BLUE — another person */
   --giver-community: oklch(0.86 0.19 95); /* YELLOW — the collective */
   --giver-connection: oklch(0.55 0.24 300); /* PURPLE — me + others */

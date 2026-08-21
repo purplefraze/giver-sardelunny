@@ -106,6 +106,16 @@ const at = (angle: number, r: number): P => ({
   y: TRACK_C.y + r * Math.sin(angle),
 });
 
+/**
+ * THE LIVE CENTRE OF THE TOP LOOP — the small circular selector itself, wherever
+ * the toggle is CURRENTLY sitting. Anything that must travel "into the top loop"
+ * asks for this and never for a hard-coded coordinate, so the motion follows the
+ * Living G's present state instead of one seat's position.
+ */
+export const seatCentre = (seat: Seat): P => at(SEAT_ANGLE[seat], TRACK_R);
+
+
+
 /** Nearest seat measured AROUND the circle, so the ±180° seam is not a wall. */
 function nearestOf(angle: number, seats: readonly Seat[]): Seat {
   let best: Seat = seats[0]!;

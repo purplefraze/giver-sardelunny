@@ -1,4 +1,5 @@
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
+import { seatCentre, type Seat } from "@/components/living-g/EarSelector";
 import { SparkBundle } from "@/components/living-g/SparkBundle";
 
 /**
@@ -18,9 +19,14 @@ export type SplitStep = "hundred" | "mine" | "gift" | "held";
 const MOVE_MS = 900;
 const EASE = "cubic-bezier(0.22,1,0.36,1)";
 
-export function SparkSplit({ step }: { step: SplitStep }) {
+export function SparkSplit({ step, seat }: { step: SplitStep; seat: Seat }) {
   const mid = LOOP_CENTRE.middle;
-  const top = LOOP_CENTRE.top;
+  /**
+   * DESTINATION = CURRENT TOP LOOP, never "the top loop when Give is selected".
+   * The selector IS the top loop, so its live centre for whatever seat the
+   * toggle already occupies is the target. The toggle is never moved for this.
+   */
+  const top = seatCentre(seat);
   const allocated = step !== "hundred";
 
   return (

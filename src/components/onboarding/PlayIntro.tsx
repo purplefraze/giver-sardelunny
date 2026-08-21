@@ -274,6 +274,12 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
               setSeat(next as Mode);
             }}
           />
+
+          {/* THE HALVES, drawn LAST so my green 50 read inside the toggle loop's
+              own negative space rather than beneath the selector itself. */}
+          {phase === "collect" ? <SparkSplit step="collect" seat={seat} /> : null}
+          {phase === "rise" ? <SparkSplit step="rise" seat={seat} /> : null}
+          {phase === "gift" ? <SparkSplit step="held" seat={seat} /> : null}
         </>
       }
     />

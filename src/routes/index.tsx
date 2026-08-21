@@ -12,7 +12,7 @@ import { useIntroSeen } from "@/hooks/use-intro-seen";
 
 
 import { CommunityFeed } from "@/components/community/CommunityFeed";
-import { ModeSearch } from "@/components/search/ModeSearch";
+
 
 import { CommunityLocked } from "@/components/community/CommunityLocked";
 import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";

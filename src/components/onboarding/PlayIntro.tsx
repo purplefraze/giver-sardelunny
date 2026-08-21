@@ -176,7 +176,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
       </Line>
 
       {/* THE NAME. One word, alone, in the middle loop's own negative space. */}
-      <Line show={phase !== "quiet"} x={mid.x} y={mid.y} size={BRAND}>
+      <Line show={phase === "brand" || phase === "spark"} x={mid.x} y={mid.y} size={BRAND}>
         giver
       </Line>
       <Line
@@ -193,7 +193,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
 
       {/* THE SPLIT, EXPLAINED BY THE NUMBERS THEMSELVES. */}
       <Line
-        show={told >= 1 && phase !== "quiet"}
+        show={told >= 1}
         x={bot.x}
         y={bot.y - LINE * 0.8}
         size={LINE}

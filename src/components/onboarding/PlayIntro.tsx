@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { SparkJourney } from "@/components/living-g/SparkJourney";
 import { SparkSplit } from "@/components/onboarding/SparkSplit";
 import { IntroG } from "@/components/onboarding/IntroG";
+import { G_FONT } from "@/components/living-g/g-type";
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
+
 import type { RegionKey } from "@/components/living-g/LivingG";
 import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
 import { buzz, haptics } from "@/lib/haptics";
@@ -78,7 +80,8 @@ function Line({
       dominantBaseline="central"
       fill={colour}
       style={{
-        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+        /* THE CANONICAL LIVING G TREATMENT — this is where it was authored. */
+        fontFamily: G_FONT,
         fontWeight: weight,
         fontSize: size,
         letterSpacing: track,
@@ -89,6 +92,7 @@ function Line({
       {children}
     </text>
   );
+
 }
 
 export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {

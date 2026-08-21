@@ -12,6 +12,8 @@ import { useIntroSeen } from "@/hooks/use-intro-seen";
 
 
 import { CommunityFeed } from "@/components/community/CommunityFeed";
+import { ModeSearch } from "@/components/search/ModeSearch";
+
 import { CommunityLocked } from "@/components/community/CommunityLocked";
 import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";
 import { sparkFlashStore } from "@/data/spark-flash";
@@ -175,11 +177,17 @@ function Index() {
    * conversation both people verify ever settles sparks.
    */
   const [browse, setBrowse] = useState<{ type: ItemType | null } | null>(null);
+  /**
+   * SEARCH IS THE TOP LOOP, AND ONLY ON MY OWN G. It opens already scoped to the
+   * toggle's world, so the content type is never asked for twice.
+   */
+  const [search, setSearch] = useState<ItemType | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
   /** THE PERSON IS THEIR OWN DESTINATION: @username opens who they are. */
   const [person, setPerson] = useState<string | null>(null);
+
   /**
    * THE COMMUNITY DOOR, WHEN IT IS STILL SHUT. Not an error and not a warning —
    * one question, asked once, with the way to open it right underneath.
@@ -288,8 +296,14 @@ function Index() {
   const mode: Mode = isProfile ? "give" : (seat as Mode);
   const content = MODE_CONTENT[mode];
 
-  /** MY <type> — the active world's #1 item, in my own priority order. */
-  const myMode = me.items[mode][0] ?? null;
+  /**
+   * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
+   * "mine" means the one I touched last, not a ranked list.
+   */
+  const myRecent =
+    [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+  const myMode = myRecent ? itemLine(myRecent) : null;
+
   /** COMMUNITY <type> — the same item collection, queried by everyone else. */
   const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
   const firstTheirs = theirs[0];
@@ -340,6 +354,8 @@ function Index() {
               !choose &&
               !help &&
               browse === null &&
+              search === null &&
+
               !locked &&
               detail === null &&
               talking === null &&
@@ -357,7 +373,15 @@ function Index() {
                 /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
                 sparks={me.sparks}
 
-                onTap={() => setEditor({ kind: "about" })}
+                /*
+                  TOP LOOP = SEARCH THIS WORLD, on my own G only. On the profile
+                  seat the G represents ME, so the top loop stays my information.
+                */
+                onTap={() =>
+                  isProfile
+                    ? setEditor({ kind: "about" })
+                    : setSearch(mode as ItemType)
+                }
               />
             }
 
@@ -365,11 +389,14 @@ function Index() {
             regions={{
               top: {
                 label: "",
-                panelTitle: isProfile ? "more information" : "you",
+                panelTitle: isProfile ? "more information" : `search ${mode}s`,
                 panelBody: null,
-                /* TAP -> the profile information screen; back returns here. */
-                onPress: () => setEditor({ kind: "about" }),
+                onPress: () =>
+                  isProfile
+                    ? setEditor({ kind: "about" })
+                    : setSearch(mode as ItemType),
               },
+
               /*
                 MIDDLE LOOP:
                   giver = MY LATEST ACTIVITY of any type
@@ -547,6 +574,23 @@ function Index() {
               />
             ) : null}
           </Screen>
+
+          {/*
+            THE TOP LOOP'S SEARCH. Already scoped to the toggle's world, and only
+            ever reachable from my own Living G — never from someone else's.
+          */}
+          <Screen open={search !== null}>
+            {search ? (
+              <ModeSearch
+                mode={search}
+                onOpen={(itemId) => setDetail(itemId)}
+                onOpenProfile={(ownerId) => setPerson(ownerId)}
+                onClose={() => setSearch(null)}
+              />
+            ) : null}
+          </Screen>
+
+
 
           <Screen open={detail !== null}>
             {detail ? (

@@ -1,4 +1,6 @@
+import { G_LABEL, G_STATEMENT } from "./g-type";
 import { LOOP_SAFE_RADIUS } from "./g-path";
+
 
 /**
  * ONE universal typography scale for everything that lives inside a Living G
@@ -156,16 +158,21 @@ export const LOOP_ROLE_SIZE: Record<LoopTypeRole, number> = {
   detail: 0.52,
 };
 
-/** Tracking + presence per role. Lowercase everywhere — no caps for emphasis. */
+/**
+ * Tracking, weight and presence per role — THE canonical Living G treatment
+ * (see g-type.ts): statements at 900 with tight optical tracking, small labels
+ * at 700 with the wide 0.26em tracking of "kindness is currency".
+ */
 export const LOOP_ROLE_STYLE: Record<
   LoopTypeRole,
-  { tracking: string; opacity: number }
+  { tracking: string; opacity: number; weight: number }
 > = {
-  action: { tracking: "-0.045em", opacity: 1 },
-  message: { tracking: "-0.045em", opacity: 1 },
-  label: { tracking: "0.14em", opacity: 0.55 },
-  detail: { tracking: "-0.01em", opacity: 0.72 },
+  action: { tracking: G_STATEMENT.tracking, opacity: 1, weight: G_STATEMENT.weight },
+  message: { tracking: G_STATEMENT.tracking, opacity: 1, weight: G_STATEMENT.weight },
+  label: { tracking: G_LABEL.tracking, opacity: 0.62, weight: G_LABEL.weight },
+  detail: { tracking: "-0.01em", opacity: 0.78, weight: G_LABEL.weight },
 };
+
 
 /** The one in-loop text colour: the loop colour's complement, from tokens. */
 export const LOOP_TEXT_FILL = "var(--world-text)";

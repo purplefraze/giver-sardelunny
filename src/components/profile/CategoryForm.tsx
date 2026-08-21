@@ -404,14 +404,18 @@ export function CategoryForm({
           my {CATEGORY_PLURAL[category]}
         </h1>
         <p className="g-body mt-2 max-w-[24ch]" style={{ color: colour }}>
-          {CATEGORY_ASK[category]}
+          {CATEGORY_CALL[category]}
         </p>
-        {/* THE ECONOMY, SAID PLAINLY — and never on a give. */}
-        <p className="mt-3 g-meta">
+        {/* THE ECONOMY, IN AS FEW WORDS AS IT TAKES. Nothing is explained twice. */}
+        <p className="mt-2 g-meta">
           {cost
             ? `${cost} sparks stay with each wish for 7 days · 3 at a time · you have ${me.sparks}`
-            : `no sparks needed · ${limit} at a time`}
+            : "no sparks needed"}
         </p>
+        {CATEGORY_TAGLINE[category] ? (
+          <p className="mt-1 g-meta opacity-45">{CATEGORY_TAGLINE[category]}</p>
+        ) : null}
+
 
         {problem ? (
           <p

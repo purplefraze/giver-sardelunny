@@ -449,8 +449,15 @@ function withSeedDetails(item: Item): Item {
   const memberId = parts[1] ?? "";
   const index = Number(parts[3] ?? 0) || 0;
   const mi = Math.max(0, MEMBERS.findIndex((m) => m.id === memberId));
-  return { ...item, details: seedDetails(item.text, mi, index) };
+  const heal = (s: string) => s.replace(/^italian lessons(?= for )/, "language lessons");
+  return {
+    ...item,
+    text: heal(item.text),
+    ...(item.offer ? { offer: heal(item.offer) } : {}),
+    details: seedDetails(item.text, mi, index),
+  };
 }
+
 
 function read(): ItemsState {
   if (typeof window === "undefined") return EMPTY;

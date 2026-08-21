@@ -272,7 +272,9 @@ export function profileLoop({
           y={origin.y + row.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill={row.fill ?? LOOP_TEXT_FILL}
+          /* BOTTOM LOOP = BIOGRAPHY = BLACK, always. It never inherits an
+             activity colour or the world's G colour. */
+          fill={row.fill ?? (region === "bottom" ? "var(--giver-ink)" : LOOP_TEXT_FILL)}
           className="lowercase"
           style={{
             ...gType(

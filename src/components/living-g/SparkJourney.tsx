@@ -43,6 +43,7 @@ export function SparkJourney({
   colour = "var(--giver-generosity)",
   grabColour,
   wash: washOn = true,
+  washColour = "var(--giver-generosity)",
   onStart,
   onArrive,
   onGreen,
@@ -65,13 +66,15 @@ export function SparkJourney({
   /** Its resting colour, and what a successful catch turns it into. */
   colour?: string;
   grabColour?: string;
-  /** Whether the landing washes the whole G in green. */
+  /** Whether the landing washes the whole G in the bundle's colour. */
   wash?: boolean;
+  /** The colour that resolves outward from a successful landing. */
+  washColour?: string;
   /** The user has taken hold of the bundle. */
   onStart?: () => void;
   /** The spark has reached the end of its journey. */
   onArrive?: () => void;
-  /** The green has finished resolving through the whole G. */
+  /** The wash has finished resolving through the whole G. */
   onGreen?: () => void;
 }) {
   const uid = useId().replace(/:/g, "");
@@ -345,7 +348,7 @@ export function SparkJourney({
             </mask>
           </defs>
           <g mask={`url(#${uid}-wash)`} pointerEvents="none">
-            <g transform={LIVING_G_TRANSFORM} fill="var(--giver-generosity)">
+            <g transform={LIVING_G_TRANSFORM} fill={washColour}>
               <path d={LIVING_G_PATH} />
             </g>
           </g>

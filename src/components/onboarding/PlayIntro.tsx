@@ -262,7 +262,6 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
             mode={seat}
             seats={MODES}
             onChange={(next) => {
-              setPlayed(true);
               setSeat(next as Mode);
             }}
           />

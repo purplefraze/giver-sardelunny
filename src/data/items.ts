@@ -289,6 +289,25 @@ const parseKm = (distance: string) => {
 };
 
 /**
+ * SEEDED DETAILS EXIST FOR THE SAME REASON REAL ONES DO: so community can be
+ * scanned and understood without opening anything. Deterministic, never random.
+ */
+function seedDetails(type: ItemType, mi: number, i: number): ItemDetails {
+  const daySets = [["tues", "thurs"], ["sat"], ["sun"], ["mon", "wed", "fri"]];
+  const places = ["online", "west end", "flexible", "north side"];
+  const times = ["evenings", "7 pm", "afternoons", "mornings"];
+  const spans = ["one time", "recurring", "flexible"];
+  const k = (mi + i) % 4;
+  return {
+    days: daySets[k % daySets.length]!,
+    time: times[k % times.length]!,
+    where: places[(k + i) % places.length]!,
+    cadence: spans[(mi + i) % spans.length]!,
+    ...(type === "give" ? { duration: DURATION_OPTIONS[k % DURATION_OPTIONS.length]! } : {}),
+  };
+}
+
+/**
  * The sample community starts out as REAL items, so my items and theirs live
  * in one collection from the first render. Seeded once, then persisted.
  */
@@ -314,6 +333,7 @@ function seedItems(): Item[] {
           createdAt: now - (mi + 1) * 86400000 - i * 3600000,
           updatedAt: now - (mi + 1) * 86400000 - i * 3600000,
           ...(km === undefined ? {} : { distanceKm: km }),
+          details: seedDetails(type, mi, i),
           boostCount: 0,
         });
       });

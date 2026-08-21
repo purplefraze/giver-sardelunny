@@ -333,20 +333,22 @@
   --world-accent: var(--giver-generosity);
 }
 
-/* ---- ANOTHER PERSON — always BLUE, whatever they are up to. ----
-   Activity type is communicated by words and interaction, never by
-   an arbitrary personal colour. */
+/* ---- ANOTHER PERSON — always YELLOW, whatever they are up to. ----
+   Activity type is communicated by the words INSIDE the G in their own
+   activity colour; the person's own G never borrows an activity colour.
+   BLUE IS RESERVED FOR BORROW and must never mean "another person". */
 [data-world="others"],
 [data-world="giving"],
 [data-world="wishing"],
 [data-world="trading"],
 [data-world="borrowing"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-others);
-  --world-ink: oklch(0.4 0.15 255);
-  --world-text: var(--giver-others-complement);
-  --world-accent: var(--giver-community);
+  --world-g: var(--giver-community);
+  --world-ink: oklch(0.52 0.15 85);
+  --world-text: var(--giver-community-complement);
+  --world-accent: var(--giver-generosity);
 }
+
 
 /* ---- ME — my own profile and my own information: RED. ---- */
 [data-world="me"],

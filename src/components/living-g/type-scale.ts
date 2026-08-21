@@ -109,7 +109,7 @@ export const PROFILE_FILL: Record<LoopRegion, number> = {
   middle: 1.16,
   /* No extra width for the bottom loop: its stack is tall, so its lines sit
      well away from the circle's widest point and must not reach for the rim. */
-  bottom: 1.0,
+  bottom: 1.12,
 };
 
 /**

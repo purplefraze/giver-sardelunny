@@ -268,7 +268,10 @@ export function SparkJourney({
     if (activeId.current !== null) return;
     activeId.current = e.pointerId;
     grabbed.current = true;
+    caught.current = uRef.current;
+    setHeld(true);
     setDragging(true);
+
     // CAPTURE: the slide survives the finger straying off the rail's grip, and
     // keeps receiving moves right through the loops and the S-curve.
     e.currentTarget.setPointerCapture?.(e.pointerId);

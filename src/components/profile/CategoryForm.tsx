@@ -404,7 +404,12 @@ export function CategoryForm({
         {full ? (
           <p className="mt-7 g-meta">that’s {limit} — remove one to add another</p>
         ) : (
-          <div className="g-rule mt-7 space-y-4 pt-5">
+          <div
+            className={`mt-7 space-y-4 ${
+              category === "give" && records.length === 0 ? "" : "g-rule pt-5"
+            }`}
+          >
+
             {/* BORROW OR LEND — one plain question, two honest answers. */}
             {category === "borrow" ? (
               <div className="flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">

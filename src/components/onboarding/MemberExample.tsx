@@ -8,7 +8,8 @@ import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
 import { SparkJourney } from "@/components/living-g/SparkJourney";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
 import { memberById, pastConnectionCount, type Member } from "@/data/giver";
-import { ACTIVITY_FILL, splitTrade, tradeText } from "@/data/items";
+import { ACTIVITY_FILL, itemLine, myItems, splitTrade, tradeText } from "@/data/items";
+import { useItems } from "@/hooks/use-items";
 import { buzz } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +87,7 @@ export function MemberExample({
   const [seat, setSeat] = useState<Mode>(START_SEAT[member.world]);
   /** Tapping the photo opens a real, scrollable profile page. */
   const [profile, setProfile] = useState<string | null>(null);
+  const itemState = useItems();
 
   useEffect(() => {
     setDeep(null);
@@ -97,7 +99,9 @@ export function MemberExample({
    * THE MIDDLE LOOP: the SELECTED world only. One primary item in that world's
    * own colour, then a quiet "+N" that promises there is more behind it.
    */
-  const items = member.active[seat].map((t) => line(seat, t));
+/* ONE COLLECTION FOR EVERYONE: a sample person's activity is read from the
+     same item store as mine, never from a second hard-coded copy. */
+  const items = myItems(itemState, seat, member.id).map(itemLine);
   const activity: LoopBlock[] = items.length
     ? [
         { text: WORLD_LABEL[seat], role: "secondary" },
@@ -267,13 +271,13 @@ export function MemberExample({
             </h2>
             {revealed ? (
               <div className="mt-8 space-y-5">
-                {member.active[revealed].map((text) => (
+                {myItems(itemState, revealed, member.id).map((it) => (
                   <p
-                    key={text}
+                    key={it.id}
                     className="text-2xl font-medium lowercase leading-tight"
                     style={{ color: ACTIVITY_FILL[revealed] }}
                   >
-                    {line(revealed, text)}
+                    {itemLine(it)}
                   </p>
                 ))}
               </div>

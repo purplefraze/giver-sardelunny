@@ -67,7 +67,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
    * ONE BUNDLE, ONE BALANCE. The 50 Give sparks from the intro follow the user
    * from person to person; they are only ever spent once.
    */
-  const [sparks, setSparks] = useState<number | null>(50);
+  const [sparks, setSparks] = useState<number | null>(STARTING_SPARKS);
 
   if (stage === "opening") {
     return (

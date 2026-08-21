@@ -3,6 +3,7 @@ import { BackArrow } from "@/components/BackArrow";
 import { PlayIntro } from "@/components/onboarding/PlayIntro";
 import { MemberExample } from "@/components/onboarding/MemberExample";
 import { MEMBERS, type Member } from "@/data/giver";
+import type { Mode } from "@/components/living-g/EarSelector";
 import { STARTING_SPARKS } from "@/data/my-profile";
 import { buzz, haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,14 @@ import { cn } from "@/lib/utils";
  */
 type Stage = "opening" | "meet" | "choose" | "celebrate";
 
+/** A person chosen from the list still carries their own world into my G. */
+const CHOICE_SEAT: Record<Member["world"], Mode> = {
+  giving: "give",
+  wishing: "wish",
+  trading: "trade",
+  borrowing: "borrow",
+};
+
 const ROLE_COLOUR: Record<Member["world"], string> = {
   // Every sample person is ANOTHER PERSON from my perspective: BLUE.
   giving: "var(--giver-others)",
@@ -37,11 +46,16 @@ export function Onboarding({
    * genuinely completed the spark interaction — the sparks are never awarded
    * because an animation played.
    */
-  onDone: (result: { gaveTo: string | null; earned: boolean }) => void;
+  onDone: (result: { gaveTo: string | null; earned: boolean; mode?: Mode }) => void;
 }) {
   const [stage, setStage] = useState<Stage>("opening");
   const [who, setWho] = useState(0);
   const [chosen, setChosen] = useState<Member | null>(null);
+  /**
+   * CONTINUITY. The mode the toggle rested on when the gift landed travels with
+   * the person into their own first Living G — nothing is reset.
+   */
+  const [giftMode, setGiftMode] = useState<Mode>("give");
   /**
    * ONE BUNDLE, ONE BALANCE. The 50 Give sparks from the intro follow the user
    * from person to person; they are only ever spent once.
@@ -73,8 +87,9 @@ export function Onboarding({
         first={who === 0}
         last={who === MEMBERS.length - 1}
         {...(sparks !== null ? { sparks } : {})}
-        onGive={() => {
+        onGive={(mode) => {
           if (sparks === null) return;
+          setGiftMode(mode);
           // GENEROSITY LANDING ON A PERSON: the recipient is chosen.
           haptics.success();
           setSparks(null);
@@ -93,7 +108,7 @@ export function Onboarding({
     return (
       <FirstGenerosity
         username={chosen.username}
-        onDone={() => onDone({ gaveTo: chosen.name, earned: true })}
+        onDone={() => onDone({ gaveTo: chosen.name, earned: true, mode: giftMode })}
       />
     );
   }
@@ -107,6 +122,7 @@ export function Onboarding({
       }}
       onChoose={(m) => {
         if (sparks === null) return;
+        setGiftMode(CHOICE_SEAT[m.world]);
         haptics.success();
         setSparks(null);
         setChosen(m);

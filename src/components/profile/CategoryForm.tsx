@@ -323,13 +323,21 @@ export function CategoryForm({
           )
         : myProfileStore.addItem(category, draft, undefined, note, extra);
     if (!result.ok) {
+      /*
+        NOT YET IS NOT NO. When the account is incomplete or the person is not
+        yet 18, the words stay exactly where they are — the draft is kept, the
+        record is simply not published.
+      */
       setProblem(
-        result.reason === "sparks"
-          ? `a wish holds ${WISH_COST} sparks until it’s granted. give something to earn more.`
-          : `you can have ${limit} at a time — remove one to add another.`,
+        result.reason === "account"
+          ? (result.say ?? "finish your account in my g to publish this.")
+          : result.reason === "sparks"
+            ? `a wish holds ${WISH_COST} sparks until it’s granted. give something to earn more.`
+            : `you can have ${limit} at a time — remove one to add another.`,
       );
       return;
     }
+
     setProblem(null);
     setLiveId(result.id ?? null);
   };

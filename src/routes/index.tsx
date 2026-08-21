@@ -12,6 +12,10 @@ import { useIntroSeen } from "@/hooks/use-intro-seen";
 
 
 import { CommunityFeed } from "@/components/community/CommunityFeed";
+import { CommunityLocked } from "@/components/community/CommunityLocked";
+import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";
+import { sparkFlashStore } from "@/data/spark-flash";
+import { haptics } from "@/lib/haptics";
 import { FullProfile } from "@/components/FullProfile";
 import { memberById } from "@/data/giver";
 import { ActivityDetail } from "@/components/community/ActivityDetail";
@@ -176,6 +180,11 @@ function Index() {
   const [threads, setThreads] = useState(false);
   /** THE PERSON IS THEIR OWN DESTINATION: @username opens who they are. */
   const [person, setPerson] = useState<string | null>(null);
+  /**
+   * THE COMMUNITY DOOR, WHEN IT IS STILL SHUT. Not an error and not a warning —
+   * one question, asked once, with the way to open it right underneath.
+   */
+  const [locked, setLocked] = useState(false);
 
   /**
    * ONE DOOR INTO A WORLD. First time: explain, then the form. Every time after:
@@ -252,6 +261,25 @@ function Index() {
     }
   }, [lifecycle.onboardingCompletedAt, me.built]);
 
+  /**
+   * THE CARDINAL GIVER RULE: one active give of my own is the key to the
+   * community. Permanent, re-checked here on every render — never a flag set
+   * once during onboarding.
+   */
+  const canCommunity = hasActiveGive(items);
+
+  /* THE KEY TURNING is worth exactly one moment, and never repeats. */
+  useEffect(() => {
+    if (!canCommunity) return;
+    if (!claimUnlockMoment()) return;
+    haptics.success();
+    sparkFlashStore.show("community unlocked ✨");
+  }, [canCommunity]);
+
+  useEffect(() => {
+    if (canCommunity && locked) setLocked(false);
+  }, [canCommunity, locked]);
+
   /** PRIVATE TO ME: how many conversations have something waiting inside. */
   const unread = unreadCount(links, ME_ID);
 
@@ -289,8 +317,9 @@ function Index() {
           onDone={() => {
             /* The 50 sparks kept from onboarding become a REAL balance, once. */
             myProfileStore.seedSparks();
+            /* ONBOARDING IS OVER FOR GOOD: reloading can never replay it. */
+            lifecycleStore.complete();
             setSessionEntered(true);
-            setEditor({ kind: "about" });
           }}
         />
       ) : (
@@ -311,6 +340,7 @@ function Index() {
               !choose &&
               !help &&
               browse === null &&
+              !locked &&
               detail === null &&
               talking === null &&
               !threads
@@ -410,8 +440,14 @@ function Index() {
                 onPress: isProfile
                   ? /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
                     () => openWorld("give")
-                  : /* BOTTOM = THE COMMUNITY, browsed for real. */
-                    () => setBrowse({ type: mode as ItemType }),
+                  : /* BOTTOM = THE COMMUNITY — open only to givers. */
+                    () => {
+                      if (!canCommunity) {
+                        setLocked(true);
+                        return;
+                      }
+                      setBrowse({ type: mode as ItemType });
+                    },
 
                 render: (anchor) =>
                   profileLoop({
@@ -435,14 +471,16 @@ function Index() {
                             text: `community ${CATEGORY_PLURAL[mode]}`,
                             role: "secondary" as const,
                           },
-                          community
-                            ? {
-                                text: clampField(community),
-                                role: "primary" as const,
-                                fill: ACTIVITY_FILL[mode as ItemType],
-                              }
-                            : { text: "nothing yet", role: "tertiary" as const },
-                          ...(community ? more(theirs.length) : []),
+                          !canCommunity
+                            ? { text: "are you a giver?", role: "primary" as const }
+                            : community
+                              ? {
+                                  text: clampField(community),
+                                  role: "primary" as const,
+                                  fill: ACTIVITY_FILL[mode as ItemType],
+                                }
+                              : { text: "nothing yet", role: "tertiary" as const },
+                          ...(canCommunity && community ? more(theirs.length) : []),
                         ],
 
                   }),
@@ -483,6 +521,20 @@ function Index() {
             NO SEPARATE "COMMUNITY" WORD either — the bottom loop is that door.
           */}
 
+
+          {/* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */}
+          <Screen open={locked}>
+            {locked ? (
+              <CommunityLocked
+                onGive={() => {
+                  setLocked(false);
+                  setSeat("give");
+                  setEditor({ kind: "category", category: "give" });
+                }}
+                onClose={() => setLocked(false)}
+              />
+            ) : null}
+          </Screen>
 
           {/* BROWSE -> ONE ACTIVITY -> A CONVERSATION. Never a shortcut. */}
           <Screen open={browse !== null}>

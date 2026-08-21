@@ -40,6 +40,7 @@ export function IntroG({
   overlay,
   stage,
   weight = "normal",
+  press,
   children,
 }: {
   world: string;
@@ -47,6 +48,11 @@ export function IntroG({
   middle?: LoopCopy | undefined;
   bottom?: LoopCopy | undefined;
   onAdvance?: (() => void) | undefined;
+  /**
+   * DISCOVERY BY TOUCH. A loop can answer for itself during the opening, using
+   * the canonical invisible hit bands — no new controls are added to the G.
+   */
+  press?: Partial<Record<RegionKey, () => void>> | undefined;
   /** Gentle fade of the words inside the loops. The G itself never moves. */
   copyOpacity?: number;
   /** Interactive layer drawn above the artwork (e.g. the travelling spark). */
@@ -62,9 +68,11 @@ export function IntroG({
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
-    if (!copy) return {};
+    const onPress = press?.[key];
+    if (!copy) return onPress ? { [key]: { onPress } } : {};
     return {
       [key]: {
+        ...(onPress ? { onPress } : {}),
         render: (anchor: { x: number; y: number }) => (
           <g
             style={{

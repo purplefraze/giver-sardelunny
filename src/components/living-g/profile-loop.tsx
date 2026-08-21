@@ -80,7 +80,7 @@ const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
 const WRAP_FACTOR: Record<RegionKey, number> = {
   top: PROFILE_WRAP_FACTOR,
   middle: PROFILE_WRAP_FACTOR,
-  bottom: 1.94,
+  bottom: 2.2,
 };
 
 type ProfileRow = {

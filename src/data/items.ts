@@ -758,6 +758,20 @@ export function completedItems(
   );
 }
 
+/** EVERYTHING NO LONGER OFFERED: completed together, or simply past. */
+export function pastItems(state: ItemsState, type: ItemType, ownerId = ME_ID) {
+  return state.items
+    .filter(
+      (i) =>
+        i.ownerId === ownerId &&
+        i.type === type &&
+        (i.status === "completed" || i.status === "archived"),
+    )
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+
+
 /**
  * COMMUNITY DISCOVERY — the same items, queried. Deliberately UNRANKED: the
  * interface (feed, map, cards, hybrid) and the ranking model come later, so

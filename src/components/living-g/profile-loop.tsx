@@ -106,8 +106,11 @@ function bottomWidth(y: number, size: number) {
  * against the ellipse chord at their own height. Only the role that overflows
  * steps down, so a tracked label cannot make the primary answer tiny.
  */
-function layoutBottom(build: (scales: Record<LoopRole, number>) => ProfileRow[]) {
-  const scales: Record<LoopRole, number> = { primary: 1, secondary: 1, tertiary: 1 };
+function layoutBottom(
+  build: (scales: Record<LoopRole, number>) => ProfileRow[],
+  cap: Record<LoopRole, number> = { primary: 1, secondary: 1, tertiary: 1 },
+) {
+  const scales: Record<LoopRole, number> = { ...cap };
   let rows: ProfileRow[] = [];
   let placed: ReturnType<typeof layoutStack>["rows"] = [];
 

@@ -189,6 +189,48 @@ function makeBuild(region: RegionKey, blocks: LoopBlock[]) {
       }));
     });
   };
+}
+
+/**
+ * GIULIA IS THE MASTER REFERENCE. Her lower-loop stack decides the LARGEST size
+ * any personal-profile stack may use: a shorter answer is never allowed to grow
+ * into the spare room. Longer copy may still step DOWN from here, never up — so
+ * every profile reads as one locked design system holding different words.
+ */
+const REFERENCE_BOTTOM: LoopBlock[] = [
+  { text: "by day", role: "secondary" },
+  { text: "chemistry teacher", role: "primary" },
+  { text: "by night", role: "secondary", lead: true },
+  { text: "choir soprano", role: "primary" },
+  { text: "weekends", role: "secondary", lead: true },
+  { text: "long bike rides", role: "primary" },
+];
+
+let referenceCap: Record<LoopRole, number> | null = null;
+
+function bottomCap() {
+  if (!referenceCap) {
+    referenceCap = layoutBottom(makeBuild("bottom", REFERENCE_BOTTOM)).scales;
+  }
+  return referenceCap;
+}
+
+export function profileLoop({
+  region,
+  blocks,
+  lift = 0,
+}: {
+  /** Accepted for API compatibility; centring always uses the loop centre. */
+  anchor?: Anchor;
+  region: RegionKey;
+  blocks: LoopBlock[];
+  lift?: number;
+}) {
+  const inset = PROFILE_SAFE_INSET[region];
+  const origin = loopOrigin(region, lift);
+  const fill = PROFILE_FILL[region];
+  const height = LOOP_HEIGHT(region);
+  const build = makeBuild(region, blocks);
 
   // ONE scale for the whole stack, stepped down only inside the allowed flex.
   // The stack is measured against the loop's TRUE negative space (fill), so a
@@ -197,7 +239,7 @@ function makeBuild(region: RegionKey, blocks: LoopBlock[]) {
   let placed = layoutStack(build(1), region, inset, fill, height);
   let bottomScales: Record<LoopRole, number> | null = null;
   if (region === "bottom") {
-    const result = layoutBottom((scales) => build(scales));
+    const result = layoutBottom(build, bottomCap());
     placed = { rows: result.rows, fits: true };
     bottomScales = result.scales;
   } else {
@@ -206,6 +248,8 @@ function makeBuild(region: RegionKey, blocks: LoopBlock[]) {
       if (placed.fits) break;
     }
   }
+
+
 
 
   return (

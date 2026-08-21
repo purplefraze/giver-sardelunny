@@ -412,9 +412,11 @@ function Index() {
                 panelTitle: isProfile ? "more information" : `search ${mode}s`,
                 panelBody: null,
                 onPress: () =>
-                  isProfile
-                    ? setEditor({ kind: "about" })
-                    : setSearch(mode as ItemType),
+                  firstArrival
+                    ? setup()
+                    : isProfile
+                      ? setEditor({ kind: "about" })
+                      : setSearch(mode as ItemType),
               },
 
               /*
@@ -433,6 +435,10 @@ function Index() {
                   yet, it asks the question and offers the four worlds.
                 */
                 onPress: () => {
+                  if (firstArrival) {
+                    setup();
+                    return;
+                  }
                   if (isProfile && !latest) {
                     setChoose(true);
                     return;
@@ -448,7 +454,10 @@ function Index() {
                   profileLoop({
                     anchor,
                     region: "middle",
-                    blocks: isProfile
+                    /* FIRST ARRIVAL: the middle loop holds nothing at all. */
+                    blocks: firstArrival
+                      ? []
+                      : isProfile
                       ? latest
                         ? [
                             { text: "latest", role: "secondary" as const },
@@ -472,6 +481,7 @@ function Index() {
                             : { text: `add a ${mode}`, role: "primary" as const },
                           ...(myMode ? more(me.items[mode].length) : []),
                         ],
+
 
                   }),
               },

@@ -31,11 +31,11 @@ const CHOICE_SEAT: Record<Member["world"], Mode> = {
 };
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
-  // Every sample person is ANOTHER PERSON from my perspective: BLUE.
-  giving: "var(--giver-others)",
-  wishing: "var(--giver-others)",
-  trading: "var(--giver-others)",
-  borrowing: "var(--giver-others)",
+  /* ANOTHER PERSON IS YELLOW — blue is reserved for borrow, always. */
+  giving: "var(--giver-community)",
+  wishing: "var(--giver-community)",
+  trading: "var(--giver-community)",
+  borrowing: "var(--giver-community)",
 };
 
 export function Onboarding({

@@ -133,21 +133,29 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
     return () => clearTimeout(t);
   }, [phase, onDone]);
 
-  /* THE 100 HAS LANDED: the halves separate, and each one is named. */
+  /**
+   * THE 100 HAS LANDED. The sequence reads: gather in the middle loop -> shoot
+   * from there into whichever loop the toggle actually occupies -> settle in its
+   * negative space. The middle-loop beat is never skipped.
+   */
   useEffect(() => {
     if (phase !== "collect") return;
-    /* THE SEQUENCE READS: land -> gather in the middle loop -> shoot into the
-       loop the toggle is actually in -> settle there. The middle-loop step is
-       never skipped. */
     const r = setTimeout(() => setPhase("rise"), 900);
     const a = setTimeout(() => setTold(1), 700);
-    const b = setTimeout(() => setTold(2), 2100);
-    const c = setTimeout(() => setPhase("gift"), 3600);
     return () => {
+      clearTimeout(r);
       clearTimeout(a);
+    };
+  }, [phase]);
+
+  /* THE GREEN HALF IS HOME: the purple half is named and handed to the finger. */
+  useEffect(() => {
+    if (phase !== "rise") return;
+    const b = setTimeout(() => setTold(2), 1200);
+    const c = setTimeout(() => setPhase("gift"), 2700);
+    return () => {
       clearTimeout(b);
       clearTimeout(c);
-      clearTimeout(r);
     };
   }, [phase]);
 

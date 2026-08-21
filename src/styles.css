@@ -192,6 +192,17 @@
   --activity-trade: var(--mode-trade);
   --activity-borrow: var(--mode-borrow);
 
+  /* ---- MY OWN ACTIVITY = THE ACTIVITY'S OWN COLOUR ----
+     These used to be four shades of profile red. A creation form, an
+     explanation or a record of MINE now carries the colour of WHAT it is:
+     wish purple, give green, trade orange, borrow blue. Profile red belongs
+     to identity only, and never to an activity. */
+  --me-wish: var(--activity-wish);
+  --me-give: var(--activity-give);
+  --me-trade: var(--activity-trade);
+  --me-borrow: var(--activity-borrow);
+  --me-profile: var(--giver-me);
+
 
   /* Compatibility aliases — every one resolves to a semantic token above. */
   --giver-give: var(--giver-generosity);

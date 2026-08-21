@@ -80,7 +80,7 @@ const AS_TOKEN: Record<LoopRole, "answer" | "label" | "detail"> = {
 const WRAP_FACTOR: Record<RegionKey, number> = {
   top: PROFILE_WRAP_FACTOR,
   middle: PROFILE_WRAP_FACTOR,
-  bottom: 1.72,
+  bottom: 2.2,
 };
 
 type ProfileRow = {
@@ -176,8 +176,10 @@ export function profileLoop({
     const scaleFor = (role: LoopRole) =>
       typeof stepOrScales === "number" ? stepOrScales : stepOrScales[role];
     const primaryScale = scaleFor("primary");
-    const gap = token.answer * primaryScale * (region === "bottom" ? 0.035 : 0.06);
-    const lead = token.answer * primaryScale * (region === "bottom" ? 0.12 : 0.24);
+    /* BREATHING ROOM IS PART OF THE TYPOGRAPHY. A label sits close to the
+       answer it introduces; each label+answer PAIR is separated by real air. */
+    const gap = token.answer * primaryScale * (region === "bottom" ? 0.1 : 0.16);
+    const lead = token.answer * primaryScale * (region === "bottom" ? 0.34 : 0.42);
     return blocks.flatMap((block, i) => {
       const key = block.role ?? "primary";
       const step = scaleFor(key);

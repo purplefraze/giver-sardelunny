@@ -198,12 +198,13 @@ function ChooseRecipient({
 
   return (
     <div
-      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-7"
+      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-9"
       style={{ background: "var(--giver-paper)", color: "var(--giver-ink)" }}
     >
       <BackArrow onClick={onBack} />
+      {/* THE QUESTION — the "giver" register, restrained: confident, not bulky. */}
       <h1
-        className="text-[13vw] font-black lowercase leading-[0.92] tracking-[-0.05em]"
+        className="text-[8.4vw] font-black lowercase leading-[1.06] tracking-[-0.045em]"
         style={{ color: "var(--giver-generosity)" }}
       >
         {QUESTION.map((phrase, i) => (
@@ -213,9 +214,9 @@ function ChooseRecipient({
         ))}
       </h1>
 
-      {/* The choices arrive as one, after the question. */}
+      {/* The choices arrive as one, after the question — widely tracked, calm. */}
       <div
-        className="mt-11 flex flex-col items-start gap-4"
+        className="mt-14 flex flex-col items-start gap-7"
         style={{
           opacity: settled ? 1 : 0,
           transition: "opacity 700ms cubic-bezier(0.32,0,0.24,1)",
@@ -227,7 +228,7 @@ function ChooseRecipient({
             key={m.id}
             type="button"
             onClick={() => onChoose(m)}
-            className="text-left text-[9.5vw] font-black lowercase leading-[0.95] tracking-[-0.05em] transition-transform active:scale-95"
+            className="text-left text-[13px] font-bold lowercase leading-none tracking-[0.26em] transition-opacity active:opacity-60"
             style={{ color: ROLE_COLOUR[m.world] }}
           >
             {m.username}

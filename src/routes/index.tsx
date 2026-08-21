@@ -573,6 +573,23 @@ function Index() {
             ) : null}
           </Screen>
 
+          {/*
+            THE TOP LOOP'S SEARCH. Already scoped to the toggle's world, and only
+            ever reachable from my own Living G — never from someone else's.
+          */}
+          <Screen open={search !== null}>
+            {search ? (
+              <ModeSearch
+                mode={search}
+                onOpen={(itemId) => setDetail(itemId)}
+                onOpenProfile={(ownerId) => setPerson(ownerId)}
+                onClose={() => setSearch(null)}
+              />
+            ) : null}
+          </Screen>
+
+
+
           <Screen open={detail !== null}>
             {detail ? (
               <ActivityDetail

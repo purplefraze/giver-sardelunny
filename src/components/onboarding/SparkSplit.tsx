@@ -25,7 +25,7 @@ export function SparkSplit({ step }: { step: SplitStep }) {
 
   return (
     <g pointerEvents="none">
-      {/* THE WHOLE: 100 Sparks, before anything is allocated. */}
+      {/* THE WHOLE: 100 Sparks, unassigned and orange, before anything is allocated. */}
       <g
         transform={`translate(${mid.x} ${mid.y})`}
         style={{
@@ -33,10 +33,10 @@ export function SparkSplit({ step }: { step: SplitStep }) {
           transition: `opacity ${MOVE_MS * 0.5}ms ease-out`,
         }}
       >
-        <SparkBundle r={62} count={100} colour="var(--world-g)" />
+        <SparkBundle r={62} count={100} colour="var(--giver-participation)" />
       </g>
 
-      {/* THE WISH HALF. It rises into the top loop and turns purple. */}
+      {/* THE MINE HALF. It rises into the top loop and becomes GREEN. */}
       <g
         style={{
           transform: allocated
@@ -46,21 +46,21 @@ export function SparkSplit({ step }: { step: SplitStep }) {
           transition: `transform ${MOVE_MS}ms ${EASE}, opacity ${MOVE_MS * 0.6}ms ease-out`,
         }}
       >
-        <SparkBundle r={26} count={50} colour="var(--giver-connection)" />
+        <SparkBundle r={26} count={50} colour="var(--giver-generosity)" />
       </g>
 
-      {/* THE GIVE HALF. It stays where it is and turns green. */}
+      {/* THE GIFT HALF. It stays where it is and becomes PURPLE. */}
       <g
         transform={`translate(${mid.x} ${mid.y})`}
         style={{
-          opacity: step === "wish" || step === "give" ? 1 : 0,
+          opacity: step === "mine" || step === "gift" ? 1 : 0,
           transition: `opacity ${MOVE_MS * 0.6}ms ease-out`,
         }}
       >
         <SparkBundle
           r={44}
           count={50}
-          colour={step === "give" ? "var(--giver-generosity)" : "var(--world-g)"}
+          colour={step === "gift" ? "var(--giver-connection)" : "var(--world-g)"}
         />
       </g>
     </g>

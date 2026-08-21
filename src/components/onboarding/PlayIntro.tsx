@@ -103,7 +103,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
    * content, and never counts toward the spark interaction.
    */
   const [seat, setSeat] = useState<Mode>("give");
-  const [played, setPlayed] = useState(false);
+  
   const [taps, setTaps] = useState(0);
   /** A transient answer to a casual touch, once the G has already spoken. */
   const [tickle, setTickle] = useState(false);
@@ -218,8 +218,9 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
 
   return (
     <IntroG
-      /* TERRITORY COLOUR WINS ONCE THE PERSON HAS PLAYED WITH THE TOGGLE. */
-      world={played ? seat : phase === "split" || phase === "gift" ? "gift" : "welcome"}
+      /* THE TOGGLE IS THE ONLY SOURCE OF THE G'S COLOUR — from the first frame.
+         wish = purple · give = green · trade = orange · borrow = blue. */
+      world={seat}
       earCut
       press={press}
       overlay={
@@ -261,7 +262,6 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
             mode={seat}
             seats={MODES}
             onChange={(next) => {
-              setPlayed(true);
               setSeat(next as Mode);
             }}
           />

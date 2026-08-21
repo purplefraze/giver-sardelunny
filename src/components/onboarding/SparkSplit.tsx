@@ -46,7 +46,12 @@ export function SparkSplit({ step }: { step: SplitStep }) {
           transition: `transform ${MOVE_MS}ms ${EASE}, opacity ${MOVE_MS * 0.6}ms ease-out`,
         }}
       >
-        <SparkBundle r={26} count={50} colour="var(--giver-generosity)" />
+        <SparkBundle
+          r={26}
+          count={50}
+          colour="var(--giver-generosity)"
+          stroke="var(--world-bg)"
+        />
       </g>
 
       {/* THE GIFT HALF. It stays where it is and becomes PURPLE. */}

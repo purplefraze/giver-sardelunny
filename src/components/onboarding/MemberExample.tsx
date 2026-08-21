@@ -190,6 +190,7 @@ export function MemberExample({
                   key={member.id}
                   mode="gift"
                   count={sparks}
+                  colour="var(--giver-connection)"
                   onArrive={() => onGive?.(seat)}
                 />
               ) : null}

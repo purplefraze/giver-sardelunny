@@ -399,9 +399,9 @@ export const itemsStore = {
     parts?: { offer: string; want: string },
     note?: string,
     /** PHOTOS AND THE BORROW/LEND SIDE ride on the SAME underlying record. */
-    extra?: { photos?: string[]; side?: BorrowSide },
+    extra?: { photos?: string[]; side?: BorrowSide; details?: ItemDetails },
   ): Item | null {
-    const t = text.trim().slice(0, ACTIVITY_MAX);
+    const t = text.trim().slice(0, TITLE_MAX[type]);
     if (!t) return null;
     const s = ensure();
     const mine = s.items.filter(
@@ -418,9 +418,14 @@ export const itemsStore = {
       ...(parts
         ? { offer: parts.offer.trim(), want: parts.want.trim() }
         : {}),
-      ...(note && note.trim() ? { note: note.trim().slice(0, NOTE_MAX) } : {}),
+      ...(note && note.trim()
+        ? { note: note.trim().slice(0, NOTE_MAX_FOR[type]) }
+        : {}),
       ...(photos.length ? { photos } : {}),
       ...(type === "borrow" ? { side: extra?.side ?? "borrow" } : {}),
+      ...(extra?.details && Object.keys(extra.details).length
+        ? { details: extra.details }
+        : {}),
       status: "active",
       priority: mine.length,
       published: true,

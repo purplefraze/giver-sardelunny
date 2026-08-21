@@ -472,77 +472,101 @@ export function CategoryForm({
               <p className="g-meta opacity-45">{titleLeft} characters left</p>
             ) : null}
 
-            {/* WHERE · WHEN · HOW LONG — tapped, never typed out in full. */}
-            <div className="space-y-3.5">
-              <Line label="where">
-                {WHERE_OPTIONS.map((w) => (
+            {/* WHERE · WHEN · HOW LONG — three quiet words. One opens at a
+                time, and only the questions this kind of give deserves. */}
+            <div className="space-y-0">
+              <Field
+                label="where"
+                summary={details.where}
+                open={open === "where"}
+                colour={colour}
+                onToggle={() => setOpen(open === "where" ? null : "where")}
+              >
+                {whereOptions.map((w) => (
                   <Choice
                     key={w}
                     label={w}
                     colour={colour}
                     on={details.where === w}
-                    onPress={() =>
-                      setDetail({ where: details.where === w ? undefined : w })
+                    onPress={() => {
+                      setDetail({ where: details.where === w ? undefined : w });
+                      setOpen(null);
+                    }}
+                  />
+                ))}
+                {ASKS_AREA[kind] ? (
+                  <input
+                    value={
+                      details.where && !whereOptions.includes(details.where)
+                        ? details.where
+                        : ""
                     }
+                    onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
+                    placeholder="neighbourhood / area"
+                    aria-label="neighbourhood or general area"
+                    className="w-40 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
                   />
-                ))}
-                <input
-                  value={
-                    details.where && !WHERE_OPTIONS.includes(details.where)
-                      ? details.where
-                      : ""
-                  }
-                  onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
-                  placeholder="neighbourhood / area"
-                  aria-label="neighbourhood or general area"
-                  className="w-40 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
-                />
-              </Line>
+                ) : null}
+              </Field>
 
-              <Line label="when">
-                {DAY_NAMES.map((d) => (
-                  <Choice
-                    key={d}
-                    label={d}
-                    colour={colour}
-                    on={Boolean(details.days?.includes(d))}
-                    onPress={() => toggleDay(d)}
-                  />
-                ))}
-              </Line>
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
-                {TIME_OPTIONS.map((t) => (
-                  <Choice
-                    key={t}
-                    label={t}
-                    colour={colour}
-                    on={details.time === t}
-                    onPress={() =>
-                      setDetail({ time: details.time === t ? undefined : t })
+              <Field
+                label="when"
+                summary={whenSummary}
+                open={open === "when"}
+                colour={colour}
+                onToggle={() => setOpen(open === "when" ? null : "when")}
+              >
+                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5">
+                  {DAY_NAMES.map((d) => (
+                    <Choice
+                      key={d}
+                      label={d}
+                      colour={colour}
+                      on={Boolean(details.days?.includes(d))}
+                      onPress={() => toggleDay(d)}
+                    />
+                  ))}
+                </div>
+                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5">
+                  {TIME_OPTIONS.map((t) => (
+                    <Choice
+                      key={t}
+                      label={t}
+                      colour={colour}
+                      on={details.time === t}
+                      onPress={() =>
+                        setDetail({ time: details.time === t ? undefined : t })
+                      }
+                    />
+                  ))}
+                  <input
+                    type="time"
+                    value={
+                      details.time && /^\d{2}:\d{2}$/.test(details.time)
+                        ? details.time
+                        : ""
                     }
+                    onChange={(e) => setDetail({ time: e.target.value })}
+                    aria-label="exact time"
+                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
                   />
-                ))}
-                <input
-                  type="time"
-                  value={
-                    details.time && /^\d{2}:\d{2}$/.test(details.time)
-                      ? details.time
-                      : ""
-                  }
-                  onChange={(e) => setDetail({ time: e.target.value })}
-                  aria-label="exact time"
-                  className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
-                />
-                <input
-                  type="date"
-                  value={details.date ?? ""}
-                  onChange={(e) => setDetail({ date: e.target.value })}
-                  aria-label="date"
-                  className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
-                />
-              </div>
+                  <input
+                    type="date"
+                    value={details.date ?? ""}
+                    onChange={(e) => setDetail({ date: e.target.value })}
+                    aria-label="date"
+                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                  />
+                </div>
+              </Field>
 
-              <Line label="how long">
+              <Field
+                label="how long"
+                summary={longSummary}
+                open={open === "long"}
+                colour={colour}
+                onToggle={() => setOpen(open === "long" ? null : "long")}
+              >
                 {CADENCE_OPTIONS.map((c) => (
                   <Choice
                     key={c}
@@ -554,22 +578,26 @@ export function CategoryForm({
                     }
                   />
                 ))}
-                {DURATION_OPTIONS.map((d) => (
-                  <Choice
-                    key={d}
-                    label={d}
-                    colour={colour}
-                    on={details.duration === d}
-                    onPress={() =>
-                      setDetail({ duration: details.duration === d ? undefined : d })
-                    }
-                  />
-                ))}
-              </Line>
+                {ASKS_DURATION[kind]
+                  ? DURATION_OPTIONS.map((d) => (
+                      <Choice
+                        key={d}
+                        label={d}
+                        colour={colour}
+                        on={details.duration === d}
+                        onPress={() =>
+                          setDetail({
+                            duration: details.duration === d ? undefined : d,
+                          })
+                        }
+                      />
+                    ))
+                  : null}
+              </Field>
 
               {/* ONLY WHAT MAKES SENSE FOR THIS KIND OF THING. */}
               {extraFields.length ? (
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4">
                   {extraFields.map((field) => (
                     <input
                       key={field.key}
@@ -590,6 +618,7 @@ export function CategoryForm({
                 </div>
               ) : null}
             </div>
+
 
             {/* SHORT AND SWEET — said under the field, not above it. */}
             <div className="space-y-1">

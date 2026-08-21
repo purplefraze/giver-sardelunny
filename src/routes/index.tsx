@@ -32,7 +32,7 @@ import type { Category } from "@/data/my-profile";
 import { CATEGORY_PLURAL, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
 
 /**
  * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
@@ -172,12 +172,14 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-  const [seat, setSeatState] = useState<Mode>("give");
+  const [seat, setSeatState] = useState<Seat>("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
-  const setSeat = (next: Mode) => {
+  const setSeat = (next: Seat) => {
     setSeatState(next);
-    rememberFirstUseSeat(next);
+    /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
+       remembered as the first-use mode. */
+    if (next !== "giver") rememberFirstUseSeat(next);
   };
 
   /**
@@ -243,6 +245,7 @@ function Index() {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
+    if (seat === "giver") return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
   }, [entered, seat]);
@@ -314,8 +317,14 @@ function Index() {
   /** PRIVATE TO ME: how many conversations have something waiting inside. */
   const unread = unreadCount(links, ME_ID);
 
-  /** THE TOGGLE IS THE WORLD: wish | give | trade | borrow. */
-  const mode: Mode = seat;
+  /**
+   * THE TOGGLE IS THE WORLD: wish | give | trade | borrow — plus MY G, the one
+   * destination seat at 12 o'clock. `mode` is the activity world, and it is
+   * null while the toggle is sitting on My G.
+   */
+  const activity: Mode | null = seat === "giver" ? null : seat;
+  /* The last activity world still owns the loops' grammar when My G is held. */
+  const mode: Mode = activity ?? "give";
   const content = MODE_CONTENT[mode];
 
   /**
@@ -328,15 +337,27 @@ function Index() {
    */
   const firstArrival =
     Boolean(lifecycle.onboardingCompletedAt) && !lifecycle.profileSetupCompletedAt;
-  const setup = () => setEditor({ kind: "about" });
+  const setup = () => {
+    /* DISCOVERY UNLOCKS MY G — the moment profile setup opens, and forever. */
+    lifecycleStore.discoverProfile();
+    setEditor({ kind: "about" });
+  };
+
+  /**
+   * MY G AT 12 O'CLOCK, ONCE IT HAS BEEN FOUND. Before the discovery there is
+   * nothing there; afterwards the seat exists permanently, whether or not a
+   * single field was ever filled in. SEARCH (6 o'clock) stays unbuilt.
+   */
+  const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
+    ? (["giver", ...MODES_ONLY] as const)
+    : MODES_ONLY;
 
   /**
    * TOP = ME. MY G is not a content type and never a toggle seat: it is the
    * top loop, and it opens my own profile — or, before it exists, its setup.
    */
   const openMyG = () => {
-    if (firstArrival || !me.built) setup();
-    else setEditor({ kind: "about" });
+    setup();
   };
 
   /**
@@ -391,7 +412,7 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={mode}
+            world={activity ?? "me"}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -409,8 +430,8 @@ function Index() {
             overlay={
               <EarSelector
                 mode={seat}
-                onChange={(next) => setSeat(next as Mode)}
-                seats={MODES_ONLY}
+                onChange={(next) => setSeat(next)}
+                seats={myGSeats}
                 {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
                 {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
                 /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */

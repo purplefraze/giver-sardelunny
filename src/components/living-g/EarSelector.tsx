@@ -320,11 +320,13 @@ export function EarSelector({
     const raw = Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x);
     return {
       point: { x: local.x, y: local.y } as P,
-      // FINGER FREE, SELECTOR RAILED: only the angle is taken from the finger —
-      // and it is UNWRAPPED against the gesture's own continuous angle, so the
-      // ±180° seam is a 1° step, never a wall and never a 358° jump.
-      angle: unwrap(dragRef.current ?? angleRef.current, raw),
+      // FINGER FREE, BEAD RAILED: only the angle is taken from the finger, and
+      // it is resolved onto the WIRE nearest the bead and clamped to its ends —
+      // so a finger swung across the break holds the bead at the nearest lip
+      // instead of teleporting it to the far side.
+      angle: onTrack(dragRef.current ?? angleRef.current, raw),
     };
+
   };
 
 

@@ -179,7 +179,8 @@ export function CategoryForm({
   const unlimited = !Number.isFinite(limit);
   /* THE RECORD BEING TYPED IS SHOWN IN THE FIELD, NOT TWICE IN THE LIST. */
   const records = me.records[category].filter((i) => i.id !== liveId);
-  const full = records.length >= limit;
+  /* THE LIMIT COUNTS EVERY ACTIVE RECORD, including the one being typed. */
+  const full = me.records[category].length >= limit;
   /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
   const cost = category === "wish" ? WISH_COST : 0;
   const broke = cost > 0 && me.sparks < cost;

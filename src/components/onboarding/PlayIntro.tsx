@@ -78,7 +78,8 @@ function Line({
       dominantBaseline="central"
       fill={colour}
       style={{
-        fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+        /* THE CANONICAL LIVING G TREATMENT — this is where it was authored. */
+        fontFamily: G_FONT,
         fontWeight: weight,
         fontSize: size,
         letterSpacing: track,
@@ -89,6 +90,7 @@ function Line({
       {children}
     </text>
   );
+
 }
 
 export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {

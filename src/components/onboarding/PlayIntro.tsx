@@ -218,8 +218,9 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
 
   return (
     <IntroG
-      /* TERRITORY COLOUR WINS ONCE THE PERSON HAS PLAYED WITH THE TOGGLE. */
-      world={played ? seat : phase === "split" || phase === "gift" ? "gift" : "welcome"}
+      /* THE TOGGLE IS THE ONLY SOURCE OF THE G'S COLOUR — from the first frame.
+         wish = purple · give = green · trade = orange · borrow = blue. */
+      world={seat}
       earCut
       press={press}
       overlay={

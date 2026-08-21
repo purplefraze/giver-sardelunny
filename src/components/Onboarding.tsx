@@ -6,6 +6,7 @@ import { SparkSplit, type SplitStep } from "@/components/onboarding/SparkSplit";
 import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
 import { MemberExample } from "@/components/onboarding/MemberExample";
 import { MEMBERS, type Member } from "@/data/giver";
+import { STARTING_SPARKS } from "@/data/my-profile";
 import { buzz, haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 

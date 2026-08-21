@@ -1,4 +1,6 @@
+import { gType } from "./g-type";
 import type { Anchor, RegionKey } from "./LivingG";
+
 import {
   LOOP_MIN_SIZE,
   LOOP_ROLE_STYLE,

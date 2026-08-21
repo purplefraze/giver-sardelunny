@@ -38,6 +38,25 @@ import { EarSelector, SEATS, type Mode, type Seat } from "@/components/living-g/
 
 /** FIRST USE: the toggle offers the four content worlds only — My G is separate. */
 const MODES_ONLY = ["wish", "give", "trade", "borrow"] as const;
+
+const FIRST_USE_SEAT_KEY = "giver.first-use.seat";
+
+function rememberFirstUseSeat(seat: Seat) {
+  try {
+    window.localStorage.setItem(FIRST_USE_SEAT_KEY, seat);
+  } catch {
+    /* private mode: the mode simply does not survive the refresh */
+  }
+}
+
+function readFirstUseSeat(): Seat | null {
+  try {
+    const raw = window.localStorage.getItem(FIRST_USE_SEAT_KEY);
+    return raw && (MODES_ONLY as readonly string[]).includes(raw) ? (raw as Seat) : null;
+  } catch {
+    return null;
+  }
+}
 import { useItems } from "@/hooks/use-items";
 import { ACTIVITY_FILL, ME_ID, communityItems, itemLine, type ItemType } from "@/data/items";
 
@@ -156,7 +175,13 @@ function Index() {
    * THE ONE SOURCE OF TRUTH for the toggle: giver | wish | give | trade | borrow.
    * "giver" is ME (profile); the other four are activity worlds.
    */
-  const [seat, setSeat] = useState<Seat>("giver");
+  const [seat, setSeatState] = useState<Seat>("giver");
+  /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
+     transient default, so the empty G never falls back to red or green. */
+  const setSeat = (next: Seat) => {
+    setSeatState(next);
+    if (next !== "giver") rememberFirstUseSeat(next);
+  };
 
   /**
    * FIRST-TIME WORLD EXPLANATION. Giver explains wish / give / trade / borrow

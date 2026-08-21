@@ -27,6 +27,9 @@ import { cn } from "@/lib/utils";
  */
 type Deep = Mode | "about" | null;
 
+/** The lower personal-profile loop is always black — never an activity colour. */
+const INK = "var(--giver-ink)";
+
 /** How each world reads when the selector rests on it. */
 const WORLD_LABEL: Record<Mode, string> = {
   wish: "wish",

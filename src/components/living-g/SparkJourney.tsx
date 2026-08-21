@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SparkBundle } from "./SparkBundle";
 import { SPARK_TRACK_D } from "./spark-track";
 import { haptics } from "@/lib/haptics";
@@ -83,7 +83,6 @@ export function SparkJourney({
   /** The wash has finished resolving through the whole G. */
   onGreen?: () => void;
 }) {
-  const uid = useId().replace(/:/g, "");
   const rail = useRef<SVGPathElement | null>(null);
   const samples = useRef<Sample[]>([]);
   const total = useRef(1);

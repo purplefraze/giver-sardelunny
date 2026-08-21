@@ -158,7 +158,16 @@ function Index() {
   removeLegacyAutomaticProfile();
   const lifecycle = useLifecycle();
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    setHydrated(true);
+    /* Restore the inherited first-use mode before the empty G is first shown. */
+    const remembered = readFirstUseSeat();
+    if (remembered && !lifecycleStore.get().profileSetupCompletedAt) {
+      setSeatState(remembered);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [sessionEntered, setSessionEntered] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /**

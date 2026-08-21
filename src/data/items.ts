@@ -91,8 +91,118 @@ export const ME_ID = "me";
  * SHORT AND SWEET, ENFORCED. An activity is a headline, not a description:
  * one glanceable line, plus at most one short line of extra context.
  */
-export const ACTIVITY_MAX = 40;
-export const NOTE_MAX = 50;
+export const ACTIVITY_MAX = 50;
+export const NOTE_MAX = 100;
+
+/** Per-type room. A give may say a little more; asks stay terse. */
+export const TITLE_MAX: Record<ItemType, number> = {
+  wish: 40,
+  give: 50,
+  trade: 40,
+  borrow: 40,
+};
+
+export const NOTE_MAX_FOR: Record<ItemType, number> = {
+  wish: 50,
+  give: 100,
+  trade: 50,
+  borrow: 50,
+};
+
+/**
+ * A COUNTDOWN IS A WARNING, NOT A METER. It stays hidden until the end is
+ * actually in sight.
+ */
+export const TITLE_COUNTDOWN_AT = 10;
+export const NOTE_COUNTDOWN_AT = 40;
+
+/**
+ * STRUCTURED DETAILS — enough for somebody to decide without messaging, never
+ * a form. Everything is optional, and nothing is ever an exact home address.
+ */
+export type ItemDetails = {
+  /** neighbourhood / general area, "online" or "flexible". Never an address. */
+  where?: string;
+  /** days of the week, in order, e.g. ["tues", "thurs"]. */
+  days?: string[];
+  /** a time or time range: "evenings", "7 pm". */
+  time?: string;
+  /** a date or date range, where it matters. */
+  date?: string;
+  /** one time · recurring · flexible. */
+  cadence?: string;
+  /** approximate duration: "1 hour". */
+  duration?: string;
+  /** context-specific answers (subject, level, format...). */
+  extras?: Record<string, string>;
+};
+
+export const DAY_NAMES = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"];
+
+export const WHERE_OPTIONS = ["online", "flexible"];
+export const CADENCE_OPTIONS = ["one time", "recurring", "flexible"];
+export const TIME_OPTIONS = ["mornings", "afternoons", "evenings", "flexible"];
+export const DURATION_OPTIONS = ["30 min", "1 hour", "2 hours", "flexible"];
+
+/**
+ * THE SCANNABLE FACTS OF ONE ITEM, in one order, everywhere they appear. Only
+ * what exists is ever shown — no empty labels, no placeholders.
+ */
+export function detailBits(item: Item): string[] {
+  const d = item.details;
+  if (!d) return [];
+  const out: string[] = [];
+  if (d.days?.length) out.push(d.days.join(" + "));
+  if (d.date) out.push(d.date);
+  if (d.time) out.push(d.time);
+  if (d.duration) out.push(d.duration);
+  if (d.cadence && d.cadence !== "flexible") out.push(d.cadence);
+  if (d.where) out.push(d.where);
+  for (const value of Object.values(d.extras ?? {}))
+    if (value.trim()) out.push(value.trim());
+  return out;
+}
+
+/**
+ * CONTEXT-SPECIFIC QUESTIONS. A give only ever asks what makes sense for that
+ * kind of give — tutoring is asked about subject and level, a meal is not.
+ */
+export const CONTEXT_FIELDS: {
+  match: RegExp;
+  fields: { key: string; ask: string }[];
+}[] = [
+  {
+    match: /tutor|lesson|teach|class|coach|math|science|language/i,
+    fields: [
+      { key: "subject", ask: "subject" },
+      { key: "level", ask: "level / grade" },
+    ],
+  },
+  {
+    match: /dinner|meal|lunch|food|cook|bake|seat/i,
+    fields: [
+      { key: "people", ask: "how many people" },
+      { key: "diet", ask: "dietary notes" },
+    ],
+  },
+  {
+    match: /ride|lift|drive|move|haul|deliver/i,
+    fields: [
+      { key: "from", ask: "general area (from)" },
+      { key: "to", ask: "general area (to)" },
+    ],
+  },
+  {
+    match: /repair|fix|paint|build|garden|clean|help/i,
+    fields: [{ key: "kind", ask: "what kind of work" }],
+  },
+];
+
+export const contextFieldsFor = (text: string) =>
+  CONTEXT_FIELDS.find((c) => c.match.test(text))?.fields ?? [];
+
+/** A WISH LIVES SEVEN DAYS. After that its sparks come home. */
+export const WISH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * PERMANENT LIMITS. Generosity is never capped; asking is deliberately scarce.

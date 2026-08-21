@@ -410,6 +410,7 @@ export function SparkJourney({
             }}
           >
             <g
+              className="[&_circle]:transition-[fill] [&_circle]:duration-[600ms] [&_path]:transition-[fill] [&_path]:duration-[600ms]"
               style={{
                 transform: `scale(${dragging ? 1.08 : 1})`,
                 transition: "transform 220ms cubic-bezier(0.22,1,0.36,1)",
@@ -417,7 +418,8 @@ export function SparkJourney({
             >
               <SparkBundle
                 r={R}
-                colour="var(--giver-generosity)"
+                colour={held && grabColour ? grabColour : colour}
+
                 {...(count !== undefined ? { count } : {})}
               />
             </g>

@@ -4,16 +4,16 @@ import { SparkBundle } from "@/components/living-g/SparkBundle";
 /**
  * THE SPARK ECONOMY, TOLD IN MOTION.
  *
- *   hundred  one bundle of 100 Sparks, Giver's own light, in the middle loop
- *   wish     half of it travels UP into the top loop and becomes WISH purple
- *   give     the half left behind becomes GIVE green
- *   held     only the purple wish half remains here; the green half is now the
- *            draggable bundle owned by SparkJourney
+ *   hundred  one bundle of 100 Sparks, unassigned and orange, in the middle loop
+ *   mine     half of it travels UP into the top loop and becomes GREEN — mine
+ *   gift     the half left behind becomes PURPLE — to gift to another Giver
+ *   held     only the green mine half remains here; the purple gift half is now
+ *            the draggable bundle owned by SparkJourney
  *
  * One hundred never becomes "another" set of Sparks: the same two halves are
  * mounted throughout and simply move and change colour.
  */
-export type SplitStep = "hundred" | "wish" | "give" | "held";
+export type SplitStep = "hundred" | "mine" | "gift" | "held";
 
 const MOVE_MS = 900;
 const EASE = "cubic-bezier(0.22,1,0.36,1)";

@@ -263,15 +263,16 @@ export function EarSelector({
   const [angle, setAngle] = useState(restAngle);
   const angleRef = useRef(angle);
 
-  // Rest and magnet targets are always the nearest equivalent angle AROUND the
-  // circle, so settling takes the short way and never spins the long way.
-  let target = unwrap(angleRef.current, restAngle);
+  // Rest and magnet targets live ON THE WIRE: the bead always travels the real
+  // stroke between two seats, however far round the loop that is.
+  let target = clampTrack(restAngle);
   if (drag !== null) {
-    const seat = unwrap(drag, SEAT_ANGLE[nearestOf(drag, seats)]);
+    const seat = SEAT_ANGLE[nearestOf(drag, seats)];
 
     const pull = Math.max(0, 1 - Math.abs(seat - drag) / CAPTURE) * 0.55;
-    target = drag + (seat - drag) * pull;
+    target = clampTrack(drag + (seat - drag) * pull);
   }
+
 
 
   const targetRef = useRef(target);

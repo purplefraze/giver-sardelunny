@@ -676,6 +676,18 @@ function Index() {
             ) : null}
           </Screen>
 
+          {/*
+            SPARKS AND SPARKLES ARE STORIES, NOT COUNTERS. Each is its own
+            history portal, reached from the toggle on my own photo.
+          */}
+          <Screen open={history !== null}>
+            {history ? (
+              <LedgerHistory currency={history} onClose={() => setHistory(null)} />
+            ) : null}
+          </Screen>
+
+
+
           {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
           <Screen open={choose}>
             {choose ? <ChooseWorld onChoose={openWorld} onCancel={() => setChoose(false)} /> : null}

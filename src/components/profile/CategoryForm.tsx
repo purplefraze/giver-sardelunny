@@ -46,7 +46,7 @@ import { haptics } from "@/lib/haptics";
 
 const CATEGORY_ASK: Record<Category, string> = {
   wish: "what do you wish for?",
-  give: "what can you give?",
+  give: "what can you give today?",
   trade: "what are you offering?",
   borrow: "what would you borrow?",
 };
@@ -234,9 +234,8 @@ export function CategoryForm({
             <h1 className="g-display" style={{ color: colour }}>
               are you a giver?
             </h1>
-            <p className="g-display-sm mt-2 opacity-80">what can you give today?</p>
             <p className="g-meta mt-3 opacity-50">
-              give what you can · give what you’ve got · someone will be happy
+              give what you can · give what you want · make someone happy
             </p>
           </>
         ) : (

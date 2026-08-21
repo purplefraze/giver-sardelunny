@@ -135,6 +135,8 @@ export type ItemDetails = {
   time?: string | undefined;
   /** a date or date range, where it matters. */
   date?: string | undefined;
+  /** THE LAST DAY THIS IS AVAILABLE. Optional, and always removable. */
+  until?: string | undefined;
   /** one time · recurring · flexible. */
   cadence?: string | undefined;
   /** approximate duration: "1 hour". */
@@ -142,6 +144,27 @@ export type ItemDetails = {
   /** context-specific answers (subject, level, format...). */
   extras?: Record<string, string> | undefined;
 };
+
+/**
+ * AVAILABILITY IS OPTIONAL, AND WHEN IT EXISTS IT IS HONEST.
+ *
+ * A give with no date and no closing day stays available for as long as its
+ * owner keeps it. A give with either one stops being offered to the community
+ * the moment that day is over — it is never deleted, it simply leaves
+ * circulation and stays in the person's own history.
+ */
+export function availabilityEnd(item: Item): number | null {
+  const day = item.details?.until ?? item.details?.date;
+  if (!day) return null;
+  const end = new Date(`${day}T23:59:59`);
+  return Number.isNaN(end.getTime()) ? null : end.getTime();
+}
+
+export function itemExpired(item: Item, now = Date.now()): boolean {
+  const end = availabilityEnd(item);
+  return end !== null && now > end;
+}
+
 
 export const DAY_NAMES = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"];
 

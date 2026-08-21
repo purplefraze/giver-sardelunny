@@ -150,7 +150,9 @@ function Field({
           className="min-w-0 flex-1 truncate pb-[0.12em] text-right text-[13px] font-black lowercase leading-[1.25] tracking-[0.02em]"
           style={{ color: summary ? colour : "var(--world-ink)" }}
         >
-          {summary || <span className="opacity-30">add</span>}
+          {summary || (
+            <span style={{ color: action, opacity: 0.85 }}>add</span>
+          )}
         </span>
       </button>
       {open ? (
@@ -220,8 +222,12 @@ export function CategoryForm({
       .join(" · ") || undefined;
   const longSummary =
     [details.cadence, details.duration].filter(Boolean).join(" · ") || undefined;
-  /** A BRIGHT WAY BACK — electric, never muddy. */
-  const wayBack = `var(--mode-${category}-complement)`;
+  /**
+   * PINK IS THE COLOUR OF AN ACTION WHILE CREATING — add a photo, add a
+   * detail. The mode colour stays the identity of the thing being made, so a
+   * saved give is always green and never pink.
+   */
+  const action = "var(--giver-action)";
 
   /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
      sense as the give is described is quietly dropped, never corrected aloud. */
@@ -500,7 +506,7 @@ export function CategoryForm({
                       type="button"
                       onClick={() => pickPhotos(item.id)}
                       className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                      style={{ color: wayBack }}
+                      style={{ color: action }}
                     >
                       + add photo
                     </button>
@@ -617,7 +623,7 @@ export function CategoryForm({
                   type="button"
                   onClick={() => pickPhotos()}
                   className="shrink-0 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                  style={{ color: wayBack }}
+                  style={{ color: action }}
                 >
                   + add photo
                 </button>
@@ -828,7 +834,7 @@ export function CategoryForm({
                   type="button"
                   onClick={() => pickPhotos()}
                   className="text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                  style={{ color: wayBack }}
+                  style={{ color: action }}
                 >
                   add another
                 </button>
@@ -866,7 +872,7 @@ export function CategoryForm({
           type="button"
           onClick={leave}
           className="whitespace-nowrap text-[13px] font-black lowercase tracking-[0.16em] transition-transform active:scale-95"
-          style={{ color: "var(--giver-ink, #000)" }}
+          style={{ color: "var(--giver-me)" }}
         >
           ← back to my g
         </button>

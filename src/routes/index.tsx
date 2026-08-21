@@ -462,6 +462,10 @@ function Index() {
                 panelTitle: content.mine.title,
                 panelBody: null,
                 onPress: () => {
+                  if (activity === null) {
+                    openMyG();
+                    return;
+                  }
                   if (firstArrival) {
                     setup();
                     return;
@@ -473,20 +477,24 @@ function Index() {
                   profileLoop({
                     anchor,
                     region: "middle",
-                    /* FIRST ARRIVAL: the middle loop holds nothing at all. */
-                    blocks: firstArrival
-                      ? []
-                      : [
-                          { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
-                          myMode
-                            ? {
-                                text: clampField(myMode),
-                                role: "primary" as const,
-                                fill: ACTIVITY_FILL[mode as ItemType],
-                              }
-                            : { text: `add a ${mode}`, role: "primary" as const },
-                          ...(myMode ? more(me.items[mode].length) : []),
-                        ],
+                    /*
+                      EMPTY MEANS VISUALLY EMPTY. With nothing of mine in this
+                      world, the loop holds NOTHING: no label, no "add a …", no
+                      prompt, no invented content. The words only ever describe
+                      something that actually exists.
+                    */
+                    blocks:
+                      activity === null || !myMode
+                        ? []
+                        : [
+                            { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
+                            {
+                              text: clampField(myMode),
+                              role: "primary" as const,
+                              fill: ACTIVITY_FILL[mode as ItemType],
+                            },
+                            ...more(me.items[mode].length),
+                          ],
                   }),
               },
               /*
@@ -497,39 +505,45 @@ function Index() {
                 label: "",
                 panelTitle: content.community.title,
                 panelBody: null,
-                onPress: firstArrival
-                  ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
-                  : () => {
-                      if (!canCommunity) {
-                        setLocked(true);
-                        return;
-                      }
-                      setBrowse({ type: mode as ItemType });
-                    },
+                onPress:
+                  activity === null
+                    ? openMyG
+                    : firstArrival
+                      ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
+                      : () => {
+                          if (!canCommunity) {
+                            setLocked(true);
+                            return;
+                          }
+                          setBrowse({ type: mode as ItemType });
+                        },
 
                 render: (anchor) =>
                   profileLoop({
                     anchor,
                     region: "bottom",
-                    /* FIRST ARRIVAL: the bottom loop holds nothing at all. */
-                    blocks: firstArrival
-                      ? []
-                      : [
-                          {
-                            text: `communi-g ${CATEGORY_PLURAL[mode]}`,
-                            role: "secondary" as const,
-                          },
-                          !canCommunity
-                            ? { text: "are you a giver?", role: "primary" as const }
-                            : community
-                              ? {
-                                  text: clampField(community),
-                                  role: "primary" as const,
-                                  fill: ACTIVITY_FILL[mode as ItemType],
-                                }
-                              : { text: "nothing yet", role: "tertiary" as const },
-                          ...(canCommunity && community ? more(theirs.length) : []),
-                        ],
+                    /*
+                      COMMUNITY CONTENT OR NOTHING. Until the community is truly
+                      open AND there is something in this world to show, the
+                      bottom loop stays empty — never a question, never filler.
+                      The label itself carries the activity's own colour.
+                    */
+                    blocks:
+                      activity === null || !canCommunity || !community
+                        ? []
+                        : [
+                            {
+                              text: `communi-g ${CATEGORY_PLURAL[mode]}`,
+                              role: "secondary" as const,
+                              fill: ACTIVITY_FILL[mode as ItemType],
+                            },
+                            {
+                              text: clampField(community),
+                              role: "primary" as const,
+                              fill: ACTIVITY_FILL[mode as ItemType],
+                            },
+                            ...more(theirs.length),
+                          ],
                   }),
               },
             }}

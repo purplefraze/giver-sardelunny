@@ -369,7 +369,15 @@ function Index() {
                 /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
                 sparks={me.sparks}
 
-                onTap={() => setEditor({ kind: "about" })}
+                /*
+                  TOP LOOP = SEARCH THIS WORLD, on my own G only. On the profile
+                  seat the G represents ME, so the top loop stays my information.
+                */
+                onTap={() =>
+                  isProfile
+                    ? setEditor({ kind: "about" })
+                    : setSearch(mode as ItemType)
+                }
               />
             }
 
@@ -377,11 +385,14 @@ function Index() {
             regions={{
               top: {
                 label: "",
-                panelTitle: isProfile ? "more information" : "you",
+                panelTitle: isProfile ? "more information" : `search ${mode}s`,
                 panelBody: null,
-                /* TAP -> the profile information screen; back returns here. */
-                onPress: () => setEditor({ kind: "about" }),
+                onPress: () =>
+                  isProfile
+                    ? setEditor({ kind: "about" })
+                    : setSearch(mode as ItemType),
               },
+
               /*
                 MIDDLE LOOP:
                   giver = MY LATEST ACTIVITY of any type

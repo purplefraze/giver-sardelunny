@@ -317,6 +317,8 @@ function Index() {
           onDone={() => {
             /* The 50 sparks kept from onboarding become a REAL balance, once. */
             myProfileStore.seedSparks();
+            /* ONBOARDING IS OVER FOR GOOD: reloading can never replay it. */
+            lifecycleStore.complete();
             setSessionEntered(true);
           }}
         />
@@ -469,14 +471,16 @@ function Index() {
                             text: `community ${CATEGORY_PLURAL[mode]}`,
                             role: "secondary" as const,
                           },
-                          community
-                            ? {
-                                text: clampField(community),
-                                role: "primary" as const,
-                                fill: ACTIVITY_FILL[mode as ItemType],
-                              }
-                            : { text: "nothing yet", role: "tertiary" as const },
-                          ...(community ? more(theirs.length) : []),
+                          !canCommunity
+                            ? { text: "are you a giver?", role: "primary" as const }
+                            : community
+                              ? {
+                                  text: clampField(community),
+                                  role: "primary" as const,
+                                  fill: ACTIVITY_FILL[mode as ItemType],
+                                }
+                              : { text: "nothing yet", role: "tertiary" as const },
+                          ...(canCommunity && community ? more(theirs.length) : []),
                         ],
 
                   }),

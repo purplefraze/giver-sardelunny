@@ -65,16 +65,21 @@ export function CommunityFeed({
   const links = useConnections();
   const [type, setType] = useState<ItemType | null>(initialType);
   const [sort, setSort] = useState<Sort>("nearby");
+  /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside Communi-G. */
+  const [query, setQuery] = useState("");
 
+  const needle = query.trim().toLowerCase();
   const list = communityItems(items, {
     ...(type ? { type } : {}),
     excludeOwnerId: ME_ID,
-  }).sort((a, b) => {
-    if (sort === "latest") return b.createdAt - a.createdAt;
-    if (sort === "popular")
-      return b.boostWeight - a.boostWeight || b.createdAt - a.createdAt;
-    return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
-  });
+  })
+    .filter((item) => (needle ? itemLine(item).toLowerCase().includes(needle) : true))
+    .sort((a, b) => {
+      if (sort === "latest") return b.createdAt - a.createdAt;
+      if (sort === "popular")
+        return b.boostWeight - a.boostWeight || b.createdAt - a.createdAt;
+      return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
+    });
 
   return (
     <div
@@ -84,11 +89,20 @@ export function CommunityFeed({
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      {/* COMMUNITY SPEAKS IN BLACK. Blue stays its identity accent. */}
+      {/* COMMUNI-G SPEAKS IN BLACK. Blue stays its identity accent. */}
       <h1 className="g-display" style={{ color: "var(--giver-ink)" }}>
-        community
+        communi-g
       </h1>
       <p className="g-meta mt-2 whitespace-nowrap opacity-55">it’s all happening near you, right now.</p>
+
+      {/* SEARCH — a line, never a bar: no box, no icon, no button. */}
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="search communi-g"
+        className="g-rule mt-4 w-full border-0 bg-transparent pb-2 text-[15px] font-black lowercase tracking-[0.06em] outline-none placeholder:opacity-30"
+        style={{ color: "var(--giver-ink)" }}
+      />
 
       {/* FILTERS ARE WORDS, NOT CHIPS OR ICONS. ALL · GIVE · WISH · TRADE · BORROW */}
       <div className="g-rule mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-2 pt-3 text-[13px] font-black lowercase tracking-[0.16em]">

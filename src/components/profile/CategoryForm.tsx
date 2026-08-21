@@ -275,10 +275,10 @@ export function CategoryForm({
       itemsStore.patch(liveId, {
         text: category === "trade" ? tradeText(draft, want) : draft,
         ...(category === "trade" ? { offer: draft, want } : {}),
-        ...(note.trim() ? { note: note.trim() } : { note: undefined }),
-        ...(photos.length ? { photos } : { photos: undefined }),
+        note: note.trim(),
+        photos,
         ...(category === "borrow" ? { side } : {}),
-        ...(hasDetails(cleaned) ? { details: cleaned } : { details: undefined }),
+        details: hasDetails(cleaned) ? cleaned : {},
       });
       return;
     }

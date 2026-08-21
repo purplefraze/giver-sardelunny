@@ -29,12 +29,17 @@ export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
 /**
- * THE FIFTH SEAT: GIVER = ME. It sits at 12 o'clock, dead above the middle
- * loop's centre — the profile state, not another activity category. Screens
- * that only speak activity (other people's Gs) keep the four-seat track.
+ * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
+ * activities: GIVER = ME at 12 o'clock, and SEARCH at 6 o'clock (the community,
+ * explored). Both are LOCKED until the person has a profile and one active give
+ * of their own, so onboarding only ever offers MODES.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow"] as const;
+export const SEATS = ["giver", "wish", "give", "trade", "borrow", "search"] as const;
 export type Seat = (typeof SEATS)[number];
+
+/** Every seat on the wire, in travel order. Search is reserved, not built yet. */
+export const FULL_SEATS = ["search", "borrow", "wish", "giver", "give", "trade"] as const;
+
 
 
 type P = { x: number; y: number };
@@ -65,37 +70,60 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * Four seats on the one track. TWO MIRRORED PAIRS, and the track is CONTINUOUS:
- * there is no forbidden arc, so every seat can be reached by dragging either
- * way around the loop.
+ * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN where the spine
+ * leaves it, between roughly 4 o'clock and 6 o'clock. The selector is a bead on
+ * that wire: its angle lives on ONE CONTINUOUS LINE that runs from trade (the
+ * hard clockwise end, beside one lip of the break) anticlockwise all the way
+ * round to search (6 o'clock, the other lip). There is no wrap-around, so the
+ * bead can never teleport across the gap, interpolate through empty space, or
+ * take the shortest geometric route between two seats.
+ *
+ *   trade  +30°   hard end — cannot continue clockwise, there is no stroke
+ *   give   -44°
+ *   giver  -90°   12 o'clock
+ *   wish   -136°
+ *   borrow -210°  (= 8 o'clock)
+ *   search -270°  (= 6 o'clock) hard end on the other lip of the break
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  // ME — dead centre above the middle loop, between wish and give.
-  giver: rad(-90), // 12 o'clock
-  // UPPER PAIR — mirrored about the vertical axis through the loop's centre.
-  wish: rad(-136), // ~10 o'clock
-  give: rad(-44), // ~2 o'clock (canonical home)
-  // LOWER PAIR — the same mirror, below the centre line.
-  trade: rad(30), // ~4 o'clock
-  borrow: rad(150), // ~8 o'clock
+  search: rad(-270),
+  borrow: rad(-210),
+  wish: rad(-136),
+  giver: rad(-90),
+  give: rad(-44),
+  trade: rad(30),
 };
 
+/** The wire's two physical ends. Nothing may travel outside them. */
+const TRACK_MIN = SEAT_ANGLE.search;
+const TRACK_MAX = SEAT_ANGLE.trade;
 
 const TAU = Math.PI * 2;
 
-/** Shortest signed distance from `a` to `b` on the circle: never a 358° jump. */
-const shortest = (a: number, b: number) => {
-  let d = (b - a) % TAU;
-  if (d > Math.PI) d -= TAU;
-  if (d < -Math.PI) d += TAU;
-  return d;
-};
+/** Signed travel ALONG THE WIRE from `a` to `b` — plain distance, no wrapping. */
+const shortest = (a: number, b: number) => b - a;
+
+/** The bead can only be where the stroke is. */
+const clampTrack = (a: number) => Math.min(TRACK_MAX, Math.max(TRACK_MIN, a));
 
 /**
- * WRAP-AWARE UNWRAP: express `next` as the value nearest `ref` on the
- * continuous line, so crossing +179° -> -179° reads as a 2° move.
+ * A raw finger angle (-π..π] expressed as the point ON THE WIRE nearest the
+ * bead's current position, then clamped to the wire's ends. A finger over the
+ * physical gap simply holds the bead at the nearest lip.
  */
-const unwrap = (ref: number, next: number) => ref + shortest(ref, next);
+const onTrack = (ref: number, raw: number) => {
+  let best = raw;
+  let bestD = Infinity;
+  for (let k = -2; k <= 2; k += 1) {
+    const c = raw + k * TAU;
+    const d = Math.abs(c - ref);
+    if (d < bestD) {
+      bestD = d;
+      best = c;
+    }
+  }
+  return clampTrack(best);
+};
 
 /** How near a seat (in radians of travel) counts as captured. */
 const CAPTURE = 0.34;
@@ -116,12 +144,12 @@ export const seatCentre = (seat: Seat): P => at(SEAT_ANGLE[seat], TRACK_R);
 
 
 
-/** Nearest seat measured AROUND the circle, so the ±180° seam is not a wall. */
+/** Nearest seat measured ALONG THE WIRE — never across the break. */
 function nearestOf(angle: number, seats: readonly Seat[]): Seat {
   let best: Seat = seats[0]!;
   let bestD = Infinity;
   for (const m of seats) {
-    const d = Math.abs(shortest(angle, SEAT_ANGLE[m]));
+    const d = Math.abs(SEAT_ANGLE[m] - angle);
     if (d < bestD) {
       bestD = d;
       best = m;
@@ -129,6 +157,7 @@ function nearestOf(angle: number, seats: readonly Seat[]): Seat {
   }
   return best;
 }
+
 
 
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -143,6 +172,8 @@ const MODE_COLOUR: Record<Seat, string> = {
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
+  search: "var(--giver-community)",
+
 };
 
 
@@ -232,15 +263,16 @@ export function EarSelector({
   const [angle, setAngle] = useState(restAngle);
   const angleRef = useRef(angle);
 
-  // Rest and magnet targets are always the nearest equivalent angle AROUND the
-  // circle, so settling takes the short way and never spins the long way.
-  let target = unwrap(angleRef.current, restAngle);
+  // Rest and magnet targets live ON THE WIRE: the bead always travels the real
+  // stroke between two seats, however far round the loop that is.
+  let target = clampTrack(restAngle);
   if (drag !== null) {
-    const seat = unwrap(drag, SEAT_ANGLE[nearestOf(drag, seats)]);
+    const seat = SEAT_ANGLE[nearestOf(drag, seats)];
 
     const pull = Math.max(0, 1 - Math.abs(seat - drag) / CAPTURE) * 0.55;
-    target = drag + (seat - drag) * pull;
+    target = clampTrack(drag + (seat - drag) * pull);
   }
+
 
 
   const targetRef = useRef(target);
@@ -288,11 +320,13 @@ export function EarSelector({
     const raw = Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x);
     return {
       point: { x: local.x, y: local.y } as P,
-      // FINGER FREE, SELECTOR RAILED: only the angle is taken from the finger —
-      // and it is UNWRAPPED against the gesture's own continuous angle, so the
-      // ±180° seam is a 1° step, never a wall and never a 358° jump.
-      angle: unwrap(dragRef.current ?? angleRef.current, raw),
+      // FINGER FREE, BEAD RAILED: only the angle is taken from the finger, and
+      // it is resolved onto the WIRE nearest the bead and clamped to its ends —
+      // so a finger swung across the break holds the bead at the nearest lip
+      // instead of teleporting it to the far side.
+      angle: onTrack(dragRef.current ?? angleRef.current, raw),
     };
+
   };
 
 

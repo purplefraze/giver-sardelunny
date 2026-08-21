@@ -215,11 +215,14 @@ function Index() {
   };
 
   useEffect(() => {
-    if (!entered || seat === "giver") return;
+    /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
+       navigates nowhere until the person has built their profile. */
+    if (!entered || seat === "giver" || !myProfileStore.get().built) return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entered, seat]);
+
 
   /**
    * TEACH THE G ONCE. On first entry the action labels show themselves, then
@@ -297,6 +300,19 @@ function Index() {
   const content = MODE_CONTENT[mode];
 
   /**
+   * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
+   *
+   * Until the profile exists the G holds NOTHING: no photo, no latest, no
+   * community, no placeholder. Only "my g" in the top loop, and the toggle,
+   * which is free to travel every mode and recolour the whole G. Any tap on
+   * the G itself leads to one place: set up your profile.
+   */
+  const firstArrival = !me.built;
+  const setup = () => setEditor({ kind: "about" });
+
+
+
+  /**
    * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
    * "mine" means the one I touched last, not a ranked list.
    */
@@ -367,34 +383,40 @@ function Index() {
                 mode={seat}
                 onChange={setSeat}
                 seats={SEATS}
-                {...(isProfile && me.photo ? { photo: me.photo } : {})}
+                {...(!firstArrival && isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
-                {...(isProfile && unread ? { badge: unread } : {})}
+                {...(!firstArrival && isProfile && unread ? { badge: unread } : {})}
                 /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
                 sparks={me.sparks}
 
                 /*
                   TOP LOOP = SEARCH THIS WORLD, on my own G only. On the profile
                   seat the G represents ME, so the top loop stays my information.
+                  BEFORE THE PROFILE EXISTS every tap leads to setting it up.
                 */
                 onTap={() =>
-                  isProfile
-                    ? setEditor({ kind: "about" })
-                    : setSearch(mode as ItemType)
+                  firstArrival
+                    ? setup()
+                    : isProfile
+                      ? setEditor({ kind: "about" })
+                      : setSearch(mode as ItemType)
                 }
+
               />
             }
 
-            teach={teach}
+            teach={firstArrival ? false : teach}
             regions={{
               top: {
                 label: "",
                 panelTitle: isProfile ? "more information" : `search ${mode}s`,
                 panelBody: null,
                 onPress: () =>
-                  isProfile
-                    ? setEditor({ kind: "about" })
-                    : setSearch(mode as ItemType),
+                  firstArrival
+                    ? setup()
+                    : isProfile
+                      ? setEditor({ kind: "about" })
+                      : setSearch(mode as ItemType),
               },
 
               /*
@@ -413,6 +435,10 @@ function Index() {
                   yet, it asks the question and offers the four worlds.
                 */
                 onPress: () => {
+                  if (firstArrival) {
+                    setup();
+                    return;
+                  }
                   if (isProfile && !latest) {
                     setChoose(true);
                     return;
@@ -428,7 +454,10 @@ function Index() {
                   profileLoop({
                     anchor,
                     region: "middle",
-                    blocks: isProfile
+                    /* FIRST ARRIVAL: the middle loop holds nothing at all. */
+                    blocks: firstArrival
+                      ? []
+                      : isProfile
                       ? latest
                         ? [
                             { text: "latest", role: "secondary" as const },
@@ -453,6 +482,7 @@ function Index() {
                           ...(myMode ? more(me.items[mode].length) : []),
                         ],
 
+
                   }),
               },
               /*
@@ -464,7 +494,9 @@ function Index() {
                 label: "",
                 panelTitle: isProfile ? "my gives" : content.community.title,
                 panelBody: null,
-                onPress: isProfile
+                onPress: firstArrival
+                  ? /* NOTHING BUT PROFILE SETUP EXISTS YET. */ setup
+                  : isProfile
                   ? /* BOTTOM = WHAT I GIVE. First time, giver explains it. */
                     () => openWorld("give")
                   : /* BOTTOM = THE COMMUNITY — open only to givers. */
@@ -480,7 +512,11 @@ function Index() {
                   profileLoop({
                     anchor,
                     region: "bottom",
-                    blocks: isProfile
+                    /* FIRST ARRIVAL: the bottom loop holds nothing at all. */
+                    blocks: firstArrival
+                      ? []
+                      : isProfile
+
                       ? myGive
                         ? [
                             { text: "gives", role: "secondary" as const },
@@ -525,7 +561,12 @@ function Index() {
             the profile, where it belongs. Sparks are no longer printed here:
             they ride my own top profile loop (see EarSelector).
           */}
-          {!tutorialSeen && intro === null && editor === null && !choose && !help ? (
+          {!firstArrival &&
+          !tutorialSeen &&
+          intro === null &&
+          editor === null &&
+          !choose &&
+          !help ? (
             <button
               type="button"
               onClick={() =>

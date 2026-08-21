@@ -14,6 +14,7 @@ export function AboutForm({
   onHelp,
   onMessages,
   unread = 0,
+  firstSetup = false,
 }: {
   onDone: () => void;
   /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
@@ -21,6 +22,8 @@ export function AboutForm({
   /** MY INBOX LIVES HERE, beside my balances — private account information. */
   onMessages?: () => void;
   unread?: number;
+  /** A new person's setup is identity only; account furniture comes afterwards. */
+  firstSetup?: boolean;
 }) {
   const me = useMyProfile();
 
@@ -90,7 +93,7 @@ export function AboutForm({
           nowhere else — they are mine, private, and never on display on the
           Living G itself. Nobody else ever sees these numbers.
         */}
-        <dl className="mt-12 flex flex-wrap items-start gap-x-10 gap-y-8">
+        {!firstSetup ? <dl className="mt-12 flex flex-wrap items-start gap-x-10 gap-y-8">
           <div>
             <dd
               className="text-[3.5rem] font-black leading-none tracking-[-0.05em] tabular-nums"
@@ -141,10 +144,10 @@ export function AboutForm({
               messages
             </dt>
           </button>
-        </dl>
-        <p className="mt-3 g-meta opacity-40">
+        </dl> : null}
+        {!firstSetup ? <p className="mt-3 g-meta opacity-40">
           private to you
-        </p>
+        </p> : null}
 
 
 
@@ -192,7 +195,7 @@ export function AboutForm({
         </p>
 
         {/* LEARN HOW, WHENEVER YOU LIKE. Never a nag, always here. */}
-        {onHelp ? (
+        {onHelp && !firstSetup ? (
           <button
             type="button"
             onClick={() => {

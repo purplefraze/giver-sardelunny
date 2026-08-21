@@ -44,7 +44,8 @@ import { World } from "@/components/World";
 import { cn } from "@/lib/utils";
 import { DevControls } from "@/components/DevControls";
 import { lifecycleStore } from "@/data/lifecycle";
-import { seedDevelopmentProfileOnce } from "@/data/dev-fixture";
+import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
+import { initializeFirstUse } from "@/data/first-use";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
 /**
@@ -130,10 +131,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  /* Preview fixtures must exist before the first store snapshots are read;
-     seeding in an effect briefly rendered an obsolete blank/onboarding state. */
-  seedDevelopmentProfileOnce();
+  /* A populated current-user fixture used to be injected here automatically.
+     Remove that legacy state once; development profiles are now explicit only. */
+  removeLegacyAutomaticProfile();
   const lifecycle = useLifecycle();
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [sessionEntered, setSessionEntered] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /**
@@ -267,10 +270,10 @@ function Index() {
 
   /* Migrate an existing completed prototype profile into the explicit lifecycle. */
   useEffect(() => {
-    if (!lifecycle.onboardingCompletedAt && me.built && !import.meta.env.DEV) {
-      lifecycleStore.complete();
+    if (!lifecycle.profileSetupCompletedAt && me.built) {
+      lifecycleStore.migrateCompletedProfile();
     }
-  }, [lifecycle.onboardingCompletedAt, me.built]);
+  }, [lifecycle.profileSetupCompletedAt, me.built]);
 
   /**
    * THE CARDINAL GIVER RULE: one active give of my own is the key to the
@@ -307,7 +310,9 @@ function Index() {
    * which is free to travel every mode and recolour the whole G. Any tap on
    * the G itself leads to one place: set up your profile.
    */
-  const firstArrival = !me.built;
+  const firstArrival =
+    Boolean(lifecycle.onboardingCompletedAt) &&
+    !lifecycle.profileSetupCompletedAt;
   const setup = () => setEditor({ kind: "about" });
 
 
@@ -338,6 +343,18 @@ function Index() {
 
 
 
+  /* Persisted lifecycle/profile state is browser-owned. Render neither the
+     onboarding nor My G until it is hydrated, preventing a stale server frame
+     from flashing or surviving as the first post-onboarding screen. */
+  if (!hydrated) {
+    return (
+      <main
+        className="mx-auto h-[100dvh] w-full max-w-[520px]"
+        style={{ background: "var(--giver-paper)" }}
+      />
+    );
+  }
+
   return (
     <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
       <DevControls />
@@ -345,10 +362,9 @@ function Index() {
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
           onDone={({ earned }) => {
-            /* SPARKS FOLLOW THE COMPLETED INTERACTION, never the animation. */
-            if (earned) myProfileStore.seedSparks();
-            /* ONBOARDING IS OVER FOR GOOD: reloading can never replay it. */
-            lifecycleStore.complete();
+            /* A NEW PERSON GETS A CLEAN, IDEMPOTENT HANDOVER. Sample people and
+               their community records are never projected into this profile. */
+            initializeFirstUse(earned);
             setSessionEntered(true);
           }}
         />
@@ -386,8 +402,8 @@ function Index() {
                 {...(!firstArrival && isProfile && me.photo ? { photo: me.photo } : {})}
                 {...(isProfile ? { word: "my g" } : {})}
                 {...(!firstArrival && isProfile && unread ? { badge: unread } : {})}
-                /* MY SPARKS RIDE MY OWN TOP LOOP — never shown on anyone else's G. */
-                sparks={me.sparks}
+                /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
+                {...(!firstArrival ? { sparks: me.sparks } : {})}
 
                 /*
                   TOP LOOP = SEARCH THIS WORLD, on my own G only. On the profile
@@ -727,12 +743,13 @@ function Index() {
             {editor?.kind === "about" ? (
               <AboutForm
                 unread={unread}
+                firstSetup={firstArrival}
                 onMessages={() => {
                   setEditor(null);
                   setThreads(true);
                 }}
                 onDone={() => {
-                  if (!lifecycle.onboardingCompletedAt) lifecycleStore.complete();
+                  lifecycleStore.completeProfileSetup();
                   setEditor(null);
                 }}
                 onHelp={() => {

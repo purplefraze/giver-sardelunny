@@ -1,7 +1,15 @@
 const KEY = "giver.lifecycle.v1";
 
-export type Lifecycle = { onboardingCompletedAt: number | null };
-const EMPTY: Lifecycle = { onboardingCompletedAt: null };
+export type Lifecycle = {
+  onboardingCompletedAt: number | null;
+  profileSetupCompletedAt: number | null;
+  firstUseInitializedAt: number | null;
+};
+const EMPTY: Lifecycle = {
+  onboardingCompletedAt: null,
+  profileSetupCompletedAt: null,
+  firstUseInitializedAt: null,
+};
 let state = EMPTY;
 let hydrated = false;
 const listeners = new Set<() => void>();
@@ -38,6 +46,35 @@ export const lifecycleStore = {
   },
   get() { hydrate(); return state; },
   getServer() { return EMPTY; },
-  complete() { hydrate(); save({ onboardingCompletedAt: Date.now() }); },
+  completeOnboarding() {
+    hydrate();
+    save({
+      ...state,
+      onboardingCompletedAt: state.onboardingCompletedAt ?? Date.now(),
+    });
+  },
+  markFirstUseInitialized() {
+    hydrate();
+    if (state.firstUseInitializedAt) return;
+    save({ ...state, firstUseInitializedAt: Date.now() });
+  },
+  completeProfileSetup() {
+    hydrate();
+    save({
+      ...state,
+      onboardingCompletedAt: state.onboardingCompletedAt ?? Date.now(),
+      profileSetupCompletedAt: state.profileSetupCompletedAt ?? Date.now(),
+    });
+  },
+  migrateCompletedProfile() {
+    hydrate();
+    if (state.profileSetupCompletedAt) return;
+    save({
+      ...state,
+      onboardingCompletedAt: state.onboardingCompletedAt ?? Date.now(),
+      profileSetupCompletedAt: Date.now(),
+      firstUseInitializedAt: state.firstUseInitializedAt ?? Date.now(),
+    });
+  },
   reset() { hydrate(); save(EMPTY); },
 };

@@ -290,7 +290,10 @@ function Index() {
   /* SEVEN DAYS AND THE SPARKS COME HOME: expire stale wishes on every entry. */
   useEffect(() => {
     myProfileStore.sweepWishes();
+    /* AND ANY OFFER WHOSE DAY HAS PASSED LEAVES CIRCULATION BY ITSELF. */
+    itemsStore.sweepAvailability();
   }, []);
+
 
   /* Migrate an existing completed prototype profile into the explicit lifecycle. */
   useEffect(() => {

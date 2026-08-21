@@ -559,6 +559,7 @@ function Index() {
             they ride my own top profile loop (see EarSelector).
           */}
           {!firstArrival &&
+          activity !== null &&
           !tutorialSeen &&
           intro === null &&
           editor === null &&

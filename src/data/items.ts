@@ -372,22 +372,35 @@ const parseKm = (distance: string) => {
 
 /**
  * SEEDED DETAILS EXIST FOR THE SAME REASON REAL ONES DO: so community can be
- * scanned and understood without opening anything. Deterministic, never random.
+ * scanned and understood without opening anything. Deterministic, never random,
+ * and never nonsense — a sourdough starter is picked up nearby, not "online".
  */
-function seedDetails(type: ItemType, mi: number, i: number): ItemDetails {
+function seedDetails(text: string, mi: number, i: number): ItemDetails {
+  const kind = classifyKind(text);
   const daySets = [["tues", "thurs"], ["sat"], ["sun"], ["mon", "wed", "fri"]];
-  const places = ["online", "west end", "flexible", "north side"];
+  const areas = ["west end", "north side", "nearby pickup", "in person"];
   const times = ["evenings", "7 pm", "afternoons", "mornings"];
   const spans = ["one time", "recurring", "flexible"];
   const k = (mi + i) % 4;
+  const wheres = WHERE_FOR[kind];
+  const where = wheres[k % wheres.length]!;
+  const cadence = spans[(mi + i) % spans.length]!;
+  const flexible = where === "flexible" && cadence === "recurring";
   return {
-    days: daySets[k % daySets.length]!,
-    time: times[k % times.length]!,
-    where: places[(k + i) % places.length]!,
-    cadence: spans[(mi + i) % spans.length]!,
-    ...(type === "give" ? { duration: DURATION_OPTIONS[k % DURATION_OPTIONS.length]! } : {}),
+    /* A FLEXIBLE, RECURRING THING DOES NOT CLAIM FIXED DAYS. */
+    ...(flexible ? {} : { days: daySets[k % daySets.length]! }),
+    ...(flexible ? {} : { time: times[k % times.length]! }),
+    where:
+      where === "in person" || where === "nearby pickup"
+        ? (areas[(k + i) % areas.length] ?? where)
+        : where,
+    cadence,
+    ...(ASKS_DURATION[kind]
+      ? { duration: DURATION_OPTIONS[k % DURATION_OPTIONS.length]! }
+      : {}),
   };
 }
+
 
 /**
  * The sample community starts out as REAL items, so my items and theirs live

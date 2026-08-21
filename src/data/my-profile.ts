@@ -356,8 +356,10 @@ export const myProfileStore = {
       18+ AND A REAL ACCOUNT BEFORE ANYTHING IS PUBLISHED. The answer is only
       ever "not yet": the caller keeps its draft, word for word.
     */
-    const allowed = myProfileStore.canPublish();
+    const allowed =
+      category === "give" ? myProfileStore.canPublish() : ({ ok: true } as const);
     if (!allowed.ok) return { ok: false, reason: "account", say: allowed.say };
+
     const item = itemsStore.add(ME_ID, category, text, parts, note, extra);
     if (!item) return { ok: false, reason: "full" };
     /* A WISH RESERVES ITS SPARKS. They leave the balance but are not spent:

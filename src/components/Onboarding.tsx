@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
-import { SparkJourney } from "@/components/living-g/SparkJourney";
-import { SparkSplit, type SplitStep } from "@/components/onboarding/SparkSplit";
-
-import { BEAT_MS, IntroG, type LoopCopy } from "@/components/onboarding/IntroG";
+import { PlayIntro } from "@/components/onboarding/PlayIntro";
 import { MemberExample } from "@/components/onboarding/MemberExample";
 import { MEMBERS, type Member } from "@/data/giver";
 import { STARTING_SPARKS } from "@/data/my-profile";
@@ -23,34 +20,6 @@ import { cn } from "@/lib/utils";
  * Colour and copy always arrive together, as one beat.
  */
 type Stage = "opening" | "meet" | "choose" | "celebrate";
-
-/**
- * OPENING TYPE HIERARCHY, as shared tokens — never per-word guesses.
- *   BRAND  — a word alone in the middle loop
- *   PHRASE — supporting language in the bottom loop
- */
-const BRAND = 0.9;
-const PHRASE = 0.8;
-
-/**
- * THE OPENING, AS ONE CONTINUOUS STORY. Each slide is a COMPLETE thought that
- * arrives whole — never word by word — and hands straight over to the next.
- */
-type Slide = {
-  middle?: string[];
-  bottom?: string[];
-  hold: number;
-  /** The Sparks themselves carry this beat; the words only name it. */
-  spark?: SplitStep;
-};
-
-const WORDS: Slide[] = [
-  { middle: ["giver"], hold: 900 },
-  { bottom: ["kindness is", "currency"], hold: 1250 },
-  { bottom: ["here's", "100 sparks"], hold: 1500, spark: "hundred" },
-  { bottom: ["50 to wish"], hold: 1500, spark: "wish" },
-  { bottom: ["50 to give"], hold: 1500, spark: "give" },
-];
 
 const ROLE_COLOUR: Record<Member["world"], string> = {
   // Every sample person is ANOTHER PERSON from my perspective: BLUE.
@@ -72,7 +41,7 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
 
   if (stage === "opening") {
     return (
-      <OpeningSequence
+      <PlayIntro
         onDone={() => {
           buzz();
           setWho(0);
@@ -125,202 +94,6 @@ export function Onboarding({ onDone }: { onDone: (gaveTo: string | null) => void
         setStage("celebrate");
       }}
     />
-  );
-}
-
-/**
- * THE OPENING — ONE CONTINUOUS SHOT, never a stack of slides.
- *
- *   word   the composition reads as GIVER: the Living G IS the g
- *   zoom   "iver" collapses into the spark while the camera flies into the
- *          very same G until it reaches its canonical full-screen size
- *   auto   the spark travels the G's own stroke, bottom loop -> middle loop
- *   words  giver / kindness is currency / here's 100 sparks / 50 + 50
- *   drag   the spark is handed over: the user walks it along the rail
- *   green  arrival, haptic, colour change — and straight into the community
- */
-type Phase = "word" | "zoom" | "auto" | "words" | "drag" | "done";
-
-/**
- * THE LOGO COMPOSITION. The Living G is not a symbol beside the word: its SMALL
- * TOP LOOP is the dot of the "i" in "iver". Scale, x and y are tuned together;
- * the canonical geometry is untouched.
- */
-const LETTER_SCALE = 0.26;
-const LETTER_SHIFT = "-6.4vw";
-const LETTER_RISE = "1.6vh";
-/** Where the letters "ıver" sit relative to screen centre. */
-const LETTERS_SHIFT = "15.9vw";
-const ZOOM_MS = 900;
-const WORD_HOLD = 850;
-
-
-function OpeningSequence({ onDone }: { onDone: () => void }) {
-  const [phase, setPhase] = useState<Phase>("word");
-  const [i, setI] = useState(0);
-  const [fading, setFading] = useState(false);
-  const [green, setGreen] = useState(false);
-  const [arrived, setArrived] = useState(false);
-
-  // word -> zoom -> auto: no waiting, no empty screens.
-  useEffect(() => {
-    if (phase !== "word") return;
-    const t = setTimeout(() => setPhase("zoom"), WORD_HOLD);
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== "zoom") return;
-    const t = setTimeout(() => setPhase("auto"), ZOOM_MS);
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  // The scripted thoughts: each arrives whole, holds, and hands over.
-  useEffect(() => {
-    if (phase !== "words") return;
-    const slide = WORDS[i]!;
-    const out = setTimeout(() => setFading(true), slide.hold);
-    const next = setTimeout(() => {
-      if (i + 1 < WORDS.length) {
-        setFading(false);
-        setI(i + 1);
-      } else {
-        setPhase("drag");
-      }
-    }, slide.hold + BEAT_MS);
-    return () => {
-      clearTimeout(out);
-      clearTimeout(next);
-    };
-  }, [phase, i]);
-
-  /* THE CHANGE IS THE TRANSITION. It holds just long enough to be unmistakably
-     COMPLETE — the green G, the confirmed words — then hands over to the people. */
-  useEffect(() => {
-    if (!green) return;
-    const t = setTimeout(onDone, 760);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [green]);
-
-  const slide = phase === "words" ? WORDS[i]! : undefined;
-  const say = (lines: string[] | undefined, scale: number): LoopCopy | undefined =>
-    lines ? { lines, plan: lines, scale, opacity: fading ? 0 : 1 } : undefined;
-
-  /* THE ACTION RESOLVES TO THE BRAND: completing the slide returns the middle
-     loop to "giver" — never a flash of other words in between. */
-  const done: LoopCopy | undefined = arrived
-    ? { lines: ["giver"], plan: ["giver"], scale: BRAND, opacity: 1 }
-    : undefined;
-
-  const middle: LoopCopy | undefined =
-    phase === "drag" ? done : say(slide?.middle, BRAND);
-
-  /* THE INSTRUCTION STAYS PUT until the sparks reach their destination —
-     touching or moving them never takes the guidance away. */
-  const dragLine = "slide to spark change";
-  const bottom: LoopCopy | undefined =
-    phase === "drag"
-      ? {
-          lines: [dragLine],
-          plan: [dragLine],
-          scale: PHRASE,
-          opacity: arrived ? 0 : 1,
-        }
-      : say(slide?.bottom, PHRASE);
-
-
-  const small = phase === "word";
-
-  return (
-    <IntroG
-      world={green ? "gift" : "welcome"}
-      weight={small ? "heavy" : "normal"}
-      {...(middle ? { middle } : {})}
-      {...(bottom ? { bottom } : {})}
-      stage={{
-        transformOrigin: "50% 50%",
-        transform: small
-          ? `translate(${LETTER_SHIFT}, ${LETTER_RISE}) scale(${LETTER_SCALE})`
-          : "translate(0, 0) scale(1)",
-        transition: `transform ${ZOOM_MS}ms cubic-bezier(0.22,1,0.36,1)`,
-      }}
-      {...(phase === "auto"
-        ? { overlay: <SparkJourney mode="auto" onArrive={() => setPhase("words")} /> }
-        : phase === "drag"
-          ? {
-              overlay: (
-                <>
-                  <SparkSplit step="held" />
-                  <SparkJourney
-                    mode="drag"
-                    count={50}
-                    onArrive={() => setArrived(true)}
-                    onGreen={() => setGreen(true)}
-                  />
-                </>
-              ),
-            }
-          : slide?.spark
-            ? { overlay: <SparkSplit step={slide.spark} /> }
-            : {})}
-    >
-      <Wordmark phase={phase} />
-    </IntroG>
-  );
-}
-
-/**
- * [LIVING G]IVER. The letters belong to the same word as the artwork, and when
- * the camera pushes in they COLLAPSE INTO THE SPARK rather than disappearing —
- * one object becoming another, never a cut.
- */
-function Wordmark({ phase }: { phase: Phase }) {
-  const show = phase === "word" || phase === "zoom";
-  if (!show) return null;
-  const holding = phase === "word";
-  /* DOTLESS I: the Living G's top loop is the only i-dot in the wordmark. */
-  const letters = ["\u0131", "v", "e", "r"];
-
-  return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-      <span
-        className="flex items-center font-black lowercase leading-none tracking-[-0.05em]"
-        style={{ fontSize: "12dvh", transform: `translateX(${LETTERS_SHIFT})`, color: "var(--world-g)" }}
-      >
-        {letters.map((l, k) => (
-          <span
-            key={l + k}
-            className="inline-block"
-            style={{
-              // Every letter travels to the SAME point — the spark — shrinking
-              // as it goes, so four letters read as one bead forming.
-              transform: holding
-                ? "translate(0,0) scale(1)"
-                : `translate(calc(${LETTER_SHIFT} - ${(letters.length - k) * 2.2}rem), 0) scale(0.12)`,
-              opacity: holding ? 1 : 0,
-              transition: `transform ${ZOOM_MS}ms cubic-bezier(0.5,0,0.2,1) ${k * 40}ms, opacity ${ZOOM_MS}ms ease-in ${k * 40}ms`,
-            }}
-          >
-            {l}
-          </span>
-        ))}
-      </span>
-
-      {/* THE BEAD the letters become. It hands over to the real spark on the G. */}
-      <span
-        className="absolute rounded-full"
-        style={{
-          width: "3.6vh",
-          height: "3.6vh",
-          left: `calc(50% + ${LETTER_SHIFT})`,
-          background: "var(--giver-generosity)",
-          opacity: holding ? 0 : 1,
-          transform: holding ? "scale(0.4)" : "scale(1)",
-          transition: `opacity ${ZOOM_MS * 0.6}ms ease-out, transform ${ZOOM_MS}ms cubic-bezier(0.22,1,0.36,1)`,
-        }}
-      />
-    </div>
   );
 }
 

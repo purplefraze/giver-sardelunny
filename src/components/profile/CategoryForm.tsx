@@ -17,7 +17,10 @@ import {
   TIME_OPTIONS,
   TITLE_COUNTDOWN_AT,
   TITLE_MAX,
-  WHERE_OPTIONS,
+  ASKS_AREA,
+  ASKS_DURATION,
+  WHERE_FOR,
+  classifyKind,
   contextFieldsFor,
   detailBits,
   itemsStore,
@@ -95,6 +98,52 @@ function Line({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
+/**
+ * A COMPACT FIELD — one word, its answer beside it, and its choices only while
+ * it is open. Never a settings row, never every option at once.
+ */
+function Field({
+  label,
+  summary,
+  open,
+  colour,
+  onToggle,
+  children,
+}: {
+  label: string;
+  summary?: string | undefined;
+  open: boolean;
+  colour: string;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="g-rule py-3.5">
+      <button
+        type="button"
+        onClick={() => {
+          haptics.selection();
+          onToggle();
+        }}
+        className="flex w-full items-baseline justify-between gap-4 text-left"
+      >
+        <span className="g-meta opacity-40">{label}</span>
+        <span
+          className="min-w-0 flex-1 truncate pb-[0.12em] text-right text-[13px] font-black lowercase leading-[1.25] tracking-[0.02em]"
+          style={{ color: summary ? colour : "var(--world-ink)" }}
+        >
+          {summary || <span className="opacity-30">add</span>}
+        </span>
+      </button>
+      {open ? (
+        <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function CategoryForm({
   category,
   onDone,
@@ -115,6 +164,8 @@ export function CategoryForm({
   /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */
   const [details, setDetails] = useState<ItemDetails>({});
   const [problem, setProblem] = useState<string | null>(null);
+  /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
+  const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
   const colour = `var(--me-${category})`;
   const limit = MAX_PER_CATEGORY[category];
   const unlimited = !Number.isFinite(limit);
@@ -130,6 +181,15 @@ export function CategoryForm({
   const noteLeft = noteMax - note.length;
   /** ONLY THE QUESTIONS THAT MAKE SENSE for this kind of thing. */
   const extraFields = contextFieldsFor(draft);
+  /** WHAT KIND OF THING THIS IS decides which metadata is even offered. */
+  const kind = classifyKind(draft);
+  const whereOptions = WHERE_FOR[kind];
+  const whenSummary =
+    [details.days?.length ? details.days.join(" + ") : null, details.date, details.time]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+  const longSummary =
+    [details.cadence, details.duration].filter(Boolean).join(" · ") || undefined;
   /** A BRIGHT WAY BACK — electric, never muddy. */
   const wayBack = "var(--giver-me-complement)";
 

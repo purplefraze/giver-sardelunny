@@ -352,6 +352,8 @@ function Index() {
               !choose &&
               !help &&
               browse === null &&
+              search === null &&
+
               !locked &&
               detail === null &&
               talking === null &&

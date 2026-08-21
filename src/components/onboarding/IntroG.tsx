@@ -68,9 +68,11 @@ export function IntroG({
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
-    if (!copy) return {};
+    const onPress = press?.[key];
+    if (!copy) return onPress ? { [key]: { onPress } } : {};
     return {
       [key]: {
+        ...(onPress ? { onPress } : {}),
         render: (anchor: { x: number; y: number }) => (
           <g
             style={{

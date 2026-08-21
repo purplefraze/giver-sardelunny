@@ -55,6 +55,23 @@ const CATEGORY_ASK: Record<Category, string> = {
   borrow: "what would you borrow?",
 };
 
+/**
+ * THE ONE LINE UNDER THE TITLE. Said once, never repeated by the input below
+ * it: the question belongs to the field, the invitation belongs to the page.
+ */
+const CATEGORY_CALL: Record<Category, string> = {
+  wish: "what do you wish for?",
+  give: "are you a giver?",
+  trade: "what are you offering?",
+  borrow: "what would you borrow?",
+};
+
+/** ONE SHORT HUMAN LINE. Only where it adds something the labels cannot. */
+const CATEGORY_TAGLINE: Partial<Record<Category, string>> = {
+  give: "give what you can. make someone happy.",
+};
+
+
 /** BORROWING HAS TWO SIDES, and giver asks which one you mean. */
 const SIDE_ASK: Record<BorrowSide, string> = {
   borrow: "what would you like to borrow?",

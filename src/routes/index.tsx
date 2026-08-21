@@ -618,19 +618,9 @@ function Index() {
           </Screen>
 
           {/*
-            THE TOP LOOP'S SEARCH. Already scoped to the toggle's world, and only
-            ever reachable from my own Living G — never from someone else's.
+            SEARCH IS NOT A LOOP AND NEVER A BAR ON THE LIVING G: it lives inside
+            the expanded Communi-G, where the whole community already is.
           */}
-          <Screen open={search !== null}>
-            {search ? (
-              <ModeSearch
-                mode={search}
-                onOpen={(itemId) => setDetail(itemId)}
-                onOpenProfile={(ownerId) => setPerson(ownerId)}
-                onClose={() => setSearch(null)}
-              />
-            ) : null}
-          </Screen>
 
 
 

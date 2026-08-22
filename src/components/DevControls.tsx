@@ -5,6 +5,8 @@ import {
   resetNewUser,
 } from "@/data/dev-fixture";
 import { adminStore } from "@/data/admin";
+import { demoRepliesStore } from "@/data/demo-replies";
+
 import { memberEditsStore } from "@/data/member-edits";
 import { useAdmin } from "@/hooks/use-admin";
 import { HapticsCheck } from "@/components/HapticsCheck";
@@ -41,8 +43,16 @@ export function DevControls() {
           >
             {admin ? "admin editing: on" : "admin editing: off"}
           </button>
+          <button
+            type="button"
+            className="py-2 text-left"
+            onClick={() => run(() => demoRepliesStore.toggle())}
+          >
+            {demoRepliesStore.get() ? "demo replies: on" : "demo replies: off"}
+          </button>
           <button type="button" className="py-2 text-left" onClick={() => run(replayOnboarding)}>replay onboarding</button>
           <button type="button" className="py-2 text-left" onClick={() => run(resetNewUser)}>new-user reset</button>
+
           <button type="button" className="py-2 text-left" onClick={() => run(completeOnboarding)}>skip / complete</button>
           <button
             type="button"

@@ -427,6 +427,18 @@
   }
 }
 
+/* A G that has been entered is alive: it breathes, it never pulses. */
+@keyframes g-alive {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.008);
+  }
+}
+
+
 /* Quiet appearance for words living inside the Living G. */
 @keyframes g-fade {
   from {

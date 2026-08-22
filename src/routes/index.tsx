@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { GEnclosure } from "@/components/living-g/GEnclosure";
+
 import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
@@ -226,6 +228,8 @@ function Index() {
    * toggle's world, so the content type is never asked for twice.
    */
   const [detail, setDetail] = useState<string | null>(null);
+  const detailShown = useLinger(detail);
+
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
   /** SPARKS AND SPARKLES ARE HISTORIES, opened from my own photo's toggle. */
@@ -235,6 +239,9 @@ function Index() {
   const [person, setPerson] = useState<string | null>(null);
   /** WHICH SECTION a profile opens on when it was reached from an activity. */
   const [personFocus, setPersonFocus] = useState<ItemType | null>(null);
+  /* WHILE THE G FOLDS BACK, what was inside it is still inside it. */
+  const personShown = useLinger(person);
+
 
   /**
    * THE COMMUNITY DOOR, WHEN IT IS STILL SHUT. Not an error and not a warning —
@@ -646,16 +653,23 @@ function Index() {
             the expanded Communi-G, where the whole community already is.
           */}
 
-          {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
-          <Screen open={person !== null}>
-            {person
+          {/*
+            @USERNAME -> INSIDE THAT PERSON'S LIVING G. Not a page: the same
+            artwork unfurls until its curves frame the screen, and their profile
+            appears within it. Backing out contracts it to exactly where it was.
+          */}
+          <GEnclosure
+            open={person !== null}
+            world={personShown === ME_ID ? "me" : "others"}
+          >
+            {personShown
               ? (() => {
                   const member =
-                    person === ME_ID ? myAsMember(me) : memberById(person);
+                    personShown === ME_ID ? myAsMember(me) : memberById(personShown);
                   return member ? (
                     <FullProfile
                       member={member}
-                      world={person === ME_ID ? "me" : "others"}
+                      world={personShown === ME_ID ? "me" : "others"}
                       focus={personFocus}
                       onBack={() => {
                         setPersonFocus(null);
@@ -671,13 +685,13 @@ function Index() {
                   ) : null;
                 })()
               : null}
-          </Screen>
+          </GEnclosure>
 
-          {/* AN ITEM OPENS ON TOP OF WHEREVER IT WAS FOUND — feed or profile. */}
-          <Screen open={detail !== null}>
-            {detail ? (
+          {/* AN ITEM IS MORE OF THE SAME G: only the interior content changes. */}
+          <GEnclosure open={detail !== null}>
+            {detailShown ? (
               <ActivityDetail
-                itemId={detail}
+                itemId={detailShown}
                 onOpenConnection={(id) => {
                   setDetail(null);
                   setTalking(id);
@@ -689,7 +703,8 @@ function Index() {
                 onClose={() => setDetail(null)}
               />
             ) : null}
-          </Screen>
+          </GEnclosure>
+
 
           <Screen open={talking !== null}>
             {talking ? (
@@ -805,4 +820,15 @@ function Screen({ open, children }: { open: boolean; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+/**
+ * CONTEXT IS NEVER RESET. A value that has just been cleared is kept one beat
+ * longer, so what the user was looking at is still there while the Living G
+ * folds back around it.
+ */
+function useLinger<T>(value: T | null) {
+  const held = useRef<T | null>(value);
+  if (value !== null) held.current = value;
+  return value ?? held.current;
 }

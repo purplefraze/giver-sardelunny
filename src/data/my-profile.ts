@@ -19,7 +19,12 @@ import {
 
 
 import { ledgerStore } from "@/data/ledger";
-import { ageFrom, hashPassword, publishEligibility } from "@/data/account";
+import {
+  ageFrom,
+  hashPassword,
+  normaliseBirthday,
+  publishEligibility,
+} from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 
@@ -242,7 +247,7 @@ function writePerson(next: Person) {
 }
 
 function savePerson(next: Person) {
-  person = writePerson(next);
+  person = writePerson(withDateOnlyFields(next));
   invalidate();
 }
 

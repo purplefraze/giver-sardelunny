@@ -90,12 +90,16 @@ export function GEnclosure({
           willChange: "transform",
         }}
       >
+        {/* The breathing layer must be a full-size box: it carries a transform,
+            so it becomes the containing block the stage measures itself in. */}
         <div
+          className="absolute inset-0"
           style={{
             animation: unfurled ? "g-alive 7200ms ease-in-out infinite" : undefined,
             transformOrigin: `${ORIGIN_X}% ${ORIGIN_Y}%`,
           }}
         >
+
           <GStage>
             <svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible">
               <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">

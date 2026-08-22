@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { myProfileStore } from "@/data/my-profile";
@@ -7,7 +7,6 @@ import {
   HANDLE_MESSAGE,
   PASSWORD_RULES,
   ageFrom,
-  birthdayLabel,
   checkHandle,
   displayHandle,
   normaliseHandle,
@@ -19,28 +18,22 @@ import {
   ProfilePhotoToggle,
   type PhotoSeat,
 } from "@/components/profile/ProfilePhotoToggle";
-import { buzz } from "@/lib/haptics";
-import { haptics } from "@/lib/haptics";
+import { InlineEdit } from "@/components/profile/InlineEdit";
+import { BirthdayInput } from "@/components/profile/BirthdayInput";
+import { buzz, haptics } from "@/lib/haptics";
 
 /**
- * MY G — THE PERSON, EDITABLE, ABOVE THE FOLD.
+ * MY G — A PERSON, NOT A QUESTIONNAIRE.
  *
- * Once an account exists this screen stops being an onboarding form: the
- * identity that has already been given (handle, date of birth) lives beside the
- * photo as METADATA YOU CAN TAP, the password moves into a small settings
- * affordance, and the page below is nothing but the person themselves.
- *
- * THE PHOTO IS ITS OWN MENU. Tapping it opens a compact contextual list —
- * change photo, reposition photo, and the one line explaining the dots — so
- * nothing has to be explained permanently beside it.
- *
- * FIRST SETUP IS THE ONLY TIME ASTERISKS EXIST. Required-field marks belong to
- * account creation, never to the everyday editor.
+ * This screen is my profile itself, and it is also how I change it. Every piece
+ * of me is printed exactly once, where it belongs, and touching that place turns
+ * it into its own input. There are no field boxes, no repeated labels, no second
+ * copy of the same question lower down, and nothing to submit.
  */
 
 const GENDERS = ["male", "female", "non-binary", "prefer not to say"] as const;
 
-const PHOTO = 112;
+const PHOTO = 104;
 
 export function AboutForm({
   onDone,
@@ -53,16 +46,12 @@ export function AboutForm({
   firstSetup = false,
 }: {
   onDone: () => void;
-  /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
   onHelp?: () => void;
-  /** MY WHOLE PROFILE, in the same shared profile system everyone else uses. */
   onViewProfile?: () => void;
-  /** THE THREE HISTORY PORTALS behind my photo's own toggle. */
   onMessages?: () => void;
   onSparks?: () => void;
   onSparkles?: () => void;
   unread?: number;
-  /** A new person's setup is identity only; account furniture comes afterwards. */
   firstSetup?: boolean;
 }) {
   const me = useMyProfile();
@@ -70,36 +59,27 @@ export function AboutForm({
   const [pass, setPass] = useState("");
   const [again, setAgain] = useState("");
   const [showPass, setShowPass] = useState(false);
-  /* ONE SHARED PHOTO FLOW: choose, position inside the circle, confirm. */
   const photo = useProfilePhoto();
-  const dateRef = useRef<HTMLInputElement | null>(null);
-  /** THE PHOTO'S OWN LITTLE MENU. Closed is the resting state. */
   const [photoMenu, setPhotoMenu] = useState(false);
-  /** WHICH PIECE OF IDENTITY IS BEING EDITED RIGHT NOW, if any. */
-  const [editing, setEditing] = useState<"handle" | "birthday" | null>(null);
-  /** MY SETTINGS — where a password is changed, and nowhere else. */
   const [settings, setSettings] = useState(false);
+  /** THE INTERFACE TEACHES ITSELF ONCE: the hint retires after the first touch. */
+  const [taught, setTaught] = useState(false);
+  const [genderOpen, setGenderOpen] = useState(false);
 
   const handle = normaliseHandle(me.username);
+  const named = Boolean(handle) && handle !== "you";
   const age = ageFrom(me.birthday);
   const adult = age !== null && age >= ADULT_AGE;
-
-  /**
-   * ONBOARDING IS A MOMENT, NOT A STATE. Asterisks, the password fields and
-   * the account block only exist while the account is still being created.
-   */
   const onboarding = firstSetup || !me.built;
-  const req = onboarding ? " *" : "";
-  const showHandleField = onboarding || editing === "handle" || !handle || handle === "you";
-  const showBirthdayField = onboarding || editing === "birthday" || !me.birthday;
 
-  /* AVAILABILITY IS CHECKED WHILE YOU TYPE, and never blocks the typing. */
   useEffect(() => {
     let alive = true;
-    if (!handle || handle === "you") {
-      setHandleState({ state: "empty" });
+    if (!named) {
+      /* A stable value: a fresh object here would re-render forever. */
+      setHandleState((current) => (current.state === "empty" ? current : { state: "empty" }));
       return;
     }
+
     const timer = setTimeout(() => {
       void checkHandle(handle).then((r) => alive && setHandleState(r));
     }, 260);
@@ -107,9 +87,8 @@ export function AboutForm({
       alive = false;
       clearTimeout(timer);
     };
-  }, [handle]);
+  }, [handle, named]);
 
-  /* A PASSWORD IS SAVED THE MOMENT IT IS REAL — hashed, never stored plainly. */
   useEffect(() => {
     if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
     void myProfileStore.setPassword(pass);
@@ -138,8 +117,8 @@ export function AboutForm({
     >
       <BackArrow onClick={save} label="back to my g" sticky />
 
-      <div className="px-7 pb-14 pt-16">
-        {/* PHOTO + WHO I AM. Identity first, and nothing else beside it. */}
+      <div className="g-page g-page-top g-page-bottom">
+        {/* WHO I AM — photo, name, birthday. All three in one breath. */}
         <div className="flex items-start gap-5">
           <div className="relative shrink-0" style={{ width: PHOTO, height: PHOTO }}>
             <button
@@ -159,7 +138,6 @@ export function AboutForm({
                   className="h-full w-full rounded-full object-cover"
                 />
               ) : (
-                /* MATHEMATICALLY CENTRED PLUS — a flex box with no line-height. */
                 <span
                   className="flex h-full w-full items-center justify-center rounded-full"
                   style={{ border: "2px solid var(--giver-me)" }}
@@ -183,60 +161,63 @@ export function AboutForm({
             ) : null}
           </div>
 
-          {/* MY NAME, MY DAY OF BIRTH — the two things already given, tappable. */}
-          <div className="min-w-0 flex-1 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                haptics.selection();
-                setEditing(editing === "handle" ? null : "handle");
+          <div className="min-w-0 flex-1 space-y-4 pt-0.5">
+            {/* @USERNAME — printed as it reads, edited in place. */}
+            <InlineEdit
+              label="my name on giver"
+              value={handle}
+              onChange={(v) => {
+                setTaught(true);
+                myProfileStore.patch({ username: normaliseHandle(v) });
               }}
-              className="block max-w-full truncate text-left text-2xl font-black lowercase leading-none tracking-[-0.03em]"
-              style={{ color: "var(--giver-me)" }}
-            >
-              {handle && handle !== "you" ? `@${handle}` : "add your username"}
-            </button>
+              placeholder="@yourname"
+              prefix="@"
+              limit={20}
+              register="display-sm"
+              /* "you" is a stand-in, not a name: touching it replaces it. */
+              selectAll={!named}
+              autoEdit={onboarding && !named}
 
-            <button
-              type="button"
-              onClick={() => {
-                haptics.selection();
-                setEditing(editing === "birthday" ? null : "birthday");
+              {...(named
+                ? {
+                    note:
+                      handleState.state === "taken"
+                        ? HANDLE_MESSAGE.taken
+                        : handleState.state === "free"
+                          ? HANDLE_MESSAGE.free
+                          : "",
+                  }
+                : {})}
+            />
+
+            {/* BIRTHDAY — once, here, typed. Nowhere else in the app. */}
+            <BirthdayInput
+              birthday={me.birthday}
+              onChange={(day) => {
+                setTaught(true);
+                myProfileStore.patch({ birthday: day });
               }}
-              className="mt-2 block text-left g-meta opacity-60"
-            >
-              {me.birthday
-                ? `${birthdayLabel(me.birthday)}${age !== null ? ` · ${age}` : ""}`
-                : "add your date of birth"}
-            </button>
-
-            {/* MY SETTINGS — small, quiet, and the only home of the password. */}
-            {!onboarding ? (
-              <button
-                type="button"
-                onClick={() => {
-                  haptics.selection();
-                  setSettings((o) => !o);
-                }}
-                className="mt-2 block text-left g-meta opacity-45"
-              >
-                my settings
-              </button>
-            ) : null}
-
-            {/* IF A PICTURE CANNOT BE READ, SAY SO — never fail in silence. */}
-            {photo.failed ? (
-              <p className="mt-2 g-meta" style={{ color: "var(--giver-me)" }}>
-                that picture wouldn’t open — try another
-              </p>
-            ) : null}
+            />
           </div>
         </div>
 
-        {/* THE PHOTO'S CONTEXTUAL MENU — only while it is open. */}
+        {/* THE ONE TEACHING LINE. It shows how, once, then never again. */}
+        {!taught ? (
+          <p className="g-body mt-6" style={{ opacity: 0.6 }}>
+            tap anything on your profile to change it — it saves itself.
+          </p>
+        ) : null}
+
+        {photo.failed ? (
+          <p className="g-body mt-4" style={{ color: "var(--giver-me)" }}>
+            that picture wouldn’t open — try another
+          </p>
+        ) : null}
+
+        {/* THE PHOTO'S OWN SHORT LIST, only while it is open. */}
         {photoMenu ? (
           <div
-            className="mt-4 flex flex-col items-start gap-3 border-l pl-4"
+            className="mt-5 flex flex-col items-start gap-3 border-l pl-4"
             style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
           >
             <button
@@ -245,7 +226,7 @@ export function AboutForm({
                 setPhotoMenu(false);
                 void photo.choose();
               }}
-              className="text-left text-base font-black lowercase tracking-[-0.01em]"
+              className="g-name text-left"
               style={{ color: "var(--giver-me)" }}
             >
               {photo.loading ? "opening…" : "change photo"}
@@ -257,60 +238,154 @@ export function AboutForm({
                   setPhotoMenu(false);
                   photo.reposition(me.photoSource!, me.photoCrop);
                 }}
-                className="text-left text-base font-black lowercase tracking-[-0.01em]"
+                className="g-name text-left"
                 style={{ color: "var(--giver-me)" }}
               >
                 reposition photo
               </button>
             ) : null}
-            {!firstSetup ? (
-              <p className="g-meta opacity-40">tap a dot, tap again to open</p>
-            ) : null}
           </div>
         ) : null}
 
-        {/* MY SETTINGS: A PASSWORD IS CHANGED HERE, never asked for again. */}
-        {settings && !onboarding ? (
-          <div className="mt-6 space-y-5">
-            <p className="g-heading" style={{ color: "var(--giver-me)" }}>
-              my settings
-            </p>
+        {/* ---- THE PERSON. Each thing once, tapped where it stands. ---- */}
+        <div className="mt-9 space-y-7">
+          <div className="g-rule pt-6">
+            <InlineEdit
+              label="about me"
+              value={me.aboutMe}
+              onChange={(v) => {
+                setTaught(true);
+                myProfileStore.patch({ aboutMe: v });
+              }}
+              placeholder="a line about you"
+              limit={120}
+              multiline
+              register="lede"
+            />
+          </div>
+
+          {/* GENDER — the answer stands; the choices only appear when asked for. */}
+          <div>
+            {genderOpen ? (
+              <>
+                <p className="g-meta" style={{ color: "var(--giver-me)" }}>
+                  i am
+                </p>
+                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
+                  {GENDERS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => {
+                        haptics.selection();
+                        setTaught(true);
+                        myProfileStore.patch({ gender: me.gender === g ? "" : g });
+                        setGenderOpen(false);
+                      }}
+                      className="g-name"
+                      style={{
+                        color: me.gender === g ? "var(--giver-me)" : "var(--world-ink)",
+                        opacity: me.gender === g ? 1 : 0.5,
+                      }}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.selection();
+                  setGenderOpen(true);
+                }}
+                className="block w-full text-left"
+              >
+                <span className="g-meta" style={{ color: "var(--giver-me)" }}>
+                  i am
+                </span>
+                <span
+                  className="g-name mt-1 block"
+                  style={me.gender ? undefined : { opacity: 0.32 }}
+                >
+                  {me.gender || "tap to say"}
+                </span>
+              </button>
+            )}
+          </div>
+
+          <InlineEdit
+            label="by day"
+            value={me.byDay}
+            onChange={(v) => {
+              setTaught(true);
+              myProfileStore.patch({ byDay: v });
+            }}
+            placeholder="what you do with your days"
+          />
+          <InlineEdit
+            label="by night"
+            value={me.byNight}
+            onChange={(v) => {
+              setTaught(true);
+              myProfileStore.patch({ byNight: v });
+            }}
+            placeholder="what you do with your evenings"
+          />
+          <InlineEdit
+            label="by weekend"
+            value={me.weekend}
+            onChange={(v) => {
+              setTaught(true);
+              myProfileStore.patch({ weekend: v });
+            }}
+            placeholder="where the weekend takes you"
+            limit={120}
+          />
+        </div>
+
+        {/* AGE ONLY MATTERS FOR PUBLISHING, and it is said once, plainly. */}
+        {age !== null && !adult ? (
+          <p className="g-body mt-8" style={{ color: "var(--giver-me)" }}>
+            gives can be written and saved, and published once you are {ADULT_AGE}.
+          </p>
+        ) : null}
+
+        {/* A PASSWORD IS ASKED FOR ONCE, while the account is being made. */}
+        {onboarding ? (
+          <div className="g-rule mt-10 space-y-5 pt-6">
             <Secret
-              label="new password"
+              label="a password"
               value={pass}
               onChange={setPass}
               show={showPass}
-              placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
+              placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
             />
             {pass ? (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {PASSWORD_RULES.map((rule) => {
                   const ok = rule.test(pass);
                   return (
                     <p
                       key={rule.label}
                       className="g-meta"
-                      style={{
-                        color: ok ? "var(--mode-give)" : undefined,
-                        opacity: ok ? 0.9 : 0.4,
-                      }}
+                      style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.9 : 0.5 }}
                     >
                       {ok ? "✓" : "·"} {rule.label}
                     </p>
                   );
                 })}
+                <Secret
+                  label="again, exactly"
+                  value={again}
+                  onChange={setAgain}
+                  show={showPass}
+                  placeholder="the same password"
+                />
               </div>
             ) : null}
-            {pass ? (
-              <Secret
-                label="confirm new password"
-                value={again}
-                onChange={setAgain}
-                show={showPass}
-                placeholder="again, exactly"
-              />
-            ) : null}
-            <div className="flex items-baseline gap-4">
+            <div className="flex items-baseline gap-5">
               <button
                 type="button"
                 onClick={() => {
@@ -318,269 +393,123 @@ export function AboutForm({
                   setShowPass((s) => !s);
                 }}
                 className="g-meta"
-                style={{ color: "var(--giver-me)" }}
+                style={{ color: "var(--giver-me)", opacity: 0.9 }}
               >
                 {showPass ? "hide" : "show"}
               </button>
-              <span className="g-meta opacity-50">
-                {!pass
-                  ? "update password"
-                  : matches
-                    ? passwordStrongEnough(pass)
-                      ? "saved"
-                      : "nearly — see above"
-                    : "these two don’t match yet"}
+              <span className="g-meta">
+                {!pass && passwordSet
+                  ? "password saved"
+                  : !pass
+                    ? ""
+                    : matches
+                      ? passwordStrongEnough(pass)
+                        ? "saved"
+                        : "nearly — see above"
+                      : "these two don’t match yet"}
               </span>
             </div>
           </div>
         ) : null}
 
-        {/* ---- MY G. The account itself, only while it is still being made. ---- */}
-        {showHandleField || showBirthdayField || onboarding ? (
-          <>
-            <p className="mt-10 g-heading" style={{ color: "var(--giver-me)" }}>
-              my g
-            </p>
-            {onboarding ? <p className="mt-2 g-meta opacity-40">* required</p> : null}
+        {/* MY SETTINGS — quiet, and the only home of a password change. */}
+        {!onboarding ? (
+          <div className="g-rule mt-10 pt-6">
+            <button
+              type="button"
+              onClick={() => {
+                haptics.selection();
+                setSettings((o) => !o);
+              }}
+              className="g-name text-left"
+              style={{ color: "var(--giver-me)" }}
+            >
+              my settings
+            </button>
 
-            <div className="mt-5 space-y-5">
-              {showHandleField ? (
-                <Field
-                  label={`username / handle${req}`}
-                  value={handle}
-                  onChange={(v) => myProfileStore.patch({ username: normaliseHandle(v) })}
-                  placeholder="yourname"
-                  prefix="@"
-                  limit={20}
-                  note={
-                    handleState.state === "free"
-                      ? HANDLE_MESSAGE.free
-                      : handleState.state === "taken"
-                        ? HANDLE_MESSAGE.taken
-                        : handleState.state === "short"
-                          ? HANDLE_MESSAGE.short
-                          : "lowercase, no spaces"
-                  }
-                  noteColour={
-                    handleState.state === "taken" ? "var(--giver-me)" : undefined
-                  }
+            {settings ? (
+              <div className="mt-5 space-y-5">
+                <Secret
+                  label="new password"
+                  value={pass}
+                  onChange={setPass}
+                  show={showPass}
+                  placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
                 />
-              ) : null}
-
-              {/* BIRTHDAY — the answer belongs to its own label, right beside it. */}
-              {showBirthdayField ? (
-                <div className="flex flex-col gap-1.5">
-                  <span
-                    className="g-meta"
-                    style={{ color: "var(--giver-me)", opacity: 0.75 }}
-                  >
-                    birthday / dob{req}
-                  </span>
-                  <div
-                    className="relative flex items-baseline gap-3 border-b pb-1"
-                    style={{
-                      borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        haptics.selection();
-                        dateRef.current?.showPicker?.();
-                        dateRef.current?.focus();
-                      }}
-                      className="text-left text-xl font-black lowercase leading-tight tracking-[-0.03em]"
-                      style={{ opacity: me.birthday ? 1 : 0.3 }}
-                    >
-                      {birthdayLabel(me.birthday) || "choose your date of birth"}
-                    </button>
-                    <input
-                      ref={dateRef}
-                      type="date"
-                      value={me.birthday ?? ""}
-                      onChange={(e) =>
-                        myProfileStore.patch({ birthday: e.target.value })
-                      }
-                      aria-label="date of birth"
-                      className="absolute inset-0 h-full w-full opacity-0"
-                    />
-                  </div>
-                  <span
-                    className="g-meta"
-                    style={{
-                      color: age !== null && !adult ? "var(--giver-me)" : undefined,
-                      opacity: 0.6,
-                    }}
-                  >
-                    {age === null
-                      ? `you must be ${ADULT_AGE} or older to publish a give`
-                      : adult
-                        ? `${age} — you can publish gives`
-                        : `${age} — gives can be written and saved, not published yet`}
-                  </span>
-                </div>
-              ) : null}
-
-              {/* A PASSWORD IS ASKED FOR ONCE, while the account is being made. */}
-              {onboarding ? (
-                <>
+                {pass ? (
                   <Secret
-                    label="password *"
-                    value={pass}
-                    onChange={setPass}
-                    show={showPass}
-                    placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
-                  />
-                  <div className="space-y-1.5">
-                    {PASSWORD_RULES.map((rule) => {
-                      const ok = rule.test(pass);
-                      return (
-                        <p
-                          key={rule.label}
-                          className="g-meta"
-                          style={{
-                            color: ok ? "var(--mode-give)" : undefined,
-                            opacity: ok ? 0.9 : 0.4,
-                          }}
-                        >
-                          {ok ? "✓" : "·"} {rule.label}
-                        </p>
-                      );
-                    })}
-                  </div>
-                  <Secret
-                    label="confirm password *"
+                    label="again, exactly"
                     value={again}
                     onChange={setAgain}
                     show={showPass}
-                    placeholder="again, exactly"
+                    placeholder="the same password"
                   />
-                  <div className="flex items-baseline gap-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        haptics.selection();
-                        setShowPass((s) => !s);
-                      }}
-                      className="g-meta"
-                      style={{ color: "var(--giver-me)" }}
-                    >
-                      {showPass ? "hide" : "show"}
-                    </button>
-                    <span className="g-meta opacity-50">
-                      {!pass && passwordSet
-                        ? "password saved"
-                        : !pass
-                          ? ""
-                          : matches
-                            ? passwordStrongEnough(pass)
-                              ? "saved"
-                              : "nearly — see above"
-                            : "these two don’t match yet"}
-                    </span>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </>
-        ) : null}
-
-        {/* ---- THE PERSON. ---- */}
-        <p className="mt-12 g-heading" style={{ color: "var(--giver-me)" }}>
-          about you
-        </p>
-
-        <div className="mt-5 space-y-5">
-          <Field
-            label="about me"
-            value={me.aboutMe}
-            onChange={(v) => myProfileStore.patch({ aboutMe: v })}
-            placeholder="in ten words or less"
-            limit={80}
-          />
-
-          {/* GENDER — a few words, one selected. Never a dropdown. */}
-          <div className="flex flex-col gap-1.5">
-            <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
-              gender
-            </span>
-            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-              {GENDERS.map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => {
-                    haptics.selection();
-                    myProfileStore.patch({ gender: me.gender === g ? "" : g });
-                  }}
-                  className="text-[13px] font-black lowercase tracking-[0.14em] transition-opacity"
-                  style={{
-                    color: me.gender === g ? "var(--giver-me)" : "var(--world-ink)",
-                    opacity: me.gender === g ? 1 : 0.4,
-                  }}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
+                ) : null}
+                <div className="flex items-baseline gap-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.selection();
+                      setShowPass((s) => !s);
+                    }}
+                    className="g-meta"
+                    style={{ color: "var(--giver-me)", opacity: 0.9 }}
+                  >
+                    {showPass ? "hide" : "show"}
+                  </button>
+                  <span className="g-meta">
+                    {!pass
+                      ? "update password"
+                      : matches
+                        ? passwordStrongEnough(pass)
+                          ? "saved"
+                          : "nearly"
+                        : "these two don’t match yet"}
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </div>
+        ) : null}
 
-          <Field
-            label="by day"
-            value={me.byDay}
-            onChange={(v) => myProfileStore.patch({ byDay: v })}
-          />
-          <Field
-            label="by night"
-            value={me.byNight}
-            onChange={(v) => myProfileStore.patch({ byNight: v })}
-          />
-          <Field
-            label="anything else we should know?"
-            value={me.weekend}
-            onChange={(v) => myProfileStore.patch({ weekend: v })}
-            limit={80}
-          />
+        <div className="mt-10 flex flex-col items-start gap-5">
+          <button
+            type="button"
+            onClick={save}
+            className="g-display-sm text-left transition-transform active:scale-[0.98]"
+            style={{ color: "var(--giver-me)" }}
+          >
+            ← back to my g
+          </button>
+
+          {onViewProfile && !firstSetup ? (
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                onViewProfile();
+              }}
+              className="g-name text-left"
+              style={{ color: "var(--giver-me)" }}
+            >
+              see my whole profile
+            </button>
+          ) : null}
+
+          {onHelp && !firstSetup ? (
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                onHelp();
+              }}
+              className="g-name text-left"
+              style={{ opacity: 0.7 }}
+            >
+              learn how giver works
+            </button>
+          ) : null}
         </div>
-
-        <button
-          type="button"
-          onClick={save}
-          className="mt-9 text-left text-2xl font-black lowercase leading-none tracking-[-0.03em] transition-transform active:scale-[0.98]"
-          style={{ color: "var(--giver-me)" }}
-        >
-          ← back to my g
-        </button>
-        <p className="mt-2.5 g-meta opacity-40">everything saves as you go</p>
-
-        {/* MY PROFILE, EXACTLY AS ANYONE ELSE SEES IT. Same shared system. */}
-        {onViewProfile && !firstSetup ? (
-          <button
-            type="button"
-            onClick={() => {
-              buzz();
-              onViewProfile();
-            }}
-            className="mt-6 text-left g-meta"
-            style={{ color: "var(--giver-me)", opacity: 0.85 }}
-          >
-            see my whole profile
-          </button>
-        ) : null}
-
-        {/* LEARN HOW, WHENEVER YOU LIKE. Never a nag, always here. */}
-        {onHelp && !firstSetup ? (
-          <button
-            type="button"
-            onClick={() => {
-              buzz();
-              onHelp();
-            }}
-            className="mt-6 text-left g-meta opacity-60"
-          >
-            learn how giver works
-          </button>
-        ) : null}
       </div>
 
       {/* THE CIRCLE IS CHOSEN BY HAND — drag to move, pinch to zoom. */}
@@ -589,55 +518,7 @@ export function AboutForm({
   );
 }
 
-/** One field: its label, then its own answer directly beneath it. */
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder = "—",
-  limit = 26,
-  prefix,
-  note,
-  noteColour,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  limit?: number;
-  prefix?: string;
-  note?: string;
-  noteColour?: string | undefined;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
-        {label}
-      </span>
-      <span
-        className="flex items-baseline border-b pb-1"
-        style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
-      >
-        {prefix ? (
-          <span className="text-xl font-black leading-tight opacity-45">{prefix}</span>
-        ) : null}
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value.slice(0, limit))}
-          placeholder={placeholder}
-          className="min-w-0 flex-1 bg-transparent text-xl font-black lowercase leading-tight tracking-[-0.03em] outline-none placeholder:opacity-30"
-        />
-      </span>
-      {note ? (
-        <span className="g-meta" style={{ color: noteColour, opacity: 0.55 }}>
-          {note}
-        </span>
-      ) : null}
-    </label>
-  );
-}
-
-/** A password field. Same type as everything else; never a special widget. */
+/** A password. The one thing that cannot be printed in place. */
 function Secret({
   label,
   value,
@@ -652,8 +533,8 @@ function Secret({
   placeholder: string;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
+    <label className="block">
+      <span className="g-meta" style={{ color: "var(--giver-me)" }}>
         {label}
       </span>
       <input
@@ -662,8 +543,7 @@ function Secret({
         autoComplete="new-password"
         onChange={(e) => onChange(e.target.value.slice(0, 64))}
         placeholder={placeholder}
-        className="w-full border-b bg-transparent pb-1 text-xl font-black leading-tight tracking-[-0.03em] outline-none placeholder:font-medium placeholder:lowercase placeholder:opacity-30"
-        style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
+        className="g-name mt-1 w-full bg-transparent outline-none placeholder:font-medium placeholder:opacity-30"
       />
     </label>
   );

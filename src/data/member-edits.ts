@@ -19,6 +19,8 @@ export type MemberEdits = Record<string, MemberPatch>;
 
 const KEY = "giver.admin.member-edits.v1";
 
+const NO_EDITS: MemberEdits = Object.freeze({});
+
 let state: MemberEdits = {};
 let hydrated = false;
 const listeners = new Set<() => void>();
@@ -64,7 +66,8 @@ export const memberEditsStore = {
   },
   /** SSR reads the written record, never a browser-only override. */
   getServer(): MemberEdits {
-    return {};
+    /* ONE frozen snapshot: a fresh object here loops forever on the server. */
+    return NO_EDITS;
   },
 
   /** EDIT ONE PERSON. Every view of them updates with it. */

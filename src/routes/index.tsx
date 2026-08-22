@@ -252,6 +252,11 @@ function Index() {
   /* WHILE THE G FOLDS BACK, what was inside it is still inside it. */
   const personShown = useLinger(person);
 
+  /* MY OWN PROFILE IS ALSO INSIDE THE G: it unfurls, it never opens a page. */
+  const aboutOpen = editor?.kind === "about";
+  const aboutShown = useLinger(aboutOpen ? true : null);
+
+
 
   /**
    * THE COMMUNITY DOOR, WHEN IT IS STILL SHUT. Not an error and not a warning —
@@ -790,8 +795,12 @@ function Index() {
             THE EDITOR DESTINATIONS. One screen at a time, above the G — never
             beneath it. Leaving returns to the same seat, already updated.
           */}
-          <Screen open={editor !== null}>
-            {editor?.kind === "about" ? (
+          {/*
+            MY OWN PROFILE UNFURLS OUT OF THE G ITSELF — the same artwork becomes
+            the frame, and the person appears inside it. Never a separate page.
+          */}
+          <GEnclosure open={aboutOpen} world="me">
+            {aboutShown ? (
               <AboutForm
                 unread={unread}
                 firstSetup={firstArrival}
@@ -807,7 +816,6 @@ function Index() {
                   setEditor(null);
                   setHistory("sparkle");
                 }}
-
                 onDone={() => {
                   lifecycleStore.completeProfileSetup();
                   setEditor(null);
@@ -821,10 +829,19 @@ function Index() {
                   setHelp(true);
                 }}
               />
-            ) : editor?.kind === "category" ? (
+            ) : null}
+          </GEnclosure>
+
+          {/*
+            THE OTHER EDITOR DESTINATION. One screen at a time, above the G —
+            never beneath it. Leaving returns to the same seat, already updated.
+          */}
+          <Screen open={editor?.kind === "category"}>
+            {editor?.kind === "category" ? (
               <CategoryForm category={editor.category} onDone={() => setEditor(null)} />
             ) : null}
           </Screen>
+
         </>
       )}
     </main>

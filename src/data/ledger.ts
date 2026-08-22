@@ -33,6 +33,8 @@ export type LedgerEvent = {
 
 const KEY = "giver.ledger.v1";
 
+const NO_EVENTS: LedgerEvent[] = [];
+
 let events: LedgerEvent[] = [];
 let hydrated = false;
 const listeners = new Set<() => void>();
@@ -77,7 +79,8 @@ export const ledgerStore = {
     return events;
   },
   getServer(): LedgerEvent[] {
-    return [];
+    /* ONE frozen snapshot: a fresh array here loops forever on the server. */
+    return NO_EVENTS;
   },
   /** RECORD ONE MOVEMENT. Idempotent when an id is supplied. */
   record(event: Omit<LedgerEvent, "id" | "at"> & { id?: string; at?: number }) {

@@ -47,7 +47,7 @@ export function LedgerHistory({
       className="relative h-full w-full overflow-y-auto"
       style={{ background: "var(--giver-paper, #fff)", color: "var(--world-ink)" }}
     >
-      <BackArrow onClick={onClose} label="back to my g" />
+      <BackArrow onClick={onClose} label="back to my g" sticky />
 
       <div className="g-page g-page-top g-page-bottom">
         <p className="g-heading" style={{ color: colour }}>

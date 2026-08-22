@@ -179,7 +179,7 @@ export function FullProfile({
         color: "var(--giver-ink)",
       }}
     >
-      <BackArrow onClick={onBack} label={`back to ${member.name}`} />
+      <BackArrow onClick={onBack} label={`back to ${member.name}`} sticky />
 
       <div className="g-page g-page-top g-page-bottom">
         {/* HEADER — photo, handle, age, gender, distance, member since. */}

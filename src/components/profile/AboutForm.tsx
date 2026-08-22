@@ -136,7 +136,7 @@ export function AboutForm({
       className="relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <BackArrow onClick={save} label="back to my g" />
+      <BackArrow onClick={save} label="back to my g" sticky />
 
       <div className="px-7 pb-14 pt-16">
         {/* PHOTO + WHO I AM. Identity first, and nothing else beside it. */}

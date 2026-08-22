@@ -63,7 +63,12 @@ export function ActivityDetail({
   const items = useItems();
   const links = useConnections();
   const sparkles = useMyProfile().sparkles;
+  /* THE DEVELOPER SWITCH, and the live people projection it can edit. */
+  const admin = useAdmin();
+  useMemberEdits();
+  const [editing, setEditing] = useState(false);
   const item = items.items.find((i) => i.id === itemId);
+
 
   if (!item)
     return (

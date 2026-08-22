@@ -255,7 +255,30 @@ export function ActivityDetail({
             {item.boostCount > 0 ? `sparkled ×${item.boostCount}` : "sparkle this"}
           </button>
         ) : null}
+
+        {/*
+          THE DEVELOPER DOOR. Present only while the dev switch is on, so the
+          end-user experience never sees it — and it edits the same one record.
+        */}
+        {admin ? (
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              setEditing(true);
+            }}
+            className="text-[12px] font-black lowercase tracking-[0.26em]"
+            style={{ color: "var(--giver-me)" }}
+          >
+            edit this activity
+          </button>
+        ) : null}
       </div>
+
+      {admin && editing ? (
+        <AdminItemEditor itemId={item.id} onClose={() => setEditing(false)} />
+      ) : null}
     </div>
   );
+
 }

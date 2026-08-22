@@ -74,15 +74,15 @@ export const HANDLE_MESSAGE: Record<HandleCheck["state"], string> = {
 
 /* -------------------------------- AGE ------------------------------------ */
 
-/** WHOLE YEARS FROM A REAL DATE OF BIRTH. Nobody is ever asked their age. */
+/**
+ * WHOLE YEARS FROM A REAL DATE OF BIRTH. Nobody is ever asked their age.
+ * The dob is a calendar day, so it is read at local midnight — never as a UTC
+ * timestamp, which would move the day for half the planet.
+ */
 export function ageFrom(birthday: string | null | undefined): number | null {
-  if (!birthday) return null;
-  const dob = new Date(birthday);
-  if (Number.isNaN(dob.getTime())) return null;
-  const now = new Date();
-  let age = now.getFullYear() - dob.getFullYear();
-  const monthDiff = now.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) age -= 1;
+  const dob = parseDateOnly(birthday);
+  if (!dob) return null;
+  const age = yearsBetween(dob, new Date());
   return age < 0 || age > 120 ? null : age;
 }
 
@@ -93,14 +93,12 @@ export const isAdult = (birthday: string | null | undefined) => {
   return age !== null && age >= ADULT_AGE;
 };
 
+/** THE ONE STORED SHAPE OF A DOB: "YYYY-MM-DD", exactly the day chosen. */
+export const normaliseBirthday = normaliseDateOnly;
+
 /** BIRTHDAY, SHOWN BESIDE ITS OWN LABEL. Short, human, never a long string. */
 export function birthdayLabel(birthday: string | null | undefined): string {
-  if (!birthday) return "";
-  const dob = new Date(birthday);
-  if (Number.isNaN(dob.getTime())) return "";
-  return dob
-    .toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
-    .toLowerCase();
+  return formatDateOnly(birthday);
 }
 
 /* ------------------------------ PASSWORDS -------------------------------- */

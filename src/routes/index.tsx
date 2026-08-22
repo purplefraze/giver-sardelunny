@@ -643,6 +643,10 @@ function Index() {
                   setDetail(null);
                   setTalking(id);
                 }}
+                onOpenProfile={(ownerId) => {
+                  setDetail(null);
+                  setPerson(ownerId);
+                }}
                 onClose={() => setDetail(null)}
               />
             ) : null}
@@ -652,17 +656,22 @@ function Index() {
           <Screen open={person !== null}>
             {person
               ? (() => {
-                  const member = memberById(person);
+                  const member =
+                    person === ME_ID ? myAsMember(me) : memberById(person);
                   return member ? (
                     <FullProfile
                       member={member}
+                      world={person === ME_ID ? "me" : "others"}
                       onBack={() => setPerson(null)}
                       onOpen={(id) => setPerson(id)}
+                      /* EVERY ITEM ON EVERY PROFILE OPENS ITS OWN RICH DETAIL. */
+                      onOpenItem={(itemId) => setDetail(itemId)}
                     />
                   ) : null;
                 })()
               : null}
           </Screen>
+
 
           <Screen open={talking !== null}>
             {talking ? (

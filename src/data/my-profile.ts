@@ -157,13 +157,27 @@ const NO_ITEMS: Record<Category, Item[]> = {
   borrow: [],
 };
 
+/**
+ * ONE SHAPE FOR A DATE OF BIRTH. Whatever arrives — a picked day, an older
+ * stored value, a stray timestamp — becomes the exact calendar day "YYYY-MM-DD",
+ * so hydration, formatting and editing all read back the day that was chosen.
+ */
+function withDateOnlyFields(p: Person): Person {
+  const birthday = normaliseBirthday(p.birthday);
+  return birthday === p.birthday ? p : { ...p, birthday };
+}
+
 function readPerson(): Person {
   if (typeof window === "undefined") return EMPTY_PERSON;
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return EMPTY_PERSON;
     const parsed = JSON.parse(raw) as Partial<Person>;
-    return { ...EMPTY_PERSON, ...parsed, reserved: parsed.reserved ?? {} };
+    return withDateOnlyFields({
+      ...EMPTY_PERSON,
+      ...parsed,
+      reserved: parsed.reserved ?? {},
+    });
   } catch {
     return EMPTY_PERSON;
   }

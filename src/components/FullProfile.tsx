@@ -238,26 +238,44 @@ export function FullProfile({
                   item={item}
                   onOpen={openItem}
                   trailing={
-                    /* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */
-                    mine ? (
-                      boostWeight(state, item.id) ? (
-                        <span className="g-meta">{boostWeight(state, item.id)} sparkled</span>
-                      ) : null
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={sparkles < 1}
-                        onClick={() => {
-                          buzz();
-                          myProfileStore.useSparkle(item.id);
-                        }}
-                        className="text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
-                        style={{ color: "var(--giver-participation)" }}
-                      >
-                        {boostWeight(state, item.id) ? "sparkle again" : "sparkle"}
-                      </button>
-                    )
+                    <div className="flex flex-col items-end gap-2">
+                      {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
+                      {mine ? (
+                        boostWeight(state, item.id) ? (
+                          <span className="g-meta">{boostWeight(state, item.id)} sparkled</span>
+                        ) : null
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={sparkles < 1}
+                          onClick={() => {
+                            buzz();
+                            myProfileStore.useSparkle(item.id);
+                          }}
+                          className="text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
+                          style={{ color: "var(--giver-participation)" }}
+                        >
+                          {boostWeight(state, item.id) ? "sparkle again" : "sparkle"}
+                        </button>
+                      )}
+
+                      {/* FAST DEVELOPER EDITING, right where the item is listed. */}
+                      {admin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            buzz();
+                            setEditItem(item.id);
+                          }}
+                          className="text-[11px] font-black lowercase tracking-[0.24em]"
+                          style={{ color: "var(--giver-me)" }}
+                        >
+                          edit
+                        </button>
+                      ) : null}
+                    </div>
                   }
+
                 />
               ))}
             </ul>

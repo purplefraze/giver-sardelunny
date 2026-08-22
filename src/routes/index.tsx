@@ -233,6 +233,8 @@ function Index() {
 
   /** THE PERSON IS THEIR OWN DESTINATION: @username opens who they are. */
   const [person, setPerson] = useState<string | null>(null);
+  /** WHICH SECTION a profile opens on when it was reached from an activity. */
+  const [personFocus, setPersonFocus] = useState<ItemType | null>(null);
 
   /**
    * THE COMMUNITY DOOR, WHEN IT IS STILL SHUT. Not an error and not a warning —
@@ -630,7 +632,10 @@ function Index() {
               <CommunityFeed
                 initialType={browse.type}
                 onOpen={(itemId) => setDetail(itemId)}
-                onOpenProfile={(ownerId) => setPerson(ownerId)}
+                onOpenProfile={(ownerId) => {
+                  setPersonFocus(null);
+                  setPerson(ownerId);
+                }}
                 onClose={() => setBrowse(null)}
               />
             ) : null}
@@ -651,8 +656,15 @@ function Index() {
                     <FullProfile
                       member={member}
                       world={person === ME_ID ? "me" : "others"}
-                      onBack={() => setPerson(null)}
-                      onOpen={(id) => setPerson(id)}
+                      focus={personFocus}
+                      onBack={() => {
+                        setPersonFocus(null);
+                        setPerson(null);
+                      }}
+                      onOpen={(id) => {
+                        setPersonFocus(null);
+                        setPerson(id);
+                      }}
                       /* EVERY ITEM ON EVERY PROFILE OPENS ITS OWN RICH DETAIL. */
                       onOpenItem={(itemId) => setDetail(itemId)}
                     />

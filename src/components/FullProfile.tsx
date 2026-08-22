@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { connectionsOf, memberById, type Member } from "@/data/giver";
 import { earnedConnectionIds } from "@/data/connections";
@@ -70,13 +70,15 @@ function Section({
   title,
   accent,
   children,
+  innerRef,
 }: {
   title: string;
   accent?: string;
   children: React.ReactNode;
+  innerRef?: React.Ref<HTMLElement>;
 }) {
   return (
-    <section className="g-rule mt-12 pt-5">
+    <section ref={innerRef} className="g-rule mt-12 pt-5">
       <h2 className="g-heading" style={accent ? { color: accent } : { opacity: 0.45 }}>
         {title}
       </h2>
@@ -85,6 +87,7 @@ function Section({
   );
 }
 
+
 export function FullProfile({
   member,
   onBack,
@@ -92,6 +95,7 @@ export function FullProfile({
   onOpenItem,
   /** RED when this is me, BLUE when this is somebody else. */
   world = "others",
+  focus = null,
 }: {
   member: Member;
   onBack: () => void;
@@ -100,6 +104,11 @@ export function FullProfile({
   onOpen?: (id: string) => void;
   /** ITEM -> RICH DETAIL -> ACTION. Every entry on every profile is clickable. */
   onOpenItem?: (itemId: string) => void;
+  /**
+   * DEEP LINK. The profile was opened FROM an activity region, so it opens with
+   * that category's section at the top of the viewport — never at about me.
+   */
+  focus?: ItemType | null;
 }) {
   const state = useItems();
   const links = useConnections();
@@ -140,6 +149,17 @@ export function FullProfile({
 
   const openItem = onOpenItem ?? (() => {});
 
+  /* THE ANCHOR ITSELF: a real element, scrolled to as soon as it exists. */
+  const scroller = useRef<HTMLDivElement>(null);
+  const target = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!focus) return;
+    const section = target.current;
+    const box = scroller.current;
+    if (!section || !box) return;
+    box.scrollTo({ top: section.offsetTop - 8, behavior: "auto" });
+  }, [focus, member.id, activeGroups.length]);
+
   /** WHO THIS PERSON IS, IN ONE LINE: age, how they describe themselves, distance. */
   const identity = [
     member.age ? `${member.age}` : null,
@@ -150,6 +170,7 @@ export function FullProfile({
   return (
     <div
       data-world={world}
+      ref={scroller}
       className="relative h-full w-full overflow-y-auto"
       style={{
         background: "var(--world-bg)",
@@ -230,6 +251,9 @@ export function FullProfile({
             key={key}
             title={mine ? MY_CATEGORY_LABEL[key] : CATEGORY_LABEL[key]}
             accent={ACTIVITY_FILL[key]}
+            {...(focus === key
+              ? { innerRef: (node: HTMLElement | null) => { target.current = node; } }
+              : {})}
           >
             <ul>
               {items.map((item) => (

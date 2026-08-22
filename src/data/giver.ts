@@ -3,6 +3,8 @@ import sofiaAsset from "@/assets/sofia-profile.jpg.asset.json";
 import robinAsset from "@/assets/robin.jpg.asset.json";
 import marcusAsset from "@/assets/marcus.jpg.asset.json";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
+import { memberEditsStore } from "@/data/member-edits";
+
 
 /**
  * All user-facing copy in Giver is lowercase. Proper nouns entered by a person

@@ -73,6 +73,13 @@ export type Item = {
   distanceKm?: number;
   /** Cheap denormalised counter; the truth is the boost ledger. */
   boostCount: number;
+  /**
+   * A DEVELOPER/ADMIN HAS CORRECTED THIS RECORD BY HAND. Seeded demo items are
+   * normally re-derived on load so old nonsense heals; once someone has edited
+   * one deliberately, their words are the truth and are never re-derived.
+   */
+  edited?: boolean;
+
 };
 
 export type BorrowSide = "borrow" | "lend";

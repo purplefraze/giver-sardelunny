@@ -236,7 +236,7 @@ export function AdminItemEditor({
       <AdminNumber
         label="distance (km)"
         value={item.distanceKm}
-        onChange={(value) => set({ distanceKm: value })}
+        onChange={(value) => set({ distanceKm: value ?? 0 })}
       />
       <AdminNumber
         label="priority"

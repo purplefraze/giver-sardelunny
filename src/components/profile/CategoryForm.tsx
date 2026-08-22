@@ -31,6 +31,7 @@ import {
   type ItemDetails,
 } from "@/data/items";
 
+import { pickImages } from "@/lib/pick-image";
 import { haptics } from "@/lib/haptics";
 
 /**
@@ -283,22 +284,18 @@ export function CategoryForm({
       return { ...prev, days: next };
     });
 
-  const pickPhotos = (attachTo?: string) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.multiple = !attachTo;
-    input.onchange = async () => {
-      const files = Array.from(input.files ?? []);
-      const shrunk = (await Promise.all(files.map(readSmall))).filter(Boolean);
-      if (attachTo) {
-        for (const photo of shrunk) itemsStore.addPhoto(attachTo, photo);
-      } else {
-        setPhotos((prev) => [...prev, ...shrunk].slice(0, 3));
-      }
-      haptics.light();
-    };
-    input.click();
+  const pickPhotos = async (attachTo?: string) => {
+    /* THE ONE RELIABLE PICKER — a real input, so the first attempt works. */
+    const files = await pickImages({ multiple: !attachTo });
+    if (!files.length) return;
+    const shrunk = (await Promise.all(files.map((f) => readSmall(f)))).filter(Boolean);
+    if (!shrunk.length) return;
+    if (attachTo) {
+      for (const photo of shrunk) itemsStore.addPhoto(attachTo, photo);
+    } else {
+      setPhotos((prev) => [...prev, ...shrunk].slice(0, 3));
+    }
+    haptics.light();
   };
 
   /** The structured details, with empty answers dropped. */
@@ -527,7 +524,7 @@ export function CategoryForm({
                     <button
                       type="button"
                       aria-label={`replace photo of ${item.text}`}
-                      onClick={() => pickPhotos(item.id)}
+                      onClick={() => void pickPhotos(item.id)}
                       className="h-11 w-11 shrink-0 overflow-hidden"
                     >
                       <img
@@ -539,7 +536,7 @@ export function CategoryForm({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => pickPhotos(item.id)}
+                      onClick={() => void pickPhotos(item.id)}
                       className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
                       style={{ color: action }}
                     >
@@ -656,7 +653,7 @@ export function CategoryForm({
               {canPhoto && photos.length === 0 ? (
                 <button
                   type="button"
-                  onClick={() => pickPhotos()}
+                  onClick={() => void pickPhotos()}
                   className="shrink-0 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
                   style={{ color: action }}
                 >
@@ -918,7 +915,7 @@ export function CategoryForm({
                 ))}
                 <button
                   type="button"
-                  onClick={() => pickPhotos()}
+                  onClick={() => void pickPhotos()}
                   className="text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
                   style={{ color: action }}
                 >

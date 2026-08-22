@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { BackArrow } from "@/components/BackArrow";
 import { FullProfile } from "@/components/FullProfile";
+import { ActivityDetail } from "@/components/community/ActivityDetail";
+import { Conversation } from "@/components/connection/Conversation";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { profileLoop } from "@/components/living-g/profile-loop";
@@ -11,7 +12,7 @@ import { memberById, pastConnectionCount, type Member } from "@/data/giver";
 import { ACTIVITY_FILL, itemLine, myItems, splitTrade, tradeText } from "@/data/items";
 import { useItems } from "@/hooks/use-items";
 import { buzz } from "@/lib/haptics";
-import { cn } from "@/lib/utils";
+
 
 /**
  * ONE SAMPLE GIVER, SHOWN THROUGH THE APPROVED FULL-SIZE LIVING G.
@@ -22,10 +23,11 @@ import { cn } from "@/lib/utils";
  *   MIDDLE LOOP  the SELECTED activity world: one primary item + "+N"  (now)
  *   BOTTOM LOOP  by day / by night / weekends                  (who they are)
  *
- * Only the MIDDLE loop changes when the toggle moves. The "+N" is a discovery
- * mechanic, not a report: tapping it reveals everything they have in that world.
+ * Only the MIDDLE loop changes when the toggle moves. Pressing either loop is a
+ * door into THIS PERSON'S WHOLE PROFILE — the same shared, detailed profile the
+ * rest of the app uses — never a stripped-down category page.
  */
-type Deep = Mode | "about" | null;
+
 
 /** The lower personal-profile loop is always black — never an activity colour. */
 const INK = "var(--giver-ink)";
@@ -82,21 +84,26 @@ export function MemberExample({
   onNext: () => void;
   onDone: () => void;
 }) {
-  const [deep, setDeep] = useState<Deep>(null);
   /**
    * THE PROFILE TOGGLE. It rests on give — what this person is offering — but
    * it MOVES: dragging it shows what else they have going on right now.
    */
   const [seat, setSeat] = useState<Mode>(START_SEAT[member.world]);
-  /** Tapping the photo opens a real, scrollable profile page. */
+  /** Any loop, the photo or a "+N" opens this person's real, whole profile. */
   const [profile, setProfile] = useState<string | null>(null);
+  /** ONE ITEM, IN FULL — the same rich detail the whole app uses. */
+  const [detail, setDetail] = useState<string | null>(null);
+  /** MESSAGING ABOUT THAT ONE ITEM, right here, without leaving the person. */
+  const [talking, setTalking] = useState<string | null>(null);
   const itemState = useItems();
 
   useEffect(() => {
-    setDeep(null);
     setProfile(null);
+    setDetail(null);
+    setTalking(null);
     setSeat(START_SEAT[member.world]);
   }, [member.id, member.world]);
+
 
   /**
    * THE MIDDLE LOOP: the SELECTED world only. One primary item in that world's
@@ -141,10 +148,37 @@ export function MemberExample({
     { text: member.weekend, role: "primary", fill: INK },
   ];
 
-  const open = (d: Exclude<Deep, null>) => () => {
+  /**
+   * EVERY DOOR ON THIS G LEADS TO THE PERSON, IN FULL. There is no category-only
+   * page any more: pressing a loop opens the same detailed profile — photo, age,
+   * gender, about me, and every give, wish, trade and borrow with its real day,
+   * time, duration, frequency and place — that the rest of Giver uses.
+   */
+  const openProfile = () => {
     buzz();
-    setDeep(d);
+    setProfile(member.id);
   };
+
+  /* MESSAGING ABOUT ONE ITEM, on top of wherever it was opened from. */
+  if (talking)
+    return <Conversation connectionId={talking} onClose={() => setTalking(null)} />;
+
+  /* ONE ITEM, IN FULL, WITH ITS OWN ACTION — apply, grant, propose, lend, ask. */
+  if (detail)
+    return (
+      <ActivityDetail
+        itemId={detail}
+        onOpenConnection={(id) => {
+          setDetail(null);
+          setTalking(id);
+        }}
+        onOpenProfile={(ownerId) => {
+          setDetail(null);
+          setProfile(ownerId);
+        }}
+        onClose={() => setDetail(null)}
+      />
+    );
 
   const shown = profile ? memberById(profile) : null;
   if (shown) {
@@ -153,11 +187,11 @@ export function MemberExample({
         member={shown}
         onBack={() => setProfile(shown.id === member.id ? null : member.id)}
         onOpen={(id) => setProfile(id)}
+        onOpenItem={(itemId) => setDetail(itemId)}
       />
     );
   }
 
-  const revealed = deep && deep !== "about" ? deep : null;
 
   return (
     <div
@@ -222,16 +256,23 @@ export function MemberExample({
           }
           regions={{
             middle: {
-              onPress: open(seat),
+              /* ONE THING -> STRAIGHT INTO THAT THING. MORE -> THE WHOLE PERSON. */
+              onPress: () => {
+                const list = myItems(itemState, seat, member.id);
+                buzz();
+                if (list.length === 1) setDetail(list[0]!.id);
+                else setProfile(member.id);
+              },
               render: (anchor) =>
                 profileLoop({ anchor, region: "middle", blocks: activity }),
             },
             bottom: {
-              onPress: open("about"),
+              onPress: openProfile,
               render: (anchor) =>
                 profileLoop({ anchor, region: "bottom", blocks: about }),
             },
           }}
+
         />
       </GStage>
 
@@ -261,65 +302,8 @@ export function MemberExample({
         </button>
       </div>
 
-      {/* WHAT WAS BEHIND THE "+N" — always a way back to this exact person. */}
-      <div
-        className={cn(
-          "absolute inset-0 z-50 flex flex-col px-7 pb-10 pt-16 transition-opacity duration-200 ease-out",
-          deep ? "opacity-100" : "invisible pointer-events-none opacity-0",
-        )}
-        style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
-        aria-hidden={!deep}
-      >
-        {deep ? (
-          <>
-            <BackArrow onClick={() => setDeep(null)} label={`back to ${member.name}`} />
-            <h2
-              className="mt-6 text-[15vw] font-black lowercase leading-[0.82] tracking-[-0.05em]"
-              style={revealed ? { color: ACTIVITY_FILL[revealed] } : undefined}
-            >
-              {revealed ? WORLD_LABEL[revealed] : "about them"}
-            </h2>
-            {revealed ? (
-              <div className="mt-8 space-y-5">
-                {myItems(itemState, revealed, member.id).map((it) => (
-                  <p
-                    key={it.id}
-                    className="text-2xl font-medium lowercase leading-tight"
-                    style={{ color: ACTIVITY_FILL[revealed] }}
-                  >
-                    {itemLine(it)}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-8 space-y-6">
-                <p className="text-2xl font-medium lowercase leading-tight">
-                  {member.byDay} by day
-                </p>
-                <p className="text-2xl font-medium lowercase leading-tight">
-                  {member.byNight} by night
-                </p>
-                <p className="text-2xl font-medium lowercase leading-tight">
-                  {member.weekend} at weekends
-                </p>
-                <p className="text-xl font-medium lowercase leading-snug opacity-70">
-                  {member.aboutMe}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    buzz();
-                    setProfile(member.id);
-                  }}
-                  className="text-[12px] font-black lowercase tracking-[0.3em] underline underline-offset-8 opacity-70"
-                >
-                  see their whole profile
-                </button>
-              </div>
-            )}
-          </>
-        ) : null}
-      </div>
+      {/* NO CATEGORY-ONLY PAGE LIVES HERE ANY MORE: every door opens the person. */}
+
     </div>
   );
 }

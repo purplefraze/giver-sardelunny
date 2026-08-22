@@ -755,6 +755,10 @@ function Index() {
                   lifecycleStore.completeProfileSetup();
                   setEditor(null);
                 }}
+                onViewProfile={() => {
+                  setEditor(null);
+                  setPerson(ME_ID);
+                }}
                 onHelp={() => {
                   setEditor(null);
                   setHelp(true);

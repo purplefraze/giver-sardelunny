@@ -43,6 +43,7 @@ const PHOTO = 112;
 export function AboutForm({
   onDone,
   onHelp,
+  onViewProfile,
   onMessages,
   onSparks,
   onSparkles,
@@ -52,6 +53,8 @@ export function AboutForm({
   onDone: () => void;
   /** HELP IS ALWAYS AVAILABLE — quietly, from inside my own profile. */
   onHelp?: () => void;
+  /** MY WHOLE PROFILE, in the same shared profile system everyone else uses. */
+  onViewProfile?: () => void;
   /** THE THREE HISTORY PORTALS behind my photo's own toggle. */
   onMessages?: () => void;
   onSparks?: () => void;
@@ -408,6 +411,21 @@ export function AboutForm({
           ← back to my g
         </button>
         <p className="mt-2.5 g-meta opacity-40">everything saves as you go</p>
+
+        {/* MY PROFILE, EXACTLY AS ANYONE ELSE SEES IT. Same shared system. */}
+        {onViewProfile && !firstSetup ? (
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              onViewProfile();
+            }}
+            className="mt-6 text-left g-meta"
+            style={{ color: "var(--giver-me)", opacity: 0.85 }}
+          >
+            see my whole profile
+          </button>
+        ) : null}
 
         {/* LEARN HOW, WHENEVER YOU LIKE. Never a nag, always here. */}
         {onHelp && !firstSetup ? (

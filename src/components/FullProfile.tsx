@@ -364,8 +364,17 @@ export function FullProfile({
           </Section>
         ) : null}
       </div>
+
+      {/* THE DEVELOPER EDITORS. One person or one activity, same records. */}
+      {admin && editPerson ? (
+        <AdminMemberEditor member={member} onClose={() => setEditPerson(false)} />
+      ) : null}
+      {admin && editItem ? (
+        <AdminItemEditor itemId={editItem} onClose={() => setEditItem(null)} />
+      ) : null}
     </div>
   );
+
 }
 
 /**

@@ -33,9 +33,17 @@ export type HapticLevel =
   | "selection"
   | "success"
   | "warning"
-  | "error";
+  | "error"
+  /** Going INSIDE a Living G: a short rising pair, felt as the G swallowing. */
+  | "enter"
+  /** The G folding shut again: the same pair, falling. */
+  | "exit";
 
-/** Web vibration approximations, used only when no native engine is present. */
+/**
+ * Web vibration approximations, used only when no native engine is present.
+ * ANDROID TASTE RULE: nothing here is longer than a tick. The motor is asked
+ * for short pulses with air between them — never a buzz a thumb has to wait out.
+ */
 const WEB_PATTERN: Record<HapticLevel, number | number[]> = {
   selection: 8,
   light: 12,
@@ -44,6 +52,8 @@ const WEB_PATTERN: Record<HapticLevel, number | number[]> = {
   success: [12, 55, 22],
   warning: [16, 70, 16],
   error: [24, 60, 24, 60, 24],
+  enter: [9, 42, 16],
+  exit: [16, 38, 8],
 };
 
 /** Capacitor's own vocabulary, so a native build feels native. */
@@ -51,7 +61,10 @@ const CAP_IMPACT: Partial<Record<HapticLevel, "LIGHT" | "MEDIUM" | "HEAVY">> = {
   light: "LIGHT",
   medium: "MEDIUM",
   heavy: "HEAVY",
+  enter: "MEDIUM",
+  exit: "LIGHT",
 };
+
 
 const CAP_NOTIFY: Partial<Record<HapticLevel, "SUCCESS" | "WARNING" | "ERROR">> = {
   success: "SUCCESS",
@@ -108,6 +121,20 @@ function customBridge():
 function canVibrate() {
   return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
 }
+
+/**
+ * ANDROID'S ONE RULE. Chrome only lets a page vibrate once the user has actually
+ * touched it (sticky user activation). Asking earlier is refused and logged, so
+ * we simply stay quiet until the first real gesture has happened. Everything the
+ * app feels is triggered from a gesture, so this only silences the impossible.
+ */
+function activated() {
+  if (typeof navigator === "undefined") return false;
+  const ua = (navigator as unknown as Loose)["userActivation"] as Loose | undefined;
+  if (!ua) return true; // No way to ask: let the browser decide.
+  return ua["hasBeenActive"] === true;
+}
+
 
 function isIOS() {
   if (typeof navigator === "undefined") return false;
@@ -266,8 +293,12 @@ function fire(level: HapticLevel) {
         customBridge()?.send(level);
         break;
       case "vibrate":
+        if (!activated()) break;
+        // A new pulse always replaces the old one: no queue, no lingering buzz.
+        navigator.vibrate(0);
         navigator.vibrate(WEB_PATTERN[level]);
         break;
+
       case "ios-switch":
         // One tick per event; a success reads as a quick double.
         iosSwitchTick();
@@ -297,6 +328,11 @@ export const haptics = {
   /** Something could not be done. */
   warning: () => fire("warning"),
   error: () => fire("error"),
+  /** Going inside someone's Living G: the unfurl felt in the thumb. */
+  enter: () => fire("enter"),
+  /** The Living G folding shut and handing the canvas back. */
+  exit: () => fire("exit"),
+
   /** Which route is in use — for diagnostics only. */
   bridge: () => resolve(),
   /** True native haptics, as opposed to a web motor buzz or a Safari tick. */

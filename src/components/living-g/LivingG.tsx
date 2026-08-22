@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { buzz } from "@/lib/haptics";
+import { buzz, haptics } from "@/lib/haptics";
 import {
   EAR_CUT,
   RIM_PATCH,
@@ -430,8 +430,13 @@ export function LivingG({
               down.current = { x: e.clientX, y: e.clientY };
               revealed.current = false;
               setPressed(key);
+              // THE SWELL IS FELT AS IT IS SEEN. Fired inside the gesture itself,
+              // which is exactly what Android requires, and the quietest tick we
+              // have so a finger resting on the G never buzzes.
+              haptics.selection();
               holdCue(key);
             }}
+
             onPointerUp={(e) => {
               if (tapId.current !== e.pointerId) return;
               tapId.current = null;
@@ -449,7 +454,10 @@ export function LivingG({
                 revealed.current = false;
                 return;
               }
-              buzz();
+              // THE REGION HAS TAKEN. A single light tick, in the gesture, and
+              // the deeper pulse is left to the G's own unfurl.
+              haptics.light();
+
               if (navTimer.current) clearTimeout(navTimer.current);
               const run = region.onPress;
               navTimer.current = setTimeout(() => run?.(), RHYTHM.read);

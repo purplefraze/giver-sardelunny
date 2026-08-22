@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX, G_ANCHORS, LIVING_G_FRAME } from "./g-path";
-import { buzz } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 /**
  * GOING INSIDE A LIVING G.
@@ -46,20 +46,29 @@ export function GEnclosure({
   const [phase, setPhase] = useState<Phase>("shut");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** Nothing is felt on the very first mount — only on a real change of state. */
+  const knew = useRef(false);
+
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     if (open) {
       setPhase((p) => (p === "in" ? "in" : "opening"));
-      buzz(12);
+      // FELT, NOT WATCHED. The unfurl and the fold each carry their own pulse,
+      // fired in the same task as the tap that caused them so Android's user
+      // activation still holds. Unsupported devices simply feel nothing.
+      if (knew.current) haptics.enter();
       timer.current = setTimeout(() => setPhase("in"), OPEN_MS);
     } else {
       setPhase((p) => (p === "shut" ? "shut" : "closing"));
+      if (knew.current) haptics.exit();
       timer.current = setTimeout(() => setPhase("shut"), CLOSE_MS);
     }
+    knew.current = true;
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [open]);
+
 
   if (phase === "shut" && !open) return null;
 

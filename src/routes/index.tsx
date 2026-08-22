@@ -226,6 +226,8 @@ function Index() {
    * toggle's world, so the content type is never asked for twice.
    */
   const [detail, setDetail] = useState<string | null>(null);
+  const detailShown = useLinger(detail);
+
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
   /** SPARKS AND SPARKLES ARE HISTORIES, opened from my own photo's toggle. */

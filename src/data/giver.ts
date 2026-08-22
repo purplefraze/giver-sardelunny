@@ -22,7 +22,8 @@ export type Member = {
   username: string;
   /** Approximate distance, shown under the username. Never inside a loop. */
   distance: string;
-  photo: string;
+  /** null until the person has chosen their own picture. Never a stand-in. */
+  photo: string | null;
   blurb: string;
   mode: "wishing" | "giving" | "trading" | "borrowing";
   /** Activity world. Colour-wise every sample person is ANOTHER PERSON: blue. */

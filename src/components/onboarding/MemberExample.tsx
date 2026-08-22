@@ -256,16 +256,23 @@ export function MemberExample({
           }
           regions={{
             middle: {
-              onPress: open(seat),
+              /* ONE THING -> STRAIGHT INTO THAT THING. MORE -> THE WHOLE PERSON. */
+              onPress: () => {
+                const list = myItems(itemState, seat, member.id);
+                buzz();
+                if (list.length === 1) setDetail(list[0]!.id);
+                else setProfile(member.id);
+              },
               render: (anchor) =>
                 profileLoop({ anchor, region: "middle", blocks: activity }),
             },
             bottom: {
-              onPress: open("about"),
+              onPress: openProfile,
               render: (anchor) =>
                 profileLoop({ anchor, region: "bottom", blocks: about }),
             },
           }}
+
         />
       </GStage>
 

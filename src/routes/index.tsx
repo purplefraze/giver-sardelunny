@@ -29,7 +29,7 @@ import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { CATEGORY_PLURAL, myProfileStore } from "@/data/my-profile";
+import { CATEGORY_PLURAL, myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
@@ -635,6 +635,27 @@ function Index() {
             the expanded Communi-G, where the whole community already is.
           */}
 
+          {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
+          <Screen open={person !== null}>
+            {person
+              ? (() => {
+                  const member =
+                    person === ME_ID ? myAsMember(me) : memberById(person);
+                  return member ? (
+                    <FullProfile
+                      member={member}
+                      world={person === ME_ID ? "me" : "others"}
+                      onBack={() => setPerson(null)}
+                      onOpen={(id) => setPerson(id)}
+                      /* EVERY ITEM ON EVERY PROFILE OPENS ITS OWN RICH DETAIL. */
+                      onOpenItem={(itemId) => setDetail(itemId)}
+                    />
+                  ) : null;
+                })()
+              : null}
+          </Screen>
+
+          {/* AN ITEM OPENS ON TOP OF WHEREVER IT WAS FOUND — feed or profile. */}
           <Screen open={detail !== null}>
             {detail ? (
               <ActivityDetail
@@ -643,25 +664,13 @@ function Index() {
                   setDetail(null);
                   setTalking(id);
                 }}
+                onOpenProfile={(ownerId) => {
+                  setDetail(null);
+                  setPerson(ownerId);
+                }}
                 onClose={() => setDetail(null)}
               />
             ) : null}
-          </Screen>
-
-          {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
-          <Screen open={person !== null}>
-            {person
-              ? (() => {
-                  const member = memberById(person);
-                  return member ? (
-                    <FullProfile
-                      member={member}
-                      onBack={() => setPerson(null)}
-                      onOpen={(id) => setPerson(id)}
-                    />
-                  ) : null;
-                })()
-              : null}
           </Screen>
 
           <Screen open={talking !== null}>
@@ -745,6 +754,10 @@ function Index() {
                 onDone={() => {
                   lifecycleStore.completeProfileSetup();
                   setEditor(null);
+                }}
+                onViewProfile={() => {
+                  setEditor(null);
+                  setPerson(ME_ID);
                 }}
                 onHelp={() => {
                   setEditor(null);

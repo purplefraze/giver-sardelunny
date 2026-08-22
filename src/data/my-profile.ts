@@ -19,7 +19,7 @@ import {
 
 
 import { ledgerStore } from "@/data/ledger";
-import { hashPassword, publishEligibility } from "@/data/account";
+import { ageFrom, hashPassword, publishEligibility } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 
@@ -558,7 +558,13 @@ export function myAsMember(p: MyProfile): Member {
     headline: p.items.give[0] ?? "",
     activity: p.items.give[0] ?? "",
     about: p.aboutMe,
-    age: "",
+    /* MY OWN PROFILE READS EXACTLY LIKE ANYONE ELSE'S — same fields, my data. */
+    age: (() => {
+      const years = ageFrom(p.birthday);
+      return years === null ? "" : String(years);
+    })(),
+    gender: p.gender,
+
     byDay: p.byDay || "—",
     byNight: p.byNight || "—",
     weekend: p.weekend || "—",

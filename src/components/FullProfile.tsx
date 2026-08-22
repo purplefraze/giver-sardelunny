@@ -15,10 +15,15 @@ import {
 import { myProfileStore } from "@/data/my-profile";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import { useAdmin } from "@/hooks/use-admin";
+import { useMemberEdits } from "@/hooks/use-member-edits";
+import { AdminMemberEditor } from "@/components/admin/AdminMemberEditor";
+import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemRow } from "@/components/profile/ItemRow";
 import { itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
 import { itemLine } from "@/data/items";
+
 
 
 /**

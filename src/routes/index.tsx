@@ -29,7 +29,7 @@ import { useConnections } from "@/hooks/use-connections";
 import { profileLoop, clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { CATEGORY_PLURAL, myProfileStore } from "@/data/my-profile";
+import { CATEGORY_PLURAL, myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";

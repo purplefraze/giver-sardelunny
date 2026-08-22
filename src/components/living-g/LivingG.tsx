@@ -454,7 +454,10 @@ export function LivingG({
                 revealed.current = false;
                 return;
               }
-              buzz();
+              // THE REGION HAS TAKEN. A single light tick, in the gesture, and
+              // the deeper pulse is left to the G's own unfurl.
+              haptics.light();
+
               if (navTimer.current) clearTimeout(navTimer.current);
               const run = region.onPress;
               navTimer.current = setTimeout(() => run?.(), RHYTHM.read);

@@ -23,10 +23,11 @@ import { buzz } from "@/lib/haptics";
  *   MIDDLE LOOP  the SELECTED activity world: one primary item + "+N"  (now)
  *   BOTTOM LOOP  by day / by night / weekends                  (who they are)
  *
- * Only the MIDDLE loop changes when the toggle moves. The "+N" is a discovery
- * mechanic, not a report: tapping it reveals everything they have in that world.
+ * Only the MIDDLE loop changes when the toggle moves. Pressing either loop is a
+ * door into THIS PERSON'S WHOLE PROFILE — the same shared, detailed profile the
+ * rest of the app uses — never a stripped-down category page.
  */
-type Deep = Mode | "about" | null;
+
 
 /** The lower personal-profile loop is always black — never an activity colour. */
 const INK = "var(--giver-ink)";

@@ -328,6 +328,11 @@ export const haptics = {
   /** Something could not be done. */
   warning: () => fire("warning"),
   error: () => fire("error"),
+  /** Going inside someone's Living G: the unfurl felt in the thumb. */
+  enter: () => fire("enter"),
+  /** The Living G folding shut and handing the canvas back. */
+  exit: () => fire("exit"),
+
   /** Which route is in use — for diagnostics only. */
   bridge: () => resolve(),
   /** True native haptics, as opposed to a web motor buzz or a Safari tick. */

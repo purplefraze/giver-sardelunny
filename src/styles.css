@@ -217,6 +217,16 @@
   --me-borrow: var(--activity-borrow);
   --me-profile: var(--giver-me);
 
+  /* ---- A CONVERSATION IS THE MEETING OF TWO PEOPLE ----
+     Two related oranges, so a thread reads as one exchange rather than two
+     apps talking. The person who posted the activity carries the deeper tone;
+     the person answering carries the lighter one. Names keep their own
+     identity colour (mine red, another person's yellow). */
+  --convo-poster: oklch(0.58 0.19 55); /* DEEP ORANGE — whoever posted it */
+  --convo-responder: oklch(0.76 0.15 68); /* LIGHT ORANGE — whoever answered */
+
+
+
 
   /* Compatibility aliases — every one resolves to a semantic token above. */
   --giver-give: var(--giver-generosity);

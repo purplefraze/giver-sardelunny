@@ -174,7 +174,10 @@ export function AboutForm({
               prefix="@"
               limit={20}
               register="display-sm"
+              /* "you" is a stand-in, not a name: touching it replaces it. */
+              selectAll={!named}
               autoEdit={onboarding && !named}
+
               {...(named
                 ? {
                     note:

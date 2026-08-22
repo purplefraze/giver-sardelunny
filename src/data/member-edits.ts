@@ -64,7 +64,8 @@ export const memberEditsStore = {
   },
   /** SSR reads the written record, never a browser-only override. */
   getServer(): MemberEdits {
-    return {};
+    /* ONE frozen snapshot: a fresh object here loops forever on the server. */
+    return NO_EDITS;
   },
 
   /** EDIT ONE PERSON. Every view of them updates with it. */

@@ -219,26 +219,40 @@ export function Conversation({
         </p>
       ) : null}
 
+      {/*
+        ONE MESSAGE AREA. The label, the field and send are a single group at the
+        bottom of the page: tap, type, send. Nothing to work out.
+      */}
       {c.state !== "verified" && c.state !== "cancelled" ? (
-        <div className="flex items-end gap-3">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value.slice(0, MESSAGE_MAX))}
-            rows={2}
-            placeholder="say something"
-            className="min-w-0 flex-1 resize-none bg-transparent g-body outline-none placeholder:opacity-30"
-            style={{ color: "var(--world-ink)" }}
-          />
-          <button
-            type="button"
-            onClick={send}
-            className="pb-1 text-[12px] font-black lowercase tracking-[0.26em]"
-            style={{ color: "var(--giver-connection)" }}
+        <div>
+          <span className="g-meta opacity-55">
+            message {them ? them.username : "them"}
+          </span>
+          <div
+            className="mt-2 flex items-end gap-3 border-b-2 pb-2"
+            style={{ borderColor: "var(--giver-connection)" }}
           >
-            send
-          </button>
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value.slice(0, MESSAGE_MAX))}
+              rows={2}
+              placeholder="type your message"
+              className="min-w-0 flex-1 resize-none bg-transparent g-body outline-none placeholder:opacity-30"
+              style={{ color: "var(--world-ink)" }}
+            />
+            <button
+              type="button"
+              onClick={send}
+              disabled={!draft.trim()}
+              className="shrink-0 pb-1 text-[15px] font-black lowercase tracking-[0.22em] disabled:opacity-25"
+              style={{ color: "var(--giver-connection)" }}
+            >
+              send
+            </button>
+          </div>
         </div>
       ) : null}
+
     </div>
   );
 }

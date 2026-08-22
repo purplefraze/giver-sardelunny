@@ -83,14 +83,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "theme-color", content: "#fbfaf7" },
       { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "color-scheme", content: "light" },
+      { name: "format-detection", content: "telephone=no" },
 
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Giver — kindness is currency" },
+      {
+        name: "description",
+        content:
+          "Giver is a community built on wishing, giving and trading, where one Living G is the whole interface.",
+      },
+      { name: "author", content: "Giver" },
+      { property: "og:title", content: "Giver — kindness is currency" },
+      {
+        property: "og:description",
+        content:
+          "Wish, give, trade and borrow with people near you. One Living G, one community.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+
       { name: "twitter:site", content: "@Lovable" },
     ],
     links: [

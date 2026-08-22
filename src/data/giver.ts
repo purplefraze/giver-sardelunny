@@ -1,7 +1,6 @@
 import giuliaAsset from "@/assets/giulia.jpg.asset.json";
 import sofiaAsset from "@/assets/sofia-profile.jpg.asset.json";
 import robinAsset from "@/assets/robin.jpg.asset.json";
-import me from "@/assets/me.jpg";
 import marcusAsset from "@/assets/marcus.jpg.asset.json";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
 

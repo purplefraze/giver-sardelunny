@@ -418,7 +418,10 @@ function seedDetails(text: string, mi: number, i: number): ItemDetails {
   const kind = classifyKind(text);
   const daySets = [["tues", "thurs"], ["sat"], ["sun"], ["mon", "wed", "fri"]];
   const areas = ["west end", "north side", "nearby pickup", "in person"];
-  const times = ["evenings", "7 pm", "afternoons", "mornings"];
+  /* A WINDOW, NOT A VAGUE WORD: "evenings" alone forces a message just to find
+     out when. These are fixture values and are editable in admin. */
+  const times = ["evenings, 7–9 pm", "7–9 pm", "afternoons, 2–4 pm", "mornings, 9–11 am"];
+
   const spans = ["one time", "recurring", "flexible"];
   const k = (mi + i) % 4;
   const wheres = WHERE_FOR[kind];

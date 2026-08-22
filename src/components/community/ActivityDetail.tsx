@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
 import { ACTIVITY_FILL, ME_ID, itemLine, type Item, type ItemType } from "@/data/items";
@@ -13,8 +14,12 @@ import { myProfileStore } from "@/data/my-profile";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import { useAdmin } from "@/hooks/use-admin";
+import { useMemberEdits } from "@/hooks/use-member-edits";
+import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemFacts, itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
+
 
 /**
  * ONE ITEM, IN FULL — WHOEVER POSTED IT, WHEREVER IT WAS OPENED FROM.

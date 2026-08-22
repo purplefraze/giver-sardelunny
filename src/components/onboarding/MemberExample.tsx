@@ -148,10 +148,37 @@ export function MemberExample({
     { text: member.weekend, role: "primary", fill: INK },
   ];
 
-  const open = (d: Exclude<Deep, null>) => () => {
+  /**
+   * EVERY DOOR ON THIS G LEADS TO THE PERSON, IN FULL. There is no category-only
+   * page any more: pressing a loop opens the same detailed profile — photo, age,
+   * gender, about me, and every give, wish, trade and borrow with its real day,
+   * time, duration, frequency and place — that the rest of Giver uses.
+   */
+  const openProfile = () => {
     buzz();
-    setDeep(d);
+    setProfile(member.id);
   };
+
+  /* MESSAGING ABOUT ONE ITEM, on top of wherever it was opened from. */
+  if (talking)
+    return <Conversation connectionId={talking} onClose={() => setTalking(null)} />;
+
+  /* ONE ITEM, IN FULL, WITH ITS OWN ACTION — apply, grant, propose, lend, ask. */
+  if (detail)
+    return (
+      <ActivityDetail
+        itemId={detail}
+        onOpenConnection={(id) => {
+          setDetail(null);
+          setTalking(id);
+        }}
+        onOpenProfile={(ownerId) => {
+          setDetail(null);
+          setProfile(ownerId);
+        }}
+        onClose={() => setDetail(null)}
+      />
+    );
 
   const shown = profile ? memberById(profile) : null;
   if (shown) {
@@ -160,11 +187,11 @@ export function MemberExample({
         member={shown}
         onBack={() => setProfile(shown.id === member.id ? null : member.id)}
         onOpen={(id) => setProfile(id)}
+        onOpenItem={(itemId) => setDetail(itemId)}
       />
     );
   }
 
-  const revealed = deep && deep !== "about" ? deep : null;
 
   return (
     <div

@@ -70,13 +70,15 @@ function Section({
   title,
   accent,
   children,
+  innerRef,
 }: {
   title: string;
   accent?: string;
   children: React.ReactNode;
+  innerRef?: React.Ref<HTMLElement>;
 }) {
   return (
-    <section className="g-rule mt-12 pt-5">
+    <section ref={innerRef} className="g-rule mt-12 pt-5">
       <h2 className="g-heading" style={accent ? { color: accent } : { opacity: 0.45 }}>
         {title}
       </h2>
@@ -84,6 +86,7 @@ function Section({
     </section>
   );
 }
+
 
 export function FullProfile({
   member,

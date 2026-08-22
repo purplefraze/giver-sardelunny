@@ -107,6 +107,12 @@ export function FullProfile({
   const sparkles = useMyProfile().sparkles;
   /** Which activity count has been opened. A count is never a dead number. */
   const [openedCount, setOpenedCount] = useState<ItemType | null>(null);
+  /* THE DEVELOPER SWITCH: the profile becomes directly editable while it is on. */
+  const admin = useAdmin();
+  useMemberEdits();
+  const [editPerson, setEditPerson] = useState(false);
+  const [editItem, setEditItem] = useState<string | null>(null);
+
 
   /*
     MY OWN connections are earned live: only interactions that reached their

@@ -173,8 +173,14 @@ export function AboutForm({
               className="block text-left text-lg font-black lowercase leading-none tracking-[-0.02em]"
               style={{ color: "var(--giver-me)" }}
             >
-              {me.photo ? "change photo" : "add a photo"}
+              {photo.loading ? "opening…" : me.photo ? "change photo" : "add a photo"}
             </button>
+            {/* IF A PICTURE CANNOT BE READ, SAY SO — never fail in silence. */}
+            {photo.failed ? (
+              <p className="mt-2 g-meta" style={{ color: "var(--giver-me)" }}>
+                that picture wouldn’t open — try another
+              </p>
+            ) : null}
             {me.photoSource ? (
               <button
                 type="button"
@@ -184,6 +190,7 @@ export function AboutForm({
                 reposition
               </button>
             ) : null}
+
             {!firstSetup ? (
               <p className="mt-3 g-meta opacity-35">tap a dot, tap again to open</p>
             ) : null}

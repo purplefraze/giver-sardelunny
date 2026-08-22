@@ -73,6 +73,13 @@ export type Item = {
   distanceKm?: number;
   /** Cheap denormalised counter; the truth is the boost ledger. */
   boostCount: number;
+  /**
+   * A DEVELOPER/ADMIN HAS CORRECTED THIS RECORD BY HAND. Seeded demo items are
+   * normally re-derived on load so old nonsense heals; once someone has edited
+   * one deliberately, their words are the truth and are never re-derived.
+   */
+  edited?: boolean;
+
 };
 
 export type BorrowSide = "borrow" | "lend";
@@ -468,6 +475,9 @@ function seedItems(): Item[] {
 function withSeedDetails(item: Item): Item {
   /* DEMO ITEMS ARE ALWAYS RE-DERIVED, so old nonsense combinations heal. */
   if (!item.id.startsWith("seed-")) return item;
+  /* UNLESS SOMEBODY MEANT IT: a hand-edited record is never re-derived. */
+  if (item.edited) return item;
+
   const parts = item.id.split("-");
   const memberId = parts[1] ?? "";
   const index = Number(parts[3] ?? 0) || 0;
@@ -626,6 +636,27 @@ export const itemsStore = {
       ),
     });
   },
+
+  /**
+   * THE DEVELOPER/ADMIN EDIT. Exactly the same single record as everything
+   * else — it simply also marks the item as deliberately written, so a seeded
+   * demo item stops being re-derived on load and the change persists for good.
+   */
+  adminPatch(
+    id: string,
+    fields: Partial<Omit<Item, "id" | "ownerId">> & { type?: ItemType },
+  ) {
+    const s = ensure();
+    const item = s.items.find((i) => i.id === id);
+    if (!item) return;
+    commit({
+      ...s,
+      items: s.items.map((i) =>
+        i.id === id ? { ...i, ...fields, edited: true, updatedAt: Date.now() } : i,
+      ),
+    });
+  },
+
 
   setStatus(id: string, status: ItemStatus) {
     const s = ensure();

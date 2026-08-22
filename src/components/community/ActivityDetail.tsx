@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
 import { ACTIVITY_FILL, ME_ID, itemLine, type Item, type ItemType } from "@/data/items";
@@ -13,8 +14,12 @@ import { myProfileStore } from "@/data/my-profile";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import { useAdmin } from "@/hooks/use-admin";
+import { useMemberEdits } from "@/hooks/use-member-edits";
+import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemFacts, itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
+
 
 /**
  * ONE ITEM, IN FULL — WHOEVER POSTED IT, WHEREVER IT WAS OPENED FROM.
@@ -58,7 +63,12 @@ export function ActivityDetail({
   const items = useItems();
   const links = useConnections();
   const sparkles = useMyProfile().sparkles;
+  /* THE DEVELOPER SWITCH, and the live people projection it can edit. */
+  const admin = useAdmin();
+  useMemberEdits();
+  const [editing, setEditing] = useState(false);
   const item = items.items.find((i) => i.id === itemId);
+
 
   if (!item)
     return (
@@ -245,7 +255,30 @@ export function ActivityDetail({
             {item.boostCount > 0 ? `sparkled ×${item.boostCount}` : "sparkle this"}
           </button>
         ) : null}
+
+        {/*
+          THE DEVELOPER DOOR. Present only while the dev switch is on, so the
+          end-user experience never sees it — and it edits the same one record.
+        */}
+        {admin ? (
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              setEditing(true);
+            }}
+            className="text-[12px] font-black lowercase tracking-[0.26em]"
+            style={{ color: "var(--giver-me)" }}
+          >
+            edit this activity
+          </button>
+        ) : null}
       </div>
+
+      {admin && editing ? (
+        <AdminItemEditor itemId={item.id} onClose={() => setEditing(false)} />
+      ) : null}
     </div>
   );
+
 }

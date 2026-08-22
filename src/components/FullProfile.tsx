@@ -15,10 +15,15 @@ import {
 import { myProfileStore } from "@/data/my-profile";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
+import { useAdmin } from "@/hooks/use-admin";
+import { useMemberEdits } from "@/hooks/use-member-edits";
+import { AdminMemberEditor } from "@/components/admin/AdminMemberEditor";
+import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemRow } from "@/components/profile/ItemRow";
 import { itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
 import { itemLine } from "@/data/items";
+
 
 
 /**
@@ -102,6 +107,12 @@ export function FullProfile({
   const sparkles = useMyProfile().sparkles;
   /** Which activity count has been opened. A count is never a dead number. */
   const [openedCount, setOpenedCount] = useState<ItemType | null>(null);
+  /* THE DEVELOPER SWITCH: the profile becomes directly editable while it is on. */
+  const admin = useAdmin();
+  useMemberEdits();
+  const [editPerson, setEditPerson] = useState(false);
+  const [editItem, setEditItem] = useState<string | null>(null);
+
 
   /*
     MY OWN connections are earned live: only interactions that reached their
@@ -168,7 +179,26 @@ export function FullProfile({
           <h1 className="g-display mt-6">{member.username}</h1>
           {identity.length ? <p className="g-meta mt-4">{identity.join(" · ")}</p> : null}
           <p className="g-meta mt-1">member of giver since {member.since}</p>
+
+          {/*
+            THE DEVELOPER DOOR — every person, not one special case. It is only
+            ever here while the dev switch is on; end users never see it.
+          */}
+          {admin && !mine ? (
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                setEditPerson(true);
+              }}
+              className="mt-5 text-[12px] font-black lowercase tracking-[0.26em]"
+              style={{ color: "var(--giver-me)" }}
+            >
+              edit this person
+            </button>
+          ) : null}
         </header>
+
 
         <Section title={mine ? "about me" : "about them"}>
           {member.aboutMe ? (
@@ -208,26 +238,44 @@ export function FullProfile({
                   item={item}
                   onOpen={openItem}
                   trailing={
-                    /* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */
-                    mine ? (
-                      boostWeight(state, item.id) ? (
-                        <span className="g-meta">{boostWeight(state, item.id)} sparkled</span>
-                      ) : null
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={sparkles < 1}
-                        onClick={() => {
-                          buzz();
-                          myProfileStore.useSparkle(item.id);
-                        }}
-                        className="text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
-                        style={{ color: "var(--giver-participation)" }}
-                      >
-                        {boostWeight(state, item.id) ? "sparkle again" : "sparkle"}
-                      </button>
-                    )
+                    <div className="flex flex-col items-end gap-2">
+                      {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
+                      {mine ? (
+                        boostWeight(state, item.id) ? (
+                          <span className="g-meta">{boostWeight(state, item.id)} sparkled</span>
+                        ) : null
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={sparkles < 1}
+                          onClick={() => {
+                            buzz();
+                            myProfileStore.useSparkle(item.id);
+                          }}
+                          className="text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
+                          style={{ color: "var(--giver-participation)" }}
+                        >
+                          {boostWeight(state, item.id) ? "sparkle again" : "sparkle"}
+                        </button>
+                      )}
+
+                      {/* FAST DEVELOPER EDITING, right where the item is listed. */}
+                      {admin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            buzz();
+                            setEditItem(item.id);
+                          }}
+                          className="text-[11px] font-black lowercase tracking-[0.24em]"
+                          style={{ color: "var(--giver-me)" }}
+                        >
+                          edit
+                        </button>
+                      ) : null}
+                    </div>
                   }
+
                 />
               ))}
             </ul>
@@ -316,8 +364,17 @@ export function FullProfile({
           </Section>
         ) : null}
       </div>
+
+      {/* THE DEVELOPER EDITORS. One person or one activity, same records. */}
+      {admin && editPerson ? (
+        <AdminMemberEditor member={member} onClose={() => setEditPerson(false)} />
+      ) : null}
+      {admin && editItem ? (
+        <AdminItemEditor itemId={editItem} onClose={() => setEditItem(null)} />
+      ) : null}
     </div>
   );
+
 }
 
 /**

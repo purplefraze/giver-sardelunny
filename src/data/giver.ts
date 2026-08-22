@@ -35,6 +35,8 @@ export type Member = {
   about: string;
   /** Middle loop: who are they? Short-form human prompts. */
   age: string;
+  /** How they describe themselves. Their words, never a fixed set. */
+  gender: string;
   byDay: string;
   byNight: string;
   weekend: string;
@@ -81,6 +83,7 @@ export const MEMBERS: Member[] = [
     about:
       "29, about 0.7 km away. high-school chemistry teacher. out on her bike most weekends.",
     age: "29",
+    gender: "she / her",
     byDay: "chemistry teacher",
     byNight: "choir soprano",
     weekend: "long bike rides",
@@ -139,6 +142,7 @@ export const MEMBERS: Member[] = [
     activity: "wishing for a ride to the airport this tuesday, 4 pm.",
     about: "26, less than a kilometre away. business grad. deep into tarot and spirituality.",
     age: "26",
+    gender: "she / her",
     byDay: "market researcher",
     byNight: "reads tarot",
     weekend: "cold water swims",
@@ -198,6 +202,7 @@ export const MEMBERS: Member[] = [
     about:
       "43, about 1.5 km away. music festivals, bonfires and boys. tall enough that he has never owned a ladder.",
     age: "43",
+    gender: "he / him",
     byDay: "lighting technician",
     byNight: "vinyl digging",
     weekend: "festivals and fires",
@@ -258,6 +263,7 @@ export const MEMBERS: Member[] = [
     activity: "wants to borrow a cigarette.",
     about: "psychologist by day, snusing by night. no weekends allowed.",
     age: "38",
+    gender: "he / him",
     byDay: "psychologist",
     byNight: "night runner",
     weekend: "no weekends allowed",

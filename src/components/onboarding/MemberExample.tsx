@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { BackArrow } from "@/components/BackArrow";
 import { FullProfile } from "@/components/FullProfile";
+import { ActivityDetail } from "@/components/community/ActivityDetail";
+import { Conversation } from "@/components/connection/Conversation";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { profileLoop } from "@/components/living-g/profile-loop";
@@ -11,7 +12,7 @@ import { memberById, pastConnectionCount, type Member } from "@/data/giver";
 import { ACTIVITY_FILL, itemLine, myItems, splitTrade, tradeText } from "@/data/items";
 import { useItems } from "@/hooks/use-items";
 import { buzz } from "@/lib/haptics";
-import { cn } from "@/lib/utils";
+
 
 /**
  * ONE SAMPLE GIVER, SHOWN THROUGH THE APPROVED FULL-SIZE LIVING G.

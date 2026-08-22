@@ -73,20 +73,8 @@ export function Conversation({
     >
       <BackArrow onClick={onClose} label="back" />
 
-      {/* THE CURVE ITSELF: the piece of the Living G that joins two people. */}
-      <svg
-        viewBox="0 0 120 60"
-        className="pointer-events-none absolute right-5 top-5 h-10 w-20 opacity-45"
-        aria-hidden="true"
-      >
-        <path
-          d="M8 52 C 44 52, 40 8, 78 8"
-          fill="none"
-          stroke="var(--world-g)"
-          strokeWidth={9}
-          strokeLinecap="round"
-        />
-      </svg>
+      {/* NO ORNAMENT. The conversation itself is the only thing on this page. */}
+
 
       <span className="g-meta opacity-70">
         {them ? them.username : "someone"} · {STATE_WORD[c.state]}

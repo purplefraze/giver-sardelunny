@@ -142,6 +142,48 @@ export function ActivityDetail({
               : "open"}
       </p>
 
+      {/*
+        THE PERSON, NOT JUST THEIR NAME. The item and whoever is behind it are
+        read in the same breath — one door straight through to their whole
+        profile, in the shared profile system everybody else uses.
+      */}
+      {!isMine && owner ? (
+        <button
+          type="button"
+          onClick={() => {
+            buzz();
+            onOpenProfile?.(owner.id);
+          }}
+          className="g-rule mt-6 flex w-full items-center gap-4 pt-5 text-left transition-opacity active:opacity-60"
+        >
+          {owner.photo ? (
+            <img
+              src={owner.photo}
+              alt={owner.username}
+              className="h-14 w-14 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="h-14 w-14 shrink-0 rounded-full"
+              style={{ background: "var(--giver-ink)", opacity: 0.08 }}
+            />
+          )}
+          <span className="min-w-0">
+            <span className="g-name block" style={{ color: "var(--giver-others)" }}>
+              {owner.username}
+            </span>
+            <span className="g-meta mt-1 block opacity-55">
+              {[owner.age ? `${owner.age}` : null, owner.gender || null, owner.distance || null]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+            <span className="g-meta mt-1 block opacity-40">see their whole profile</span>
+          </span>
+        </button>
+      ) : null}
+
+
       {/* THE PHOTOS OF THE REAL THING, from the one shared record. */}
       {item.photos?.length ? (
         <div className="mt-6 flex gap-3 overflow-x-auto">

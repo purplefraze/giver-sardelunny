@@ -91,6 +91,8 @@ export function MemberExample({
   const [seat, setSeat] = useState<Mode>(START_SEAT[member.world]);
   /** Any loop, the photo or a "+N" opens this person's real, whole profile. */
   const [profile, setProfile] = useState<string | null>(null);
+  /** WHICH SECTION the profile should open on, when it was opened from a region. */
+  const [profileFocus, setProfileFocus] = useState<Mode | null>(null);
   /** ONE ITEM, IN FULL — the same rich detail the whole app uses. */
   const [detail, setDetail] = useState<string | null>(null);
   /** MESSAGING ABOUT THAT ONE ITEM, right here, without leaving the person. */
@@ -99,6 +101,7 @@ export function MemberExample({
 
   useEffect(() => {
     setProfile(null);
+    setProfileFocus(null);
     setDetail(null);
     setTalking(null);
     setSeat(START_SEAT[member.world]);
@@ -156,6 +159,7 @@ export function MemberExample({
    */
   const openProfile = () => {
     buzz();
+    setProfileFocus(null);
     setProfile(member.id);
   };
 
@@ -185,8 +189,12 @@ export function MemberExample({
     return (
       <FullProfile
         member={shown}
+        focus={profileFocus}
         onBack={() => setProfile(shown.id === member.id ? null : member.id)}
-        onOpen={(id) => setProfile(id)}
+        onOpen={(id) => {
+          setProfileFocus(null);
+          setProfile(id);
+        }}
         onOpenItem={(itemId) => setDetail(itemId)}
       />
     );
@@ -260,8 +268,13 @@ export function MemberExample({
               onPress: () => {
                 const list = myItems(itemState, seat, member.id);
                 buzz();
-                if (list.length === 1) setDetail(list[0]!.id);
-                else setProfile(member.id);
+                if (list.length === 1) {
+                  setDetail(list[0]!.id);
+                  return;
+                }
+                /* THE REGION IS THE ANCHOR: their profile opens ON that section. */
+                setProfileFocus(seat);
+                setProfile(member.id);
               },
               render: (anchor) =>
                 profileLoop({ anchor, region: "middle", blocks: activity }),

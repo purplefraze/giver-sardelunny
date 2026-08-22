@@ -159,6 +159,8 @@ function Index() {
   /* A populated current-user fixture used to be injected here automatically.
      Remove that legacy state once; development profiles are now explicit only. */
   removeLegacyAutomaticProfile();
+  /* The canvas measures the real viewport itself — see use-app-height. */
+  useAppHeight();
   const lifecycle = useLifecycle();
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {

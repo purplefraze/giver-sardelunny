@@ -635,23 +635,6 @@ function Index() {
             the expanded Communi-G, where the whole community already is.
           */}
 
-          <Screen open={detail !== null}>
-            {detail ? (
-              <ActivityDetail
-                itemId={detail}
-                onOpenConnection={(id) => {
-                  setDetail(null);
-                  setTalking(id);
-                }}
-                onOpenProfile={(ownerId) => {
-                  setDetail(null);
-                  setPerson(ownerId);
-                }}
-                onClose={() => setDetail(null)}
-              />
-            ) : null}
-          </Screen>
-
           {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
           <Screen open={person !== null}>
             {person
@@ -672,6 +655,23 @@ function Index() {
               : null}
           </Screen>
 
+          {/* AN ITEM OPENS ON TOP OF WHEREVER IT WAS FOUND — feed or profile. */}
+          <Screen open={detail !== null}>
+            {detail ? (
+              <ActivityDetail
+                itemId={detail}
+                onOpenConnection={(id) => {
+                  setDetail(null);
+                  setTalking(id);
+                }}
+                onOpenProfile={(ownerId) => {
+                  setDetail(null);
+                  setPerson(ownerId);
+                }}
+                onClose={() => setDetail(null)}
+              />
+            ) : null}
+          </Screen>
 
           <Screen open={talking !== null}>
             {talking ? (

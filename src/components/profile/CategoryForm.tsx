@@ -61,7 +61,7 @@ const CATEGORY_ASK: Record<Category, string> = {
  * it: the question belongs to the field, the invitation belongs to the page.
  */
 const CATEGORY_CALL: Record<Category, string> = {
-  wish: "what do you wish for?",
+  wish: "make a wish",
   give: "are you a giver?",
   trade: "what are you offering?",
   borrow: "what would you borrow?",
@@ -217,13 +217,19 @@ export function CategoryForm({
   const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
   /* THE FORM IS THE COLOUR OF WHAT IT MAKES: wish purple, give green,
      trade orange, borrow blue. It never inherits profile red. */
-  const colour = `var(--activity-${category})`;
+  const colour =
+    category === "borrow" && side === "lend"
+      ? "var(--activity-lend)"
+      : `var(--activity-${category})`;
   const limit = MAX_PER_CATEGORY[category];
   const unlimited = !Number.isFinite(limit);
   /* THE RECORD BEING TYPED IS SHOWN IN THE FIELD, NOT TWICE IN THE LIST. */
   const records = me.records[category].filter((i) => i.id !== liveId);
   /* THE LIMIT COUNTS EVERY ACTIVE RECORD, including the one being typed. */
-  const full = me.records[category].length >= limit;
+  const full =
+    category === "borrow"
+      ? me.records.borrow.filter((i) => (i.side ?? "borrow") === side).length >= limit
+      : me.records[category].length >= limit;
   /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
   const cost = category === "wish" ? WISH_COST : 0;
   const broke = cost > 0 && me.sparks < cost;
@@ -255,7 +261,7 @@ export function CategoryForm({
    * detail. The mode colour stays the identity of the thing being made, so a
    * saved give is always green and never pink.
    */
-  const action = "var(--giver-action)";
+  const action = colour;
 
   /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
      sense as the give is described is quietly dropped, never corrected aloud. */
@@ -613,11 +619,15 @@ export function CategoryForm({
         ) : null}
 
         {full ? (
-          <p className="mt-7 g-meta">that’s {limit} — remove one to add another</p>
+          <p className="mt-7 g-meta">
+            that’s {limit}
+            {category === "borrow" ? (side === "lend" ? " lends" : " borrows") : ""} —
+            remove one to add another
+          </p>
         ) : (
           <div
             className={`mt-7 space-y-4 ${
-              category === "give" && records.length === 0 ? "" : "g-rule pt-5"
+              records.length === 0 ? "" : "g-rule pt-5"
             }`}
           >
 
@@ -932,12 +942,14 @@ export function CategoryForm({
               type="button"
               onClick={add}
               disabled={broke}
-              className="text-xl font-black lowercase disabled:opacity-30"
+              className="g-heading disabled:opacity-30"
               style={{ color: colour }}
             >
-              {records.length
-                ? `+ add another ${category}`
-                : `+ add ${category === "borrow" ? "a borrow" : `a ${category}`}`}
+              {category === "borrow"
+                ? side === "lend"
+                  ? "+ add a lend"
+                  : "+ add a borrow"
+                : `+ add a ${category === "wish" ? "wish" : category}`}
             </button>
           </div>
         )}

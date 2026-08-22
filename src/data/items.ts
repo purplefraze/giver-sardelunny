@@ -475,6 +475,9 @@ function seedItems(): Item[] {
 function withSeedDetails(item: Item): Item {
   /* DEMO ITEMS ARE ALWAYS RE-DERIVED, so old nonsense combinations heal. */
   if (!item.id.startsWith("seed-")) return item;
+  /* UNLESS SOMEBODY MEANT IT: a hand-edited record is never re-derived. */
+  if (item.edited) return item;
+
   const parts = item.id.split("-");
   const memberId = parts[1] ?? "";
   const index = Number(parts[3] ?? 0) || 0;

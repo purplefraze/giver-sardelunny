@@ -311,7 +311,32 @@ const BASE_MEMBERS: Member[] = [
   },
 ];
 
+/**
+ * THE ONE MEMBER PROJECTION EVERY VIEW READS.
+ *
+ * The array identity never changes (so every existing import keeps working),
+ * but each entry is rebuilt whenever a developer edits that person, which is
+ * what makes an admin edit show up on their profile, in the community feed, on
+ * every item's detail page and in their activity counts at once.
+ */
+export const MEMBERS: Member[] = BASE_MEMBERS.map((m) => ({ ...m }));
+
+function applyMemberEdits() {
+  const edits = memberEditsStore.get();
+  BASE_MEMBERS.forEach((base, i) => {
+    const patch = edits[base.id];
+    MEMBERS[i] = patch ? { ...base, ...patch } : { ...base };
+  });
+}
+
+memberEditsStore.subscribe(applyMemberEdits);
+applyMemberEdits();
+
+/** The untouched written record, so an admin edit can always be reverted. */
+export const baseMemberById = (id: string) => BASE_MEMBERS.find((m) => m.id === id);
+
 export const memberById = (id: string) => MEMBERS.find((m) => m.id === id);
+
 
 /**
  * CONNECTIONS ARE MUTUAL. The completed act creates the link both ways, so a

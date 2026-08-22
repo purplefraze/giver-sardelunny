@@ -572,8 +572,12 @@
    larger screen it keeps 9:16 rather than stretching into a desktop layout. */
 @utility g-canvas-w {
   width: 100%;
-  max-width: min(520px, calc(var(--app-h, 100dvh) * 0.5625));
+  /* A phone gets the whole screen. Anything wider than a phone gets phone
+     proportions instead of a stretched layout — but never narrower than the
+     screen itself, so a landscape phone is not squeezed into a ribbon. */
+  max-width: min(520px, max(100%, calc(var(--app-h, 100dvh) * 0.5625)));
 }
+
 
 /* CALM BY REQUEST. Anyone asking for less motion gets the same app without the
    unfurl swell, the breathing G or any decorative transition. */

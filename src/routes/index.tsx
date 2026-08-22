@@ -606,7 +606,7 @@ function Index() {
             <button
               type="button"
               onClick={() => setIntro({ topic: mode, help: true })}
-              className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
+              className="absolute bottom-1 left-3 z-20 p-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
             >
               {`what’s ${mode}?`}
             </button>

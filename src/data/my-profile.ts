@@ -1,4 +1,4 @@
-import meFallback from "@/assets/me.jpg";
+
 import type { Member } from "@/data/giver";
 import {
   ITEM_TYPES,

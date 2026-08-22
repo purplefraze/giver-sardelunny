@@ -215,7 +215,7 @@ export function FullProfile({
                 className="flex w-20 flex-col items-center gap-2 transition-transform active:scale-95"
               >
                 <img
-                  src={person.photo}
+                  src={person.photo ?? undefined}
                   alt={person.username}
                   className="h-16 w-16 rounded-full object-cover"
                 />

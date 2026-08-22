@@ -66,6 +66,8 @@ export function GEnclosure({
   const unfurled = phase === "opening" ? open : phase === "in";
   const ms = open ? OPEN_MS : CLOSE_MS;
   const ease = open ? OPEN_EASE : CLOSE_EASE;
+  /** Only promote the big artwork layer while it is actually moving. */
+  const moving = phase === "opening" || phase === "closing";
 
   return (
     <div
@@ -82,20 +84,25 @@ export function GEnclosure({
     >
       {/* THE SAME ARTWORK, SIMPLY LARGER. Geometry untouched. */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 motion-reduce:transition-none"
         style={{
-          transform: `scale(${unfurled ? SCALE : 1})`,
+          // translateZ keeps the unfurl on the compositor on Android, where a
+          // plain scale of this much artwork repaints every frame.
+          transform: `translateZ(0) scale(${unfurled ? SCALE : 1})`,
           transformOrigin: `${ORIGIN_X}% ${ORIGIN_Y}%`,
           transition: `transform ${ms}ms ${ease}`,
-          willChange: "transform",
+          willChange: moving ? "transform" : "auto",
+          backfaceVisibility: "hidden",
         }}
       >
         {/* The breathing layer must be a full-size box: it carries a transform,
             so it becomes the containing block the stage measures itself in. */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 motion-reduce:animate-none"
           style={{
-            animation: unfurled ? "g-alive 7200ms ease-in-out infinite" : undefined,
+            // Breathing only once the G has settled: an infinite animation
+            // during the unfurl fights it for the same compositor layer.
+            animation: phase === "in" ? "g-alive 7200ms ease-in-out infinite" : undefined,
             transformOrigin: `${ORIGIN_X}% ${ORIGIN_Y}%`,
           }}
         >
@@ -112,9 +119,14 @@ export function GEnclosure({
 
       {/* WHAT IS INSIDE THE G. Dynamic: it may change without ever leaving. */}
       <div
-        className="absolute overflow-hidden"
+        className="absolute overflow-hidden motion-reduce:transition-none"
         style={{
-          inset: "3.2% 5.4%",
+          // The G's own arcs frame the content; the safe-area insets make sure a
+          // notch or a gesture bar can never sit on top of it.
+          top: "max(3.2%, env(safe-area-inset-top))",
+          bottom: "max(3.2%, env(safe-area-inset-bottom))",
+          left: "max(5.4%, env(safe-area-inset-left))",
+          right: "max(5.4%, env(safe-area-inset-right))",
           borderRadius: "2.25rem",
           opacity: unfurled ? 1 : 0,
           transform: `scale(${unfurled ? 1 : 0.965})`,
@@ -126,6 +138,7 @@ export function GEnclosure({
       >
         {children}
       </div>
+
     </div>
   );
 }

@@ -267,7 +267,7 @@ export function FullProfile({
             <PastActivity
               member={member}
               type={openedCount}
-              onOpenItem={onOpenItem ? openItem : undefined}
+              {...(onOpenItem ? { onOpenItem: openItem } : {})}
             />
           ) : null}
         </Section>

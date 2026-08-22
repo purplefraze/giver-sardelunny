@@ -21,6 +21,8 @@ export function InlineEdit({
   note,
   autoEdit = false,
   onEditingChange,
+  /** A STAND-IN VALUE IS REPLACED, NOT APPENDED TO: touch it and it is chosen. */
+  selectAll = false,
 }: {
   /** The one quiet word that says what this is. Never repeated elsewhere. */
   label: string;
@@ -35,6 +37,7 @@ export function InlineEdit({
   note?: string;
   autoEdit?: boolean;
   onEditingChange?: (editing: boolean) => void;
+  selectAll?: boolean;
 }) {
   const [editing, setEditing] = useState(autoEdit);
   const field = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -46,11 +49,12 @@ export function InlineEdit({
     node.focus();
     const end = node.value.length;
     try {
-      node.setSelectionRange(end, end);
+      node.setSelectionRange(selectAll ? 0 : end, end);
     } catch {
       /* number-ish inputs refuse selection; focus is enough */
     }
-  }, [editing]);
+  }, [editing, selectAll]);
+
 
   useEffect(() => {
     onEditingChange?.(editing);

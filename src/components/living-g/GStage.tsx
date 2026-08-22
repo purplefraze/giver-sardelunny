@@ -31,7 +31,9 @@ const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
 export const CTA_BAND = "2.6rem";
 
 /** The canonical artwork target: 94% of the usable height, 96% of the width. */
-const CANONICAL_WIDTH = `min(${(96 * BOX_W).toFixed(3)}vw, calc((100dvh - ${CTA_BAND}) * 0.99 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`;
+/* Height comes from --app-h (a real measured viewport height) so a collapsing
+   Android address bar can never resize the artwork mid-animation. */
+const CANONICAL_WIDTH = `min(${(96 * BOX_W).toFixed(3)}%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.99 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`;
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (

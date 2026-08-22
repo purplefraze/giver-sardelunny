@@ -235,6 +235,9 @@ function Index() {
   const [person, setPerson] = useState<string | null>(null);
   /** WHICH SECTION a profile opens on when it was reached from an activity. */
   const [personFocus, setPersonFocus] = useState<ItemType | null>(null);
+  /* WHILE THE G FOLDS BACK, what was inside it is still inside it. */
+  const personShown = useLinger(person);
+
 
   /**
    * THE COMMUNITY DOOR, WHEN IT IS STILL SHUT. Not an error and not a warning —

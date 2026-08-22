@@ -430,8 +430,13 @@ export function LivingG({
               down.current = { x: e.clientX, y: e.clientY };
               revealed.current = false;
               setPressed(key);
+              // THE SWELL IS FELT AS IT IS SEEN. Fired inside the gesture itself,
+              // which is exactly what Android requires, and the quietest tick we
+              // have so a finger resting on the G never buzzes.
+              haptics.selection();
               holdCue(key);
             }}
+
             onPointerUp={(e) => {
               if (tapId.current !== e.pointerId) return;
               tapId.current = null;

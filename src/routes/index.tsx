@@ -646,16 +646,23 @@ function Index() {
             the expanded Communi-G, where the whole community already is.
           */}
 
-          {/* @USERNAME -> THE WHOLE PERSON, with their living g and messaging. */}
-          <Screen open={person !== null}>
-            {person
+          {/*
+            @USERNAME -> INSIDE THAT PERSON'S LIVING G. Not a page: the same
+            artwork unfurls until its curves frame the screen, and their profile
+            appears within it. Backing out contracts it to exactly where it was.
+          */}
+          <GEnclosure
+            open={person !== null}
+            world={personShown === ME_ID ? "me" : "others"}
+          >
+            {personShown
               ? (() => {
                   const member =
-                    person === ME_ID ? myAsMember(me) : memberById(person);
+                    personShown === ME_ID ? myAsMember(me) : memberById(personShown);
                   return member ? (
                     <FullProfile
                       member={member}
-                      world={person === ME_ID ? "me" : "others"}
+                      world={personShown === ME_ID ? "me" : "others"}
                       focus={personFocus}
                       onBack={() => {
                         setPersonFocus(null);
@@ -671,13 +678,13 @@ function Index() {
                   ) : null;
                 })()
               : null}
-          </Screen>
+          </GEnclosure>
 
-          {/* AN ITEM OPENS ON TOP OF WHEREVER IT WAS FOUND — feed or profile. */}
-          <Screen open={detail !== null}>
-            {detail ? (
+          {/* AN ITEM IS MORE OF THE SAME G: only the interior content changes. */}
+          <GEnclosure open={detail !== null}>
+            {detailShown ? (
               <ActivityDetail
-                itemId={detail}
+                itemId={detailShown}
                 onOpenConnection={(id) => {
                   setDetail(null);
                   setTalking(id);
@@ -689,7 +696,8 @@ function Index() {
                 onClose={() => setDetail(null)}
               />
             ) : null}
-          </Screen>
+          </GEnclosure>
+
 
           <Screen open={talking !== null}>
             {talking ? (

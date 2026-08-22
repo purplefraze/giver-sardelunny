@@ -288,7 +288,11 @@ export function CategoryForm({
     /* THE ONE RELIABLE PICKER — a real input, so the first attempt works. */
     const files = await pickImages({ multiple: !attachTo });
     if (!files.length) return;
-    const shrunk = (await Promise.all(files.map((f) => readSmall(f)))).filter(Boolean);
+    const read = await Promise.allSettled(files.map((f) => readSmall(f)));
+    const shrunk = read
+      .map((r) => (r.status === "fulfilled" ? r.value : ""))
+      .filter(Boolean);
+
     if (!shrunk.length) return;
     if (attachTo) {
       for (const photo of shrunk) itemsStore.addPhoto(attachTo, photo);

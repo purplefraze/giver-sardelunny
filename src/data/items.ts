@@ -637,6 +637,27 @@ export const itemsStore = {
     });
   },
 
+  /**
+   * THE DEVELOPER/ADMIN EDIT. Exactly the same single record as everything
+   * else — it simply also marks the item as deliberately written, so a seeded
+   * demo item stops being re-derived on load and the change persists for good.
+   */
+  adminPatch(
+    id: string,
+    fields: Partial<Omit<Item, "id" | "ownerId">> & { type?: ItemType },
+  ) {
+    const s = ensure();
+    const item = s.items.find((i) => i.id === id);
+    if (!item) return;
+    commit({
+      ...s,
+      items: s.items.map((i) =>
+        i.id === id ? { ...i, ...fields, edited: true, updatedAt: Date.now() } : i,
+      ),
+    });
+  },
+
+
   setStatus(id: string, status: ItemStatus) {
     const s = ensure();
     const item = s.items.find((i) => i.id === id);

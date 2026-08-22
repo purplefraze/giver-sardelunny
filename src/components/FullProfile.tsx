@@ -179,7 +179,26 @@ export function FullProfile({
           <h1 className="g-display mt-6">{member.username}</h1>
           {identity.length ? <p className="g-meta mt-4">{identity.join(" · ")}</p> : null}
           <p className="g-meta mt-1">member of giver since {member.since}</p>
+
+          {/*
+            THE DEVELOPER DOOR — every person, not one special case. It is only
+            ever here while the dev switch is on; end users never see it.
+          */}
+          {admin && !mine ? (
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                setEditPerson(true);
+              }}
+              className="mt-5 text-[12px] font-black lowercase tracking-[0.26em]"
+              style={{ color: "var(--giver-me)" }}
+            >
+              edit this person
+            </button>
+          ) : null}
         </header>
+
 
         <Section title={mine ? "about me" : "about them"}>
           {member.aboutMe ? (

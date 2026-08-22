@@ -19,6 +19,8 @@ export type MemberEdits = Record<string, MemberPatch>;
 
 const KEY = "giver.admin.member-edits.v1";
 
+const NO_EDITS: MemberEdits = Object.freeze({});
+
 let state: MemberEdits = {};
 let hydrated = false;
 const listeners = new Set<() => void>();

@@ -293,8 +293,12 @@ function fire(level: HapticLevel) {
         customBridge()?.send(level);
         break;
       case "vibrate":
+        if (!activated()) break;
+        // A new pulse always replaces the old one: no queue, no lingering buzz.
+        navigator.vibrate(0);
         navigator.vibrate(WEB_PATTERN[level]);
         break;
+
       case "ios-switch":
         // One tick per event; a success reads as a quick double.
         iosSwitchTick();

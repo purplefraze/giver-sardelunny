@@ -298,6 +298,10 @@ function Index() {
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
   const items = useItems();
+  /* ADMIN PEOPLE EDITS re-render every screen below, so a corrected person is
+     immediately true in the feed, on their profile and on every item. */
+  useMemberEdits();
+
   const links = useConnections();
 
   /* SEVEN DAYS AND THE SPARKS COME HOME: expire stale wishes on every entry. */

@@ -67,7 +67,12 @@ export type Member = {
   connections: string[];
 };
 
-export const MEMBERS: Member[] = [
+/**
+ * THE WRITTEN RECORD of the sample people. Never read directly by the app: the
+ * exported MEMBERS below is this, with any developer/admin edit applied on top.
+ */
+const BASE_MEMBERS: Member[] = [
+
   {
     id: "giulia",
     name: "Giulia",

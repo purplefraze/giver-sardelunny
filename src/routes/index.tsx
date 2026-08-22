@@ -417,14 +417,14 @@ function Index() {
   if (!hydrated) {
     return (
       <main
-        className="mx-auto h-[100dvh] w-full max-w-[520px]"
+        className="g-canvas-h mx-auto w-full max-w-[520px]"
         style={{ background: "var(--giver-paper)" }}
       />
     );
   }
 
   return (
-    <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
+    <main className="g-canvas-h relative mx-auto w-full max-w-[520px] overflow-hidden">
       <DevControls />
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */

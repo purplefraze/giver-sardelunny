@@ -94,11 +94,19 @@ export function FullProfile({
       <div className="g-page g-page-top g-page-bottom">
         {/* HEADER — photo, username, distance, member since. Nothing more. */}
         <header className="flex flex-col items-start">
-          <img
-            src={member.photo}
-            alt={`${member.username}, ${member.byDay} by day`}
-            className="h-32 w-32 rounded-full object-cover"
-          />
+          {member.photo ? (
+            <img
+              src={member.photo}
+              alt={`${member.username}, ${member.byDay} by day`}
+              className="h-32 w-32 rounded-full object-cover"
+            />
+          ) : (
+            <div
+              aria-hidden
+              className="h-32 w-32 rounded-full"
+              style={{ background: "var(--world-ink)", opacity: 0.08 }}
+            />
+          )}
           <h1 className="g-display mt-6">{member.username}</h1>
           <p className="g-meta mt-4">{member.distance}</p>
           <p className="g-meta mt-1">member of giver since {member.since}</p>
@@ -207,7 +215,7 @@ export function FullProfile({
                 className="flex w-20 flex-col items-center gap-2 transition-transform active:scale-95"
               >
                 <img
-                  src={person.photo}
+                  src={person.photo ?? undefined}
                   alt={person.username}
                   className="h-16 w-16 rounded-full object-cover"
                 />

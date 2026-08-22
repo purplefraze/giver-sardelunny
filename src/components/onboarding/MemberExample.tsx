@@ -207,7 +207,7 @@ export function MemberExample({
               mode={seat}
               /* Other people's Gs keep the four activity seats only. */
               onChange={(next) => setSeat(next as Mode)}
-              photo={member.photo}
+              {...(member.photo ? { photo: member.photo } : {})}
               /* PAST CONNECTIONS live with the photo, as one quiet number. */
               badge={pastConnectionCount(member)}
               // THE PHOTO IS THE GATEWAY: a tap opens their full profile.

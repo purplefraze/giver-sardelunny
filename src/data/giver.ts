@@ -1,7 +1,6 @@
 import giuliaAsset from "@/assets/giulia.jpg.asset.json";
 import sofiaAsset from "@/assets/sofia-profile.jpg.asset.json";
 import robinAsset from "@/assets/robin.jpg.asset.json";
-import me from "@/assets/me.jpg";
 import marcusAsset from "@/assets/marcus.jpg.asset.json";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
 
@@ -22,7 +21,8 @@ export type Member = {
   username: string;
   /** Approximate distance, shown under the username. Never inside a loop. */
   distance: string;
-  photo: string;
+  /** null until the person has chosen their own picture. Never a stand-in. */
+  photo: string | null;
   blurb: string;
   mode: "wishing" | "giving" | "trading" | "borrowing";
   /** Activity world. Colour-wise every sample person is ANOTHER PERSON: blue. */
@@ -323,17 +323,12 @@ export function pastConnectionCount(m: Member) {
   return m.done.gifts + m.done.wishes + m.done.trades + m.done.borrows;
 }
 
-export const ME = {
-  name: "you",
-  photo: me,
-  activity: "you gave 50 sparks. your first act of generosity.",
-  about: "new here. curious. reckons kindness is currency.",
-  history: {
-    wishes: ["nothing yet"],
-    gives: ["50 sparks, gifted"],
-    trades: ["nothing yet"],
-  },
-};
+/*
+  THERE IS NO STAND-IN FOR ME. My own name, picture and story come only from
+  myProfileStore — never from sample data. The community below stays sample.
+*/
+
+
 
 export const COMMUNITY_WISHES = [
   "a ladder for one afternoon — ravi, 300m",

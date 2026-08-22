@@ -3,7 +3,6 @@ import {
   completeOnboarding,
   replayOnboarding,
   resetNewUser,
-  seedDevelopmentProfile,
 } from "@/data/dev-fixture";
 import { HapticsCheck } from "@/components/HapticsCheck";
 
@@ -31,7 +30,6 @@ export function DevControls() {
           <button type="button" className="py-2 text-left" onClick={() => run(replayOnboarding)}>replay onboarding</button>
           <button type="button" className="py-2 text-left" onClick={() => run(resetNewUser)}>new-user reset</button>
           <button type="button" className="py-2 text-left" onClick={() => run(completeOnboarding)}>skip / complete</button>
-          <button type="button" className="py-2 text-left" onClick={() => run(seedDevelopmentProfile)}>restore dev profile</button>
           <button type="button" className="py-2 text-left" onClick={() => { setOpen(false); setHaptics(true); }}>haptics check</button>
         </div>
       ) : null}

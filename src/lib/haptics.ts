@@ -122,6 +122,20 @@ function canVibrate() {
   return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
 }
 
+/**
+ * ANDROID'S ONE RULE. Chrome only lets a page vibrate once the user has actually
+ * touched it (sticky user activation). Asking earlier is refused and logged, so
+ * we simply stay quiet until the first real gesture has happened. Everything the
+ * app feels is triggered from a gesture, so this only silences the impossible.
+ */
+function activated() {
+  if (typeof navigator === "undefined") return false;
+  const ua = (navigator as unknown as Loose)["userActivation"] as Loose | undefined;
+  if (!ua) return true; // No way to ask: let the browser decide.
+  return ua["hasBeenActive"] === true;
+}
+
+
 function isIOS() {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;

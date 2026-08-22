@@ -418,16 +418,30 @@ function Index() {
      onboarding nor My G until it is hydrated, preventing a stale server frame
      from flashing or surviving as the first post-onboarding screen. */
   if (!hydrated) {
+    /* NEVER A BLANK, NEVER AN OVERFLOWING FIRST FRAME: the canvas is already
+       the right size and the G is already there, simply not yet awake. */
     return (
       <main
-        className="g-canvas-h mx-auto w-full max-w-[520px]"
+        className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden"
         style={{ background: "var(--giver-paper)" }}
-      />
+        aria-busy="true"
+      >
+        <div className="absolute inset-0 opacity-[0.07]">
+          <GStage>
+            <svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible">
+              <g transform={LIVING_G_TRANSFORM} fill="var(--giver-ink)">
+                <path d={LIVING_G_PATH} />
+              </g>
+            </svg>
+          </GStage>
+        </div>
+      </main>
     );
   }
 
   return (
-    <main className="g-canvas-h relative mx-auto w-full max-w-[520px] overflow-hidden">
+    <main className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden">
+
       <DevControls />
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */

@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { GEnclosure } from "@/components/living-g/GEnclosure";
+import { GStage } from "@/components/living-g/GStage";
+import {
+  LIVING_G_PATH,
+  LIVING_G_TRANSFORM,
+  LIVING_G_VIEWBOX,
+} from "@/components/living-g/g-path";
 import { useAppHeight } from "@/hooks/use-app-height";
+
 
 import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";

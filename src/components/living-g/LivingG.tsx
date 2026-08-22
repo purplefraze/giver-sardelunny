@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { buzz } from "@/lib/haptics";
+import { buzz, haptics } from "@/lib/haptics";
 import {
   EAR_CUT,
   RIM_PATCH,

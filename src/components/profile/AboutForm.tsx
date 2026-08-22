@@ -23,17 +23,19 @@ import { buzz } from "@/lib/haptics";
 import { haptics } from "@/lib/haptics";
 
 /**
- * MY G — THE ACCOUNT AND THE PERSON, ON ONE COMPACT PAGE.
+ * MY G — THE PERSON, EDITABLE, ABOVE THE FOLD.
  *
- * Giver asks for almost nothing, but an ACCOUNT is real: a username, a date of
- * birth and a password are required, marked with *, and everything else is
- * genuinely optional. Publishing a give needs 18+, and that is said here, once,
- * plainly — never as an alarm.
+ * Once an account exists this screen stops being an onboarding form: the
+ * identity that has already been given (handle, date of birth) lives beside the
+ * photo as METADATA YOU CAN TAP, the password moves into a small settings
+ * affordance, and the page below is nothing but the person themselves.
  *
- * THE PRIVATE UTILITIES LIVE ON THE PHOTO ITSELF: one miniature Living-G-style
- * toggle riding the rim of my photo circle. 1:30 messages (RED), 3:00 sparks
- * (PURPLE), 4:30 sparkles (PINK). First tap selects, second tap opens that
- * history. There are no large counters anywhere.
+ * THE PHOTO IS ITS OWN MENU. Tapping it opens a compact contextual list —
+ * change photo, reposition photo, and the one line explaining the dots — so
+ * nothing has to be explained permanently beside it.
+ *
+ * FIRST SETUP IS THE ONLY TIME ASTERISKS EXIST. Required-field marks belong to
+ * account creation, never to the everyday editor.
  */
 
 const GENDERS = ["male", "female", "non-binary", "prefer not to say"] as const;
@@ -71,10 +73,25 @@ export function AboutForm({
   /* ONE SHARED PHOTO FLOW: choose, position inside the circle, confirm. */
   const photo = useProfilePhoto();
   const dateRef = useRef<HTMLInputElement | null>(null);
+  /** THE PHOTO'S OWN LITTLE MENU. Closed is the resting state. */
+  const [photoMenu, setPhotoMenu] = useState(false);
+  /** WHICH PIECE OF IDENTITY IS BEING EDITED RIGHT NOW, if any. */
+  const [editing, setEditing] = useState<"handle" | "birthday" | null>(null);
+  /** MY SETTINGS — where a password is changed, and nowhere else. */
+  const [settings, setSettings] = useState(false);
 
   const handle = normaliseHandle(me.username);
   const age = ageFrom(me.birthday);
   const adult = age !== null && age >= ADULT_AGE;
+
+  /**
+   * ONBOARDING IS A MOMENT, NOT A STATE. Asterisks, the password fields and
+   * the account block only exist while the account is still being created.
+   */
+  const onboarding = firstSetup || !me.built;
+  const req = onboarding ? " *" : "";
+  const showHandleField = onboarding || editing === "handle" || !handle || handle === "you";
+  const showBirthdayField = onboarding || editing === "birthday" || !me.birthday;
 
   /* AVAILABILITY IS CHECKED WHILE YOU TYPE, and never blocks the typing. */
   useEffect(() => {
@@ -122,18 +139,18 @@ export function AboutForm({
       <BackArrow onClick={save} label="back to my g" />
 
       <div className="px-7 pb-14 pt-16">
-        {/* PHOTO + ITS ONE PHYSICAL UTILITY TOGGLE ON THE RIM. */}
+        {/* PHOTO + WHO I AM. Identity first, and nothing else beside it. */}
         <div className="flex items-start gap-5">
           <div className="relative shrink-0" style={{ width: PHOTO, height: PHOTO }}>
             <button
               type="button"
               onClick={() => {
                 buzz();
-                if (me.photoSource) photo.reposition(me.photoSource, me.photoCrop);
+                if (me.photo || me.photoSource) setPhotoMenu((o) => !o);
                 else void photo.choose();
               }}
               className="block h-full w-full transition-transform active:scale-[0.98]"
-              aria-label={me.photo ? "reposition photo" : "add a photo"}
+              aria-label={me.photo ? "photo options" : "add a photo"}
             >
               {me.photo ? (
                 <img
@@ -166,173 +183,312 @@ export function AboutForm({
             ) : null}
           </div>
 
-          <div className="min-w-0 pt-1">
+          {/* MY NAME, MY DAY OF BIRTH — the two things already given, tappable. */}
+          <div className="min-w-0 flex-1 pt-1">
             <button
               type="button"
-              onClick={() => void photo.choose()}
-              className="block text-left text-lg font-black lowercase leading-none tracking-[-0.02em]"
+              onClick={() => {
+                haptics.selection();
+                setEditing(editing === "handle" ? null : "handle");
+              }}
+              className="block max-w-full truncate text-left text-2xl font-black lowercase leading-none tracking-[-0.03em]"
               style={{ color: "var(--giver-me)" }}
             >
-              {photo.loading ? "opening…" : me.photo ? "change photo" : "add a photo"}
+              {handle && handle !== "you" ? `@${handle}` : "add your username"}
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                haptics.selection();
+                setEditing(editing === "birthday" ? null : "birthday");
+              }}
+              className="mt-2 block text-left g-meta opacity-60"
+            >
+              {me.birthday
+                ? `${birthdayLabel(me.birthday)}${age !== null ? ` · ${age}` : ""}`
+                : "add your date of birth"}
+            </button>
+
+            {/* MY SETTINGS — small, quiet, and the only home of the password. */}
+            {!onboarding ? (
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.selection();
+                  setSettings((o) => !o);
+                }}
+                className="mt-2 block text-left g-meta opacity-45"
+              >
+                my settings
+              </button>
+            ) : null}
+
             {/* IF A PICTURE CANNOT BE READ, SAY SO — never fail in silence. */}
             {photo.failed ? (
               <p className="mt-2 g-meta" style={{ color: "var(--giver-me)" }}>
                 that picture wouldn’t open — try another
               </p>
             ) : null}
-            {me.photoSource ? (
-              <button
-                type="button"
-                onClick={() => photo.reposition(me.photoSource!, me.photoCrop)}
-                className="mt-2 block text-left g-meta opacity-55"
-              >
-                reposition
-              </button>
-            ) : null}
-
-            {!firstSetup ? (
-              <p className="mt-3 g-meta opacity-35">tap a dot, tap again to open</p>
-            ) : null}
           </div>
         </div>
 
-        {/* ---- REQUIRED: THE ACCOUNT ITSELF. ---- */}
-        <p className="mt-10 g-heading" style={{ color: "var(--giver-me)" }}>
-          your account
-        </p>
-        <p className="mt-2 g-meta opacity-40">* required</p>
-
-        <div className="mt-5 space-y-5">
-          <Field
-            label="username / handle *"
-            value={handle}
-            onChange={(v) => myProfileStore.patch({ username: normaliseHandle(v) })}
-            placeholder="yourname"
-            prefix="@"
-            limit={20}
-            note={
-              handleState.state === "free"
-                ? HANDLE_MESSAGE.free
-                : handleState.state === "taken"
-                  ? HANDLE_MESSAGE.taken
-                  : handleState.state === "short"
-                    ? HANDLE_MESSAGE.short
-                    : "lowercase, no spaces"
-            }
-            noteColour={
-              handleState.state === "taken" ? "var(--giver-action)" : undefined
-            }
-          />
-
-          {/* BIRTHDAY — THE ANSWER BELONGS TO ITS OWN LABEL, right beside it. */}
-          <div className="flex flex-col gap-1.5">
-            <span className="g-meta" style={{ color: "var(--giver-me)", opacity: 0.75 }}>
-              birthday / dob *
-            </span>
-            <div
-              className="relative flex items-baseline gap-3 border-b pb-1"
-              style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
+        {/* THE PHOTO'S CONTEXTUAL MENU — only while it is open. */}
+        {photoMenu ? (
+          <div
+            className="mt-4 flex flex-col items-start gap-3 border-l pl-4"
+            style={{ borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)" }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoMenu(false);
+                void photo.choose();
+              }}
+              className="text-left text-base font-black lowercase tracking-[-0.01em]"
+              style={{ color: "var(--giver-me)" }}
             >
+              {photo.loading ? "opening…" : "change photo"}
+            </button>
+            {me.photoSource ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setPhotoMenu(false);
+                  photo.reposition(me.photoSource!, me.photoCrop);
+                }}
+                className="text-left text-base font-black lowercase tracking-[-0.01em]"
+                style={{ color: "var(--giver-me)" }}
+              >
+                reposition photo
+              </button>
+            ) : null}
+            {!firstSetup ? (
+              <p className="g-meta opacity-40">tap a dot, tap again to open</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* MY SETTINGS: A PASSWORD IS CHANGED HERE, never asked for again. */}
+        {settings && !onboarding ? (
+          <div className="mt-6 space-y-5">
+            <p className="g-heading" style={{ color: "var(--giver-me)" }}>
+              my settings
+            </p>
+            <Secret
+              label="new password"
+              value={pass}
+              onChange={setPass}
+              show={showPass}
+              placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
+            />
+            {pass ? (
+              <div className="space-y-1.5">
+                {PASSWORD_RULES.map((rule) => {
+                  const ok = rule.test(pass);
+                  return (
+                    <p
+                      key={rule.label}
+                      className="g-meta"
+                      style={{
+                        color: ok ? "var(--mode-give)" : undefined,
+                        opacity: ok ? 0.9 : 0.4,
+                      }}
+                    >
+                      {ok ? "✓" : "·"} {rule.label}
+                    </p>
+                  );
+                })}
+              </div>
+            ) : null}
+            {pass ? (
+              <Secret
+                label="confirm new password"
+                value={again}
+                onChange={setAgain}
+                show={showPass}
+                placeholder="again, exactly"
+              />
+            ) : null}
+            <div className="flex items-baseline gap-4">
               <button
                 type="button"
                 onClick={() => {
                   haptics.selection();
-                  dateRef.current?.showPicker?.();
-                  dateRef.current?.focus();
+                  setShowPass((s) => !s);
                 }}
-                className="text-left text-xl font-black lowercase leading-tight tracking-[-0.03em]"
-                style={{ opacity: me.birthday ? 1 : 0.3 }}
+                className="g-meta"
+                style={{ color: "var(--giver-me)" }}
               >
-                {birthdayLabel(me.birthday) || "choose your date of birth"}
+                {showPass ? "hide" : "show"}
               </button>
-              <input
-                ref={dateRef}
-                type="date"
-                value={me.birthday ?? ""}
-                onChange={(e) => myProfileStore.patch({ birthday: e.target.value })}
-                aria-label="date of birth"
-                className="absolute inset-0 h-full w-full opacity-0"
-              />
-            </div>
-            <span
-              className="g-meta"
-              style={{
-                color: age !== null && !adult ? "var(--giver-action)" : undefined,
-                opacity: 0.6,
-              }}
-            >
-              {age === null
-                ? `you must be ${ADULT_AGE} or older to publish a give`
-                : adult
-                  ? `${age} — you can publish gives`
-                  : `${age} — gives can be written and saved, not published yet`}
-            </span>
-          </div>
-
-          <Secret
-            label="password *"
-            value={pass}
-            onChange={setPass}
-            show={showPass}
-            placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
-          />
-          <div className="space-y-1.5">
-            {PASSWORD_RULES.map((rule) => {
-              const ok = rule.test(pass);
-              return (
-                <p
-                  key={rule.label}
-                  className="g-meta"
-                  style={{
-                    color: ok ? "var(--mode-give)" : undefined,
-                    opacity: ok ? 0.9 : 0.4,
-                  }}
-                >
-                  {ok ? "✓" : "·"} {rule.label}
-                </p>
-              );
-            })}
-          </div>
-
-          <Secret
-            label="confirm password *"
-            value={again}
-            onChange={setAgain}
-            show={showPass}
-            placeholder="again, exactly"
-          />
-          <div className="flex items-baseline gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                haptics.selection();
-                setShowPass((s) => !s);
-              }}
-              className="g-meta"
-              style={{ color: "var(--giver-action)" }}
-            >
-              {showPass ? "hide" : "show"}
-            </button>
-            <span className="g-meta opacity-50">
-              {!pass && passwordSet
-                ? "password saved"
-                : !pass
-                  ? ""
+              <span className="g-meta opacity-50">
+                {!pass
+                  ? "update password"
                   : matches
                     ? passwordStrongEnough(pass)
                       ? "saved"
                       : "nearly — see above"
                     : "these two don’t match yet"}
-            </span>
+              </span>
+            </div>
           </div>
-        </div>
+        ) : null}
 
-        {/* ---- OPTIONAL: THE PERSON. ---- */}
+        {/* ---- MY G. The account itself, only while it is still being made. ---- */}
+        {showHandleField || showBirthdayField || onboarding ? (
+          <>
+            <p className="mt-10 g-heading" style={{ color: "var(--giver-me)" }}>
+              my g
+            </p>
+            {onboarding ? <p className="mt-2 g-meta opacity-40">* required</p> : null}
+
+            <div className="mt-5 space-y-5">
+              {showHandleField ? (
+                <Field
+                  label={`username / handle${req}`}
+                  value={handle}
+                  onChange={(v) => myProfileStore.patch({ username: normaliseHandle(v) })}
+                  placeholder="yourname"
+                  prefix="@"
+                  limit={20}
+                  note={
+                    handleState.state === "free"
+                      ? HANDLE_MESSAGE.free
+                      : handleState.state === "taken"
+                        ? HANDLE_MESSAGE.taken
+                        : handleState.state === "short"
+                          ? HANDLE_MESSAGE.short
+                          : "lowercase, no spaces"
+                  }
+                  noteColour={
+                    handleState.state === "taken" ? "var(--giver-me)" : undefined
+                  }
+                />
+              ) : null}
+
+              {/* BIRTHDAY — the answer belongs to its own label, right beside it. */}
+              {showBirthdayField ? (
+                <div className="flex flex-col gap-1.5">
+                  <span
+                    className="g-meta"
+                    style={{ color: "var(--giver-me)", opacity: 0.75 }}
+                  >
+                    birthday / dob{req}
+                  </span>
+                  <div
+                    className="relative flex items-baseline gap-3 border-b pb-1"
+                    style={{
+                      borderColor: "color-mix(in oklab, var(--giver-me) 35%, transparent)",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        haptics.selection();
+                        dateRef.current?.showPicker?.();
+                        dateRef.current?.focus();
+                      }}
+                      className="text-left text-xl font-black lowercase leading-tight tracking-[-0.03em]"
+                      style={{ opacity: me.birthday ? 1 : 0.3 }}
+                    >
+                      {birthdayLabel(me.birthday) || "choose your date of birth"}
+                    </button>
+                    <input
+                      ref={dateRef}
+                      type="date"
+                      value={me.birthday ?? ""}
+                      onChange={(e) =>
+                        myProfileStore.patch({ birthday: e.target.value })
+                      }
+                      aria-label="date of birth"
+                      className="absolute inset-0 h-full w-full opacity-0"
+                    />
+                  </div>
+                  <span
+                    className="g-meta"
+                    style={{
+                      color: age !== null && !adult ? "var(--giver-me)" : undefined,
+                      opacity: 0.6,
+                    }}
+                  >
+                    {age === null
+                      ? `you must be ${ADULT_AGE} or older to publish a give`
+                      : adult
+                        ? `${age} — you can publish gives`
+                        : `${age} — gives can be written and saved, not published yet`}
+                  </span>
+                </div>
+              ) : null}
+
+              {/* A PASSWORD IS ASKED FOR ONCE, while the account is being made. */}
+              {onboarding ? (
+                <>
+                  <Secret
+                    label="password *"
+                    value={pass}
+                    onChange={setPass}
+                    show={showPass}
+                    placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
+                  />
+                  <div className="space-y-1.5">
+                    {PASSWORD_RULES.map((rule) => {
+                      const ok = rule.test(pass);
+                      return (
+                        <p
+                          key={rule.label}
+                          className="g-meta"
+                          style={{
+                            color: ok ? "var(--mode-give)" : undefined,
+                            opacity: ok ? 0.9 : 0.4,
+                          }}
+                        >
+                          {ok ? "✓" : "·"} {rule.label}
+                        </p>
+                      );
+                    })}
+                  </div>
+                  <Secret
+                    label="confirm password *"
+                    value={again}
+                    onChange={setAgain}
+                    show={showPass}
+                    placeholder="again, exactly"
+                  />
+                  <div className="flex items-baseline gap-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        haptics.selection();
+                        setShowPass((s) => !s);
+                      }}
+                      className="g-meta"
+                      style={{ color: "var(--giver-me)" }}
+                    >
+                      {showPass ? "hide" : "show"}
+                    </button>
+                    <span className="g-meta opacity-50">
+                      {!pass && passwordSet
+                        ? "password saved"
+                        : !pass
+                          ? ""
+                          : matches
+                            ? passwordStrongEnough(pass)
+                              ? "saved"
+                              : "nearly — see above"
+                            : "these two don’t match yet"}
+                    </span>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+
+        {/* ---- THE PERSON. ---- */}
         <p className="mt-12 g-heading" style={{ color: "var(--giver-me)" }}>
           about you
         </p>
-        <p className="mt-2 g-meta opacity-40">all optional</p>
 
         <div className="mt-5 space-y-5">
           <Field

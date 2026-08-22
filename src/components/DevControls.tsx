@@ -5,6 +5,8 @@ import {
   resetNewUser,
 } from "@/data/dev-fixture";
 import { adminStore } from "@/data/admin";
+import { demoRepliesStore } from "@/data/demo-replies";
+
 import { memberEditsStore } from "@/data/member-edits";
 import { useAdmin } from "@/hooks/use-admin";
 import { HapticsCheck } from "@/components/HapticsCheck";

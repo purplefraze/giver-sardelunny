@@ -581,5 +581,5 @@ export function myAsMember(p: MyProfile): Member {
   };
 }
 
-/** Photo with a graceful prototype fallback for the ring. */
-export const myPhoto = (p: MyProfile) => p.photo ?? meFallback;
+/** MY picture, or nothing at all. There is never a stand-in person here. */
+export const myPhoto = (p: MyProfile) => p.photo;

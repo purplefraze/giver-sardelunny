@@ -14,7 +14,7 @@ import {
   passwordStrongEnough,
   type HandleCheck,
 } from "@/data/account";
-import { PhotoCropper } from "@/components/profile/PhotoCropper";
+import { useProfilePhoto } from "@/components/profile/ProfilePhotoPicker";
 import {
   ProfilePhotoToggle,
   type PhotoSeat,
@@ -68,7 +68,8 @@ export function AboutForm({
   const [pass, setPass] = useState("");
   const [again, setAgain] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [cropping, setCropping] = useState<string | null>(null);
+  /* ONE SHARED PHOTO FLOW: choose, position inside the circle, confirm. */
+  const photo = useProfilePhoto();
   const dateRef = useRef<HTMLInputElement | null>(null);
 
   const handle = normaliseHandle(me.username);
@@ -96,23 +97,6 @@ export function AboutForm({
     if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
     void myProfileStore.setPassword(pass);
   }, [pass, again]);
-
-  const pickPhoto = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async () => {
-        /* Shrunk first, then positioned: the crop is always the last word. */
-        setCropping(await shrink(String(reader.result)));
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
-  };
 
   const openSeat = (seat: PhotoSeat) => {
     if (seat === "messages") onMessages?.();
@@ -145,8 +129,8 @@ export function AboutForm({
               type="button"
               onClick={() => {
                 buzz();
-                if (me.photoSource) setCropping(me.photoSource);
-                else pickPhoto();
+                if (me.photoSource) photo.reposition(me.photoSource, me.photoCrop);
+                else void photo.choose();
               }}
               className="block h-full w-full transition-transform active:scale-[0.98]"
               aria-label={me.photo ? "reposition photo" : "add a photo"}
@@ -185,27 +169,28 @@ export function AboutForm({
           <div className="min-w-0 pt-1">
             <button
               type="button"
-              onClick={() => {
-                buzz();
-                pickPhoto();
-              }}
+              onClick={() => void photo.choose()}
               className="block text-left text-lg font-black lowercase leading-none tracking-[-0.02em]"
               style={{ color: "var(--giver-me)" }}
             >
-              {me.photo ? "change photo" : "add a photo"}
+              {photo.loading ? "opening…" : me.photo ? "change photo" : "add a photo"}
             </button>
+            {/* IF A PICTURE CANNOT BE READ, SAY SO — never fail in silence. */}
+            {photo.failed ? (
+              <p className="mt-2 g-meta" style={{ color: "var(--giver-me)" }}>
+                that picture wouldn’t open — try another
+              </p>
+            ) : null}
             {me.photoSource ? (
               <button
                 type="button"
-                onClick={() => {
-                  buzz();
-                  setCropping(me.photoSource);
-                }}
+                onClick={() => photo.reposition(me.photoSource!, me.photoCrop)}
                 className="mt-2 block text-left g-meta opacity-55"
               >
                 reposition
               </button>
             ) : null}
+
             {!firstSetup ? (
               <p className="mt-3 g-meta opacity-35">tap a dot, tap again to open</p>
             ) : null}
@@ -443,44 +428,9 @@ export function AboutForm({
       </div>
 
       {/* THE CIRCLE IS CHOSEN BY HAND — drag to move, pinch to zoom. */}
-      {cropping ? (
-        <PhotoCropper
-          source={cropping}
-          initial={me.photoCrop}
-          onCancel={() => setCropping(null)}
-          onConfirm={(cropped, crop) => {
-            myProfileStore.setPhoto(cropped, cropping, crop);
-            setCropping(null);
-          }}
-        />
-      ) : null}
+      {photo.cropper}
     </div>
   );
-}
-
-/**
- * A photo must never cost the words. We redraw it small before it is stored,
- * so the whole profile keeps fitting in persistent storage.
- */
-async function shrink(dataUrl: string, max = 900): Promise<string> {
-  try {
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("bad image"));
-      img.src = dataUrl;
-    });
-    const scale = Math.min(1, max / Math.max(img.width, img.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return dataUrl;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.82);
-  } catch {
-    return dataUrl;
-  }
 }
 
 /** One field: its label, then its own answer directly beneath it. */

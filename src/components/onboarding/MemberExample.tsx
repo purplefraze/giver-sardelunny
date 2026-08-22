@@ -302,65 +302,8 @@ export function MemberExample({
         </button>
       </div>
 
-      {/* WHAT WAS BEHIND THE "+N" — always a way back to this exact person. */}
-      <div
-        className={cn(
-          "absolute inset-0 z-50 flex flex-col px-7 pb-10 pt-16 transition-opacity duration-200 ease-out",
-          deep ? "opacity-100" : "invisible pointer-events-none opacity-0",
-        )}
-        style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
-        aria-hidden={!deep}
-      >
-        {deep ? (
-          <>
-            <BackArrow onClick={() => setDeep(null)} label={`back to ${member.name}`} />
-            <h2
-              className="mt-6 text-[15vw] font-black lowercase leading-[0.82] tracking-[-0.05em]"
-              style={revealed ? { color: ACTIVITY_FILL[revealed] } : undefined}
-            >
-              {revealed ? WORLD_LABEL[revealed] : "about them"}
-            </h2>
-            {revealed ? (
-              <div className="mt-8 space-y-5">
-                {myItems(itemState, revealed, member.id).map((it) => (
-                  <p
-                    key={it.id}
-                    className="text-2xl font-medium lowercase leading-tight"
-                    style={{ color: ACTIVITY_FILL[revealed] }}
-                  >
-                    {itemLine(it)}
-                  </p>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-8 space-y-6">
-                <p className="text-2xl font-medium lowercase leading-tight">
-                  {member.byDay} by day
-                </p>
-                <p className="text-2xl font-medium lowercase leading-tight">
-                  {member.byNight} by night
-                </p>
-                <p className="text-2xl font-medium lowercase leading-tight">
-                  {member.weekend} at weekends
-                </p>
-                <p className="text-xl font-medium lowercase leading-snug opacity-70">
-                  {member.aboutMe}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    buzz();
-                    setProfile(member.id);
-                  }}
-                  className="text-[12px] font-black lowercase tracking-[0.3em] underline underline-offset-8 opacity-70"
-                >
-                  see their whole profile
-                </button>
-              </div>
-            )}
-          </>
-        ) : null}
-      </div>
+      {/* NO CATEGORY-ONLY PAGE LIVES HERE ANY MORE: every door opens the person. */}
+
     </div>
   );
 }

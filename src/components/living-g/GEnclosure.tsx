@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX, G_ANCHORS, LIVING_G_FRAME } from "./g-path";
-import { buzz } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 /**
  * GOING INSIDE A LIVING G.

@@ -23,6 +23,8 @@ import { Conversation } from "@/components/connection/Conversation";
 import { ConnectionsList } from "@/components/connection/ConnectionsList";
 import { tutorialSeenStore } from "@/data/tutorial-seen";
 import { useTutorialSeen } from "@/hooks/use-tutorial-seen";
+import { useMemberEdits } from "@/hooks/use-member-edits";
+
 
 import { unreadCount } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";

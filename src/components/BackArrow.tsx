@@ -1,3 +1,5 @@
+import { haptics } from "@/lib/haptics";
+
 /** The single, minimal back affordance used everywhere in Giver. */
 export function BackArrow({
   onClick,
@@ -17,11 +19,19 @@ export function BackArrow({
   const button = (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        // Leaving is felt as gently as arriving; fired straight from the tap so
+        // Android's activation rule is satisfied, and silent where it can't be.
+        haptics.exit();
+        onClick();
+      }}
       aria-label={label}
+      // 48px of finger, 24px of ink: the touch target is padding, never a bigger
+      // arrow, so the drawing is untouched.
       className="absolute left-3 top-3 z-40 p-3 opacity-60 transition-transform active:scale-90"
-      style={{ color: "var(--world-ink)" }}
+      style={{ color: "var(--world-ink)", touchAction: "manipulation" }}
     >
+
       <svg
         viewBox="0 0 24 24"
         className="h-6 w-6"

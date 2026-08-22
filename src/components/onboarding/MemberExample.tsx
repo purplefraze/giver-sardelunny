@@ -84,21 +84,26 @@ export function MemberExample({
   onNext: () => void;
   onDone: () => void;
 }) {
-  const [deep, setDeep] = useState<Deep>(null);
   /**
    * THE PROFILE TOGGLE. It rests on give — what this person is offering — but
    * it MOVES: dragging it shows what else they have going on right now.
    */
   const [seat, setSeat] = useState<Mode>(START_SEAT[member.world]);
-  /** Tapping the photo opens a real, scrollable profile page. */
+  /** Any loop, the photo or a "+N" opens this person's real, whole profile. */
   const [profile, setProfile] = useState<string | null>(null);
+  /** ONE ITEM, IN FULL — the same rich detail the whole app uses. */
+  const [detail, setDetail] = useState<string | null>(null);
+  /** MESSAGING ABOUT THAT ONE ITEM, right here, without leaving the person. */
+  const [talking, setTalking] = useState<string | null>(null);
   const itemState = useItems();
 
   useEffect(() => {
-    setDeep(null);
     setProfile(null);
+    setDetail(null);
+    setTalking(null);
     setSeat(START_SEAT[member.world]);
   }, [member.id, member.world]);
+
 
   /**
    * THE MIDDLE LOOP: the SELECTED world only. One primary item in that world's

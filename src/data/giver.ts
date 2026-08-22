@@ -324,17 +324,12 @@ export function pastConnectionCount(m: Member) {
   return m.done.gifts + m.done.wishes + m.done.trades + m.done.borrows;
 }
 
-export const ME = {
-  name: "you",
-  photo: me,
-  activity: "you gave 50 sparks. your first act of generosity.",
-  about: "new here. curious. reckons kindness is currency.",
-  history: {
-    wishes: ["nothing yet"],
-    gives: ["50 sparks, gifted"],
-    trades: ["nothing yet"],
-  },
-};
+/*
+  THERE IS NO STAND-IN FOR ME. My own name, picture and story come only from
+  myProfileStore — never from sample data. The community below stays sample.
+*/
+
+
 
 export const COMMUNITY_WISHES = [
   "a ladder for one afternoon — ravi, 300m",

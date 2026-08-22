@@ -33,7 +33,7 @@ export type LedgerEvent = {
 
 const KEY = "giver.ledger.v1";
 
-const NO_EVENTS: LedgerEvent[] = Object.freeze([]) as LedgerEvent[];
+const NO_EVENTS: LedgerEvent[] = [];
 
 let events: LedgerEvent[] = [];
 let hydrated = false;

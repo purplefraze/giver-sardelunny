@@ -475,14 +475,31 @@ export function CategoryForm({
         ) : null}
 
         <ul className="mt-7 space-y-4">
-          {records.map((item, i) => (
+          {records.map((item, i) => {
+            /* EACH RECORD WEARS ITS OWN COLOUR — a lend is never mistaken
+               for a borrow in a list. */
+            const rowColour =
+              category === "borrow"
+                ? (item.side ?? "borrow") === "lend"
+                  ? "var(--activity-lend)"
+                  : "var(--activity-borrow)"
+                : colour;
+            return (
             <li key={item.id} className="g-rule pt-4 first:border-0 first:pt-0">
+              {category === "borrow" ? (
+                <p
+                  className="mb-1 text-[11px] font-black lowercase tracking-[0.2em]"
+                  style={{ color: rowColour }}
+                >
+                  {(item.side ?? "borrow") === "lend" ? "lending" : "borrowing"}
+                </p>
+              ) : null}
               <div className="flex items-start gap-3">
                 {/* GIVING IS NOT A RANKED QUEUE — only scarce asks are numbered. */}
                 {category === "give" ? null : (
                   <span
                     className="w-5 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em] opacity-45"
-                    style={{ color: colour }}
+                    style={{ color: rowColour }}
                   >
                     {i + 1}
                   </span>
@@ -610,7 +627,8 @@ export function CategoryForm({
                 <p className="ml-8 mt-1 g-meta opacity-35">{item.note}</p>
               ) : null}
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {/* PRIORITY IS FOR ASKS. Gives are never ranked against each other. */}

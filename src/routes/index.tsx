@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { GEnclosure } from "@/components/living-g/GEnclosure";
+import { useAppHeight } from "@/hooks/use-app-height";
 
 import { Onboarding } from "@/components/Onboarding";
 import { AboutForm } from "@/components/profile/AboutForm";
@@ -159,6 +160,8 @@ function Index() {
   /* A populated current-user fixture used to be injected here automatically.
      Remove that legacy state once; development profiles are now explicit only. */
   removeLegacyAutomaticProfile();
+  /* The canvas measures the real viewport itself — see use-app-height. */
+  useAppHeight();
   const lifecycle = useLifecycle();
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
@@ -417,14 +420,14 @@ function Index() {
   if (!hydrated) {
     return (
       <main
-        className="mx-auto h-[100dvh] w-full max-w-[520px]"
+        className="g-canvas-h mx-auto w-full max-w-[520px]"
         style={{ background: "var(--giver-paper)" }}
       />
     );
   }
 
   return (
-    <main className="relative mx-auto h-[100dvh] w-full max-w-[520px] overflow-hidden">
+    <main className="g-canvas-h relative mx-auto w-full max-w-[520px] overflow-hidden">
       <DevControls />
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
@@ -603,7 +606,7 @@ function Index() {
             <button
               type="button"
               onClick={() => setIntro({ topic: mode, help: true })}
-              className="absolute bottom-4 left-6 z-20 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
+              className="absolute bottom-1 left-3 z-20 p-3 text-[11px] font-black lowercase tracking-[0.28em] opacity-40"
             >
               {`what’s ${mode}?`}
             </button>

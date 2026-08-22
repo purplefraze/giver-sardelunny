@@ -114,7 +114,7 @@ export function ActivityDetail({
       className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--giver-ink)" }}
     >
-      <BackArrow onClick={onClose} label="back" />
+      <BackArrow onClick={onClose} label="back" sticky />
 
       {/* WHAT THIS IS, SAID EXACTLY: borrowing and lending are not the same. */}
       <span className="g-heading" style={{ color: fill }}>

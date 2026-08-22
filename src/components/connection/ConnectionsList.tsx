@@ -43,7 +43,7 @@ export function ConnectionsList({
       className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <BackArrow onClick={onClose} label="back to my g" />
+      <BackArrow onClick={onClose} label="back to my g" sticky />
 
       <h1 className="g-display">conversations</h1>
 

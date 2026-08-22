@@ -439,7 +439,7 @@ export function CategoryForm({
       className="relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <BackArrow onClick={leave} label="back to my g" />
+      <BackArrow onClick={leave} label="back to my g" sticky />
 
       <div className="g-page pb-[8.5rem] pt-16">
         {/*

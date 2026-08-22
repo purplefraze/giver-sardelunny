@@ -484,19 +484,70 @@
     border-color: var(--color-border);
   }
 
+  /* THE APP IS A FIXED CANVAS, NOT A DOCUMENT.
+     Android Chrome will otherwise hand a drag on the Living G to the page
+     scroller, bounce the whole composition on overscroll, and collapse the
+     address bar mid-animation. The page itself never scrolls; every scroll in
+     Giver happens inside a panel. */
   html,
   body {
-    overflow-x: hidden;
-    overscroll-behavior-x: none;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
+    position: relative;
     background-color: var(--giver-paper);
     color: var(--color-foreground);
     font-family: var(--giver-font);
     -webkit-font-smoothing: antialiased;
+    /* No 300ms double-tap delay, no grey flash, no accidental text selection
+       while dragging the G. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  [role="button"],
+  a,
+  label,
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Text inputs keep normal selection behaviour. */
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    touch-action: auto;
+    -webkit-user-select: text;
+    user-select: text;
+    /* Android zooms into any field under 16px on focus. */
+    font-size: max(1rem, 1em);
+  }
+
+  /* INTENTIONAL SCROLLING STAYS, PAGE SCROLLING NEVER STARTS.
+     Every panel scroller keeps its momentum but never chains its overscroll
+     out to the canvas behind it. */
+  .overflow-y-auto,
+  .overflow-auto,
+  .overflow-y-scroll {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
+
+/* One canvas height, written from the real viewport (see use-app-height). */
+@utility g-canvas-h {
+  height: var(--app-h, 100dvh);
+  max-height: var(--app-h, 100dvh);
+}
+
 
 
 /* ---------------------------------------------------------------

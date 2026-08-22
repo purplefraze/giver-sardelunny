@@ -821,3 +821,14 @@ function Screen({ open, children }: { open: boolean; children: React.ReactNode }
     </div>
   );
 }
+
+/**
+ * CONTEXT IS NEVER RESET. A value that has just been cleared is kept one beat
+ * longer, so what the user was looking at is still there while the Living G
+ * folds back around it.
+ */
+function useLinger<T>(value: T | null) {
+  const held = useRef<T | null>(value);
+  if (value !== null) held.current = value;
+  return value ?? held.current;
+}

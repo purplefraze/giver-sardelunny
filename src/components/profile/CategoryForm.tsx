@@ -618,6 +618,30 @@ export function CategoryForm({
           <p className="mt-3 g-meta">#1 is your priority</p>
         ) : null}
 
+        {/* BORROW OR LEND — one plain question, two honest answers, each in
+            its own blue: bright for borrowing, royal for lending. */}
+        {category === "borrow" ? (
+          <div className="mt-7 flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
+            {(["borrow", "lend"] as BorrowSide[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  haptics.selection();
+                  setSide(s);
+                }}
+                style={{
+                  color:
+                    s === "lend" ? "var(--activity-lend)" : "var(--activity-borrow)",
+                }}
+                className={side === s ? "opacity-100" : "opacity-35"}
+              >
+                {s === "borrow" ? "i want to borrow" : "i can lend"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {full ? (
           <p className="mt-7 g-meta">
             that’s {limit}
@@ -631,25 +655,6 @@ export function CategoryForm({
             }`}
           >
 
-            {/* BORROW OR LEND — one plain question, two honest answers. */}
-            {category === "borrow" ? (
-              <div className="flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
-                {(["borrow", "lend"] as BorrowSide[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      haptics.selection();
-                      setSide(s);
-                    }}
-                    style={{ color: side === s ? colour : "var(--world-ink)" }}
-                    className={side === s ? "opacity-100" : "opacity-40"}
-                  >
-                    {s === "borrow" ? "i want to borrow" : "i can lend"}
-                  </button>
-                ))}
-              </div>
-            ) : null}
 
             <div className="flex items-end gap-3">
               <input

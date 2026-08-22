@@ -188,6 +188,7 @@
   --mode-wish: var(--giver-connection);
   --mode-trade: var(--giver-participation);
   --mode-borrow: var(--giver-others);
+  --mode-lend: oklch(0.42 0.2 265); /* ROYAL BLUE — what i can lend */
 
   --mode-give-complement: var(--giver-generosity-complement);
   --mode-wish-complement: var(--giver-connection-complement);
@@ -201,6 +202,9 @@
   --activity-give: var(--mode-give);
   --activity-trade: var(--mode-trade);
   --activity-borrow: var(--mode-borrow);
+  /* LENDING IS THE OTHER SIDE OF THE SAME BLUE — royal, clearly darker, so a
+     list of borrows and lends can never be misread as one thing. */
+  --activity-lend: var(--mode-lend);
 
   /* ---- MY OWN ACTIVITY = THE ACTIVITY'S OWN COLOUR ----
      These used to be four shades of profile red. A creation form, an

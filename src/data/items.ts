@@ -327,10 +327,19 @@ export const WISH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
  */
 export const MAX_ACTIVE: Record<ItemType, number> = {
   wish: 3,
-  give: Number.POSITIVE_INFINITY,
+  give: 5,
   trade: 3,
   borrow: 3,
 };
+
+/**
+ * BORROWING HAS TWO SIDES, AND EACH SIDE HAS ITS OWN ROOM: three things you
+ * are asking to borrow, three things you are happy to lend. One never eats
+ * into the other.
+ */
+export function activeLimitFor(type: ItemType, _side?: BorrowSide): number {
+  return MAX_ACTIVE[type];
+}
 
 /**
  * A TRADE ALWAYS READS AS BOTH OF ITS SIDES — everywhere it appears, through
@@ -577,7 +586,11 @@ export const itemsStore = {
     const mine = s.items.filter(
       (i) => i.ownerId === ownerId && i.type === type && i.status === "active",
     );
-    if (mine.length >= MAX_ACTIVE[type]) return null;
+    /* BORROW AND LEND ARE COUNTED SEPARATELY — three each, never shared. */
+    const side: BorrowSide = extra?.side ?? "borrow";
+    const counted =
+      type === "borrow" ? mine.filter((i) => (i.side ?? "borrow") === side) : mine;
+    if (counted.length >= MAX_ACTIVE[type]) return null;
     const now = Date.now();
     const photos = (extra?.photos ?? []).slice(0, MAX_PHOTOS);
     const item: Item = {
@@ -592,7 +605,7 @@ export const itemsStore = {
         ? { note: note.trim().slice(0, NOTE_MAX_FOR[type]) }
         : {}),
       ...(photos.length ? { photos } : {}),
-      ...(type === "borrow" ? { side: extra?.side ?? "borrow" } : {}),
+      ...(type === "borrow" ? { side } : {}),
       ...(extra?.details && Object.keys(extra.details).length
         ? { details: extra.details }
         : {}),

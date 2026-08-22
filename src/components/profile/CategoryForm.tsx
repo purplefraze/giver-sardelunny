@@ -61,7 +61,7 @@ const CATEGORY_ASK: Record<Category, string> = {
  * it: the question belongs to the field, the invitation belongs to the page.
  */
 const CATEGORY_CALL: Record<Category, string> = {
-  wish: "what do you wish for?",
+  wish: "make a wish",
   give: "are you a giver?",
   trade: "what are you offering?",
   borrow: "what would you borrow?",
@@ -217,13 +217,19 @@ export function CategoryForm({
   const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
   /* THE FORM IS THE COLOUR OF WHAT IT MAKES: wish purple, give green,
      trade orange, borrow blue. It never inherits profile red. */
-  const colour = `var(--activity-${category})`;
+  const colour =
+    category === "borrow" && side === "lend"
+      ? "var(--activity-lend)"
+      : `var(--activity-${category})`;
   const limit = MAX_PER_CATEGORY[category];
   const unlimited = !Number.isFinite(limit);
   /* THE RECORD BEING TYPED IS SHOWN IN THE FIELD, NOT TWICE IN THE LIST. */
   const records = me.records[category].filter((i) => i.id !== liveId);
   /* THE LIMIT COUNTS EVERY ACTIVE RECORD, including the one being typed. */
-  const full = me.records[category].length >= limit;
+  const full =
+    category === "borrow"
+      ? me.records.borrow.filter((i) => (i.side ?? "borrow") === side).length >= limit
+      : me.records[category].length >= limit;
   /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
   const cost = category === "wish" ? WISH_COST : 0;
   const broke = cost > 0 && me.sparks < cost;
@@ -255,7 +261,7 @@ export function CategoryForm({
    * detail. The mode colour stays the identity of the thing being made, so a
    * saved give is always green and never pink.
    */
-  const action = "var(--giver-action)";
+  const action = colour;
 
   /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
      sense as the give is described is quietly dropped, never corrected aloud. */
@@ -469,14 +475,31 @@ export function CategoryForm({
         ) : null}
 
         <ul className="mt-7 space-y-4">
-          {records.map((item, i) => (
+          {records.map((item, i) => {
+            /* EACH RECORD WEARS ITS OWN COLOUR — a lend is never mistaken
+               for a borrow in a list. */
+            const rowColour =
+              category === "borrow"
+                ? (item.side ?? "borrow") === "lend"
+                  ? "var(--activity-lend)"
+                  : "var(--activity-borrow)"
+                : colour;
+            return (
             <li key={item.id} className="g-rule pt-4 first:border-0 first:pt-0">
+              {category === "borrow" ? (
+                <p
+                  className="mb-1 text-[11px] font-black lowercase tracking-[0.2em]"
+                  style={{ color: rowColour }}
+                >
+                  {(item.side ?? "borrow") === "lend" ? "lending" : "borrowing"}
+                </p>
+              ) : null}
               <div className="flex items-start gap-3">
                 {/* GIVING IS NOT A RANKED QUEUE — only scarce asks are numbered. */}
                 {category === "give" ? null : (
                   <span
                     className="w-5 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em] opacity-45"
-                    style={{ color: colour }}
+                    style={{ color: rowColour }}
                   >
                     {i + 1}
                   </span>
@@ -604,7 +627,8 @@ export function CategoryForm({
                 <p className="ml-8 mt-1 g-meta opacity-35">{item.note}</p>
               ) : null}
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {/* PRIORITY IS FOR ASKS. Gives are never ranked against each other. */}
@@ -612,34 +636,43 @@ export function CategoryForm({
           <p className="mt-3 g-meta">#1 is your priority</p>
         ) : null}
 
+        {/* BORROW OR LEND — one plain question, two honest answers, each in
+            its own blue: bright for borrowing, royal for lending. */}
+        {category === "borrow" ? (
+          <div className="mt-7 flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
+            {(["borrow", "lend"] as BorrowSide[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  haptics.selection();
+                  setSide(s);
+                }}
+                style={{
+                  color:
+                    s === "lend" ? "var(--activity-lend)" : "var(--activity-borrow)",
+                }}
+                className={side === s ? "opacity-100" : "opacity-35"}
+              >
+                {s === "borrow" ? "i want to borrow" : "i can lend"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {full ? (
-          <p className="mt-7 g-meta">that’s {limit} — remove one to add another</p>
+          <p className="mt-7 g-meta">
+            that’s {limit}
+            {category === "borrow" ? (side === "lend" ? " lends" : " borrows") : ""} —
+            remove one to add another
+          </p>
         ) : (
           <div
             className={`mt-7 space-y-4 ${
-              category === "give" && records.length === 0 ? "" : "g-rule pt-5"
+              records.length === 0 ? "" : "g-rule pt-5"
             }`}
           >
 
-            {/* BORROW OR LEND — one plain question, two honest answers. */}
-            {category === "borrow" ? (
-              <div className="flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
-                {(["borrow", "lend"] as BorrowSide[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      haptics.selection();
-                      setSide(s);
-                    }}
-                    style={{ color: side === s ? colour : "var(--world-ink)" }}
-                    className={side === s ? "opacity-100" : "opacity-40"}
-                  >
-                    {s === "borrow" ? "i want to borrow" : "i can lend"}
-                  </button>
-                ))}
-              </div>
-            ) : null}
 
             <div className="flex items-end gap-3">
               <input
@@ -932,12 +965,14 @@ export function CategoryForm({
               type="button"
               onClick={add}
               disabled={broke}
-              className="text-xl font-black lowercase disabled:opacity-30"
+              className="g-heading disabled:opacity-30"
               style={{ color: colour }}
             >
-              {records.length
-                ? `+ add another ${category}`
-                : `+ add ${category === "borrow" ? "a borrow" : `a ${category}`}`}
+              {category === "borrow"
+                ? side === "lend"
+                  ? "+ add a lend"
+                  : "+ add a borrow"
+                : `+ add a ${category === "wish" ? "wish" : category}`}
             </button>
           </div>
         )}

@@ -492,10 +492,22 @@
   html,
   body {
     height: 100%;
+    width: 100%;
     overflow: hidden;
+    /* Horizontal page scrolling is never part of Giver: the only intentional
+       gestures are inside the G and inside panels. */
+    overflow-x: hidden;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    color-scheme: light;
+  }
+
+  html {
+    /* iOS Safari honours dvh but still rubber-bands the document; a fixed html
+       box removes the bounce without needing scroll-position bookkeeping. */
+    position: fixed;
+    inset: 0;
   }
 
   body {
@@ -539,6 +551,14 @@
   .overflow-y-scroll {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+    /* A vertical panel must never become a horizontal one on a narrow phone. */
+    overscroll-behavior-x: none;
+  }
+
+  img,
+  svg,
+  video {
+    max-width: 100%;
   }
 }
 
@@ -547,6 +567,27 @@
   height: var(--app-h, 100dvh);
   max-height: var(--app-h, 100dvh);
 }
+
+/* PHONE PROPORTIONS FIRST. On a phone the canvas is simply the screen; on a
+   larger screen it keeps 9:16 rather than stretching into a desktop layout. */
+@utility g-canvas-w {
+  width: 100%;
+  max-width: min(520px, calc(var(--app-h, 100dvh) * 0.5625));
+}
+
+/* CALM BY REQUEST. Anyone asking for less motion gets the same app without the
+   unfurl swell, the breathing G or any decorative transition. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 
 
 

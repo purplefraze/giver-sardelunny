@@ -33,9 +33,17 @@ export type HapticLevel =
   | "selection"
   | "success"
   | "warning"
-  | "error";
+  | "error"
+  /** Going INSIDE a Living G: a short rising pair, felt as the G swallowing. */
+  | "enter"
+  /** The G folding shut again: the same pair, falling. */
+  | "exit";
 
-/** Web vibration approximations, used only when no native engine is present. */
+/**
+ * Web vibration approximations, used only when no native engine is present.
+ * ANDROID TASTE RULE: nothing here is longer than a tick. The motor is asked
+ * for short pulses with air between them — never a buzz a thumb has to wait out.
+ */
 const WEB_PATTERN: Record<HapticLevel, number | number[]> = {
   selection: 8,
   light: 12,
@@ -44,6 +52,8 @@ const WEB_PATTERN: Record<HapticLevel, number | number[]> = {
   success: [12, 55, 22],
   warning: [16, 70, 16],
   error: [24, 60, 24, 60, 24],
+  enter: [9, 42, 16],
+  exit: [16, 38, 8],
 };
 
 /** Capacitor's own vocabulary, so a native build feels native. */
@@ -51,7 +61,10 @@ const CAP_IMPACT: Partial<Record<HapticLevel, "LIGHT" | "MEDIUM" | "HEAVY">> = {
   light: "LIGHT",
   medium: "MEDIUM",
   heavy: "HEAVY",
+  enter: "MEDIUM",
+  exit: "LIGHT",
 };
+
 
 const CAP_NOTIFY: Partial<Record<HapticLevel, "SUCCESS" | "WARNING" | "ERROR">> = {
   success: "SUCCESS",

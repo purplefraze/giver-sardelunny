@@ -19,7 +19,10 @@ const LEVELS: HapticLevel[] = [
   "success",
   "warning",
   "error",
+  "enter",
+  "exit",
 ];
+
 
 export function HapticsCheck({ onClose }: { onClose: () => void }) {
   const [, bump] = useState(0);

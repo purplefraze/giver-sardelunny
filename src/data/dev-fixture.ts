@@ -42,18 +42,23 @@ export function completeOnboarding() {
 }
 
 /**
- * Remove the old automatic current-user fixture once. Sample community data is
- * deliberately retained. From now on a populated dev profile is opt-in only.
+ * REMOVE THE OLD SEEDED "ME" ONCE, FOR GOOD.
+ *
+ * Any current-user record that came from the old development fixture is wiped
+ * so the person starts from a genuinely blank profile they build themselves.
+ * Sample community members and their activity are deliberately untouched.
  */
+const PURGE_KEY = "giver.seeded-me-removed.v1";
+
 export function removeLegacyAutomaticProfile() {
-  if (!import.meta.env.DEV || typeof window === "undefined") return;
-  if (window.localStorage.getItem(CHOICE_KEY) !== "seeded") return;
+  if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(PURGE_KEY)) return;
+  window.localStorage.setItem(PURGE_KEY, "done");
   myProfileStore.reset();
   itemsStore.clearMine();
   draftsStore.clearAll();
   lifecycleStore.reset();
-  initializeFirstUse(true);
   tutorialSeenStore.reset();
   introSeenStore.reset();
-  window.localStorage.setItem(CHOICE_KEY, "first-use");
+  window.localStorage.removeItem(CHOICE_KEY);
 }

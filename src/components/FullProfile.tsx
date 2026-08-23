@@ -23,7 +23,7 @@ import { ItemRow } from "@/components/profile/ItemRow";
 import { itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
 import { itemLine } from "@/data/items";
-import { answeredStatements } from "@/data/prompts";
+import { answeredStatements, pronounsFrom } from "@/data/prompts";
 
 
 
@@ -242,6 +242,7 @@ export function FullProfile({
               const said = answeredStatements(member.answers, {
                 mine: false,
                 name: member.name.toLowerCase(),
+                pronouns: pronounsFrom(member.gender),
               });
               if (said.length)
                 return (

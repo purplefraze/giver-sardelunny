@@ -282,7 +282,10 @@
   --color-give: var(--giver-generosity);
   --color-trade: var(--giver-participation);
   --color-discovery: var(--giver-community);
-  --color-borrow: var(--giver-community);
+  --color-borrow: var(--mode-borrow);
+  --color-self: var(--person-self);
+  --color-other-wish: var(--person-other-wish);
+  --color-other-give: var(--person-other-give);
 }
 
 

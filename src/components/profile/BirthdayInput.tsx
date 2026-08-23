@@ -97,9 +97,12 @@ export function BirthdayInput({
 
   return (
     <div>
-      <p className="g-meta" style={{ color: "var(--giver-me)" }}>
-        birthday — day, month, year
-      </p>
+      {/* ONCE A BIRTHDAY EXISTS THE HELPER GOES: the places speak for themselves. */}
+      {label ? null : (
+        <p className="g-meta" style={{ color: "var(--giver-me)" }}>
+          birthday
+        </p>
+      )}
       <div className="mt-1 flex items-baseline gap-2">
         <Place
           ref={dayRef}
@@ -143,9 +146,9 @@ export function BirthdayInput({
           done
         </button>
       </div>
-      <p className="g-meta mt-1.5">
-        {label ? `${label}${age !== null ? ` · ${age}` : ""}` : "type it in any order you like"}
-      </p>
+      {label ? (
+        <p className="g-meta mt-1.5">{`${label}${age !== null ? ` · ${age}` : ""}`}</p>
+      ) : null}
     </div>
   );
 }

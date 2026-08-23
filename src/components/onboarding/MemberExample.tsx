@@ -6,12 +6,14 @@ import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG } from "@/components/living-g/LivingG";
 import { profileLoop } from "@/components/living-g/profile-loop";
 import { EarSelector, type Mode } from "@/components/living-g/EarSelector";
+import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { SparkJourney } from "@/components/living-g/SparkJourney";
 import type { LoopBlock } from "@/components/living-g/profile-loop";
 import { memberById, pastConnectionCount, type Member } from "@/data/giver";
 import { ACTIVITY_FILL, itemLine, myItems, splitTrade, tradeText } from "@/data/items";
 import { useItems } from "@/hooks/use-items";
 import { buzz } from "@/lib/haptics";
+import { answeredStatements, pronounsFrom } from "@/data/prompts";
 
 
 /**
@@ -142,14 +144,17 @@ export function MemberExample({
    * and always BLACK. The personal description never borrows the activity
    * colour: upper loop = activity colour, lower loop = ink.
    */
-  const about: LoopBlock[] = [
-    { text: "by day", role: "secondary", fill: INK },
-    { text: member.byDay, role: "primary", fill: INK },
-    { text: "by night", role: "secondary", lead: true, fill: INK },
-    { text: member.byNight, role: "primary", fill: INK },
-    { text: "weekends", role: "secondary", lead: true, fill: INK },
-    { text: member.weekend, role: "primary", fill: INK },
-  ];
+  const said = answeredStatements(member.answers, {
+    mine: false,
+    name: member.name.toLowerCase(),
+    pronouns: pronounsFrom(member.gender),
+  }).slice(0, 2);
+
+  const about: LoopBlock[] = said.length
+    ? said.flatMap((line, i) => [
+        { text: line.line, role: "primary" as const, fill: INK, ...(i ? { lead: true } : {}) },
+      ])
+    : [{ text: member.aboutMe || member.about || "", role: "primary" as const, fill: INK }];
 
   /**
    * EVERY DOOR ON THIS G LEADS TO THE PERSON, IN FULL. There is no category-only
@@ -163,43 +168,12 @@ export function MemberExample({
     setProfile(member.id);
   };
 
-  /* MESSAGING ABOUT ONE ITEM, on top of wherever it was opened from. */
-  if (talking)
-    return <Conversation connectionId={talking} onClose={() => setTalking(null)} />;
-
-  /* ONE ITEM, IN FULL, WITH ITS OWN ACTION — apply, grant, propose, lend, ask. */
-  if (detail)
-    return (
-      <ActivityDetail
-        itemId={detail}
-        onOpenConnection={(id) => {
-          setDetail(null);
-          setTalking(id);
-        }}
-        onOpenProfile={(ownerId) => {
-          setDetail(null);
-          setProfile(ownerId);
-        }}
-        onClose={() => setDetail(null)}
-      />
-    );
-
+  /**
+   * NOTHING HERE REPLACES THE PAGE. Their profile, an item and a conversation
+   * are all DEPTHS of this person's own Living G: the artwork the user just
+   * touched unfurls until it frames the content, and going back folds it home.
+   */
   const shown = profile ? memberById(profile) : null;
-  if (shown) {
-    return (
-      <FullProfile
-        member={shown}
-        focus={profileFocus}
-        onBack={() => setProfile(shown.id === member.id ? null : member.id)}
-        onOpen={(id) => {
-          setProfileFocus(null);
-          setProfile(id);
-        }}
-        onOpenItem={(itemId) => setDetail(itemId)}
-      />
-    );
-  }
-
 
   return (
     <div
@@ -316,7 +290,68 @@ export function MemberExample({
       </div>
 
       {/* NO CATEGORY-ONLY PAGE LIVES HERE ANY MORE: every door opens the person. */}
-
+      <GDepthStack
+        onPop={(id) => {
+          if (id === "talking") setTalking(null);
+          else if (id === "detail") setDetail(null);
+          else if (id === "person") {
+            setProfileFocus(null);
+            setProfile(null);
+          }
+        }}
+        slots={[
+          {
+            id: "person",
+            open: shown !== null,
+            anchor: "top",
+            world: "community",
+            children: shown ? (
+              <FullProfile
+                member={shown}
+                focus={profileFocus}
+                onBack={() => {
+                  setProfileFocus(null);
+                  setProfile(shown.id === member.id ? null : member.id);
+                }}
+                onOpen={(id) => {
+                  setProfileFocus(null);
+                  setProfile(id);
+                }}
+                onOpenItem={(itemId) => setDetail(itemId)}
+              />
+            ) : null,
+          },
+          {
+            id: "detail",
+            open: detail !== null,
+            anchor: "middle",
+            world: "community",
+            children: detail ? (
+              <ActivityDetail
+                itemId={detail}
+                onOpenConnection={(id) => {
+                  setDetail(null);
+                  setTalking(id);
+                }}
+                onOpenProfile={(ownerId) => {
+                  setDetail(null);
+                  setProfile(ownerId);
+                }}
+                onClose={() => setDetail(null)}
+              />
+            ) : null,
+          },
+          {
+            id: "talking",
+            open: talking !== null,
+            anchor: "bottom",
+            world: "connection",
+            children: talking ? (
+              <Conversation connectionId={talking} onClose={() => setTalking(null)} />
+            ) : null,
+          },
+        ]}
+      />
     </div>
   );
 }

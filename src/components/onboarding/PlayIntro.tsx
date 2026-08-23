@@ -6,7 +6,7 @@ import { G_FONT } from "@/components/living-g/g-type";
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
 
 import type { RegionKey } from "@/components/living-g/LivingG";
-import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES } from "@/components/living-g/EarSelector";
 import { buzz, haptics } from "@/lib/haptics";
 
 /**
@@ -95,6 +95,9 @@ function Line({
 
 }
 
+const PLAY_SEATS = [...MODES, "lend"] as const;
+type PlaySeat = (typeof PLAY_SEATS)[number];
+
 export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
   const [phase, setPhase] = useState<Phase>("quiet");
   /**
@@ -102,7 +105,9 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
    * in that territory's canonical colour — it never navigates, never reveals
    * content, and never counts toward the spark interaction.
    */
-  const [seat, setSeat] = useState<Mode>("give");
+  /* THE SIX POSITIONS ARE FIXED APP-WIDE: play offers the five activity seats
+     (my g at 12 o'clock is not reachable until the profile is discovered). */
+  const [seat, setSeat] = useState<PlaySeat>("give");
   
   const [taps, setTaps] = useState(0);
   /** A transient answer to a casual touch, once the G has already spoken. */
@@ -277,9 +282,9 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
           {/* THE EXISTING TOGGLE, FULLY PLAYABLE — the G answers in colour. */}
           <EarSelector
             mode={seat}
-            seats={MODES}
+            seats={PLAY_SEATS}
             onChange={(next) => {
-              setSeat(next as Mode);
+              setSeat(next as PlaySeat);
             }}
           />
 

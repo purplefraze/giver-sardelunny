@@ -204,16 +204,20 @@
   --giver-participation-complement: var(--giver-orange-complement);
   --giver-generosity-complement: var(--giver-green-complement);
 
-  /* ---- LIVING G MODE COLOURS ----
-       give / lend = green (offering), wish / borrow = purple (asking),
-       trade = orange, on the 6 o'clock toggle, deliberately apart. */
-  --mode-give: var(--state-give);
-  --mode-lend: oklch(0.48 0.15 150); /* deeper green — the lending side of green */
-  --mode-wish: var(--state-wish);
-  --mode-borrow: oklch(0.46 0.2 305); /* deeper purple — the borrowing side */
-  --mode-trade: var(--state-trade);
+  /* ---- LIVING G MODE COLOURS — THE SIX TOGGLE POSITIONS ----
+       12 o'clock = my g (blue) · give = bright green · wish = dreamy purple ·
+       borrow = deeper electric purple · 9 o'clock = lend (soft mint green) ·
+       3 o'clock = trade (orange). These six are the source of truth. */
+  --mode-giver: var(--person-self); /* my g at 12 o'clock — blue */
+  --mode-give: var(--state-give); /* bright green */
+  --mode-lend: oklch(0.74 0.13 158); /* soft mint green — lending */
+  --mode-wish: var(--state-wish); /* dreamy purple */
+  --mode-borrow: oklch(0.5 0.26 300); /* deeper, electric purple */
+  --mode-trade: var(--state-trade); /* orange */
 
+  --mode-giver-complement: var(--giver-blue-complement);
   --mode-give-complement: var(--giver-green-complement);
+  --mode-lend-complement: var(--giver-green-complement);
   --mode-wish-complement: var(--giver-purple-complement);
   --mode-trade-complement: var(--giver-orange-complement);
   --mode-borrow-complement: var(--giver-purple-complement);

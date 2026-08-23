@@ -94,27 +94,20 @@ export function Conversation({
         {theirName}
       </h1>
 
-      {/* WHAT, AND ALL OF ITS PARAMETERS — carried forward, never left behind. */}
+      {/* WHAT, AND ITS PARAMETERS — one quiet line, carried through from the give. */}
       {item ? (
         <>
           <p className="mt-2 g-name" style={{ color: ACTIVITY_FILL[c.type] }}>
             {itemLine(item)}
           </p>
           {facts.length ? (
-            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2">
-              {facts.map((f) => (
-                <div key={`${f.label}-${f.value}`} className="flex gap-2">
-                  <dt className="g-meta shrink-0 opacity-55">{f.label}</dt>
-                  <dd className="g-meta" style={{ color: "var(--convo-poster)" }}>
-                    {f.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <p className="mt-2 g-meta" style={{ color: "var(--convo-poster)" }}>
+              {facts.map((f) => f.value).join(" · ")}
+            </p>
           ) : null}
-          {item.note ? <p className="mt-3 g-body opacity-70">{item.note}</p> : null}
         </>
       ) : null}
+
 
       {/* THE THREAD. It runs downward, newest at the bottom. */}
       <ul className="g-rule mt-5 flex-1 space-y-5 overflow-y-auto pb-4 pt-5">

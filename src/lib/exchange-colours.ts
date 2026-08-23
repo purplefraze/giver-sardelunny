@@ -9,7 +9,7 @@ import type { ItemType } from "@/data/items";
  * HOT PINK = borrow, and the other person on the asking side.
  * SEAFOAM  = lend.
  * YELLOW   = the person receiving a give / lend.
- * ORANGE   = community, and the other person in a trade.
+ * ORANGE   = the trade world and the other person in a trade. RED = community.
  */
 
 export type ExchangeState = "wish" | "give" | "trade";
@@ -45,10 +45,10 @@ export const OTHER_PERSON_COLOUR: Record<ExchangeState, string> = {
 /** Me, as a participant in an interaction: always blue. My identity stays green. */
 export const SELF_COLOUR = "var(--person-self)";
 
-/** Me inside the orange community environment: a differentiated deeper blue. */
+/** Me inside the RED community environment: a differentiated deeper blue. */
 export const SELF_COMMUNITY_COLOUR = "var(--person-self-community)";
 
-/** The community environment itself: orange. */
+/** The community environment itself: red. */
 export const COMMUNITY_COLOUR = "var(--state-community)";
 
 /** My own identity / home / profile: always green, whatever the mode. */

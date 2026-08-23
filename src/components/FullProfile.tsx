@@ -342,7 +342,7 @@ export function FullProfile({
                             myProfileStore.useSparkle(item.id);
                           }}
                           className="text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
-                          style={{ color: "var(--giver-participation)" }}
+                          style={{ color: "var(--giver-sparkles)" }}
                         >
                           {boostWeight(state, item.id) ? "sparkle again" : "sparkle"}
                         </button>

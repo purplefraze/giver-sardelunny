@@ -12,6 +12,7 @@ import {
 import { CATEGORY_PLURAL } from "@/data/my-profile";
 import { useItems } from "@/hooks/use-items";
 import { buzz } from "@/lib/haptics";
+import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 
 /**
  * SEARCH LIVES INSIDE THE LIVING G.
@@ -108,7 +109,7 @@ export function ModeSearch({
                     if (owner) onOpenProfile?.(owner.id);
                   }}
                   className="font-black underline decoration-current/40 underline-offset-4"
-                  style={{ color: "var(--giver-others)" }}
+                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
                 >
                   {owner ? owner.username : "someone"}
                 </button>

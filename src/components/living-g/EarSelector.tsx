@@ -172,7 +172,7 @@ const MODE_COLOUR: Record<Seat, string> = {
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
-  search: "var(--giver-community)",
+  search: "var(--person-self)",
 
 };
 
@@ -511,7 +511,7 @@ export function EarSelector({
           y={ear.y + Math.cos(angle) * (EAR_GEOMETRY.outerR + 46)}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="var(--giver-generosity)"
+          fill="var(--giver-green)"
           className="font-black lowercase"
           pointerEvents="none"
           style={{

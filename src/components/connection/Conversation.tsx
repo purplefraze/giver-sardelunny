@@ -9,6 +9,13 @@ import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { buzz } from "@/lib/haptics";
+import {
+  OTHER_PERSON_COLOUR,
+  SELF_COLOUR,
+  STATE_COLOUR,
+  STATE_WORLD,
+  exchangeState,
+} from "@/lib/exchange-colours";
 
 /**
  * A CONVERSATION IS AN EXCHANGE, NOT A CONTROL PANEL.
@@ -17,8 +24,10 @@ import { buzz } from "@/lib/haptics";
  * to remember when or where. Below them the thread runs downward, and the
  * starter line lives INSIDE the composer, where the typing happens.
  *
- * The two people are drawn as two related oranges — the meeting of their two
- * profile colours — while their names keep their own identity colour.
+ * The two speakers are drawn in the person colours — me in blue, the other
+ * person in red when we are asking (wish / borrow) or yellow when we are
+ * offering (give / lend) — while the whole thread sits inside the colour of the
+ * relationship itself: purple for asking, green for offering, orange for trade.
  */
 export function Conversation({
   connectionId,
@@ -45,7 +54,7 @@ export function Conversation({
   if (!c)
     return (
       <div
-        data-world="connection"
+        data-world="connection-wish"
         className="relative flex h-full w-full items-center justify-center px-7"
         style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
       >
@@ -58,12 +67,14 @@ export function Conversation({
   const them = memberById(themId);
   const theirName = them ? them.name.toLowerCase() : "them";
   const myName = (me.username || "you").replace(/^@/, "") || "you";
-  /* The person who posted the activity carries the deeper orange. */
-  const toneOf = (fromId: string) =>
-    fromId === c.ownerId ? "var(--convo-poster)" : "var(--convo-responder)";
+  /* THE STATE THIS THREAD LIVES IN — purple asking, green offering, orange trade. */
+  const state = exchangeState(item ? item.type : "wish");
+  const stateColour = STATE_COLOUR[state];
+  const themColour = OTHER_PERSON_COLOUR[state];
+  /* WHO IS SPEAKING: me blue, them red / yellow / orange. Never by who posted. */
+  const toneOf = (fromId: string) => (fromId === ME_ID ? SELF_COLOUR : themColour);
   const nameOf = (fromId: string) => (fromId === ME_ID ? myName : theirName);
-  const nameColour = (fromId: string) =>
-    fromId === ME_ID ? "var(--giver-me)" : "var(--giver-community)";
+  const nameColour = toneOf;
 
   const facts = item ? itemFacts(item) : [];
   const starter = `hey ${theirName}`;
@@ -83,25 +94,25 @@ export function Conversation({
 
   return (
     <div
-      data-world="connection"
+      data-world={STATE_WORLD[state]}
       className="relative flex h-full w-full flex-col overflow-y-auto px-6 pb-5 pt-16"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onClose} label="back" />
 
       {/* WHO. Just their name — nothing about "connecting". */}
-      <h1 className="g-display-sm" style={{ color: "var(--giver-community)" }}>
+      <h1 className="g-display-sm" style={{ color: themColour }}>
         {theirName}
       </h1>
 
       {/* WHAT, AND ITS PARAMETERS — one quiet line, carried through from the give. */}
       {item ? (
         <>
-          <p className="mt-2 g-name" style={{ color: "var(--convo-poster)" }}>
+          <p className="mt-2 g-name" style={{ color: stateColour }}>
             {itemLine(item)}
           </p>
           {facts.length ? (
-            <p className="mt-2 g-meta" style={{ color: "var(--convo-responder)" }}>
+            <p className="mt-2 g-meta" style={{ color: stateColour, opacity: 0.75 }}>
               {facts.map((f) => f.value).join(" · ")}
             </p>
           ) : null}
@@ -140,14 +151,14 @@ export function Conversation({
                 setUsedStarter(true);
               }}
               className="mb-2 g-meta"
-              style={{ color: "var(--convo-responder)" }}
+              style={{ color: themColour }}
             >
               {starter}
             </button>
           ) : null}
           <div
             className="flex items-end gap-3 border-b-2 pb-2"
-            style={{ borderColor: "var(--convo-poster)" }}
+            style={{ borderColor: stateColour }}
           >
             <textarea
               value={draft}
@@ -155,14 +166,14 @@ export function Conversation({
               rows={2}
               placeholder="type your message"
               className="min-w-0 flex-1 resize-none bg-transparent g-body outline-none placeholder:opacity-30"
-              style={{ color: "var(--convo-responder)" }}
+              style={{ color: SELF_COLOUR }}
             />
             <button
               type="button"
               onClick={send}
               disabled={!draft.trim()}
               className="shrink-0 pb-1 text-[15px] font-black lowercase tracking-[0.22em] disabled:opacity-25"
-              style={{ color: "var(--convo-poster)" }}
+              style={{ color: stateColour }}
             >
               send
             </button>

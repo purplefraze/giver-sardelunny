@@ -24,7 +24,7 @@ export function CommunityLocked({
       <BackArrow onClick={onClose} />
 
       <p className="g-meta opacity-45">oh, you're curious</p>
-      <h1 className="g-display mt-3" style={{ color: "var(--giver-community)" }}>
+      <h1 className="g-display mt-3" style={{ color: "var(--giver-yellow)" }}>
         are you
         <br />a giver?
       </h1>

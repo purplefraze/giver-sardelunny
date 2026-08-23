@@ -102,7 +102,7 @@ const BASE_MEMBERS: Member[] = [
     answers: {
       happy: "a full bike basket and nowhere to be",
       animal: "a heron",
-      "one-food": "her nonna’s tomato bread",
+      "one-food": "nonna’s tomato bread",
       hours: "why baking soda works",
       dream: "to teach science outdoors, all year",
     },

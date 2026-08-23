@@ -522,7 +522,7 @@ function seedItems(): Item[] {
           createdAt: now - (mi + 1) * 86400000 - i * 3600000,
           updatedAt: now - (mi + 1) * 86400000 - i * 3600000,
           ...(km === undefined ? {} : { distanceKm: km }),
-          details: seedDetails(text, mi, i),
+          details: detailsFor(`seed-${member.id}-${type}-${i}`, text, mi, i),
           boostCount: 0,
         });
       });
@@ -551,7 +551,7 @@ function withSeedDetails(item: Item): Item {
     ...item,
     text: heal(item.text),
     ...(item.offer ? { offer: heal(item.offer) } : {}),
-    details: seedDetails(item.text, mi, index),
+    details: detailsFor(item.id, item.text, mi, index),
   };
 }
 

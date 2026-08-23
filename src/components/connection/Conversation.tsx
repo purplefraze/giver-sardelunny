@@ -68,7 +68,7 @@ export function Conversation({
   const theirName = them ? them.name.toLowerCase() : "them";
   const myName = (me.username || "you").replace(/^@/, "") || "you";
   /* THE STATE THIS THREAD LIVES IN — purple asking, green offering, orange trade. */
-  const state = exchangeState(item ? item.type : "wish");
+  const state = exchangeState(item ? item.type : "wish", item?.side);
   const stateColour = STATE_COLOUR[state];
   const themColour = OTHER_PERSON_COLOUR[state];
   /* WHO IS SPEAKING: me blue, them red / yellow / orange. Never by who posted. */

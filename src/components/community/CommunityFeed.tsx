@@ -190,7 +190,7 @@ export function CommunityFeed({
                     if (owner) onOpenProfile?.(owner.id);
                   }}
                   className="font-black underline decoration-current/40 underline-offset-4"
-                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
+                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type, item.side)] }}
                 >
                   {owner ? owner.username : "someone"}
                 </button>

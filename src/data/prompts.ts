@@ -12,9 +12,24 @@ export type Prompt = {
   question: string;
   /** The answer, said in my own voice, on my own profile. */
   mine: (answer: string) => string;
-  /** The same answer, said about somebody else. */
-  theirs: (name: string, answer: string) => string;
+  /** The same answer, said about somebody else, in their own pronouns. */
+  theirs: (name: string, answer: string, p: Pronouns) => string;
 };
+
+/**
+ * THEIR OWN WORDS FOR THEMSELVES. Read from how a person describes themselves
+ * ("she / her"), and neutral whenever that is not clear.
+ */
+export type Pronouns = { subject: string; possessive: string };
+
+export const NEUTRAL: Pronouns = { subject: "they", possessive: "their" };
+
+export function pronounsFrom(gender: string | undefined): Pronouns {
+  const said = (gender ?? "").toLowerCase();
+  if (/\bshe\b|\bher\b/.test(said)) return { subject: "she", possessive: "her" };
+  if (/\bhe\b|\bhim\b|\bhis\b/.test(said)) return { subject: "he", possessive: "his" };
+  return NEUTRAL;
+}
 
 export const PROMPTS: Prompt[] = [
   {
@@ -51,19 +66,19 @@ export const PROMPTS: Prompt[] = [
     id: "one-food",
     question: "if you could eat one thing for the rest of your life, what would it be?",
     mine: (a) => `i could eat ${a} for the rest of my life.`,
-    theirs: (n, a) => `${n} could eat ${a} for the rest of their life.`,
+    theirs: (n, a, p) => `${n} could eat ${a} for the rest of ${p.possessive} life.`,
   },
   {
     id: "animal",
     question: "if you could be any animal, what would you be?",
     mine: (a) => `if i could be any animal, i’d be ${a}.`,
-    theirs: (n, a) => `if ${n} could be any animal, they’d be ${a}.`,
+    theirs: (n, a, p) => `if ${n} could be any animal, ${p.subject}’d be ${a}.`,
   },
   {
     id: "look-like",
     question: "what animal do you think you look like most?",
     mine: (a) => `apparently i look most like ${a}.`,
-    theirs: (n, a) => `${n} thinks they look most like ${a}.`,
+    theirs: (n, a, p) => `${n} thinks ${p.subject} looks most like ${a}.`,
   },
   {
     id: "dream",
@@ -90,12 +105,14 @@ export const promptById = (id: string) => PROMPTS.find((p) => p.id === id);
 /** THE FINISHED SENTENCES, in the order the questions are asked. */
 export function answeredStatements(
   answers: Record<string, string> | undefined,
-  who: { mine: boolean; name?: string },
+  who: { mine: boolean; name?: string; pronouns?: Pronouns },
 ): { id: string; line: string }[] {
   if (!answers) return [];
   return PROMPTS.flatMap((p) => {
     const said = (answers[p.id] ?? "").trim();
     if (!said) return [];
-    return [{ id: p.id, line: who.mine ? p.mine(said) : p.theirs(who.name ?? "they", said) }];
+    return [{ id: p.id, line: who.mine
+        ? p.mine(said)
+        : p.theirs(who.name ?? "they", said, who.pronouns ?? NEUTRAL) }];
   });
 }

@@ -262,10 +262,11 @@
   --giver-wish-complement: var(--giver-purple-complement);
   --giver-profile: var(--giver-me);
   --giver-profile-complement: var(--giver-me-complement);
-  --giver-trade: var(--state-trade);
+  --giver-trade: var(--giver-orange);
   --giver-trade-complement: var(--giver-orange-complement);
   --giver-borrow: var(--mode-borrow);
-  --giver-borrow-complement: var(--giver-purple-complement);
+  --giver-borrow-complement: var(--giver-pink-complement);
+
   --giver-discovery: var(--giver-community);
   --giver-discovery-complement: var(--giver-community-complement);
 

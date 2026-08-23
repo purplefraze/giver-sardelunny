@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
 import {
@@ -84,7 +84,6 @@ import type { Currency } from "@/data/ledger";
 
 
 import { World } from "@/components/World";
-import { cn } from "@/lib/utils";
 import { DevControls } from "@/components/DevControls";
 import { lifecycleStore } from "@/data/lifecycle";
 import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";

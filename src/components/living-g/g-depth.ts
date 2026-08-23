@@ -1,4 +1,4 @@
-import { G_ANCHORS, LIVING_G_FRAME } from "./g-path";
+import { G_ANCHORS, LIVING_G_FRAME, LOOP_SAFE_RADIUS } from "./g-path";
 
 /**
  * THE SPATIAL CAMERA — the one place that knows what "deeper" means.

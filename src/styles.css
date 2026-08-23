@@ -210,10 +210,11 @@
   --giver-purple-complement: oklch(0.72 0.18 96); /* purple -> bright yellow */
   --giver-pink-complement: oklch(0.68 0.11 196); /* pink -> seafoam */
   --giver-blue-complement: oklch(0.7 0.18 70); /* blue -> bright amber */
-  --giver-red-complement: var(--giver-pink-complement);
+  --giver-red-complement: oklch(0.72 0.15 190); /* red -> seafoam */
   --giver-yellow-complement: oklch(0.52 0.27 285); /* yellow -> electric violet */
   --giver-orange-complement: oklch(0.52 0.27 265); /* orange -> royal blue */
-  --giver-community-red-complement: oklch(0.72 0.15 190); /* red -> seafoam */
+  --giver-community-red-complement: var(--giver-orange-complement); /* community is orange */
+
 
   --giver-me-complement: var(--giver-green-complement);
   --giver-others-complement: var(--giver-blue-complement);

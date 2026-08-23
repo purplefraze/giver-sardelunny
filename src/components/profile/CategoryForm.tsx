@@ -188,9 +188,16 @@ function Field({
 
 export function CategoryForm({
   category,
+  side: decidedSide,
   onDone,
 }: {
   category: Category;
+  /**
+   * THE DOOR ALREADY ASKED. When the three-intent door has settled keeping vs
+   * borrowing, or giving vs lending, the form never asks the same question
+   * again — it simply knows.
+   */
+  side?: BorrowSide;
   onDone: () => void;
 }) {
   const me = useMyProfile();
@@ -200,8 +207,9 @@ export function CategoryForm({
   const [want, setWant] = useState(stored.want);
   /** ONE OPTIONAL, SHORT LINE OF CONTEXT. Never a description box. */
   const [note, setNote] = useState(stored.note);
-  /** BORROW OR LEND — asked plainly, never assumed. */
-  const [side, setSide] = useState<BorrowSide>(stored.side);
+  /** BORROW OR LEND — answered at the door when the door knew, else asked here. */
+  const [side, setSide] = useState<BorrowSide>(decidedSide ?? stored.side);
+
   /** OPTIONAL PHOTOS. They belong to the item the moment it exists. */
   const [photos, setPhotos] = useState<string[]>(stored.photos);
   /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */

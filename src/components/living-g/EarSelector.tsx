@@ -446,14 +446,14 @@ export function EarSelector({
           width={STEM_TO - STEM_FROM}
           height={STEM_HALF * 2}
           rx={STEM_HALF * 0.5}
-          fill="var(--world-g)"
+          fill="var(--world-selector)"
         />
         <circle
           cx={TRACK_C.x + TRACK_R}
           cy={TRACK_C.y}
           r={RING_MID}
           fill="none"
-          stroke="var(--world-g)"
+          stroke="var(--world-selector)"
           strokeWidth={RING_W}
         />
       </g>
@@ -536,7 +536,7 @@ export function EarSelector({
         y={ear.y}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="var(--world-g)"
+        fill="var(--world-selector)"
         className="font-black lowercase"
         pointerEvents="none"
         style={{

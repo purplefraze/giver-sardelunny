@@ -148,35 +148,42 @@
   --giver-paper: oklch(0.985 0.008 100);
   --giver-ink: oklch(0.16 0.01 100);
 
-  /* ---- THE GIVER COLOUR SYSTEM v2 — ONE MEANING PER COLOUR ----
-     GREEN   = me. My identity, my G, my home world — and the shared state of
-               giving and lending (offering / helping).
-     PURPLE  = wishing and borrowing. Someone is asking for something.
-     BLUE    = the initiating person in an interaction (normally me).
-     RED     = the responding other person in a WISH / BORROW interaction.
-     YELLOW  = the responding other person in a GIVE / LEND interaction.
-     ORANGE  = trade. Kept outside the wish/give mixing logic entirely.
-     Nothing else carries meaning. Every token below resolves to one of these. */
-  --giver-green: oklch(0.62 0.19 145); /* GREEN — me, my world, giving */
-  --giver-purple: oklch(0.55 0.24 300); /* PURPLE — wishing, borrowing */
-  --giver-blue: oklch(0.58 0.19 250); /* BLUE — the initiating person */
-  --giver-red: oklch(0.64 0.28 26); /* RED — the other person, wish side */
-  --giver-yellow: oklch(0.78 0.17 92); /* YELLOW — the other person, give side */
-  --giver-orange: oklch(0.72 0.2 48); /* ORANGE — trade, on its own */
+  /* ---- THE GIVER COLOUR SYSTEM v3 — A SOCIAL-STATE COLOUR SYSTEM ----
+     Calibrated to the seafoam (#60C0C0) + hot pink (#E85088) reference:
+     saturated, clean, editorial, playful — never pastel, muted or corporate.
 
-  /* THE TWO RELATIONSHIP STATES a conversation can inhabit. */
+     BLUE     = me / the current user, always.
+     HOT PINK = BORROW (and the other person on the asking side).
+     PURPLE   = WISH — and the world a wish / borrow interaction lives in.
+     SEAFOAM  = LEND.
+     GREEN    = GIVE — and the world a give / lend interaction lives in.
+     YELLOW   = the person RECEIVING a give / lend.
+     ORANGE   = COMMUNITY, and the other person in a TRADE.
+     Nothing else carries meaning. Every token below resolves to one of these. */
+  --giver-green: oklch(0.66 0.22 146); /* GREEN — giving, my own world */
+  --giver-seafoam: oklch(0.75 0.1 196); /* SEAFOAM — lending (#60C0C0) */
+  --giver-purple: oklch(0.55 0.26 300); /* PURPLE — wishing, asking */
+  --giver-pink: oklch(0.65 0.21 4); /* HOT PINK — borrowing (#E85088) */
+  --giver-blue: oklch(0.58 0.2 250); /* BLUE — me, the current user */
+  --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the receiving person */
+  --giver-orange: oklch(0.7 0.2 46); /* ORANGE — community, trade partner */
+  --giver-red: var(--giver-pink); /* legacy: the asking other person */
+
+  /* THE RELATIONSHIP STATES a conversation can inhabit. */
   --state-wish: var(--giver-purple);
   --state-give: var(--giver-green);
-  --state-trade: var(--giver-orange);
+  --state-trade: var(--giver-blue); /* trade reads as blue + orange */
+  --state-community: var(--giver-orange);
 
-  /* THE PEOPLE. Me is always blue as a participant; my own identity stays green. */
+  /* THE PEOPLE. I am always blue; the other person takes the social state. */
   --person-self: var(--giver-blue);
-  --person-other-wish: var(--giver-red);
-  --person-other-give: var(--giver-yellow);
-  --person-other-trade: oklch(0.56 0.18 55); /* deeper orange — trade stays apart */
+  --person-self-community: oklch(0.52 0.22 262); /* me inside orange community */
+  --person-other-wish: var(--giver-pink); /* they are asking */
+  --person-other-give: var(--giver-yellow); /* they are receiving */
+  --person-other-trade: var(--giver-orange); /* trade partner */
 
   /* ---- ONE SECONDARY ACTION COLOUR + THE PRIVATE UTILITIES ---- */
-  --giver-action: oklch(0.7 0.23 350); /* PINK — an action while creating */
+  --giver-action: var(--giver-pink); /* an action while creating */
   --giver-sparks: var(--giver-purple);
   --giver-sparkles: var(--giver-action);
   --giver-messages: var(--person-self);
@@ -184,25 +191,28 @@
   /* Me / others / community, expressed in the new system. */
   --giver-me: var(--giver-green); /* my identity, never remapped by mode */
   --giver-others: var(--person-self); /* a person acting, in blue */
-  --giver-community: var(--giver-yellow); /* other people, collectively */
+  --giver-community: var(--state-community); /* the community environment */
   --giver-connection: var(--state-wish);
-  --giver-participation: var(--state-trade);
+  --giver-participation: var(--giver-orange);
   --giver-generosity: var(--state-give);
 
   /* One approved bright complementary in-loop type colour per semantic. */
-  --giver-green-complement: oklch(0.56 0.28 340); /* green -> hot magenta */
-  --giver-purple-complement: oklch(0.68 0.18 92); /* purple -> bright yellow */
-  --giver-blue-complement: oklch(0.68 0.17 70); /* blue -> bright amber */
-  --giver-red-complement: oklch(0.62 0.15 195); /* red -> electric turquoise */
+  --giver-green-complement: oklch(0.58 0.28 348); /* green -> hot pink */
+  --giver-seafoam-complement: oklch(0.6 0.26 4); /* seafoam -> hot pink */
+  --giver-purple-complement: oklch(0.72 0.18 96); /* purple -> bright yellow */
+  --giver-pink-complement: oklch(0.68 0.11 196); /* pink -> seafoam */
+  --giver-blue-complement: oklch(0.7 0.18 70); /* blue -> bright amber */
+  --giver-red-complement: var(--giver-pink-complement);
   --giver-yellow-complement: oklch(0.52 0.27 285); /* yellow -> electric violet */
   --giver-orange-complement: oklch(0.52 0.27 265); /* orange -> royal blue */
 
   --giver-me-complement: var(--giver-green-complement);
   --giver-others-complement: var(--giver-blue-complement);
-  --giver-community-complement: var(--giver-yellow-complement);
+  --giver-community-complement: var(--giver-orange-complement);
   --giver-connection-complement: var(--giver-purple-complement);
   --giver-participation-complement: var(--giver-orange-complement);
   --giver-generosity-complement: var(--giver-green-complement);
+
 
   /* ---- LIVING G MODE COLOURS — THE SIX TOGGLE POSITIONS ----
        12 o'clock = my g (blue) · give = bright green · wish = dreamy purple ·

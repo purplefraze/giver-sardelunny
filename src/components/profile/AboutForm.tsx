@@ -61,8 +61,6 @@ export function AboutForm({
   const photo = useProfilePhoto();
   const [photoMenu, setPhotoMenu] = useState(false);
   const [settings, setSettings] = useState(false);
-  /** THE INTERFACE TEACHES ITSELF ONCE: the hint retires after the first touch. */
-  const [taught, setTaught] = useState(false);
 
   const handle = normaliseHandle(me.username);
   const named = Boolean(handle) && handle !== "you";
@@ -165,7 +163,6 @@ export function AboutForm({
               label=""
               value={handle}
               onChange={(v) => {
-                setTaught(true);
                 myProfileStore.patch({ username: normaliseHandle(v) });
               }}
               placeholder="@yourname"
@@ -186,7 +183,6 @@ export function AboutForm({
             <BirthdayInput
               birthday={me.birthday}
               onChange={(day) => {
-                setTaught(true);
                 myProfileStore.patch({ birthday: day });
               }}
             />
@@ -241,7 +237,6 @@ export function AboutForm({
               label={me.aboutMe ? "" : "about me"}
               value={me.aboutMe}
               onChange={(v) => {
-                setTaught(true);
                 myProfileStore.patch({ aboutMe: v });
               }}
               placeholder="a line about you"
@@ -254,7 +249,7 @@ export function AboutForm({
         </div>
 
         {/* THE FUN QUESTIONS — optional, playful, and they become sentences. */}
-        <PromptAnswers onTouched={() => setTaught(true)} />
+        <PromptAnswers />
 
         {/* AGE ONLY MATTERS FOR PUBLISHING, and it is said once, plainly. */}
         {age !== null && !adult ? (

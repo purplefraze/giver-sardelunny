@@ -20,6 +20,7 @@ import {
 } from "@/components/profile/ProfilePhotoToggle";
 import { InlineEdit } from "@/components/profile/InlineEdit";
 import { BirthdayInput } from "@/components/profile/BirthdayInput";
+import { PromptAnswers } from "@/components/profile/PromptAnswers";
 import { buzz, haptics } from "@/lib/haptics";
 
 /**
@@ -164,7 +165,7 @@ export function AboutForm({
           <div className="min-w-0 flex-1 space-y-4 pt-0.5">
             {/* @USERNAME — printed as it reads, edited in place. */}
             <InlineEdit
-              label="my name on giver"
+              label=""
               value={handle}
               onChange={(v) => {
                 setTaught(true);
@@ -178,16 +179,13 @@ export function AboutForm({
               selectAll={!named}
               autoEdit={onboarding && !named}
 
-              {...(named
-                ? {
-                    note:
-                      handleState.state === "taken"
-                        ? HANDLE_MESSAGE.taken
-                        : handleState.state === "free"
-                          ? HANDLE_MESSAGE.free
-                          : "",
-                  }
-                : {})}
+              note={
+                named && handleState.state === "taken"
+                  ? HANDLE_MESSAGE.taken
+                  : named && handleState.state === "free"
+                    ? HANDLE_MESSAGE.free
+                    : "tap to change"
+              }
             />
 
             {/* BIRTHDAY — once, here, typed. Nowhere else in the app. */}
@@ -251,7 +249,7 @@ export function AboutForm({
         <div className="mt-9 space-y-7">
           <div className="g-rule pt-6">
             <InlineEdit
-              label="about me"
+              label={me.aboutMe ? "" : "about me"}
               value={me.aboutMe}
               onChange={(v) => {
                 setTaught(true);
@@ -264,86 +262,10 @@ export function AboutForm({
             />
           </div>
 
-          {/* GENDER — the answer stands; the choices only appear when asked for. */}
-          <div>
-            {genderOpen ? (
-              <>
-                <p className="g-meta" style={{ color: "var(--giver-me)" }}>
-                  i am
-                </p>
-                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
-                  {GENDERS.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        haptics.selection();
-                        setTaught(true);
-                        myProfileStore.patch({ gender: me.gender === g ? "" : g });
-                        setGenderOpen(false);
-                      }}
-                      className="g-name"
-                      style={{
-                        color: me.gender === g ? "var(--giver-me)" : "var(--world-ink)",
-                        opacity: me.gender === g ? 1 : 0.5,
-                      }}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  haptics.selection();
-                  setGenderOpen(true);
-                }}
-                className="block w-full text-left"
-              >
-                <span className="g-meta" style={{ color: "var(--giver-me)" }}>
-                  i am
-                </span>
-                <span
-                  className="g-name mt-1 block"
-                  style={me.gender ? undefined : { opacity: 0.32 }}
-                >
-                  {me.gender || "tap to say"}
-                </span>
-              </button>
-            )}
-          </div>
-
-          <InlineEdit
-            label="by day"
-            value={me.byDay}
-            onChange={(v) => {
-              setTaught(true);
-              myProfileStore.patch({ byDay: v });
-            }}
-            placeholder="what you do with your days"
-          />
-          <InlineEdit
-            label="by night"
-            value={me.byNight}
-            onChange={(v) => {
-              setTaught(true);
-              myProfileStore.patch({ byNight: v });
-            }}
-            placeholder="what you do with your evenings"
-          />
-          <InlineEdit
-            label="by weekend"
-            value={me.weekend}
-            onChange={(v) => {
-              setTaught(true);
-              myProfileStore.patch({ weekend: v });
-            }}
-            placeholder="where the weekend takes you"
-            limit={120}
-          />
         </div>
+
+        {/* THE FUN QUESTIONS — optional, playful, and they become sentences. */}
+        <PromptAnswers onTouched={() => setTaught(true)} />
 
         {/* AGE ONLY MATTERS FOR PUBLISHING, and it is said once, plainly. */}
         {age !== null && !adult ? (

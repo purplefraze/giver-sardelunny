@@ -645,199 +645,259 @@ function Index() {
             NO SEPARATE "COMMUNITY" WORD either — the bottom loop is that door.
           */}
 
-          {/* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */}
-          <Screen open={locked}>
-            {locked ? (
-              <CommunityLocked
-                onGive={() => {
-                  setLocked(false);
-                  setSeat("give");
-                  setEditor({ kind: "category", category: "give" });
-                }}
-                onClose={() => setLocked(false)}
-              />
-            ) : null}
-          </Screen>
-
-          {/* BROWSE -> ONE ACTIVITY -> A CONVERSATION. Never a shortcut. */}
-          <Screen open={browse !== null}>
-            {browse ? (
-              <CommunityFeed
-                initialType={browse.type}
-                onOpen={(itemId) => setDetail(itemId)}
-                onOpenProfile={(ownerId) => {
-                  setPersonFocus(null);
-                  setPerson(ownerId);
-                }}
-                onClose={() => setBrowse(null)}
-              />
-            ) : null}
-          </Screen>
-
           {/*
-            SEARCH IS NOT A LOOP AND NEVER A BAR ON THE LIVING G: it lives inside
-            the expanded Communi-G, where the whole community already is.
+            EVERY DESTINATION IS A DEPTH OF THIS SAME LIVING G.
+            The list is in canonical depth order: the camera moves inward toward
+            the region each destination belongs to, the artwork unfurls into the
+            frame around it, and the depth behind stays exactly where it was.
+            Leaving — by a back control or by pinching outward — runs the
+            identical movement in reverse. No screen ever simply replaces the G.
           */}
+          <GDepthStack
+            onPop={(id) => {
+              if (id === "talking") setTalking(null);
+              else if (id === "detail") setDetail(null);
+              else if (id === "person") {
+                setPersonFocus(null);
+                setPerson(null);
+              } else if (id === "browse") setBrowse(null);
+              else if (id === "threads") setThreads(false);
+              else if (id === "history") setHistory(null);
+              else if (id === "about" || id === "category") setEditor(null);
+              else if (id === "help") setHelp(false);
+              else if (id === "choose") setChoose(false);
+              else if (id === "intro") setIntro(null);
+              else if (id === "locked") setLocked(false);
+            }}
+            slots={[
+              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */
+              {
+                id: "locked",
+                open: locked,
+                anchor: "bottom",
+                world: "community",
+                children: locked ? (
+                  <CommunityLocked
+                    onGive={() => {
+                      setLocked(false);
+                      setSeat("give");
+                      setEditor({ kind: "category", category: "give" });
+                    }}
+                    onClose={() => setLocked(false)}
+                  />
+                ) : null,
+              },
 
-          {/*
-            @USERNAME -> INSIDE THAT PERSON'S LIVING G. Not a page: the same
-            artwork unfurls until its curves frame the screen, and their profile
-            appears within it. Backing out contracts it to exactly where it was.
-          */}
-          <GEnclosure
-            open={person !== null}
-            world={personShown === ME_ID ? "me" : "others"}
-          >
-            {personShown
-              ? (() => {
-                  const member =
-                    personShown === ME_ID ? myAsMember(me) : memberById(personShown);
-                  return member ? (
-                    <FullProfile
-                      member={member}
-                      world={personShown === ME_ID ? "me" : "others"}
-                      focus={personFocus}
-                      onBack={() => {
-                        setPersonFocus(null);
-                        setPerson(null);
-                      }}
-                      onOpen={(id) => {
-                        setPersonFocus(null);
-                        setPerson(id);
-                      }}
-                      /* EVERY ITEM ON EVERY PROFILE OPENS ITS OWN RICH DETAIL. */
-                      onOpenItem={(itemId) => setDetail(itemId)}
-                    />
-                  ) : null;
-                })()
-              : null}
-          </GEnclosure>
+              /* FIRST-TIME EXPLANATION -> straight into my <type>. */
+              {
+                id: "intro",
+                open: intro !== null,
+                anchor: "middle",
+                world: activity ?? "profile",
+                children: intro ? (
+                  <WorldIntro
+                    category={intro.topic}
+                    help={intro.help}
+                    onDone={() => {
+                      const { topic, help: voluntary } = intro;
+                      setIntro(null);
+                      if (voluntary || topic === "sparks") return;
+                      /* Already marked seen on entry — this just opens the form. */
+                      setEditor({ kind: "category", category: topic });
+                    }}
+                  />
+                ) : null,
+              },
 
-          {/* AN ITEM IS MORE OF THE SAME G: only the interior content changes. */}
-          <GEnclosure open={detail !== null}>
-            {detailShown ? (
-              <ActivityDetail
-                itemId={detailShown}
-                onOpenConnection={(id) => {
-                  setDetail(null);
-                  setTalking(id);
-                }}
-                onOpenProfile={(ownerId) => {
-                  setDetail(null);
-                  setPerson(ownerId);
-                }}
-                onClose={() => setDetail(null)}
-              />
-            ) : null}
-          </GEnclosure>
+              /* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */
+              {
+                id: "choose",
+                open: choose,
+                anchor: "middle",
+                world: activity ?? "profile",
+                children: choose ? (
+                  <ChooseWorld onChoose={openWorld} onCancel={() => setChoose(false)} />
+                ) : null,
+              },
 
+              /* THE VOLUNTARY HELP AREA — explanations only, no flags, no forms. */
+              {
+                id: "help",
+                open: help,
+                anchor: "top",
+                world: "me",
+                children: help ? (
+                  <HelpIndex
+                    onOpen={(topic) => setIntro({ topic, help: true })}
+                    onClose={() => setHelp(false)}
+                  />
+                ) : null,
+              },
 
-          <Screen open={talking !== null}>
-            {talking ? (
-              <Conversation connectionId={talking} onClose={() => setTalking(null)} />
-            ) : null}
-          </Screen>
+              /*
+                A FORM IS A DEEPER CHAMBER INSIDE THE G, never a separate page:
+                the middle loop it belongs to becomes the room it is written in.
+              */
+              {
+                id: "category",
+                open: editor?.kind === "category",
+                anchor: "middle",
+                world: editor?.kind === "category" ? editor.category : (activity ?? "profile"),
+                children:
+                  editor?.kind === "category" ? (
+                    <CategoryForm category={editor.category} onDone={() => setEditor(null)} />
+                  ) : null,
+              },
 
-          <Screen open={threads}>
-            {threads ? (
-              <ConnectionsList onOpen={(id) => setTalking(id)} onClose={() => setThreads(false)} />
-            ) : null}
-          </Screen>
+              /*
+                MY OWN PROFILE UNFURLS OUT OF THE G ITSELF — the same artwork
+                becomes the frame, and the person appears inside it.
+              */
+              {
+                id: "about",
+                open: aboutOpen,
+                anchor: "top",
+                world: "me",
+                children: aboutOpen ? (
+                  <AboutForm
+                    unread={unread}
+                    firstSetup={firstArrival}
+                    onMessages={() => {
+                      setEditor(null);
+                      setThreads(true);
+                    }}
+                    onSparks={() => {
+                      setEditor(null);
+                      setHistory("spark");
+                    }}
+                    onSparkles={() => {
+                      setEditor(null);
+                      setHistory("sparkle");
+                    }}
+                    onDone={() => {
+                      lifecycleStore.completeProfileSetup();
+                      setEditor(null);
+                    }}
+                    onViewProfile={() => {
+                      setEditor(null);
+                      setPerson(ME_ID);
+                    }}
+                    onHelp={() => {
+                      setEditor(null);
+                      setHelp(true);
+                    }}
+                  />
+                ) : null,
+              },
 
-          {/*
-            SPARKS AND SPARKLES ARE STORIES, NOT COUNTERS. Each is its own
-            history portal, reached from the toggle on my own photo.
-          */}
-          <Screen open={history !== null}>
-            {history ? (
-              <LedgerHistory currency={history} onClose={() => setHistory(null)} />
-            ) : null}
-          </Screen>
+              /*
+                SPARKS AND SPARKLES ARE STORIES, NOT COUNTERS. Each is its own
+                history, one depth further inside my own G.
+              */
+              {
+                id: "history",
+                open: history !== null,
+                anchor: "top",
+                world: "me",
+                children: history ? (
+                  <LedgerHistory currency={history} onClose={() => setHistory(null)} />
+                ) : null,
+              },
 
+              {
+                id: "threads",
+                open: threads,
+                anchor: "top",
+                world: "me",
+                children: threads ? (
+                  <ConnectionsList
+                    onOpen={(id) => setTalking(id)}
+                    onClose={() => setThreads(false)}
+                  />
+                ) : null,
+              },
 
+              /* BROWSE -> ONE ACTIVITY -> A CONVERSATION. Never a shortcut. */
+              {
+                id: "browse",
+                open: browse !== null,
+                anchor: "bottom",
+                world: activity ?? "community",
+                children: browse ? (
+                  <CommunityFeed
+                    initialType={browse.type}
+                    onOpen={(itemId) => setDetail(itemId)}
+                    onOpenProfile={(ownerId) => {
+                      setPersonFocus(null);
+                      setPerson(ownerId);
+                    }}
+                    onClose={() => setBrowse(null)}
+                  />
+                ) : null,
+              },
 
-          {/* THE EMPTY MIDDLE LOOP'S QUESTION -> the chosen world's door. */}
-          <Screen open={choose}>
-            {choose ? <ChooseWorld onChoose={openWorld} onCancel={() => setChoose(false)} /> : null}
-          </Screen>
+              /*
+                @USERNAME -> DEEPER INSIDE THAT PERSON'S LIVING G. Not a page:
+                the same artwork unfurls until its curves frame the screen.
+              */
+              {
+                id: "person",
+                open: person !== null,
+                anchor: "middle",
+                world: person === ME_ID ? "me" : "others",
+                children: person
+                  ? (() => {
+                      const member = person === ME_ID ? myAsMember(me) : memberById(person);
+                      return member ? (
+                        <FullProfile
+                          member={member}
+                          world={person === ME_ID ? "me" : "others"}
+                          focus={personFocus}
+                          onBack={() => {
+                            setPersonFocus(null);
+                            setPerson(null);
+                          }}
+                          onOpen={(id) => {
+                            setPersonFocus(null);
+                            setPerson(id);
+                          }}
+                          /* EVERY ITEM ON EVERY PROFILE OPENS ITS OWN RICH DETAIL. */
+                          onOpenItem={(itemId) => setDetail(itemId)}
+                        />
+                      ) : null;
+                    })()
+                  : null,
+              },
 
-          {/* THE VOLUNTARY HELP AREA — explanations only, no flags, no forms. */}
-          <Screen open={help}>
-            {help ? (
-              <HelpIndex
-                onOpen={(topic) => setIntro({ topic, help: true })}
-                onClose={() => setHelp(false)}
-              />
-            ) : null}
-          </Screen>
+              /* AN ITEM IS MORE OF THE SAME G: only the interior changes. */
+              {
+                id: "detail",
+                open: detail !== null,
+                anchor: "middle",
+                world: activity ?? "others",
+                children: detail ? (
+                  <ActivityDetail
+                    itemId={detail}
+                    onOpenConnection={(id) => setTalking(id)}
+                    onOpenProfile={(ownerId) => setPerson(ownerId)}
+                    onClose={() => setDetail(null)}
+                  />
+                ) : null,
+              },
 
-          {/* FIRST-TIME EXPLANATION -> straight into my <type>. */}
-          <Screen open={intro !== null}>
-            {intro ? (
-              <WorldIntro
-                category={intro.topic}
-                help={intro.help}
-                onDone={() => {
-                  const { topic, help: voluntary } = intro;
-                  setIntro(null);
-                  if (voluntary || topic === "sparks") return;
-                  /* Already marked seen on entry — this just opens the form. */
-                  setEditor({ kind: "category", category: topic });
-                }}
-              />
-            ) : null}
-          </Screen>
+              /* THE CONVERSATION IS THE DEEPEST CHAMBER OF A CONNECTION. */
+              {
+                id: "talking",
+                open: talking !== null,
+                anchor: "bottom",
+                world: "connection",
+                children: talking ? (
+                  <Conversation connectionId={talking} onClose={() => setTalking(null)} />
+                ) : null,
+              },
+            ]}
+          />
 
-          {/*
-            THE EDITOR DESTINATIONS. One screen at a time, above the G — never
-            beneath it. Leaving returns to the same seat, already updated.
-          */}
-          {/*
-            MY OWN PROFILE UNFURLS OUT OF THE G ITSELF — the same artwork becomes
-            the frame, and the person appears inside it. Never a separate page.
-          */}
-          <GEnclosure open={aboutOpen} world="me">
-            {aboutShown ? (
-              <AboutForm
-                unread={unread}
-                firstSetup={firstArrival}
-                onMessages={() => {
-                  setEditor(null);
-                  setThreads(true);
-                }}
-                onSparks={() => {
-                  setEditor(null);
-                  setHistory("spark");
-                }}
-                onSparkles={() => {
-                  setEditor(null);
-                  setHistory("sparkle");
-                }}
-                onDone={() => {
-                  lifecycleStore.completeProfileSetup();
-                  setEditor(null);
-                }}
-                onViewProfile={() => {
-                  setEditor(null);
-                  setPerson(ME_ID);
-                }}
-                onHelp={() => {
-                  setEditor(null);
-                  setHelp(true);
-                }}
-              />
-            ) : null}
-          </GEnclosure>
-
-          {/*
-            THE OTHER EDITOR DESTINATION. One screen at a time, above the G —
-            never beneath it. Leaving returns to the same seat, already updated.
-          */}
-          <Screen open={editor?.kind === "category"}>
-            {editor?.kind === "category" ? (
-              <CategoryForm category={editor.category} onDone={() => setEditor(null)} />
-            ) : null}
-          </Screen>
 
         </>
       )}

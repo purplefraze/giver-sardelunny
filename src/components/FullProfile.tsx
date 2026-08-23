@@ -80,10 +80,13 @@ function Section({
 }) {
   return (
     <section ref={innerRef} className="g-rule mt-12 pt-5">
-      <h2 className="g-heading" style={accent ? { color: accent } : { opacity: 0.45 }}>
-        {title}
-      </h2>
-      <div className="mt-5">{children}</div>
+      {/* A HEADING IS SCAFFOLDING: pass none once the content speaks for itself. */}
+      {title ? (
+        <h2 className="g-heading" style={accent ? { color: accent } : { opacity: 0.45 }}>
+          {title}
+        </h2>
+      ) : null}
+      <div className={title ? "mt-5" : ""}>{children}</div>
     </section>
   );
 }
@@ -288,30 +291,14 @@ export function FullProfile({
                 name: member.name.toLowerCase(),
                 pronouns: pronounsFrom(member.gender),
               });
-              if (said.length)
-                return (
-                  <ul className="mt-7 space-y-6">
-                    {said.map((line) => (
-                      <li key={line.id} className="g-lede">
-                        {line.line}
-                      </li>
-                    ))}
-                  </ul>
-                );
+              if (!said.length) return null;
               return (
-                <ul className="mt-6 space-y-3">
-                  {[
-                    ["by day", member.byDay],
-                    ["by night", member.byNight],
-                    ["by weekend", member.weekend],
-                  ]
-                    .filter(([, value]) => Boolean(value) && value !== "—")
-                    .map(([label, value]) => (
-                      <li key={label}>
-                        <span className="g-meta">{label}</span>
-                        <span className="g-name mt-1 block">{value}</span>
-                      </li>
-                    ))}
+                <ul className="mt-7 space-y-6">
+                  {said.map((line) => (
+                    <li key={line.id} className="g-lede">
+                      {line.line}
+                    </li>
+                  ))}
                 </ul>
               );
             })()

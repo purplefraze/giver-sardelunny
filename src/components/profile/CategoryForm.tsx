@@ -709,9 +709,10 @@ export function CategoryForm({
           <p className="mt-3 g-meta">#1 is your priority</p>
         ) : null}
 
-        {/* BORROW OR LEND — one plain question, two honest answers, each in
-            its own blue: bright for borrowing, royal for lending. */}
-        {category === "borrow" ? (
+        {/* BORROW OR LEND — asked here ONLY when the door did not already ask.
+            The same question is never put to a person twice. */}
+        {category === "borrow" && !decidedSide ? (
+
           <div className="mt-7 flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
             {(["borrow", "lend"] as BorrowSide[]).map((s) => (
               <button

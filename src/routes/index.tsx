@@ -266,14 +266,23 @@ function Index() {
   const [locked, setLocked] = useState(false);
 
   /**
+   * WHICH SIDE OF BORROWING THE DOOR ALREADY ANSWERED. The three-intent door
+   * has already asked "keeping or borrowing?" / "giving or lending?", so the
+   * form must never ask the same question a second time.
+   */
+  const [pendingSide, setPendingSide] = useState<BorrowSide | undefined>(undefined);
+
+  /**
    * ONE DOOR INTO A WORLD. First time: explain, then the form. Every time after:
    * straight to the form. The flag decides, never the caller.
    */
-  const openWorld = (category: Category) => {
+  const openWorld = (category: Category, side?: BorrowSide) => {
     setChoose(false);
-    if (introSeen[category]) setEditor({ kind: "category", category });
+    setPendingSide(side);
+    if (introSeen[category]) setEditor({ kind: "category", category, ...(side ? { side } : {}) });
     else showIntro(category);
   };
+
 
   /**
    * ENTERING THE INSTRUCTIONS IS SEEING THEM. The persisted flag is written the

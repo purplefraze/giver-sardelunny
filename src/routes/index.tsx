@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { GEnclosure } from "@/components/living-g/GEnclosure";
+import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
 import {
   LIVING_G_PATH,
@@ -903,30 +903,4 @@ function Index() {
       )}
     </main>
   );
-}
-
-/** Restrained, fast screen change: no slides, no bounce. Touch, breathe, move. */
-function Screen({ open, children }: { open: boolean; children: React.ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "absolute inset-0 z-30 transition-opacity duration-200 ease-out",
-        open ? "opacity-100" : "pointer-events-none invisible opacity-0",
-      )}
-      aria-hidden={!open}
-    >
-      {children}
-    </div>
-  );
-}
-
-/**
- * CONTEXT IS NEVER RESET. A value that has just been cleared is kept one beat
- * longer, so what the user was looking at is still there while the Living G
- * folds back around it.
- */
-function useLinger<T>(value: T | null) {
-  const held = useRef<T | null>(value);
-  if (value !== null) held.current = value;
-  return value ?? held.current;
 }

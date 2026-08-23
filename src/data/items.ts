@@ -560,21 +560,23 @@ function seedDetails(text: string, mi: number, i: number): ItemDetails {
   const times = ["7–9 pm", "6–8 pm", "2–4 pm", "9–11 am"];
 
   /* A REAL FREQUENCY, not a status word. */
-  const spans = ["one time", "weekly", "flexible"];
+  const spans = ["one time", "weekly", "monthly"];
   const k = (mi + i) % 4;
   const wheres = WHERE_FOR[kind];
   const where = wheres[k % wheres.length]!;
   const cadence = spans[(mi + i) % spans.length]!;
-  const flexible = where === "flexible" && cadence === "flexible";
+  /* SOMETHING EASY ABOUT WHEN SAYS SO ON ITS OWN LINE, never as a place. */
+  const easy = where === "anywhere";
   return {
-    /* A FLEXIBLE THING DOES NOT CLAIM FIXED DAYS. */
-    ...(flexible ? {} : { days: daySets[k % daySets.length]! }),
-    ...(flexible ? {} : { time: times[k % times.length]! }),
+    ...(easy ? { flexibleDate: true, flexibleTime: true } : {}),
+    ...(easy ? {} : { days: daySets[k % daySets.length]! }),
+    ...(easy ? {} : { time: times[k % times.length]! }),
     /* NEVER THE SAME WORD TWICE: a place is a place, a frequency is a frequency. */
     where:
-      where === "in person" || where === "nearby pickup" || where === "flexible"
+      where === "in person" || where === "nearby pickup"
         ? (areas[(k + i) % areas.length] ?? where)
         : where,
+
     cadence,
     ...(ASKS_DURATION[kind]
       ? { duration: DURATION_OPTIONS[k % DURATION_OPTIONS.length]! }

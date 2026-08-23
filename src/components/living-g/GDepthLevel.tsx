@@ -81,7 +81,9 @@ export function GDepthLevel({
   /** Only promote the big artwork layer while it is actually moving. */
   const moving = phase === "opening" || phase === "closing";
   const origin = anchorOrigin(anchor);
+  const lens = anchorLens(anchor);
   const inset = levelInset(depth);
+
 
   /* THE CAMERA HAS MOVED PAST THIS DEPTH: further away, and slightly veiled. */
   const pushed = 1 + CAMERA.push * above;

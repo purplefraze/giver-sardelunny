@@ -860,6 +860,16 @@ function Index() {
                             setPersonFocus(null);
                             setPerson(id);
                           }}
+                          /* MY WHOLE PROFILE IS ALSO THE EDITOR: touching me
+                             opens the very same state, never a second screen. */
+                          {...(person === ME_ID
+                            ? {
+                                onEdit: () => {
+                                  setPerson(null);
+                                  setEditor({ kind: "about" });
+                                },
+                              }
+                            : {})}
                           /* EVERY ITEM ON EVERY PROFILE OPENS ITS OWN RICH DETAIL. */
                           onOpenItem={(itemId) => setDetail(itemId)}
                         />

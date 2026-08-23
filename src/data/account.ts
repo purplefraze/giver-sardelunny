@@ -75,8 +75,10 @@ export const HANDLE_MESSAGE: Record<HandleCheck["state"], string> = {
   empty: "",
   short: "a little longer, please",
   taken: "that one is taken — try another",
-  free: "yours",
+  /* A FREE NAME SAYS NOTHING: the name itself is the answer. */
+  free: "",
 };
+
 
 /* -------------------------------- AGE ------------------------------------ */
 

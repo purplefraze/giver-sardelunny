@@ -61,8 +61,6 @@ export function AboutForm({
   const photo = useProfilePhoto();
   const [photoMenu, setPhotoMenu] = useState(false);
   const [settings, setSettings] = useState(false);
-  /** THE INTERFACE TEACHES ITSELF ONCE: the hint retires after the first touch. */
-  const [taught, setTaught] = useState(false);
 
   const handle = normaliseHandle(me.username);
   const named = Boolean(handle) && handle !== "you";
@@ -165,7 +163,6 @@ export function AboutForm({
               label=""
               value={handle}
               onChange={(v) => {
-                setTaught(true);
                 myProfileStore.patch({ username: normaliseHandle(v) });
               }}
               placeholder="@yourname"
@@ -176,32 +173,23 @@ export function AboutForm({
               selectAll={!named}
               autoEdit={onboarding && !named}
 
-              note={
-                named && handleState.state === "taken"
-                  ? HANDLE_MESSAGE.taken
-                  : named && handleState.state === "free"
-                    ? HANDLE_MESSAGE.free
-                    : "tap to change"
-              }
+              /* THE ONLY THING WORTH SAYING IS WHEN A NAME CANNOT BE HAD. */
+              {...(named && handleState.state === "taken"
+                ? { note: HANDLE_MESSAGE.taken }
+                : {})}
             />
 
             {/* BIRTHDAY — once, here, typed. Nowhere else in the app. */}
             <BirthdayInput
               birthday={me.birthday}
               onChange={(day) => {
-                setTaught(true);
                 myProfileStore.patch({ birthday: day });
               }}
             />
           </div>
         </div>
 
-        {/* THE ONE TEACHING LINE. It shows how, once, then never again. */}
-        {!taught ? (
-          <p className="g-body mt-6" style={{ opacity: 0.6 }}>
-            tap anything on your profile to change it — it saves itself.
-          </p>
-        ) : null}
+
 
         {photo.failed ? (
           <p className="g-body mt-4" style={{ color: "var(--giver-me)" }}>
@@ -249,7 +237,6 @@ export function AboutForm({
               label={me.aboutMe ? "" : "about me"}
               value={me.aboutMe}
               onChange={(v) => {
-                setTaught(true);
                 myProfileStore.patch({ aboutMe: v });
               }}
               placeholder="a line about you"
@@ -262,7 +249,7 @@ export function AboutForm({
         </div>
 
         {/* THE FUN QUESTIONS — optional, playful, and they become sentences. */}
-        <PromptAnswers onTouched={() => setTaught(true)} />
+        <PromptAnswers />
 
         {/* AGE ONLY MATTERS FOR PUBLISHING, and it is said once, plainly. */}
         {age !== null && !adult ? (

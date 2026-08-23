@@ -602,7 +602,10 @@ export function myAsMember(p: MyProfile): Member {
     since: "today",
     aboutMe: p.aboutMe,
     done: {
-      gifts: p.completed.give.length,
+      /* THE OPENING GIFT WAS A REAL GIVE: the 50 sparks passed to a real person
+         count exactly once, alongside everything completed since. */
+      gifts: p.completed.give.length + (p.sparksSeeded ? 1 : 0),
+
       wishes: p.completed.wish.length,
       trades: p.completed.trade.length,
       borrows: p.completed.borrow.length,

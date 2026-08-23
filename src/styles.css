@@ -172,7 +172,7 @@
   /* THE RELATIONSHIP STATES a conversation can inhabit. */
   --state-wish: var(--giver-purple);
   --state-give: var(--giver-green);
-  --state-trade: var(--giver-blue); /* trade reads as blue + orange */
+  --state-trade: var(--giver-orange); /* trade surfaces: blue me + orange them */
   --state-community: var(--giver-orange);
 
   /* THE PEOPLE. I am always blue; the other person takes the social state. */

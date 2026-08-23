@@ -134,23 +134,32 @@ export const NOTE_COUNTDOWN_AT = 40;
  * a form. Everything is optional, and nothing is ever an exact home address.
  */
 export type ItemDetails = {
-  /** neighbourhood / general area, "online" or "flexible". Never an address. */
+  /** neighbourhood / general area, "online" or "anywhere". Never an address. */
   where?: string | undefined;
   /** days of the week, in order, e.g. ["tues", "thurs"]. */
   days?: string[] | undefined;
-  /** a time or time range: "evenings", "7 pm". */
+  /** the readable time window, ALWAYS built from the pickers below. */
   time?: string | undefined;
-  /** a date or date range, where it matters. */
+  /** the structured window itself, as 24h "HH:MM" values. */
+  startTime?: string | undefined;
+  endTime?: string | undefined;
+  /** a date, as "YYYY-MM-DD", from a real date picker. */
   date?: string | undefined;
   /** THE LAST DAY THIS IS AVAILABLE. Optional, and always removable. */
   until?: string | undefined;
-  /** one time · recurring · flexible. */
+  /** SAID PRECISELY, ONE THING EACH — never a second "flexible". */
+  flexibleDate?: boolean | undefined;
+  flexibleTime?: boolean | undefined;
+  /** one time · weekly · fortnightly · monthly. Only asked where it matters. */
   cadence?: string | undefined;
   /** approximate duration: "1 hour". */
   duration?: string | undefined;
+  /** the broad, human category — suggested by giver, confirmed by the person. */
+  topic?: string | undefined;
   /** context-specific answers (subject, level, format...). */
   extras?: Record<string, string> | undefined;
 };
+
 
 /**
  * AVAILABILITY IS OPTIONAL, AND WHEN IT EXISTS IT IS HONEST.

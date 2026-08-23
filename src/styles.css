@@ -321,62 +321,77 @@
                    loop may ever use.
    --------------------------------------------------------------- */
 
-/* Home / Giver — my own world: green. */
+/* THE G IS SPATIAL, NOT CATEGORICAL. By default the Living G's own stroke and
+   the travelling selector share one colour; the mode worlds below then split
+   them: the G keeps the user's blue identity, and only the selector piece plus
+   the surrounding state copy carry the category colour. */
+[data-world] {
+  --world-selector: var(--world-g);
+}
+
+/* Home / Giver — my own world: the G is me, blue. */
 [data-world="home"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-green);
+  --world-g: var(--person-self);
   --world-ink: oklch(0.42 0.14 145);
   --world-text: var(--giver-green-complement);
   --world-accent: var(--person-self);
+  --world-selector: var(--person-self);
 }
 
-/* ---- THE MODE WORLDS. Each reads ONLY its own mode token. ---- */
+/* ---- THE MODE WORLDS. The G stays blue (me); the mode colours the state. ---- */
 
 /* Wish — asking for something: purple. */
 [data-world="wish"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-wish);
+  --world-g: var(--person-self);
+  --world-selector: var(--mode-wish);
   --world-ink: oklch(0.4 0.2 300);
   --world-text: var(--mode-wish-complement);
-  --world-accent: var(--person-self);
+  --world-accent: var(--mode-wish);
 }
 
 /* Borrow — asking to borrow: hot pink. */
 [data-world="borrow"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-borrow);
+  --world-g: var(--person-self);
+  --world-selector: var(--mode-borrow);
   --world-ink: oklch(0.48 0.2 6);
   --world-text: var(--mode-borrow-complement);
-  --world-accent: var(--person-self);
+  --world-accent: var(--mode-borrow);
 }
 
-/* Give — offering: green G on white. */
+/* Give — offering: green state around a blue me. */
 [data-world="give"] {
   --world-bg: oklch(1 0 0);
-  --world-g: var(--mode-give);
+  --world-g: var(--person-self);
+  --world-selector: var(--mode-give);
   --world-ink: oklch(0.46 0.16 145);
   --world-text: var(--mode-give-complement);
-  --world-accent: var(--person-self);
+  --world-accent: var(--mode-give);
 }
 
 /* Lend — the seafoam side of generosity. */
 [data-world="lend"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-lend);
+  --world-g: var(--person-self);
+  --world-selector: var(--mode-lend);
   --world-ink: oklch(0.46 0.09 198);
   --world-text: var(--mode-lend-complement);
-  --world-accent: var(--person-self);
+  --world-accent: var(--mode-lend);
 }
 
 
 /* Trade — apart from the wish/give mixing: orange. */
 [data-world="trade"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-trade);
+  --world-g: var(--person-self);
+  --world-selector: var(--mode-trade);
   --world-ink: oklch(0.44 0.16 48);
   --world-text: var(--mode-trade-complement);
   --world-accent: var(--person-other-trade);
 }
+
 
 /* Onboarding — arriving into my own world: green. */
 [data-world="welcome"] {

@@ -77,8 +77,10 @@ import {
   communityItems,
   itemLine,
   itemsStore,
+  type BorrowSide,
   type ItemType,
 } from "@/data/items";
+
 import { LedgerHistory } from "@/components/history/LedgerHistory";
 import type { Currency } from "@/data/ledger";
 
@@ -187,8 +189,11 @@ function Index() {
    * alive inside the loop. Forms are never appended beneath the G.
    */
   const [editor, setEditor] = useState<
-    { kind: "about" } | { kind: "category"; category: Category } | null
+    | { kind: "about" }
+    | { kind: "category"; category: Category; side?: BorrowSide }
+    | null
   >(null);
+
 
   /**
    * THE ONE SOURCE OF TRUTH for the toggle: wish | give | trade | borrow.
@@ -261,14 +266,23 @@ function Index() {
   const [locked, setLocked] = useState(false);
 
   /**
+   * WHICH SIDE OF BORROWING THE DOOR ALREADY ANSWERED. The three-intent door
+   * has already asked "keeping or borrowing?" / "giving or lending?", so the
+   * form must never ask the same question a second time.
+   */
+  const [pendingSide, setPendingSide] = useState<BorrowSide | undefined>(undefined);
+
+  /**
    * ONE DOOR INTO A WORLD. First time: explain, then the form. Every time after:
    * straight to the form. The flag decides, never the caller.
    */
-  const openWorld = (category: Category) => {
+  const openWorld = (category: Category, side?: BorrowSide) => {
     setChoose(false);
-    if (introSeen[category]) setEditor({ kind: "category", category });
+    setPendingSide(side);
+    if (introSeen[category]) setEditor({ kind: "category", category, ...(side ? { side } : {}) });
     else showIntro(category);
   };
+
 
   /**
    * ENTERING THE INSTRUCTIONS IS SEEING THEM. The persisted flag is written the
@@ -702,7 +716,12 @@ function Index() {
                       setIntro(null);
                       if (voluntary || topic === "sparks") return;
                       /* Already marked seen on entry — this just opens the form. */
-                      setEditor({ kind: "category", category: topic });
+                      setEditor({
+                        kind: "category",
+                        category: topic,
+                        ...(pendingSide ? { side: pendingSide } : {}),
+                      });
+
                     }}
                   />
                 ) : null,
@@ -744,7 +763,12 @@ function Index() {
                 world: editor?.kind === "category" ? editor.category : (activity ?? "profile"),
                 children:
                   editor?.kind === "category" ? (
-                    <CategoryForm category={editor.category} onDone={() => setEditor(null)} />
+                    <CategoryForm
+                      category={editor.category}
+                      {...(editor.side ? { side: editor.side } : {})}
+                      onDone={() => setEditor(null)}
+                    />
+
                   ) : null,
               },
 

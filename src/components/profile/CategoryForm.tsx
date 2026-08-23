@@ -18,18 +18,26 @@ import {
   TIME_OPTIONS,
   TITLE_COUNTDOWN_AT,
   TITLE_MAX,
+  TOPICS,
   ASKS_AREA,
   ASKS_DURATION,
+  ASKS_RECURRENCE,
   WHERE_FOR,
   classifyKind,
   contextFieldsFor,
   detailBits,
   itemsStore,
   splitTrade,
+  suggestCadence,
+  suggestDays,
+  suggestTopic,
+  timeWindow,
   tradeText,
   type BorrowSide,
   type ItemDetails,
 } from "@/data/items";
+import { formatDateOnly } from "@/lib/date-only";
+
 
 import { pickImages } from "@/lib/pick-image";
 import { haptics } from "@/lib/haptics";
@@ -188,9 +196,16 @@ function Field({
 
 export function CategoryForm({
   category,
+  side: decidedSide,
   onDone,
 }: {
   category: Category;
+  /**
+   * THE DOOR ALREADY ASKED. When the three-intent door has settled keeping vs
+   * borrowing, or giving vs lending, the form never asks the same question
+   * again — it simply knows.
+   */
+  side?: BorrowSide;
   onDone: () => void;
 }) {
   const me = useMyProfile();
@@ -200,8 +215,9 @@ export function CategoryForm({
   const [want, setWant] = useState(stored.want);
   /** ONE OPTIONAL, SHORT LINE OF CONTEXT. Never a description box. */
   const [note, setNote] = useState(stored.note);
-  /** BORROW OR LEND — asked plainly, never assumed. */
-  const [side, setSide] = useState<BorrowSide>(stored.side);
+  /** BORROW OR LEND — answered at the door when the door knew, else asked here. */
+  const [side, setSide] = useState<BorrowSide>(decidedSide ?? stored.side);
+
   /** OPTIONAL PHOTOS. They belong to the item the moment it exists. */
   const [photos, setPhotos] = useState<string[]>(stored.photos);
   /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */
@@ -214,7 +230,8 @@ export function CategoryForm({
    */
   const [liveId, setLiveId] = useState<string | null>(stored.liveId);
   /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
-  const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
+  const [open, setOpen] = useState<"topic" | "where" | "when" | "long" | null>(null);
+
   /* THE FORM IS THE COLOUR OF WHAT IT MAKES: wish purple, give green,
      trade orange, borrow blue. It never inherits profile red. */
   const colour =
@@ -244,12 +261,29 @@ export function CategoryForm({
   /** WHAT KIND OF THING THIS IS decides which metadata is even offered. */
   const kind = classifyKind(draft);
   const whereOptions = WHERE_FOR[kind];
+  /**
+   * NOTHING IS ASKED BEFORE THE WORDS EXIST. Until the person has said what
+   * this is, the screen is one line and a placeholder — every follow-up appears
+   * only once giver has something to be intelligent about.
+   */
+  const described = draft.trim().length >= 3;
+  /** WHAT GIVER THINKS THIS IS. A suggestion to confirm, never a decision. */
+  const guessedTopic = suggestTopic(category === "trade" ? `${draft} ${want}` : draft);
+  const topic = details.topic ?? undefined;
+  /** BORROWING AND LENDING ARE ALWAYS A WINDOW: it starts, and it comes back. */
+  const isWindow = category === "borrow";
+  /** A ONE-OFF THING IS NEVER ASKED ABOUT A WEEKLY SCHEDULE. */
+  const asksRecurrence = ASKS_RECURRENCE[kind];
   const whenSummary =
     [
       details.days?.length ? details.days.join(" + ") : null,
-      details.date,
+      details.date ? formatDateOnly(details.date, { day: "numeric", month: "short" }) : null,
+      details.flexibleDate && !details.date ? "any day" : null,
       details.time,
-      details.until ? `until ${details.until}` : null,
+      details.flexibleTime && !details.time ? "any time" : null,
+      details.until
+        ? `${isWindow ? "back by" : "until"} ${formatDateOnly(details.until, { day: "numeric", month: "short" })}`
+        : null,
     ]
       .filter(Boolean)
       .join(" · ") || undefined;
@@ -276,7 +310,46 @@ export function CategoryForm({
       setDetails((prev) => ({ ...prev, where: undefined }));
     if (details.duration && !ASKS_DURATION[kind])
       setDetails((prev) => ({ ...prev, duration: undefined }));
-  }, [kind, details.where, details.duration, whereOptions]);
+    if (details.cadence && !ASKS_RECURRENCE[kind] && details.cadence !== "one time")
+      setDetails((prev) => ({ ...prev, cadence: undefined }));
+  }, [kind, details.where, details.duration, details.cadence, whereOptions]);
+
+  /*
+    THE SUGGESTIONS ARE OFFERED ONCE, AND ONLY WHERE THE PERSON SAID SO.
+    "for the weekend" fills saturday and sunday, "every week" fills weekly —
+    both stay editable, and giver never invents a day nobody mentioned.
+  */
+  useEffect(() => {
+    if (!described) return;
+    const said = category === "trade" ? `${draft} ${want}` : draft;
+    setDetails((prev) => {
+      const next: ItemDetails = { ...prev };
+      if (!prev.topic) {
+        const guess = suggestTopic(said);
+        if (guess) next.topic = guess;
+      }
+      if (!prev.days?.length) {
+        const days = suggestDays(said);
+        if (days) next.days = days;
+      }
+      if (!prev.cadence) {
+        const cadence = suggestCadence(said, classifyKind(said));
+        if (cadence) next.cadence = cadence;
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [described, draft, want]);
+
+  /* THE READABLE TIME IS ALWAYS BUILT FROM THE PICKERS, so a time field can
+     never end up holding a word like "butterflies". */
+  useEffect(() => {
+    const built = timeWindow(details.startTime, details.endTime);
+    if (!details.startTime && !details.endTime) return;
+    if (built !== details.time) setDetails((prev) => ({ ...prev, time: built }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [details.startTime, details.endTime]);
+
 
   const setDetail = (patch: Partial<ItemDetails>) =>
     setDetails((prev) => ({ ...prev, ...patch }));
@@ -636,9 +709,10 @@ export function CategoryForm({
           <p className="mt-3 g-meta">#1 is your priority</p>
         ) : null}
 
-        {/* BORROW OR LEND — one plain question, two honest answers, each in
-            its own blue: bright for borrowing, royal for lending. */}
-        {category === "borrow" ? (
+        {/* BORROW OR LEND — asked here ONLY when the door did not already ask.
+            The same question is never put to a person twice. */}
+        {category === "borrow" && !decidedSide ? (
+
           <div className="mt-7 flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
             {(["borrow", "lend"] as BorrowSide[]).map((s) => (
               <button
@@ -716,203 +790,293 @@ export function CategoryForm({
               <p className="g-meta opacity-45">{titleLeft} characters left</p>
             ) : null}
 
-            {/* WHERE · WHEN · HOW LONG — three quiet words. One opens at a
-                time, and only the questions this kind of give deserves. */}
-            <div className="space-y-0">
-              <Field
-                label="where"
-                summary={details.where}
-                open={open === "where"}
-                colour={colour}
-                onToggle={() => setOpen(open === "where" ? null : "where")}
-              >
-                {whereOptions.map((w) => (
-                  <Choice
-                    key={w}
-                    label={w}
-                    colour={colour}
-                    on={details.where === w}
-                    onPress={() => {
-                      setDetail({ where: details.where === w ? undefined : w });
-                      setOpen(null);
-                    }}
-                  />
-                ))}
-                {ASKS_AREA[kind] ? (
-                  <input
-                    value={
-                      details.where && !whereOptions.includes(details.where)
-                        ? details.where
-                        : ""
-                    }
-                    onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
-                    placeholder="neighbourhood / area"
-                    aria-label="neighbourhood or general area"
-                    className="w-40 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
-                  />
-                ) : null}
-              </Field>
-
-              <Field
-                label="when"
-                summary={whenSummary}
-                open={open === "when"}
-                colour={colour}
-                onToggle={() => setOpen(open === "when" ? null : "when")}
-              >
-                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5">
-                  {DAY_NAMES.map((d) => (
-                    <Choice
-                      key={d}
-                      label={d}
-                      colour={colour}
-                      on={Boolean(details.days?.includes(d))}
-                      onPress={() => toggleDay(d)}
-                    />
-                  ))}
-                </div>
-                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5">
-                  {TIME_OPTIONS.map((t) => (
+            {/*
+              THE WORDS COME FIRST. Nothing below appears until the person has
+              said what this is — then giver asks only the next question that
+              actually matters for this kind of thing, one at a time.
+            */}
+            {described ? (
+              <div className="space-y-0">
+                {/* WHAT GIVER THINKS THIS IS — one word, tap to change. */}
+                <Field
+                  label="this is about"
+                  summary={topic ?? guessedTopic ?? undefined}
+                  open={open === "topic"}
+                  colour={colour}
+                  onToggle={() => setOpen(open === "topic" ? null : "topic")}
+                >
+                  {TOPICS.map((t) => (
                     <Choice
                       key={t}
                       label={t}
                       colour={colour}
-                      on={details.time === t}
-                      onPress={() =>
-                        setDetail({ time: details.time === t ? undefined : t })
-                      }
+                      on={(topic ?? guessedTopic) === t}
+                      onPress={() => {
+                        setDetail({ topic: t });
+                        setOpen(null);
+                      }}
                     />
                   ))}
-                  <input
-                    type="time"
-                    value={
-                      details.time && /^\d{2}:\d{2}$/.test(details.time)
-                        ? details.time
-                        : ""
-                    }
-                    onChange={(e) => setDetail({ time: e.target.value || undefined })}
-                    aria-label="exact time"
-                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
-                  />
-                  <input
-                    type="date"
-                    value={details.date ?? ""}
-                    onChange={(e) => setDetail({ date: e.target.value || undefined })}
-                    aria-label="date"
-                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
-                  />
-                </div>
+                </Field>
 
-                {/*
-                  DATE AND TIME ARE OPTIONAL, SO THEY MUST ALSO BE REMOVABLE.
-                  Clearing one is a small pink action, never a warning, and it
-                  puts the give straight back to "no fixed time".
-                */}
-                {details.date || details.time || details.days?.length ? (
-                  <div className="flex w-full flex-wrap items-baseline gap-x-5 gap-y-1.5 pt-1">
-                    {details.time ? (
-                      <Clear
-                        label="clear time"
-                        onPress={() => setDetail({ time: undefined })}
-                      />
-                    ) : null}
-                    {details.date ? (
-                      <Clear
-                        label="clear date"
-                        onPress={() => setDetail({ date: undefined })}
-                      />
-                    ) : null}
-                    {details.days?.length ? (
-                      <Clear
-                        label="clear days"
-                        onPress={() => setDetail({ days: undefined })}
-                      />
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {/*
-                  AVAILABLE UNTIL — the honest end of an offer. Optional, and
-                  when the day passes the give leaves the community by itself
-                  and waits in your history. Nothing is ever deleted.
-                */}
-                <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-1.5 pt-1">
-                  <span className="g-meta opacity-45">available until</span>
-                  <input
-                    type="date"
-                    value={details.until ?? ""}
-                    onChange={(e) => setDetail({ until: e.target.value || undefined })}
-                    aria-label="available until"
-                    className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
-                  />
-                  {details.until ? (
-                    <Clear
-                      label="always available"
-                      onPress={() => setDetail({ until: undefined })}
+                <Field
+                  label="where"
+                  summary={details.where}
+                  open={open === "where"}
+                  colour={colour}
+                  onToggle={() => setOpen(open === "where" ? null : "where")}
+                >
+                  {whereOptions.map((w) => (
+                    <Choice
+                      key={w}
+                      label={w}
+                      colour={colour}
+                      on={details.where === w}
+                      onPress={() => {
+                        setDetail({ where: details.where === w ? undefined : w });
+                        setOpen(null);
+                      }}
+                    />
+                  ))}
+                  {ASKS_AREA[kind] ? (
+                    <input
+                      value={
+                        details.where && !whereOptions.includes(details.where)
+                          ? details.where
+                          : ""
+                      }
+                      onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
+                      placeholder="neighbourhood / area"
+                      aria-label="neighbourhood or general area"
+                      className="w-40 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
                     />
                   ) : null}
-                </div>
-              </Field>
+                </Field>
 
+                {/*
+                  WHEN — PICKED, NEVER TYPED. A date comes from a date picker, a
+                  time from a time picker, and being easy about either is said
+                  precisely: flexible on the day, or flexible on the time.
+                */}
+                <Field
+                  label={isWindow ? "when, and for how long" : "when"}
+                  summary={whenSummary}
+                  open={open === "when"}
+                  colour={colour}
+                  onToggle={() => setOpen(open === "when" ? null : "when")}
+                >
+                  <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-2">
+                    <Line label={isWindow ? "from" : "day"}>
+                      <input
+                        type="date"
+                        value={details.date ?? ""}
+                        onChange={(e) =>
+                          setDetail({
+                            date: e.target.value || undefined,
+                            ...(e.target.value ? { flexibleDate: undefined } : {}),
+                          })
+                        }
+                        aria-label={isWindow ? "first day" : "date"}
+                        className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                      />
+                      {details.date ? (
+                        <Clear
+                          label="clear"
+                          onPress={() => setDetail({ date: undefined })}
+                        />
+                      ) : (
+                        <Choice
+                          label="i’m flexible on the day"
+                          colour={colour}
+                          on={Boolean(details.flexibleDate)}
+                          onPress={() =>
+                            setDetail({
+                              flexibleDate: details.flexibleDate ? undefined : true,
+                            })
+                          }
+                        />
+                      )}
+                    </Line>
 
-              <Field
-                label="how long"
-                summary={longSummary}
-                open={open === "long"}
-                colour={colour}
-                onToggle={() => setOpen(open === "long" ? null : "long")}
-              >
-                {CADENCE_OPTIONS.map((c) => (
-                  <Choice
-                    key={c}
-                    label={c}
-                    colour={colour}
-                    on={details.cadence === c}
-                    onPress={() =>
-                      setDetail({ cadence: details.cadence === c ? undefined : c })
-                    }
-                  />
-                ))}
-                {ASKS_DURATION[kind]
-                  ? DURATION_OPTIONS.map((d) => (
-                      <Choice
-                        key={d}
-                        label={d}
-                        colour={colour}
-                        on={details.duration === d}
+                    <Line label={isWindow ? "back by" : "available until"}>
+                      <input
+                        type="date"
+                        value={details.until ?? ""}
+                        onChange={(e) => setDetail({ until: e.target.value || undefined })}
+                        aria-label={isWindow ? "back by" : "available until"}
+                        className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                      />
+                      {details.until ? (
+                        <Clear
+                          label={isWindow ? "clear" : "always available"}
+                          onPress={() => setDetail({ until: undefined })}
+                        />
+                      ) : null}
+                    </Line>
+                  </div>
+
+                  {/* THE EXACT WINDOW, FROM TWO PICKERS. 7–9 pm, not free text. */}
+                  <Line label="time">
+                    <input
+                      type="time"
+                      value={details.startTime ?? ""}
+                      onChange={(e) =>
+                        setDetail({
+                          startTime: e.target.value || undefined,
+                          ...(e.target.value ? { flexibleTime: undefined } : {}),
+                        })
+                      }
+                      aria-label="start time"
+                      className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                    />
+                    <span className="g-meta opacity-40">to</span>
+                    <input
+                      type="time"
+                      value={details.endTime ?? ""}
+                      onChange={(e) =>
+                        setDetail({
+                          endTime: e.target.value || undefined,
+                          ...(e.target.value ? { flexibleTime: undefined } : {}),
+                        })
+                      }
+                      aria-label="end time"
+                      className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                    />
+                    {details.startTime || details.endTime ? (
+                      <Clear
+                        label="clear time"
                         onPress={() =>
                           setDetail({
-                            duration: details.duration === d ? undefined : d,
+                            startTime: undefined,
+                            endTime: undefined,
+                            time: undefined,
                           })
                         }
                       />
-                    ))
-                  : null}
-              </Field>
+                    ) : (
+                      <Choice
+                        label="i’m flexible on the time"
+                        colour={colour}
+                        on={Boolean(details.flexibleTime)}
+                        onPress={() =>
+                          setDetail({
+                            flexibleTime: details.flexibleTime ? undefined : true,
+                          })
+                        }
+                      />
+                    )}
+                  </Line>
 
-              {/* ONLY WHAT MAKES SENSE FOR THIS KIND OF THING. */}
-              {extraFields.length ? (
-                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4">
-                  {extraFields.map((field) => (
-                    <input
-                      key={field.key}
-                      value={details.extras?.[field.key] ?? ""}
-                      onChange={(e) =>
-                        setDetail({
-                          extras: {
-                            ...(details.extras ?? {}),
-                            [field.key]: e.target.value.slice(0, 24),
-                          },
-                        })
-                      }
-                      placeholder={field.ask}
-                      aria-label={field.ask}
-                      className="w-36 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
+                  {/* PART OF THE DAY, for anyone who thinks in mornings. */}
+                  {details.startTime || details.endTime ? null : (
+                    <Line label="or roughly">
+                      {TIME_OPTIONS.map((t) => (
+                        <Choice
+                          key={t}
+                          label={t}
+                          colour={colour}
+                          on={details.time === t}
+                          onPress={() =>
+                            setDetail({ time: details.time === t ? undefined : t })
+                          }
+                        />
+                      ))}
+                    </Line>
+                  )}
+
+                  {/* DAYS OF THE WEEK ONLY WHERE SOMETHING CAN REPEAT. */}
+                  {asksRecurrence && details.cadence !== "one time" ? (
+                    <Line label="days">
+                      {DAY_NAMES.map((d) => (
+                        <Choice
+                          key={d}
+                          label={d}
+                          colour={colour}
+                          on={Boolean(details.days?.includes(d))}
+                          onPress={() => toggleDay(d)}
+                        />
+                      ))}
+                      {details.days?.length ? (
+                        <Clear
+                          label="clear days"
+                          onPress={() => setDetail({ days: undefined })}
+                        />
+                      ) : null}
+                    </Line>
+                  ) : null}
+                </Field>
+
+                {/* HOW OFTEN, AND HOW LONG — each only where it means something. */}
+                {asksRecurrence || ASKS_DURATION[kind] ? (
+                  <Field
+                    label={asksRecurrence ? "how often, how long" : "how long"}
+                    summary={longSummary}
+                    open={open === "long"}
+                    colour={colour}
+                    onToggle={() => setOpen(open === "long" ? null : "long")}
+                  >
+                    {asksRecurrence ? (
+                      <Line label="how often">
+                        {CADENCE_OPTIONS.map((c) => (
+                          <Choice
+                            key={c}
+                            label={c}
+                            colour={colour}
+                            on={details.cadence === c}
+                            onPress={() =>
+                              setDetail({
+                                cadence: details.cadence === c ? undefined : c,
+                              })
+                            }
+                          />
+                        ))}
+                      </Line>
+                    ) : null}
+                    {ASKS_DURATION[kind] ? (
+                      <Line label="each time">
+                        {DURATION_OPTIONS.map((d) => (
+                          <Choice
+                            key={d}
+                            label={d}
+                            colour={colour}
+                            on={details.duration === d}
+                            onPress={() =>
+                              setDetail({
+                                duration: details.duration === d ? undefined : d,
+                              })
+                            }
+                          />
+                        ))}
+                      </Line>
+                    ) : null}
+                  </Field>
+                ) : null}
+
+                {/* ONLY WHAT MAKES SENSE FOR THIS KIND OF THING. */}
+                {extraFields.length ? (
+                  <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4">
+                    {extraFields.map((field) => (
+                      <input
+                        key={field.key}
+                        value={details.extras?.[field.key] ?? ""}
+                        onChange={(e) =>
+                          setDetail({
+                            extras: {
+                              ...(details.extras ?? {}),
+                              [field.key]: e.target.value.slice(0, 24),
+                            },
+                          })
+                        }
+                        placeholder={field.ask}
+                        aria-label={field.ask}
+                        className="w-36 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
 
 
             {/* SHORT AND SWEET — said under the field, not above it. */}

@@ -138,7 +138,7 @@ export function CommunityFeed({
               type="button"
               onClick={() => setSort(s)}
               className={sort === s ? "opacity-100" : undefined}
-              style={sort === s ? { color: "var(--person-self)" } : undefined}
+              style={sort === s ? { color: "var(--person-self-community)" } : undefined}
             >
               {s}
             </button>

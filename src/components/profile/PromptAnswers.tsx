@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { PROMPTS, type Prompt } from "@/data/prompts";
+import { PROMPTS, mineStatement, type Prompt } from "@/data/prompts";
+
 import { myProfileStore } from "@/data/my-profile";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { haptics } from "@/lib/haptics";

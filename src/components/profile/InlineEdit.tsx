@@ -74,9 +74,13 @@ export function InlineEdit({
 
   return (
     <div>
-      <p className="g-meta" style={{ color: "var(--giver-me)" }}>
-        {label}
-      </p>
+      {/* A LABEL IS SCAFFOLDING: pass none once the value speaks for itself. */}
+      {label ? (
+        <p className="g-meta" style={{ color: "var(--giver-me)" }}>
+          {label}
+        </p>
+      ) : null}
+
 
       {editing ? (
         <div className="mt-1">

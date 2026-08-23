@@ -763,7 +763,12 @@ function Index() {
                 world: editor?.kind === "category" ? editor.category : (activity ?? "profile"),
                 children:
                   editor?.kind === "category" ? (
-                    <CategoryForm category={editor.category} onDone={() => setEditor(null)} />
+                    <CategoryForm
+                      category={editor.category}
+                      {...(editor.side ? { side: editor.side } : {})}
+                      onDone={() => setEditor(null)}
+                    />
+
                   ) : null,
               },
 

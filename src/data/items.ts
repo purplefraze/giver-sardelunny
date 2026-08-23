@@ -546,7 +546,11 @@ function withSeedDetails(item: Item): Item {
   const memberId = parts[1] ?? "";
   const index = Number(parts[3] ?? 0) || 0;
   const mi = Math.max(0, MEMBERS.findIndex((m) => m.id === memberId));
-  const heal = (s: string) => s.replace(/^italian lessons(?= for )/, "language lessons");
+  const heal = (s: string) =>
+    s
+      .replace(/^italian lessons(?= for )/, "language lessons")
+      /* THE WINDOW LIVES IN THE PARAMETERS NOW, not in the title. */
+      .replace(/^science tutoring, evenings$/, "science tutoring");
   return {
     ...item,
     text: heal(item.text),

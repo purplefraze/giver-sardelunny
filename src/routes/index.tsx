@@ -556,7 +556,11 @@ function Index() {
                     setup();
                     return;
                   }
-                  setEditor({ kind: "category", category: mode });
+                  setEditor({
+                    kind: "category",
+                    category: mode,
+                    ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
+                  });
                 },
 
                 render: (anchor) =>

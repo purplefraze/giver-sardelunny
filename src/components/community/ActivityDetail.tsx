@@ -137,7 +137,7 @@ export function ActivityDetail({
               onOpenProfile?.(owner.id);
             }}
             className="font-black underline decoration-current/40 underline-offset-4"
-            style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
+            style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type, item.side)] }}
           >
             {owner.username}
           </button>
@@ -183,7 +183,7 @@ export function ActivityDetail({
           <span className="min-w-0">
             <span
               className="g-name block"
-              style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
+              style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type, item.side)] }}
             >
               {owner.username}
             </span>

@@ -130,7 +130,8 @@ export function Conversation({
 
       {/* ONE MESSAGE AREA: the suggestion, the field and send, together. */}
       {c.state !== "cancelled" ? (
-        <div>
+        <div className="mt-4">
+
           {showStarter ? (
             <button
               type="button"

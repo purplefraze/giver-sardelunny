@@ -102,7 +102,7 @@ const BASE_MEMBERS: Member[] = [
     answers: {
       happy: "a full bike basket and nowhere to be",
       animal: "a heron",
-      one-food: "her nonna’s tomato bread",
+      "one-food": "her nonna’s tomato bread",
       hours: "why baking soda works",
       dream: "to teach science outdoors, all year",
     },
@@ -166,7 +166,7 @@ const BASE_MEMBERS: Member[] = [
     byNight: "reads tarot",
     weekend: "cold water swims",
     answers: {
-      lights-up: "cold water at six in the morning",
+      "lights-up": "cold water at six in the morning",
       animal: "a seal",
       "bucket-list": "swim between two islands",
       silly: "naming every stray cat on her street",

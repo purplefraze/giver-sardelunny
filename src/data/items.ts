@@ -175,10 +175,16 @@ export function itemExpired(item: Item, now = Date.now()): boolean {
 
 export const DAY_NAMES = ["mon", "tues", "wed", "thurs", "fri", "sat", "sun"];
 
-export const WHERE_OPTIONS = ["online", "flexible"];
-export const CADENCE_OPTIONS = ["one time", "recurring", "flexible"];
-export const TIME_OPTIONS = ["mornings", "afternoons", "evenings", "flexible"];
-export const DURATION_OPTIONS = ["30 min", "1 hour", "2 hours", "flexible"];
+/*
+  ONE WORD, ONE MEANING. There is never a second "flexible": a place that can
+  move says "anywhere", a day that can move says so on its own line, and a
+  frequency is only ever a frequency.
+*/
+export const WHERE_OPTIONS = ["online", "anywhere"];
+export const CADENCE_OPTIONS = ["one time", "weekly", "fortnightly", "monthly"];
+export const TIME_OPTIONS = ["mornings", "afternoons", "evenings"];
+export const DURATION_OPTIONS = ["30 min", "1 hour", "2 hours", "half a day"];
+
 
 /**
  * ASK LESS, UNDERSTAND MORE. What kind of thing this is decides which

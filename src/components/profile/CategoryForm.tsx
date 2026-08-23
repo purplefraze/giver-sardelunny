@@ -18,18 +18,26 @@ import {
   TIME_OPTIONS,
   TITLE_COUNTDOWN_AT,
   TITLE_MAX,
+  TOPICS,
   ASKS_AREA,
   ASKS_DURATION,
+  ASKS_RECURRENCE,
   WHERE_FOR,
   classifyKind,
   contextFieldsFor,
   detailBits,
   itemsStore,
   splitTrade,
+  suggestCadence,
+  suggestDays,
+  suggestTopic,
+  timeWindow,
   tradeText,
   type BorrowSide,
   type ItemDetails,
 } from "@/data/items";
+import { formatDateOnly } from "@/lib/date-only";
+
 
 import { pickImages } from "@/lib/pick-image";
 import { haptics } from "@/lib/haptics";

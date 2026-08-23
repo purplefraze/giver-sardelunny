@@ -222,7 +222,8 @@ export function CategoryForm({
    */
   const [liveId, setLiveId] = useState<string | null>(stored.liveId);
   /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
-  const [open, setOpen] = useState<"where" | "when" | "long" | null>(null);
+  const [open, setOpen] = useState<"topic" | "where" | "when" | "long" | null>(null);
+
   /* THE FORM IS THE COLOUR OF WHAT IT MAKES: wish purple, give green,
      trade orange, borrow blue. It never inherits profile red. */
   const colour =

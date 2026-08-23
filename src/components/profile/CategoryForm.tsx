@@ -253,12 +253,29 @@ export function CategoryForm({
   /** WHAT KIND OF THING THIS IS decides which metadata is even offered. */
   const kind = classifyKind(draft);
   const whereOptions = WHERE_FOR[kind];
+  /**
+   * NOTHING IS ASKED BEFORE THE WORDS EXIST. Until the person has said what
+   * this is, the screen is one line and a placeholder — every follow-up appears
+   * only once giver has something to be intelligent about.
+   */
+  const described = draft.trim().length >= 3;
+  /** WHAT GIVER THINKS THIS IS. A suggestion to confirm, never a decision. */
+  const guessedTopic = suggestTopic(category === "trade" ? `${draft} ${want}` : draft);
+  const topic = details.topic ?? undefined;
+  /** BORROWING AND LENDING ARE ALWAYS A WINDOW: it starts, and it comes back. */
+  const isWindow = category === "borrow";
+  /** A ONE-OFF THING IS NEVER ASKED ABOUT A WEEKLY SCHEDULE. */
+  const asksRecurrence = ASKS_RECURRENCE[kind];
   const whenSummary =
     [
       details.days?.length ? details.days.join(" + ") : null,
-      details.date,
+      details.date ? formatDateOnly(details.date, { day: "numeric", month: "short" }) : null,
+      details.flexibleDate && !details.date ? "any day" : null,
       details.time,
-      details.until ? `until ${details.until}` : null,
+      details.flexibleTime && !details.time ? "any time" : null,
+      details.until
+        ? `${isWindow ? "back by" : "until"} ${formatDateOnly(details.until, { day: "numeric", month: "short" })}`
+        : null,
     ]
       .filter(Boolean)
       .join(" · ") || undefined;
@@ -285,7 +302,46 @@ export function CategoryForm({
       setDetails((prev) => ({ ...prev, where: undefined }));
     if (details.duration && !ASKS_DURATION[kind])
       setDetails((prev) => ({ ...prev, duration: undefined }));
-  }, [kind, details.where, details.duration, whereOptions]);
+    if (details.cadence && !ASKS_RECURRENCE[kind] && details.cadence !== "one time")
+      setDetails((prev) => ({ ...prev, cadence: undefined }));
+  }, [kind, details.where, details.duration, details.cadence, whereOptions]);
+
+  /*
+    THE SUGGESTIONS ARE OFFERED ONCE, AND ONLY WHERE THE PERSON SAID SO.
+    "for the weekend" fills saturday and sunday, "every week" fills weekly —
+    both stay editable, and giver never invents a day nobody mentioned.
+  */
+  useEffect(() => {
+    if (!described) return;
+    const said = category === "trade" ? `${draft} ${want}` : draft;
+    setDetails((prev) => {
+      const next: ItemDetails = { ...prev };
+      if (!prev.topic) {
+        const guess = suggestTopic(said);
+        if (guess) next.topic = guess;
+      }
+      if (!prev.days?.length) {
+        const days = suggestDays(said);
+        if (days) next.days = days;
+      }
+      if (!prev.cadence) {
+        const cadence = suggestCadence(said, classifyKind(said));
+        if (cadence) next.cadence = cadence;
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [described, draft, want]);
+
+  /* THE READABLE TIME IS ALWAYS BUILT FROM THE PICKERS, so a time field can
+     never end up holding a word like "butterflies". */
+  useEffect(() => {
+    const built = timeWindow(details.startTime, details.endTime);
+    if (!details.startTime && !details.endTime) return;
+    if (built !== details.time) setDetails((prev) => ({ ...prev, time: built }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [details.startTime, details.endTime]);
+
 
   const setDetail = (patch: Partial<ItemDetails>) =>
     setDetails((prev) => ({ ...prev, ...patch }));

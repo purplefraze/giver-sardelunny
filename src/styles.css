@@ -166,23 +166,29 @@
   --giver-purple: oklch(0.55 0.26 300); /* PURPLE — wishing, asking */
   --giver-pink: oklch(0.65 0.21 4); /* HOT PINK — borrowing (#E85088) */
   --giver-blue: oklch(0.58 0.2 250); /* BLUE — me, the current user */
-  --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the receiving person */
-  --giver-orange: oklch(0.7 0.2 46); /* ORANGE — the trade world + trade partner */
-  --giver-community-red: oklch(0.57 0.24 27); /* RED — the community world */
-  --giver-red: var(--giver-pink); /* legacy: the asking other person */
+  --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the other person: give/lend/trade */
+  --giver-orange: oklch(0.7 0.2 46); /* ORANGE — the trade + community worlds */
+  --giver-red: oklch(0.57 0.24 27); /* RED — the other person: wish/borrow */
+  --giver-community-red: var(--giver-orange); /* legacy alias: community is orange */
 
-  /* THE RELATIONSHIP STATES a conversation can inhabit. */
+  /* THE WORLD each interaction lives in. */
   --state-wish: var(--giver-purple);
+  --state-borrow: var(--giver-pink);
   --state-give: var(--giver-green);
-  --state-trade: var(--giver-orange); /* trade surfaces: blue me + orange them */
-  --state-community: var(--giver-community-red);
+  --state-lend: var(--giver-seafoam);
+  --state-trade: var(--giver-orange);
+  --state-community: var(--giver-orange);
 
-  /* THE PEOPLE. I am always blue; the other person takes the social state. */
+  /* THE PEOPLE. I am always blue. The other person is RED in any wish/borrow
+     interaction and YELLOW in any give/lend/trade one — never by who receives. */
   --person-self: var(--giver-blue);
-  --person-self-community: oklch(0.52 0.22 262); /* me inside the red community */
-  --person-other-wish: var(--giver-pink); /* they are asking */
-  --person-other-give: var(--giver-yellow); /* they are receiving */
-  --person-other-trade: var(--giver-orange); /* trade partner */
+  --person-self-community: oklch(0.52 0.22 262); /* me inside the orange community */
+  --person-other-asking: var(--giver-red); /* wish + borrow */
+  --person-other-offering: var(--giver-yellow); /* give + lend + trade */
+  --person-other-wish: var(--person-other-asking); /* legacy alias */
+  --person-other-give: var(--person-other-offering); /* legacy alias */
+  --person-other-trade: var(--person-other-offering); /* legacy alias */
+
 
   /* ---- ONE SECONDARY ACTION COLOUR + THE PRIVATE UTILITIES ---- */
   --giver-action: var(--giver-pink); /* an action while creating */

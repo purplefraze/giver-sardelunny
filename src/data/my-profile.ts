@@ -70,6 +70,8 @@ export type MyProfile = {
   byDay: string;
   byNight: string;
   weekend: string;
+  /** THE FUN QUESTIONS, ANSWERED: prompt id -> what they said. */
+  answers: Record<string, string>;
   /** IDENTITY, KEPT SHORT: an ISO date and one chosen word. */
   birthday: string;
   gender: string;
@@ -110,6 +112,7 @@ type Person = {
   byDay: string;
   byNight: string;
   weekend: string;
+  answers: Record<string, string>;
   birthday: string;
   gender: string;
   password: string;
@@ -141,6 +144,7 @@ const EMPTY_PERSON: Person = {
   byDay: "",
   byNight: "",
   weekend: "",
+  answers: {},
   birthday: "",
   gender: "",
   password: "",
@@ -182,6 +186,7 @@ function readPerson(): Person {
       ...EMPTY_PERSON,
       ...parsed,
       reserved: parsed.reserved ?? {},
+      answers: parsed.answers ?? {},
     });
   } catch {
     return EMPTY_PERSON;

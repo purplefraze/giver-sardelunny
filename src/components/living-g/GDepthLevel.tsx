@@ -142,16 +142,23 @@ export function GDepthLevel({
         </div>
       </div>
 
-      {/* WHAT IS INSIDE THE G. Dynamic: it may change without ever leaving. */}
+      {/*
+        WHAT IS INSIDE THE G — seen THROUGH the loop that was touched.
+        The aperture starts as that loop's own measured negative space and widens
+        with the unfurl until it is past the corners, so the first thing the eye
+        catches is a fragment of the person's profile inside the G. Contracting
+        runs the identical movement backwards: the content recedes into the loop.
+      */}
       <div
         className="absolute overflow-hidden motion-reduce:transition-none"
         style={{
           ...inset,
           borderRadius: "2.25rem",
+          clipPath: `circle(${unfurled ? lens.end : lens.start}% at ${lens.x}% ${lens.y}%)`,
           opacity: unfurled ? 1 : 0,
           transform: `scale(${unfurled ? 1 : 0.965})`,
-          transition: `opacity ${Math.round(ms * 0.55)}ms ease-out ${
-            open ? Math.round(ms * 0.42) : 0
+          transition: `clip-path ${ms}ms ${ease}, opacity ${Math.round(ms * 0.55)}ms ease-out ${
+            open ? Math.round(ms * 0.2) : 0
           }ms, transform ${ms}ms ${ease}`,
           pointerEvents: phase === "in" && above === 0 ? "auto" : "none",
           // The depth is dragged and pinched, not page-zoomed; scrolling inside
@@ -159,8 +166,58 @@ export function GDepthLevel({
           touchAction: "pan-y",
         }}
       >
-        {inside}
+        {/*
+          THE CAMERA'S OWN TRAVEL. Deep in the lens the content sits a little
+          further away and a little off-centre; it comes level as the aperture
+          opens. Nothing is draggable — the movement belongs to the transition.
+        */}
+        <div
+          className="h-full w-full motion-reduce:transition-none motion-reduce:transform-none"
+          style={{
+            transform: unfurled
+              ? "translate3d(0, 0, 0) scale(1)"
+              : `translate3d(${((50 - lens.x) / 50) * LENS.drift}%, ${
+                  ((50 - lens.y) / 50) * LENS.drift
+                }%, 0) scale(${1 + LENS.depth})`,
+            transformOrigin: `${lens.x}% ${lens.y}%`,
+            transition: `transform ${Math.round(ms * 1.08)}ms ${ease}`,
+            willChange: moving ? "transform" : "auto",
+          }}
+        >
+          {inside}
+        </div>
       </div>
+
+      {/*
+        THE RIM OF THE LENS. The G's own colour catching the edge of the aperture
+        while it travels, gone the moment the movement is over. No glow, no ring
+        left behind — only the sense of looking through a thick, living contour.
+      */}
+      <div
+        className="pointer-events-none absolute motion-reduce:hidden"
+        style={{
+          ...inset,
+          borderRadius: "2.25rem",
+          overflow: "hidden",
+          opacity: moving ? LENS.rim : 0,
+          transition: `opacity ${Math.round(ms * 0.45)}ms ease-out`,
+        }}
+        aria-hidden
+      >
+        <div
+          className="absolute rounded-full"
+          style={{
+            left: `${lens.x}%`,
+            top: `${lens.y}%`,
+            width: `${(unfurled ? lens.end : lens.start) * 2}%`,
+            aspectRatio: "1",
+            transform: "translate(-50%, -50%)",
+            boxShadow: "0 0 0 2px var(--world-g) inset",
+            transition: `width ${ms}ms ${ease}`,
+          }}
+        />
+      </div>
+
 
       {/*
         THE VEIL OF DEPTH. Its own paper, thinly, so a level the camera has moved

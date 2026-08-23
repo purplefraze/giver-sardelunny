@@ -23,6 +23,7 @@ import { ItemRow } from "@/components/profile/ItemRow";
 import { itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
 import { itemLine } from "@/data/items";
+import { answeredStatements } from "@/data/prompts";
 
 
 
@@ -113,7 +114,8 @@ export function FullProfile({
   const state = useItems();
   const links = useConnections();
   const mine = member.id === ME_ID;
-  const sparkles = useMyProfile().sparkles;
+  const me = useMyProfile();
+  const sparkles = me.sparkles;
   /** Which activity count has been opened. A count is never a dead number. */
   const [openedCount, setOpenedCount] = useState<ItemType | null>(null);
   /* THE DEVELOPER SWITCH: the profile becomes directly editable while it is on. */
@@ -225,20 +227,31 @@ export function FullProfile({
           {member.aboutMe ? (
             <p className="g-lede">{member.aboutMe}</p>
           ) : null}
-          <ul className="mt-6 space-y-3">
-            {[
-              ["by day", member.byDay],
-              ["by night", member.byNight],
-              ["by weekend", member.weekend],
-            ]
-              .filter(([, value]) => Boolean(value) && value !== "—")
-              .map(([label, value]) => (
-                <li key={label}>
-                  <span className="g-meta">{label}</span>
-                  <span className="g-name mt-1 block">{value}</span>
+          {/* THE FUN ANSWERS, ALREADY SENTENCES. No questions, no field labels. */}
+          {mine ? (
+            <ul className="mt-7 space-y-6">
+              {answeredStatements(me.answers, { mine: true }).map((line) => (
+                <li key={line.id} className="g-lede">
+                  {line.line}
                 </li>
               ))}
-          </ul>
+            </ul>
+          ) : (
+            <ul className="mt-6 space-y-3">
+              {[
+                ["by day", member.byDay],
+                ["by night", member.byNight],
+                ["by weekend", member.weekend],
+              ]
+                .filter(([, value]) => Boolean(value) && value !== "—")
+                .map(([label, value]) => (
+                  <li key={label}>
+                    <span className="g-meta">{label}</span>
+                    <span className="g-name mt-1 block">{value}</span>
+                  </li>
+                ))}
+            </ul>
+          )}
         </Section>
 
         {/*

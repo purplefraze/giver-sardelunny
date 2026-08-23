@@ -107,7 +107,7 @@ export function PromptAnswers({ onTouched }: { onTouched?: () => void }) {
               }`}
               {...(answer ? {} : { style: { opacity: 0.42 } })}
             >
-              {answer ? p.mine(answer) : p.question}
+              {answer ? mineStatement(p, answer) : p.question}
             </button>
           );
         })}

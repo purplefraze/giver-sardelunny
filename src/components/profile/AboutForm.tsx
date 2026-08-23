@@ -32,8 +32,6 @@ import { buzz, haptics } from "@/lib/haptics";
  * copy of the same question lower down, and nothing to submit.
  */
 
-const GENDERS = ["male", "female", "non-binary", "prefer not to say"] as const;
-
 const PHOTO = 104;
 
 export function AboutForm({
@@ -65,7 +63,6 @@ export function AboutForm({
   const [settings, setSettings] = useState(false);
   /** THE INTERFACE TEACHES ITSELF ONCE: the hint retires after the first touch. */
   const [taught, setTaught] = useState(false);
-  const [genderOpen, setGenderOpen] = useState(false);
 
   const handle = normaliseHandle(me.username);
   const named = Boolean(handle) && handle !== "you";

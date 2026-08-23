@@ -288,8 +288,10 @@
 
 /* ---------------------------------------------------------------
    Giver — world colour stories, driven by MEANING:
-     red = me, blue = others, yellow = community,
-     purple = connection, orange = participation, green = giver.
+     green = me / my world / giving + lending,
+     purple = wishing + borrowing,
+     blue = the initiating person, red = the other person on the wish side,
+     yellow = the other person on the give side, orange = trade.
 
    Every world declares FOUR things and nothing else:
      --world-bg    the paper
@@ -300,130 +302,176 @@
                    loop may ever use.
    --------------------------------------------------------------- */
 
-/* Home / Giver — generosity happening: green. */
+/* Home / Giver — my own world: green. */
 [data-world="home"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-generosity);
+  --world-g: var(--giver-green);
   --world-ink: oklch(0.42 0.14 145);
-  --world-text: var(--giver-generosity-complement);
-  --world-accent: var(--giver-community);
+  --world-text: var(--giver-green-complement);
+  --world-accent: var(--person-self);
 }
 
-/* ---- THE FOUR MODE WORLDS. Each reads ONLY its own mode token. ---- */
+/* ---- THE MODE WORLDS. Each reads ONLY its own mode token. ---- */
 
-/* Wish — me reaching another person: connection purple. */
+/* Wish — asking for something: purple. */
 [data-world="wish"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-wish);
   --world-ink: oklch(0.4 0.2 300);
   --world-text: var(--mode-wish-complement);
-  --world-accent: var(--giver-community);
+  --world-accent: var(--person-self);
 }
 
-/* Give — generosity happening: green G on white. */
+/* Borrow — asking to borrow: the deeper purple. */
+[data-world="borrow"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--mode-borrow);
+  --world-ink: oklch(0.38 0.19 305);
+  --world-text: var(--mode-borrow-complement);
+  --world-accent: var(--person-self);
+}
+
+/* Give — offering: green G on white. */
 [data-world="give"] {
   --world-bg: oklch(1 0 0);
   --world-g: var(--mode-give);
   --world-ink: oklch(0.46 0.16 145);
   --world-text: var(--mode-give-complement);
-  --world-accent: var(--mode-give);
+  --world-accent: var(--person-self);
 }
 
-/* Trade — participating with the community: orange. */
+/* Lend — the other side of green. */
+[data-world="lend"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--mode-lend);
+  --world-ink: oklch(0.4 0.14 150);
+  --world-text: var(--mode-give-complement);
+  --world-accent: var(--person-self);
+}
+
+/* Trade — apart from the wish/give mixing: orange. */
 [data-world="trade"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-trade);
   --world-ink: oklch(0.44 0.16 48);
   --world-text: var(--mode-trade-complement);
-  --world-accent: var(--giver-community);
+  --world-accent: var(--person-other-trade);
 }
 
-/* Borrow — leaning on other people: bright blue. */
-[data-world="borrow"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--mode-borrow);
-  --world-ink: oklch(0.4 0.15 255);
-  --world-text: var(--mode-borrow-complement);
-  --world-accent: var(--giver-generosity);
-}
-
-/* Onboarding — Giver guiding me into participation: orange. */
+/* Onboarding — arriving into my own world: green. */
 [data-world="welcome"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-participation);
-  --world-ink: oklch(0.44 0.16 48);
-  --world-text: var(--giver-participation-complement);
-  --world-accent: var(--giver-community);
+  --world-g: var(--giver-green);
+  --world-ink: oklch(0.42 0.14 145);
+  --world-text: var(--giver-green-complement);
+  --world-accent: var(--person-self);
 }
 
-/* Sparks to gift — generosity happening: green. */
+/* Sparks to gift — giving: green. */
 [data-world="gift"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-generosity);
+  --world-g: var(--giver-green);
   --world-ink: oklch(0.42 0.14 145);
-  --world-text: var(--giver-generosity-complement);
-  --world-accent: var(--giver-community);
+  --world-text: var(--giver-green-complement);
+  --world-accent: var(--person-self);
 }
 
-/* Meeting the community — the collective: yellow. */
+/* Meeting other people — the collective: yellow. */
 [data-world="meet"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-community);
+  --world-g: var(--giver-yellow);
   --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-community-complement);
-  --world-accent: var(--giver-generosity);
+  --world-text: var(--giver-yellow-complement);
+  --world-accent: var(--person-self);
 }
 
-/* ---- ANOTHER PERSON — always YELLOW, whatever they are up to. ----
-   Activity type is communicated by the words INSIDE the G in their own
-   activity colour; the person's own G never borrows an activity colour.
-   BLUE IS RESERVED FOR BORROW and must never mean "another person". */
-[data-world="others"],
-[data-world="giving"],
+/* ---- ANOTHER PERSON. The state they are in decides their colour: ----
+   someone asking (wish/borrow) is red, someone offering (give/lend) is
+   yellow, someone trading stays in the trade orange. My identity is never
+   recoloured by their mode. */
+[data-world="others"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--person-other-give);
+  --world-ink: oklch(0.52 0.15 85);
+  --world-text: var(--giver-yellow-complement);
+  --world-accent: var(--person-self);
+}
+
 [data-world="wishing"],
-[data-world="trading"],
 [data-world="borrowing"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-community);
-  --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-community-complement);
-  --world-accent: var(--giver-generosity);
+  --world-g: var(--person-other-wish);
+  --world-ink: oklch(0.5 0.24 26);
+  --world-text: var(--giver-red-complement);
+  --world-accent: var(--person-self);
 }
 
+[data-world="giving"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--person-other-give);
+  --world-ink: oklch(0.52 0.15 85);
+  --world-text: var(--giver-yellow-complement);
+  --world-accent: var(--person-self);
+}
 
-/* ---- ME — my own profile and my own information: BRIGHT RED. ---- */
+[data-world="trading"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--person-other-trade);
+  --world-ink: oklch(0.46 0.16 52);
+  --world-text: var(--giver-orange-complement);
+  --world-accent: var(--person-self);
+}
+
+/* ---- ME — my own profile and my own information: GREEN. ---- */
 [data-world="me"],
 [data-world="profile"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-me);
-  --world-ink: oklch(0.52 0.25 26); /* bright cherry red ink, still readable */
-  --world-text: var(--giver-me-complement);
-  --world-accent: var(--giver-community);
+  --world-g: var(--giver-green);
+  --world-ink: oklch(0.42 0.15 145);
+  --world-text: var(--giver-green-complement);
+  --world-accent: var(--person-self);
 }
 
-
-/* Community — the shared space: yellow. */
+/* Community — the shared space of other people: yellow. */
 [data-world="community"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-community);
+  --world-g: var(--giver-yellow);
   --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-community-complement);
-  --world-accent: var(--giver-generosity);
+  --world-text: var(--giver-yellow-complement);
+  --world-accent: var(--person-self);
 }
 
-/* Connection — me + another person came together: purple. */
-/*
-  A CONVERSATION IS THE MEETING OF TWO PEOPLE'S COLOURS, expressed as the two
-  related oranges — the poster's deeper one, the responder's lighter one. No
-  purple and no green live on this screen.
-*/
-[data-world="connection"] {
+/* ---- A CONNECTION LIVES IN ITS RELATIONSHIP STATE ----
+   asking together = purple, offering together = green, trading = orange.
+   The two speakers inside it are blue (me) and red / yellow (them). */
+[data-world="connection"],
+[data-world="connection-wish"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--convo-poster);
-  --world-ink: var(--convo-poster);
-  --world-text: var(--convo-responder);
-  --world-accent: var(--convo-responder);
+  --world-g: var(--state-wish);
+  --world-ink: oklch(0.4 0.2 300);
+  --world-text: var(--giver-purple-complement);
+  --world-accent: var(--person-self);
+  --convo-other: var(--person-other-wish);
 }
+
+[data-world="connection-give"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--state-give);
+  --world-ink: oklch(0.42 0.15 145);
+  --world-text: var(--giver-green-complement);
+  --world-accent: var(--person-self);
+  --convo-other: var(--person-other-give);
+}
+
+[data-world="connection-trade"] {
+  --world-bg: var(--giver-paper);
+  --world-g: var(--state-trade);
+  --world-ink: oklch(0.44 0.16 48);
+  --world-text: var(--giver-orange-complement);
+  --world-accent: var(--person-self);
+  --convo-other: var(--person-other-trade);
+}
+
 
 
 

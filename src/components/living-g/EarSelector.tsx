@@ -71,33 +71,34 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
  * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN where the spine
- * leaves it, between roughly 4 o'clock and 6 o'clock. The selector is a bead on
- * that wire: its angle lives on ONE CONTINUOUS LINE that runs from trade (the
- * hard clockwise end, beside one lip of the break) anticlockwise all the way
- * round to borrow (8 o'clock, the other lip). There is no wrap-around, so the
- * bead can never teleport across the gap, interpolate through empty space, or
- * take the shortest geometric route between two seats.
+ * leaves it. The selector is a bead on that wire: its angle lives on ONE
+ * CONTINUOUS LINE that runs from trade (the hard clockwise end) anticlockwise
+ * all the way round to borrow (the other lip). There is no wrap-around, so the
+ * bead can never teleport across the gap.
  *
- * THE SIX POSITIONS — THE SOURCE OF TRUTH:
- *   trade    0°    3 o'clock, right-side middle — hard clockwise end
- *   give   -44°
- *   giver  -90°    12 o'clock (my g)
- *   wish  -136°
- *   lend  -180°    9 o'clock, left-side middle
- *   borrow -210°  (= 8 o'clock) hard end on the other lip of the break
+ * THE SIX FIXED CLOCK POSITIONS — THE SOURCE OF TRUTH. Deliberately asymmetric;
+ * never redistributed evenly or derived from the category list.
+ *   giver  12:00  (-90°)  my g
+ *   give    1:30  (-45°)
+ *   lend    3:00  (  0°)
+ *   trade   4:30  ( 45°)  hard clockwise end
+ *   wish   10:45  (-127.5°)
+ *   borrow  9:30  (-165°)  hard anticlockwise end
+ * COMMUNITY is not a seat: it is the big bottom loop itself.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-210),
-  lend: rad(-180),
-  wish: rad(-136),
+  borrow: rad(-165),
+  wish: rad(-127.5),
   giver: rad(-90),
-  give: rad(-44),
-  trade: rad(0),
+  give: rad(-45),
+  lend: rad(0),
+  trade: rad(45),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
 const TRACK_MIN = SEAT_ANGLE.borrow;
 const TRACK_MAX = SEAT_ANGLE.trade;
+
 
 const TAU = Math.PI * 2;
 

@@ -238,7 +238,6 @@ function Index() {
    * toggle's world, so the content type is never asked for twice.
    */
   const [detail, setDetail] = useState<string | null>(null);
-  const detailShown = useLinger(detail);
 
   const [talking, setTalking] = useState<string | null>(null);
   const [threads, setThreads] = useState(false);
@@ -249,12 +248,10 @@ function Index() {
   const [person, setPerson] = useState<string | null>(null);
   /** WHICH SECTION a profile opens on when it was reached from an activity. */
   const [personFocus, setPersonFocus] = useState<ItemType | null>(null);
-  /* WHILE THE G FOLDS BACK, what was inside it is still inside it. */
-  const personShown = useLinger(person);
 
   /* MY OWN PROFILE IS ALSO INSIDE THE G: it unfurls, it never opens a page. */
   const aboutOpen = editor?.kind === "about";
-  const aboutShown = useLinger(aboutOpen ? true : null);
+
 
 
 

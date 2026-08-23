@@ -472,15 +472,16 @@
   --world-accent: var(--person-self);
 }
 
-/* Community — the big surrounding loop: an orange environment around a blue me. */
+/* Community — the BIG LOWER LOOP: a red environment around a blue me. */
 [data-world="community"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--person-self-community);
   --world-selector: var(--state-community);
-  --world-ink: oklch(0.46 0.16 48);
-  --world-text: var(--giver-orange-complement);
+  --world-ink: oklch(0.5 0.21 27);
+  --world-text: var(--giver-community-red-complement);
   --world-accent: var(--state-community);
 }
+
 
 
 /* ---- A CONNECTION LIVES IN ITS RELATIONSHIP STATE ----

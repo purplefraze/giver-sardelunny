@@ -716,7 +716,12 @@ function Index() {
                       setIntro(null);
                       if (voluntary || topic === "sparks") return;
                       /* Already marked seen on entry — this just opens the form. */
-                      setEditor({ kind: "category", category: topic });
+                      setEditor({
+                        kind: "category",
+                        category: topic,
+                        ...(pendingSide ? { side: pendingSide } : {}),
+                      });
+
                     }}
                   />
                 ) : null,

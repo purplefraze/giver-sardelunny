@@ -83,10 +83,13 @@ export function BirthdayInput({
         }}
         className="block w-full text-left"
       >
-        <span className="g-meta" style={{ color: "var(--giver-me)" }}>
-          birthday
-        </span>
-        <span className="g-name mt-1 block" style={label ? undefined : { opacity: 0.32 }}>
+        {/* ONCE A BIRTHDAY IS THERE, THE WORD GOES: the date says it. */}
+        {label ? null : (
+          <span className="g-meta" style={{ color: "var(--giver-me)" }}>
+            birthday
+          </span>
+        )}
+        <span className="g-name block" style={label ? undefined : { opacity: 0.32, marginTop: 4 }}>
           {label ? `${label}${age !== null ? ` · ${age}` : ""}` : "tap to type your birthday"}
         </span>
       </button>

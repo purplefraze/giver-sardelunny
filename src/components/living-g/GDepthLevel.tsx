@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX } from "./g-path";
-import { CAMERA, anchorOrigin, levelInset, type GAnchorKey } from "./g-depth";
+import { CAMERA, LENS, anchorLens, anchorOrigin, levelInset, type GAnchorKey } from "./g-depth";
 import { haptics } from "@/lib/haptics";
 
 /**

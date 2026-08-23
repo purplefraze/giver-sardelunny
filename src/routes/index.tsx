@@ -77,8 +77,10 @@ import {
   communityItems,
   itemLine,
   itemsStore,
+  type BorrowSide,
   type ItemType,
 } from "@/data/items";
+
 import { LedgerHistory } from "@/components/history/LedgerHistory";
 import type { Currency } from "@/data/ledger";
 

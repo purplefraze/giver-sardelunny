@@ -235,16 +235,16 @@ export function classifyKind(text: string): GiveKind {
 }
 
 /** WHERE — never an exact home address, and never "online" for a real thing. */
-const PHYSICAL_WHERE = ["nearby pickup", "in person", "flexible"];
-const REMOTE_WHERE = ["online", "in person", "flexible"];
+const PHYSICAL_WHERE = ["nearby pickup", "in person", "anywhere"];
+const REMOTE_WHERE = ["online", "in person", "anywhere"];
 
 export const WHERE_FOR: Record<GiveKind, string[]> = {
   object: PHYSICAL_WHERE,
   food: PHYSICAL_WHERE,
   skill: REMOTE_WHERE,
-  digital: ["online", "flexible"],
-  experience: ["in person", "flexible"],
-  help: ["in person", "nearby pickup", "online", "flexible"],
+  digital: ["online", "anywhere"],
+  experience: ["in person", "anywhere"],
+  help: ["in person", "nearby pickup", "online", "anywhere"],
 };
 
 /** An area can only be named where meeting in person is possible at all. */
@@ -267,6 +267,125 @@ export const ASKS_DURATION: Record<GiveKind, boolean> = {
   help: true,
 };
 
+/**
+ * RECURRENCE IS RARE. A cake, a ladder or a bike happens once; teaching,
+ * sewing lessons and a lift to the shops can repeat. Nobody is ever asked
+ * about a weekly schedule for a one-off object.
+ */
+export const ASKS_RECURRENCE: Record<GiveKind, boolean> = {
+  object: false,
+  food: false,
+  skill: true,
+  digital: true,
+  experience: false,
+  help: true,
+};
+
+/**
+ * BROAD, HUMAN CATEGORIES — eight words a person recognises instantly, never a
+ * bureaucratic taxonomy. The system guesses one from what was written and the
+ * person confirms or changes it; it is never asked before the words exist.
+ */
+export const TOPICS = [
+  "items / household",
+  "transportation",
+  "outdoors / recreation",
+  "home / repair",
+  "skills / teaching",
+  "services / help",
+  "food",
+  "events / experiences",
+] as const;
+
+export type Topic = (typeof TOPICS)[number];
+
+const TOPIC_MATCH: { topic: Topic; match: RegExp }[] = [
+  {
+    topic: "transportation",
+    match: /\b(car|van|truck|lift|ride|drive|driving|bus|train|airport|trailer|scooter|motorbike|move|moving|haul|deliver)\b/i,
+  },
+  {
+    topic: "outdoors / recreation",
+    match:
+      /\b(bike|bicycle|tent|camp|camping|hike|hiking|kayak|canoe|surf|ski|snowboard|swim|climbing|fishing|waders|gym|run|running|yoga|football|exercise|fitness|sport)\b/i,
+  },
+  {
+    topic: "food",
+    match:
+      /\b(cake|bread|sourdough|starter|meal|dinner|lunch|breakfast|soup|bake|baking|jam|honey|eggs|veg|vegetables|produce|food|coffee|cook|cooking|seeds?)\b/i,
+  },
+  {
+    topic: "home / repair",
+    match:
+      /\b(hang|paint|painting|shelf|shelves|drill|fix|repair|plumb|leak|wire|electric|garden|gardening|mow|lawn|fence|assemble|flat pack|tile|door|wall)\b/i,
+  },
+  {
+    topic: "skills / teaching",
+    match:
+      /\b(tutor|tutoring|lesson|lessons|teach|teaching|class|classes|coach|coaching|language|spanish|french|english|maths?|math|science|chemistry|physics|guitar|piano|music|sewing|knit|photograph|translat|mentor|cv|resume|website|code|coding|design)\b/i,
+  },
+  {
+    topic: "events / experiences",
+    match:
+      /\b(party|dinner party|concert|gig|film|cinema|festival|birthday|wedding|tour|walk together|company|club|game night|experience|event)\b/i,
+  },
+  {
+    topic: "services / help",
+    match:
+      /\b(help|helping|hand|babysit|sit|sitting|dog walking|walk the dog|clean|cleaning|shop|shopping|errand|admin|form|paperwork|care)\b/i,
+  },
+  {
+    topic: "items / household",
+    match:
+      /\b(ladder|projector|table|chair|sofa|bed|desk|clothes|coat|shoes|toys|book|books|jars|boxes|tool|tools|kit|kettle|pram|cot|plant|plants|blender|iron|vacuum)\b/i,
+  },
+];
+
+/** THE LIKELY CATEGORY, GUESSED FROM THE WORDS. Null when it is not obvious. */
+export function suggestTopic(text: string): Topic | null {
+  const said = text.trim();
+  if (said.length < 3) return null;
+  return TOPIC_MATCH.find((t) => t.match.test(said))?.topic ?? null;
+}
+
+/** THE DAYS THE WORDS THEMSELVES NAME. Only ever a suggestion to confirm. */
+export function suggestDays(text: string): string[] | null {
+  const said = text.toLowerCase();
+  if (/\bweekend\b/.test(said)) return ["sat", "sun"];
+  const named = DAY_NAMES.filter((d) =>
+    new RegExp(`\\b${d}(s|day|days|sday|nesday|rsday|urday)?\\b`, "i").test(said),
+  );
+  return named.length ? named : null;
+}
+
+/** LIKELY FREQUENCY. A lesson repeats; an object is borrowed once. */
+export function suggestCadence(text: string, kind: GiveKind): string | null {
+  const said = text.toLowerCase();
+  if (/\bevery week|\bweekly\b|each week/.test(said)) return "weekly";
+  if (/\bmonthly\b|every month/.test(said)) return "monthly";
+  if (/\bonce\b|\bone[- ]off\b|\btomorrow\b|\btonight\b|\bthis weekend\b/.test(said))
+    return "one time";
+  if (!ASKS_RECURRENCE[kind]) return "one time";
+  return null;
+}
+
+/**
+ * A TIME WINDOW, WRITTEN THE WAY PEOPLE SAY IT. Built only from the structured
+ * pickers, so a time field can never contain the word "butterflies".
+ */
+export function timeWindow(start?: string, end?: string): string | undefined {
+  const say = (t: string) => {
+    const [h = "0", m = "00"] = t.split(":");
+    const hour = Number(h);
+    const suffix = hour < 12 ? "am" : "pm";
+    const twelve = hour % 12 === 0 ? 12 : hour % 12;
+    return `${twelve}${m === "00" ? "" : `:${m}`} ${suffix}`;
+  };
+  if (start && end) return `${say(start)}–${say(end)}`;
+  if (start) return `from ${say(start)}`;
+  if (end) return `until ${say(end)}`;
+  return undefined;
+}
 
 /**
  * THE SCANNABLE FACTS OF ONE ITEM, in one order, everywhere they appear. Only
@@ -278,7 +397,9 @@ export function detailBits(item: Item): string[] {
   const out: string[] = [];
   if (d.days?.length) out.push(d.days.join(" + "));
   if (d.date) out.push(d.date);
+  else if (d.flexibleDate) out.push("any day");
   if (d.time) out.push(d.time);
+  else if (d.flexibleTime) out.push("any time");
   if (d.duration) out.push(d.duration);
   if (d.cadence && d.cadence !== "flexible") out.push(d.cadence);
   if (d.where) out.push(d.where);
@@ -286,6 +407,7 @@ export function detailBits(item: Item): string[] {
     if (value.trim()) out.push(value.trim());
   return out;
 }
+
 
 /**
  * CONTEXT-SPECIFIC QUESTIONS. A give only ever asks what makes sense for that

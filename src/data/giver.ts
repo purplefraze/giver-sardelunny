@@ -168,7 +168,7 @@ const BASE_MEMBERS: Member[] = [
     answers: {
       lights-up: "cold water at six in the morning",
       animal: "a seal",
-      bucket-list: "swim between two islands",
+      "bucket-list": "swim between two islands",
       silly: "naming every stray cat on her street",
     },
     bottom: [
@@ -301,7 +301,7 @@ const BASE_MEMBERS: Member[] = [
     answers: {
       happy: "a quiet hour and a good notebook",
       animal: "a bear",
-      look-like: "an owl",
+      "look-like": "an owl",
       dream: "to make people less afraid of talking",
     },
     bottom: [

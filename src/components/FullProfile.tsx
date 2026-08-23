@@ -237,21 +237,41 @@ export function FullProfile({
               ))}
             </ul>
           ) : (
-            <ul className="mt-6 space-y-3">
-              {[
-                ["by day", member.byDay],
-                ["by night", member.byNight],
-                ["by weekend", member.weekend],
-              ]
-                .filter(([, value]) => Boolean(value) && value !== "—")
-                .map(([label, value]) => (
-                  <li key={label}>
-                    <span className="g-meta">{label}</span>
-                    <span className="g-name mt-1 block">{value}</span>
-                  </li>
-                ))}
-            </ul>
+            (() => {
+              /* THEIR OWN ANSWERS, AS SENTENCES — never question/answer labels. */
+              const said = answeredStatements(member.answers, {
+                mine: false,
+                name: member.name.toLowerCase(),
+              });
+              if (said.length)
+                return (
+                  <ul className="mt-7 space-y-6">
+                    {said.map((line) => (
+                      <li key={line.id} className="g-lede">
+                        {line.line}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              return (
+                <ul className="mt-6 space-y-3">
+                  {[
+                    ["by day", member.byDay],
+                    ["by night", member.byNight],
+                    ["by weekend", member.weekend],
+                  ]
+                    .filter(([, value]) => Boolean(value) && value !== "—")
+                    .map(([label, value]) => (
+                      <li key={label}>
+                        <span className="g-meta">{label}</span>
+                        <span className="g-name mt-1 block">{value}</span>
+                      </li>
+                    ))}
+                </ul>
+              );
+            })()
           )}
+
         </Section>
 
         {/*

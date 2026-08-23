@@ -148,109 +148,115 @@
   --giver-paper: oklch(0.985 0.008 100);
   --giver-ink: oklch(0.16 0.01 100);
 
-  /* ---- THE GIVER COLOUR SYSTEM — PRIMARIES AND WHAT THEY MIX INTO ----
-     PRIMARY:   red = me, blue = others, yellow = community
-     SECONDARY: red+blue = purple = connection
-                red+yellow = orange = participation
-                blue+yellow = green = generosity / giver
-     These six tokens are the ONLY source of colour meaning in Giver. */
-  --giver-me: oklch(0.64 0.28 26); /* BRIGHT CHERRY RED — me, my identity, my profile */
-  --giver-others: oklch(0.58 0.19 250); /* BLUE — another person */
-  --giver-community: oklch(0.86 0.19 95); /* YELLOW — the collective */
-  --giver-connection: oklch(0.55 0.24 300); /* PURPLE — me + others */
-  --giver-participation: oklch(0.72 0.2 48); /* ORANGE — me + community */
-  --giver-generosity: oklch(0.72 0.21 140); /* GREEN — others + community */
+  /* ---- THE GIVER COLOUR SYSTEM v2 — ONE MEANING PER COLOUR ----
+     GREEN   = me. My identity, my G, my home world — and the shared state of
+               giving and lending (offering / helping).
+     PURPLE  = wishing and borrowing. Someone is asking for something.
+     BLUE    = the initiating person in an interaction (normally me).
+     RED     = the responding other person in a WISH / BORROW interaction.
+     YELLOW  = the responding other person in a GIVE / LEND interaction.
+     ORANGE  = trade. Kept outside the wish/give mixing logic entirely.
+     Nothing else carries meaning. Every token below resolves to one of these. */
+  --giver-green: oklch(0.62 0.19 145); /* GREEN — me, my world, giving */
+  --giver-purple: oklch(0.55 0.24 300); /* PURPLE — wishing, borrowing */
+  --giver-blue: oklch(0.58 0.19 250); /* BLUE — the initiating person */
+  --giver-red: oklch(0.64 0.28 26); /* RED — the other person, wish side */
+  --giver-yellow: oklch(0.78 0.17 92); /* YELLOW — the other person, give side */
+  --giver-orange: oklch(0.72 0.2 48); /* ORANGE — trade, on its own */
 
-  /* ---- ONE SECONDARY ACTION COLOUR + THE THREE PRIVATE UTILITIES ----
-     PINK is never a meaning of its own: it is the colour of an ACTION you can
-     take while building something (add a photo, add a detail). The mode colour
-     stays the identity of the thing being made. */
+  /* THE TWO RELATIONSHIP STATES a conversation can inhabit. */
+  --state-wish: var(--giver-purple);
+  --state-give: var(--giver-green);
+  --state-trade: var(--giver-orange);
+
+  /* THE PEOPLE. Me is always blue as a participant; my own identity stays green. */
+  --person-self: var(--giver-blue);
+  --person-other-wish: var(--giver-red);
+  --person-other-give: var(--giver-yellow);
+  --person-other-trade: oklch(0.56 0.18 55); /* deeper orange — trade stays apart */
+
+  /* ---- ONE SECONDARY ACTION COLOUR + THE PRIVATE UTILITIES ---- */
   --giver-action: oklch(0.7 0.23 350); /* PINK — an action while creating */
-  --giver-sparks: var(--giver-connection); /* PURPLE — my own sparks */
-  --giver-sparkles: var(--giver-action); /* PINK — sparkles */
-  --giver-messages: var(--giver-me); /* RED — my messages */
+  --giver-sparks: var(--giver-purple);
+  --giver-sparkles: var(--giver-action);
+  --giver-messages: var(--person-self);
 
+  /* Me / others / community, expressed in the new system. */
+  --giver-me: var(--giver-green); /* my identity, never remapped by mode */
+  --giver-others: var(--person-self); /* a person acting, in blue */
+  --giver-community: var(--giver-yellow); /* other people, collectively */
+  --giver-connection: var(--state-wish);
+  --giver-participation: var(--state-trade);
+  --giver-generosity: var(--state-give);
 
   /* One approved bright complementary in-loop type colour per semantic. */
-  --giver-me-complement: oklch(0.62 0.15 195); /* red -> electric turquoise */
-  --giver-others-complement: oklch(0.68 0.17 70); /* blue -> bright amber */
-  --giver-community-complement: oklch(0.52 0.27 285); /* yellow -> electric violet */
-  --giver-connection-complement: oklch(0.68 0.18 92); /* purple -> bright yellow */
-  --giver-participation-complement: oklch(0.52 0.27 265); /* orange -> royal blue */
-  --giver-generosity-complement: oklch(0.56 0.28 340); /* green -> hot magenta */
+  --giver-green-complement: oklch(0.56 0.28 340); /* green -> hot magenta */
+  --giver-purple-complement: oklch(0.68 0.18 92); /* purple -> bright yellow */
+  --giver-blue-complement: oklch(0.68 0.17 70); /* blue -> bright amber */
+  --giver-red-complement: oklch(0.62 0.15 195); /* red -> electric turquoise */
+  --giver-yellow-complement: oklch(0.52 0.27 285); /* yellow -> electric violet */
+  --giver-orange-complement: oklch(0.52 0.27 265); /* orange -> royal blue */
 
-  /* ---- LIVING G MODE COLOURS — meaning, not arbitrary section colour ----
-       give   = generosity happening (green)
-       wish   = me reaching another person (purple, connection)
-       trade  = me participating with the community (orange)
-       borrow = leaning on other people (bright blue) */
-  --mode-give: var(--giver-generosity);
-  --mode-wish: var(--giver-connection);
-  --mode-trade: var(--giver-participation);
-  --mode-borrow: var(--giver-others);
-  --mode-lend: oklch(0.42 0.2 265); /* ROYAL BLUE — what i can lend */
+  --giver-me-complement: var(--giver-green-complement);
+  --giver-others-complement: var(--giver-blue-complement);
+  --giver-community-complement: var(--giver-yellow-complement);
+  --giver-connection-complement: var(--giver-purple-complement);
+  --giver-participation-complement: var(--giver-orange-complement);
+  --giver-generosity-complement: var(--giver-green-complement);
 
-  --mode-give-complement: var(--giver-generosity-complement);
-  --mode-wish-complement: var(--giver-connection-complement);
-  --mode-trade-complement: var(--giver-participation-complement);
-  --mode-borrow-complement: var(--giver-others-complement);
+  /* ---- LIVING G MODE COLOURS ----
+       give / lend = green (offering), wish / borrow = purple (asking),
+       trade = orange, on the 6 o'clock toggle, deliberately apart. */
+  --mode-give: var(--state-give);
+  --mode-lend: oklch(0.48 0.15 150); /* deeper green — the lending side of green */
+  --mode-wish: var(--state-wish);
+  --mode-borrow: oklch(0.46 0.2 305); /* deeper purple — the borrowing side */
+  --mode-trade: var(--state-trade);
 
-  /* ---- ACTIVITY TEXT COLOUR = ITS WORLD'S G COLOUR ----
-     The one place any screen reads the colour of a Wish / Give / Trade /
-     Borrow ITEM, so activity text can never drift from its world. */
+  --mode-give-complement: var(--giver-green-complement);
+  --mode-wish-complement: var(--giver-purple-complement);
+  --mode-trade-complement: var(--giver-orange-complement);
+  --mode-borrow-complement: var(--giver-purple-complement);
+
+  /* ---- ACTIVITY TEXT COLOUR = ITS WORLD'S G COLOUR ---- */
   --activity-wish: var(--mode-wish);
-  --activity-give: var(--mode-give);
-  --activity-trade: var(--mode-trade);
   --activity-borrow: var(--mode-borrow);
-  /* LENDING IS THE OTHER SIDE OF THE SAME BLUE — royal, clearly darker, so a
-     list of borrows and lends can never be misread as one thing. */
+  --activity-give: var(--mode-give);
   --activity-lend: var(--mode-lend);
+  --activity-trade: var(--mode-trade);
 
-  /* ---- MY OWN ACTIVITY = THE ACTIVITY'S OWN COLOUR ----
-     These used to be four shades of profile red. A creation form, an
-     explanation or a record of MINE now carries the colour of WHAT it is:
-     wish purple, give green, trade orange, borrow blue. Profile red belongs
-     to identity only, and never to an activity. */
+  /* My own activity carries the colour of WHAT it is, not of me. */
   --me-wish: var(--activity-wish);
   --me-give: var(--activity-give);
   --me-trade: var(--activity-trade);
   --me-borrow: var(--activity-borrow);
   --me-profile: var(--giver-me);
 
-  /* ---- A CONVERSATION IS THE MEETING OF TWO PEOPLE ----
-     Two related oranges, so a thread reads as one exchange rather than two
-     apps talking. The person who posted the activity carries the deeper tone;
-     the person answering carries the lighter one. Names keep their own
-     identity colour (mine red, another person's yellow). */
-  --convo-poster: oklch(0.58 0.19 55); /* DEEP ORANGE — whoever posted it */
-  --convo-responder: oklch(0.76 0.15 68); /* LIGHT ORANGE — whoever answered */
-
-
-
+  /* ---- A CONVERSATION: TWO PEOPLE INSIDE ONE RELATIONSHIP STATE ----
+     The surrounding world is purple (wish/borrow) or green (give/lend); the
+     speakers are blue (me) and red or yellow (them). Set per thread. */
+  --convo-self: var(--person-self);
+  --convo-other: var(--person-other-wish);
+  --convo-poster: var(--person-self); /* legacy alias */
+  --convo-responder: var(--person-other-wish); /* legacy alias */
 
   /* Compatibility aliases — every one resolves to a semantic token above. */
-  --giver-give: var(--giver-generosity);
-  --giver-give-complement: var(--giver-generosity-complement);
-  --giver-wish: var(--giver-connection);
-  --giver-wish-complement: var(--giver-connection-complement);
+  --giver-give: var(--state-give);
+  --giver-give-complement: var(--giver-green-complement);
+  --giver-wish: var(--state-wish);
+  --giver-wish-complement: var(--giver-purple-complement);
   --giver-profile: var(--giver-me);
   --giver-profile-complement: var(--giver-me-complement);
-  --giver-trade: var(--giver-participation);
-  --giver-trade-complement: var(--giver-participation-complement);
-  --giver-borrow: var(--giver-others);
-  --giver-borrow-complement: var(--giver-others-complement);
+  --giver-trade: var(--state-trade);
+  --giver-trade-complement: var(--giver-orange-complement);
+  --giver-borrow: var(--mode-borrow);
+  --giver-borrow-complement: var(--giver-purple-complement);
   --giver-discovery: var(--giver-community);
   --giver-discovery-complement: var(--giver-community-complement);
-  --giver-orange: var(--giver-participation);
-  --giver-orange-complement: var(--giver-participation-complement);
-  --giver-green: var(--giver-generosity);
-  --giver-green-complement: var(--giver-generosity-complement);
-  --giver-blue: var(--giver-others);
-  --giver-yellow: var(--giver-community);
 
+  /* Brand accent — Giver itself is green. */
+  --giver-accent: var(--giver-green);
 
-  /* Brand accent — Giver itself is generosity: green. */
-  --giver-accent: var(--giver-generosity);
 
   /* Geometry + motion. */
   --giver-radius: 999px;

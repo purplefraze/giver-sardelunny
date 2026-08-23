@@ -99,13 +99,17 @@ export function GDepthLevel({
         zIndex: 30 + depth,
         background: "var(--world-bg)",
         // The paper only arrives once the G has begun to open, so the swallow
-        // reads as the G growing rather than a panel appearing.
+        // reads as the G growing rather than a panel appearing. The ramp on the
+        // way IN is short and early: the level must be fully opaque while the
+        // aperture is still travelling, or the parent depth reads through the
+        // incoming text. Going out it fades on the whole fold.
         opacity: unfurled ? 1 : 0,
         transform: `scale(${pushed * pull})`,
         transformOrigin: `${origin.x}% ${origin.y}%`,
-        transition: `opacity ${Math.round(ms * 0.5)}ms ease-out, transform ${
+        transition: `opacity ${Math.round(ms * (open ? 0.18 : 0.5))}ms ease-out, transform ${
           retreat > 0 ? 90 : ms
         }ms ${ease}`,
+
         pointerEvents: open ? "auto" : "none",
       }}
       aria-hidden={!open}

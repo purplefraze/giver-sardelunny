@@ -84,7 +84,7 @@ export function Conversation({
   return (
     <div
       data-world="connection"
-      className="relative flex h-full w-full flex-col overflow-hidden px-6 pb-5 pt-16"
+      className="relative flex h-full w-full flex-col overflow-y-auto px-6 pb-5 pt-16"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onClose} label="back" />
@@ -97,11 +97,11 @@ export function Conversation({
       {/* WHAT, AND ITS PARAMETERS — one quiet line, carried through from the give. */}
       {item ? (
         <>
-          <p className="mt-2 g-name" style={{ color: ACTIVITY_FILL[c.type] }}>
+          <p className="mt-2 g-name" style={{ color: "var(--convo-poster)" }}>
             {itemLine(item)}
           </p>
           {facts.length ? (
-            <p className="mt-2 g-meta" style={{ color: "var(--convo-poster)" }}>
+            <p className="mt-2 g-meta" style={{ color: "var(--convo-responder)" }}>
               {facts.map((f) => f.value).join(" · ")}
             </p>
           ) : null}
@@ -109,8 +109,8 @@ export function Conversation({
       ) : null}
 
 
-      {/* THE THREAD. It runs downward, newest at the bottom. */}
-      <ul className="g-rule mt-5 flex-1 space-y-5 overflow-y-auto pb-4 pt-5">
+      {/* THE THREAD. It runs downward, and the composer follows it immediately. */}
+      <ul className="g-rule mt-5 space-y-5 pt-5">
         {messages.map((m) => (
           <li key={m.id} className={m.fromId === ME_ID ? "text-right" : "text-left"}>
             <span className="g-meta block" style={{ color: nameColour(m.fromId) }}>
@@ -126,6 +126,7 @@ export function Conversation({
         ))}
         <div ref={endRef} />
       </ul>
+
 
       {/* ONE MESSAGE AREA: the suggestion, the field and send, together. */}
       {c.state !== "cancelled" ? (

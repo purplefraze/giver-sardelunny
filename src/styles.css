@@ -341,11 +341,11 @@
   --world-accent: var(--person-self);
 }
 
-/* Borrow — asking to borrow: the deeper purple. */
+/* Borrow — asking to borrow: hot pink. */
 [data-world="borrow"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-borrow);
-  --world-ink: oklch(0.38 0.19 305);
+  --world-ink: oklch(0.48 0.2 6);
   --world-text: var(--mode-borrow-complement);
   --world-accent: var(--person-self);
 }
@@ -359,14 +359,15 @@
   --world-accent: var(--person-self);
 }
 
-/* Lend — the other side of green. */
+/* Lend — the seafoam side of generosity. */
 [data-world="lend"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-lend);
-  --world-ink: oklch(0.4 0.14 150);
-  --world-text: var(--mode-give-complement);
+  --world-ink: oklch(0.46 0.09 198);
+  --world-text: var(--mode-lend-complement);
   --world-accent: var(--person-self);
 }
+
 
 /* Trade — apart from the wish/give mixing: orange. */
 [data-world="trade"] {

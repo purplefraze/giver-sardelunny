@@ -433,8 +433,9 @@ function seedDetails(text: string, mi: number, i: number): ItemDetails {
     /* A FLEXIBLE THING DOES NOT CLAIM FIXED DAYS. */
     ...(flexible ? {} : { days: daySets[k % daySets.length]! }),
     ...(flexible ? {} : { time: times[k % times.length]! }),
+    /* NEVER THE SAME WORD TWICE: a place is a place, a frequency is a frequency. */
     where:
-      where === "in person" || where === "nearby pickup"
+      where === "in person" || where === "nearby pickup" || where === "flexible"
         ? (areas[(k + i) % areas.length] ?? where)
         : where,
     cadence,

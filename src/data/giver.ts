@@ -86,7 +86,7 @@ const BASE_MEMBERS: Member[] = [
     world: "giving",
     action: "giving",
     headline: "science tutoring",
-    activity: "giving science tutoring, weekday evenings.",
+    activity: "giving science tutoring, tuesdays 7–9 pm.",
     about:
       "29, about 0.7 km away. high-school chemistry teacher. out on her bike most weekends.",
     age: "29",
@@ -109,7 +109,7 @@ const BASE_MEMBERS: Member[] = [
         "company at the late film",
       ],
       give: [
-        "science tutoring, evenings",
+        "science tutoring",
         "italian conversation hour",
         "sourdough starter, endless",
       ],

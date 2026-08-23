@@ -406,13 +406,19 @@
 }
 
 /* Connection — me + another person came together: purple. */
+/*
+  A CONVERSATION IS THE MEETING OF TWO PEOPLE'S COLOURS, expressed as the two
+  related oranges — the poster's deeper one, the responder's lighter one. No
+  purple and no green live on this screen.
+*/
 [data-world="connection"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-connection);
-  --world-ink: oklch(0.4 0.2 300);
-  --world-text: var(--giver-connection-complement);
-  --world-accent: var(--giver-community);
+  --world-g: var(--convo-poster);
+  --world-ink: var(--convo-poster);
+  --world-text: var(--convo-responder);
+  --world-accent: var(--convo-responder);
 }
+
 
 
 

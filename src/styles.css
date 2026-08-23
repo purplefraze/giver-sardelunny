@@ -153,14 +153,12 @@
      saturated, clean, editorial, playful — never pastel, muted or corporate.
 
      BLUE     = me / the current user, always.
-     HOT PINK = BORROW (and the other person on the asking side).
-     PURPLE   = WISH — and the world a wish / borrow interaction lives in.
-     SEAFOAM  = LEND.
-     GREEN    = GIVE — and the world a give / lend interaction lives in.
-     YELLOW   = the person RECEIVING a give / lend.
-     ORANGE   = the TRADE world and the other person in a trade.
-     RED      = the COMMUNITY world (the big lower loop).
+     RED      = the OTHER person in ANY wish or borrow interaction.
+     YELLOW   = the OTHER person in ANY give, lend or trade interaction.
+     WORLDS:  wish = PURPLE · borrow = HOT PINK · give = GREEN ·
+              lend = SEAFOAM · trade = ORANGE · community = ORANGE.
      Nothing else carries meaning. Every token below resolves to one of these. */
+
   --giver-green: oklch(0.66 0.22 146); /* GREEN — giving, my own world */
   --giver-seafoam: oklch(0.75 0.1 196); /* SEAFOAM — lending (#60C0C0) */
   --giver-purple: oklch(0.55 0.26 300); /* PURPLE — wishing, asking */

@@ -276,12 +276,12 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
       >
         {/* ONE SYSTEM, TWO REGISTERS — exactly as a profile reads: a small
             tracked label, then the statement, then quiet metered lines.
-            COLOUR = MEANING: black voice, green generosity, purple the
-            connection just made, yellow the other person. */}
+            COLOUR = MEANING: black voice, green me and my giving, purple the
+            asking, yellow the person i gave to. */}
         <p className="g-heading" style={{ color: "var(--giver-generosity)" }}>
           your first give
         </p>
-        <p className="g-display mt-4" style={{ color: "var(--giver-participation)" }}>
+        <p className="g-display mt-4" style={{ color: "var(--giver-green)" }}>
           congrats
         </p>
         <p className="g-display-sm mt-6 max-w-[15ch]" style={{ color: "var(--giver-ink)" }}>
@@ -292,7 +292,7 @@ function FirstGenerosity({ username, onDone }: { username: string; onDone: () =>
         <div className="g-rule mt-9 max-w-[24ch] pt-5">
           <p className="g-name max-w-[26ch]" style={{ color: "var(--giver-ink)" }}>
             <span style={{ color: "var(--giver-connection)" }}>50 sparks</span> have now been
-            given to <span style={{ color: "var(--giver-community)" }}>{username}</span>
+            given to <span style={{ color: "var(--person-other-give)" }}>{username}</span>
           </p>
           <p className="g-name mt-2 max-w-[26ch]" style={{ color: "var(--giver-ink)" }}>
             and <span style={{ color: "var(--giver-connection)" }}>50 sparks</span> are yours

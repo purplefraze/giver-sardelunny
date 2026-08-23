@@ -94,12 +94,15 @@ export function FullProfile({
   onBack,
   onOpen,
   onOpenItem,
+  onEdit,
   /** RED when this is me, BLUE when this is somebody else. */
   world = "others",
   focus = null,
 }: {
   member: Member;
   onBack: () => void;
+  /** MY OWN PROFILE IS ALSO HOW I CHANGE IT: touching me opens the same state. */
+  onEdit?: () => void;
   world?: "others" | "me";
   /** Profile-to-profile discovery through completed acts. */
   onOpen?: (id: string) => void;
@@ -176,12 +179,14 @@ export function FullProfile({
       className="relative h-full w-full overflow-y-auto"
       style={{
         background: "var(--world-bg)",
-        /* A PERSON IS NOT A CATEGORY: their page reads in ink, and every colour
-           on it belongs to an actual give, wish, trade or borrow. */
-        color: "var(--giver-ink)",
+        /* MY OWN WORLD IS RED, and my profile reads in it. Somebody else's page
+           reads in ink, and every colour on it belongs to a real activity. */
+        color: mine ? "var(--giver-me)" : "var(--giver-ink)",
       }}
     >
-      <BackArrow onClick={onBack} label={`back to ${member.name}`} sticky />
+      {/* MY OWN PROFILE IS NOT A SEPARATE SCREEN: no exit stage, only the way
+          back out of the G. Somebody else's keeps their name on the way back. */}
+      <BackArrow onClick={onBack} {...(mine ? {} : { label: `back to ${member.name}` })} sticky />
 
       <div className="g-page g-page-top g-page-bottom">
         {/* HEADER — photo, handle, age, gender, distance, member since. */}
@@ -199,7 +204,20 @@ export function FullProfile({
               style={{ background: "var(--giver-ink)", opacity: 0.08 }}
             />
           )}
-          <h1 className="g-display mt-6">{member.username}</h1>
+          {mine && onEdit ? (
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                onEdit();
+              }}
+              className="g-display mt-6 text-left transition-opacity active:opacity-60"
+            >
+              {member.username}
+            </button>
+          ) : (
+            <h1 className="g-display mt-6">{member.username}</h1>
+          )}
           {identity.length ? <p className="g-meta mt-4">{identity.join(" · ")}</p> : null}
           <p className="g-meta mt-1">member of giver since {member.since}</p>
 
@@ -223,16 +241,42 @@ export function FullProfile({
         </header>
 
 
-        <Section title={mine ? "about me" : "about them"}>
+        <Section title={mine ? "" : "about them"}>
           {member.aboutMe ? (
-            <p className="g-lede">{member.aboutMe}</p>
+            mine && onEdit ? (
+              <button
+                type="button"
+                onClick={() => {
+                  buzz();
+                  onEdit();
+                }}
+                className="g-lede block w-full text-left transition-opacity active:opacity-60"
+              >
+                {member.aboutMe}
+              </button>
+            ) : (
+              <p className="g-lede">{member.aboutMe}</p>
+            )
           ) : null}
           {/* THE FUN ANSWERS, ALREADY SENTENCES. No questions, no field labels. */}
           {mine ? (
             <ul className="mt-7 space-y-6">
               {answeredStatements(me.answers, { mine: true }).map((line) => (
-                <li key={line.id} className="g-lede">
-                  {line.line}
+                <li key={line.id}>
+                  {onEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        buzz();
+                        onEdit();
+                      }}
+                      className="g-lede block w-full text-left transition-opacity active:opacity-60"
+                    >
+                      {line.line}
+                    </button>
+                  ) : (
+                    <span className="g-lede">{line.line}</span>
+                  )}
                 </li>
               ))}
             </ul>

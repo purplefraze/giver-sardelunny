@@ -187,8 +187,11 @@ function Index() {
    * alive inside the loop. Forms are never appended beneath the G.
    */
   const [editor, setEditor] = useState<
-    { kind: "about" } | { kind: "category"; category: Category } | null
+    | { kind: "about" }
+    | { kind: "category"; category: Category; side?: BorrowSide }
+    | null
   >(null);
+
 
   /**
    * THE ONE SOURCE OF TRUTH for the toggle: wish | give | trade | borrow.

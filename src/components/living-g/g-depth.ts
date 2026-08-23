@@ -62,6 +62,45 @@ export function anchorOrigin(anchor: GAnchorKey = "middle") {
 }
 
 /**
+ * THE LOOP AS A LENS.
+ *
+ * A depth is entered by looking THROUGH the loop that was touched. The loop's
+ * own negative space is the aperture: at the start of the movement the content
+ * is only visible inside that measured circle, and as the artwork unfurls the
+ * aperture widens with it until it is wider than the screen and the content
+ * simply is the inside of the G. All numbers are measurements of the canonical
+ * path, expressed as percentages of the frame — no geometry is invented.
+ */
+export function anchorLens(anchor: GAnchorKey = "middle") {
+  const centre = anchorOrigin(anchor);
+  const safe = LOOP_SAFE_RADIUS[anchor];
+  /* The aperture is measured across the frame's width so it stays a circle. */
+  const start = (safe / LIVING_G_FRAME.width) * 100;
+  return {
+    ...centre,
+    /* What the eye sees through the loop before the camera moves in. */
+    start: Number(start.toFixed(2)),
+    /* Once unfurled the aperture has passed the corners: no visible edge left. */
+    end: 148,
+  };
+}
+
+/**
+ * PARALLAX. During the movement the content sits a touch further away and
+ * slightly off the aperture's centre, then drifts into place — the camera
+ * travels through the loop rather than the page being swapped underneath it.
+ */
+export const LENS = {
+  /** How much larger the content is while still deep inside the lens. */
+  depth: 0.055,
+  /** How far, in percent of the frame, the camera drifts as it comes level. */
+  drift: 3.4,
+  /** The G's own contour catching the light around the aperture, mid-movement. */
+  rim: 0.5,
+} as const;
+
+
+/**
  * The G's own arcs frame the content, a little more tightly at every depth, so
  * depth is felt as well as seen. Safe-area insets make sure a notch or a
  * gesture bar can never sit on top of what is inside.

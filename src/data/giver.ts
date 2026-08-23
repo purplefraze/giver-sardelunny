@@ -42,6 +42,11 @@ export type Member = {
   byDay: string;
   byNight: string;
   weekend: string;
+  /**
+   * THE FUN QUESTIONS, ANSWERED. Same prompt ids as my own profile, so their
+   * page prints the same kind of sentences about them (see src/data/prompts.ts).
+   */
+  answers?: Record<string, string>;
   /** Bottom loop: what are they doing on Giver? */
   bottom: LoopBlock[];
   /** Extra active items hidden behind the "+N more" cue. */
@@ -94,6 +99,13 @@ const BASE_MEMBERS: Member[] = [
     byDay: "chemistry teacher",
     byNight: "choir soprano",
     weekend: "long bike rides",
+    answers: {
+      happy: "a full bike basket and nowhere to be",
+      animal: "a heron",
+      one-food: "her nonna’s tomato bread",
+      hours: "why baking soda works",
+      dream: "to teach science outdoors, all year",
+    },
     bottom: [
       { text: "currently offering", role: "secondary" },
       { text: "science", role: "primary" },
@@ -153,6 +165,12 @@ const BASE_MEMBERS: Member[] = [
     byDay: "market researcher",
     byNight: "reads tarot",
     weekend: "cold water swims",
+    answers: {
+      lights-up: "cold water at six in the morning",
+      animal: "a seal",
+      bucket-list: "swim between two islands",
+      silly: "naming every stray cat on her street",
+    },
     bottom: [
       { text: "wish", role: "secondary" },
       { text: "need ride", role: "primary" },
@@ -213,6 +231,12 @@ const BASE_MEMBERS: Member[] = [
     byDay: "lighting technician",
     byNight: "vinyl digging",
     weekend: "festivals and fires",
+    answers: {
+      excited: "the moment a room goes dark before a set",
+      animal: "a fox",
+      million: "buy a van and light small festivals for free",
+      hours: "stage lighting and bonfires",
+    },
     bottom: [
       { text: "trading", role: "secondary" },
       { text: "a year's supply", role: "primary" },
@@ -274,6 +298,12 @@ const BASE_MEMBERS: Member[] = [
     byDay: "psychologist",
     byNight: "night runner",
     weekend: "no weekends allowed",
+    answers: {
+      happy: "a quiet hour and a good notebook",
+      animal: "a bear",
+      look-like: "an owl",
+      dream: "to make people less afraid of talking",
+    },
     bottom: [
       { text: "wants to borrow", role: "secondary" },
       { text: "a cigarette", role: "primary" },

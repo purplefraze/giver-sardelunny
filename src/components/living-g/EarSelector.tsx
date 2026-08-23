@@ -20,7 +20,7 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  *
  * TWO MIRRORED PAIRS:
  *   wish   ~10 o'clock  <->  give  ~2 o'clock  (canonical home)
- *   borrow ~8 o'clock   <->  trade ~4 o'clock
+ *   lend    9 o'clock   <->  trade  3 o'clock
  *
  * The S-curve is never a mode destination.
  */
@@ -30,15 +30,15 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12 o'clock, and SEARCH at 6 o'clock (the community,
- * explored). Both are LOCKED until the person has a profile and one active give
- * of their own, so onboarding only ever offers MODES.
+ * activities: GIVER = ME at 12 o'clock, and LEND at 9 o'clock. My G is LOCKED
+ * until the person has discovered their profile, so onboarding only ever offers
+ * the activity seats.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow", "search"] as const;
+export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order. Search is reserved, not built yet. */
-export const FULL_SEATS = ["search", "borrow", "wish", "giver", "give", "trade"] as const;
+/** Every seat on the wire, in travel order (anticlockwise end -> clockwise end). */
+export const FULL_SEATS = ["borrow", "lend", "wish", "giver", "give", "trade"] as const;
 
 
 
@@ -74,28 +74,29 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * leaves it, between roughly 4 o'clock and 6 o'clock. The selector is a bead on
  * that wire: its angle lives on ONE CONTINUOUS LINE that runs from trade (the
  * hard clockwise end, beside one lip of the break) anticlockwise all the way
- * round to search (6 o'clock, the other lip). There is no wrap-around, so the
+ * round to borrow (8 o'clock, the other lip). There is no wrap-around, so the
  * bead can never teleport across the gap, interpolate through empty space, or
  * take the shortest geometric route between two seats.
  *
- *   trade  +30°   hard end — cannot continue clockwise, there is no stroke
+ * THE SIX POSITIONS — THE SOURCE OF TRUTH:
+ *   trade    0°    3 o'clock, right-side middle — hard clockwise end
  *   give   -44°
- *   giver  -90°   12 o'clock
- *   wish   -136°
- *   borrow -210°  (= 8 o'clock)
- *   search -270°  (= 6 o'clock) hard end on the other lip of the break
+ *   giver  -90°    12 o'clock (my g)
+ *   wish  -136°
+ *   lend  -180°    9 o'clock, left-side middle
+ *   borrow -210°  (= 8 o'clock) hard end on the other lip of the break
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  search: rad(-270),
   borrow: rad(-210),
+  lend: rad(-180),
   wish: rad(-136),
   giver: rad(-90),
   give: rad(-44),
-  trade: rad(30),
+  trade: rad(0),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.search;
+const TRACK_MIN = SEAT_ANGLE.borrow;
 const TRACK_MAX = SEAT_ANGLE.trade;
 
 const TAU = Math.PI * 2;
@@ -167,12 +168,12 @@ const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
 /** The locked seat colours, for seats that state a person's history. */
 const MODE_COLOUR: Record<Seat, string> = {
-  giver: "var(--giver-me)",
+  giver: "var(--mode-giver)",
   wish: "var(--mode-wish)",
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
-  search: "var(--person-self)",
+  lend: "var(--mode-lend)",
 
 };
 
@@ -403,7 +404,7 @@ export function EarSelector({
             cx={hint.x}
             cy={hint.y}
             r={told ? 8 : 5}
-            fill={isMe ? "var(--giver-me)" : told ? MODE_COLOUR[m] : "var(--world-g)"}
+            fill={isMe ? "var(--mode-giver)" : told ? MODE_COLOUR[m] : "var(--world-g)"}
             pointerEvents="none"
             style={{
               opacity:

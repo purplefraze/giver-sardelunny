@@ -453,18 +453,18 @@
   --world-accent: var(--person-self);
 }
 
-/* Community — the shared space of other people: yellow. */
+/* Community — the shared space of other people: orange. */
 [data-world="community"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-yellow);
-  --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-yellow-complement);
-  --world-accent: var(--person-self);
+  --world-g: var(--state-community);
+  --world-ink: oklch(0.46 0.16 48);
+  --world-text: var(--giver-orange-complement);
+  --world-accent: var(--person-self-community);
 }
 
 /* ---- A CONNECTION LIVES IN ITS RELATIONSHIP STATE ----
-   asking together = purple, offering together = green, trading = orange.
-   The two speakers inside it are blue (me) and red / yellow (them). */
+   asking together = purple, giving together = green, trading = blue + orange.
+   The two speakers inside it are blue (me) and pink / yellow / orange (them). */
 [data-world="connection"],
 [data-world="connection-wish"] {
   --world-bg: var(--giver-paper);
@@ -486,12 +486,13 @@
 
 [data-world="connection-trade"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--state-trade);
-  --world-ink: oklch(0.44 0.16 48);
-  --world-text: var(--giver-orange-complement);
-  --world-accent: var(--person-self);
+  --world-g: var(--person-self); /* trade reads blue + orange */
+  --world-ink: oklch(0.4 0.17 258);
+  --world-text: var(--giver-blue-complement);
+  --world-accent: var(--person-other-trade);
   --convo-other: var(--person-other-trade);
 }
+
 
 
 

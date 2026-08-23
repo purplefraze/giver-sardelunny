@@ -11,6 +11,7 @@ import {
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { buzz } from "@/lib/haptics";
+import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 
 /**
  * EVERYTHING I AM IN THE MIDDLE OF — and everything that actually happened.
@@ -70,7 +71,10 @@ export function ConnectionsList({
                   {line(c.itemId, c.type)}
                 </span>
                 <span className="g-meta mt-3 block">
-                  {them ? them.username : "someone"} · {STATE_WORD[c.state]}
+                  <span style={{ color: OTHER_PERSON_COLOUR[exchangeState(c.type)] }}>
+                    {them ? them.username : "someone"}
+                  </span>{" "}
+                  · {STATE_WORD[c.state]}
                   {c.state === "awaiting" && c.claimedBy !== ME_ID
                     ? " · needs your answer"
                     : ""}

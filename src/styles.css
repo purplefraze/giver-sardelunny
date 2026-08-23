@@ -158,7 +158,8 @@
      SEAFOAM  = LEND.
      GREEN    = GIVE — and the world a give / lend interaction lives in.
      YELLOW   = the person RECEIVING a give / lend.
-     ORANGE   = COMMUNITY, and the other person in a TRADE.
+     ORANGE   = the TRADE world and the other person in a trade.
+     RED      = the COMMUNITY world (the big lower loop).
      Nothing else carries meaning. Every token below resolves to one of these. */
   --giver-green: oklch(0.66 0.22 146); /* GREEN — giving, my own world */
   --giver-seafoam: oklch(0.75 0.1 196); /* SEAFOAM — lending (#60C0C0) */
@@ -166,18 +167,19 @@
   --giver-pink: oklch(0.65 0.21 4); /* HOT PINK — borrowing (#E85088) */
   --giver-blue: oklch(0.58 0.2 250); /* BLUE — me, the current user */
   --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the receiving person */
-  --giver-orange: oklch(0.7 0.2 46); /* ORANGE — community, trade partner */
+  --giver-orange: oklch(0.7 0.2 46); /* ORANGE — the trade world + trade partner */
+  --giver-community-red: oklch(0.57 0.24 27); /* RED — the community world */
   --giver-red: var(--giver-pink); /* legacy: the asking other person */
 
   /* THE RELATIONSHIP STATES a conversation can inhabit. */
   --state-wish: var(--giver-purple);
   --state-give: var(--giver-green);
   --state-trade: var(--giver-orange); /* trade surfaces: blue me + orange them */
-  --state-community: var(--giver-orange);
+  --state-community: var(--giver-community-red);
 
   /* THE PEOPLE. I am always blue; the other person takes the social state. */
   --person-self: var(--giver-blue);
-  --person-self-community: oklch(0.52 0.22 262); /* me inside orange community */
+  --person-self-community: oklch(0.52 0.22 262); /* me inside the red community */
   --person-other-wish: var(--giver-pink); /* they are asking */
   --person-other-give: var(--giver-yellow); /* they are receiving */
   --person-other-trade: var(--giver-orange); /* trade partner */
@@ -205,19 +207,21 @@
   --giver-red-complement: var(--giver-pink-complement);
   --giver-yellow-complement: oklch(0.52 0.27 285); /* yellow -> electric violet */
   --giver-orange-complement: oklch(0.52 0.27 265); /* orange -> royal blue */
+  --giver-community-red-complement: oklch(0.72 0.15 190); /* red -> seafoam */
 
   --giver-me-complement: var(--giver-green-complement);
   --giver-others-complement: var(--giver-blue-complement);
-  --giver-community-complement: var(--giver-orange-complement);
+  --giver-community-complement: var(--giver-community-red-complement);
   --giver-connection-complement: var(--giver-purple-complement);
   --giver-participation-complement: var(--giver-orange-complement);
   --giver-generosity-complement: var(--giver-green-complement);
 
 
   /* ---- LIVING G MODE COLOURS — THE SIX TOGGLE POSITIONS ----
-       12 o'clock = my g (blue) · give = bright green · wish = dreamy purple ·
-       borrow = hot pink · 9 o'clock = lend (seafoam) ·
-       3 o'clock = trade (orange). These six are the source of truth. */
+       EXACT CLOCK SEATS: 12:00 my g (blue) · 1:30 give (bright green) ·
+       3:00 lend (seafoam) · 4:30 trade (orange) · 10:45 wish (purple) ·
+       9:30 borrow (hot pink). COMMUNITY is not a seat: it is the big lower
+       loop, and its world is RED. These are the source of truth. */
   --mode-giver: var(--person-self); /* my g at 12 o'clock — blue */
   --mode-give: var(--giver-green); /* bright green */
   --mode-lend: var(--giver-seafoam); /* seafoam / turquoise — lending */
@@ -468,15 +472,16 @@
   --world-accent: var(--person-self);
 }
 
-/* Community — the big surrounding loop: an orange environment around a blue me. */
+/* Community — the BIG LOWER LOOP: a red environment around a blue me. */
 [data-world="community"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--person-self-community);
   --world-selector: var(--state-community);
-  --world-ink: oklch(0.46 0.16 48);
-  --world-text: var(--giver-orange-complement);
+  --world-ink: oklch(0.5 0.21 27);
+  --world-text: var(--giver-community-red-complement);
   --world-accent: var(--state-community);
 }
+
 
 
 /* ---- A CONNECTION LIVES IN ITS RELATIONSHIP STATE ----

@@ -176,13 +176,10 @@ export function AboutForm({
               selectAll={!named}
               autoEdit={onboarding && !named}
 
-              note={
-                named && handleState.state === "taken"
-                  ? HANDLE_MESSAGE.taken
-                  : named && handleState.state === "free"
-                    ? HANDLE_MESSAGE.free
-                    : "tap to change"
-              }
+              /* THE ONLY THING WORTH SAYING IS WHEN A NAME CANNOT BE HAD. */
+              {...(named && handleState.state === "taken"
+                ? { note: HANDLE_MESSAGE.taken }
+                : {})}
             />
 
             {/* BIRTHDAY — once, here, typed. Nowhere else in the app. */}
@@ -196,12 +193,7 @@ export function AboutForm({
           </div>
         </div>
 
-        {/* THE ONE TEACHING LINE. It shows how, once, then never again. */}
-        {!taught ? (
-          <p className="g-body mt-6" style={{ opacity: 0.6 }}>
-            tap anything on your profile to change it — it saves itself.
-          </p>
-        ) : null}
+
 
         {photo.failed ? (
           <p className="g-body mt-4" style={{ color: "var(--giver-me)" }}>

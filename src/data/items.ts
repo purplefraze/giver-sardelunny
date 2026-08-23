@@ -420,16 +420,17 @@ function seedDetails(text: string, mi: number, i: number): ItemDetails {
   const areas = ["west end", "north side", "nearby pickup", "in person"];
   /* A WINDOW, NOT A VAGUE WORD: "evenings" alone forces a message just to find
      out when. These are fixture values and are editable in admin. */
-  const times = ["evenings, 7–9 pm", "7–9 pm", "afternoons, 2–4 pm", "mornings, 9–11 am"];
+  const times = ["7–9 pm", "6–8 pm", "2–4 pm", "9–11 am"];
 
-  const spans = ["one time", "recurring", "flexible"];
+  /* A REAL FREQUENCY, not a status word. */
+  const spans = ["one time", "weekly", "flexible"];
   const k = (mi + i) % 4;
   const wheres = WHERE_FOR[kind];
   const where = wheres[k % wheres.length]!;
   const cadence = spans[(mi + i) % spans.length]!;
-  const flexible = where === "flexible" && cadence === "recurring";
+  const flexible = where === "flexible" && cadence === "flexible";
   return {
-    /* A FLEXIBLE, RECURRING THING DOES NOT CLAIM FIXED DAYS. */
+    /* A FLEXIBLE THING DOES NOT CLAIM FIXED DAYS. */
     ...(flexible ? {} : { days: daySets[k % daySets.length]! }),
     ...(flexible ? {} : { time: times[k % times.length]! }),
     where:
@@ -442,6 +443,57 @@ function seedDetails(text: string, mi: number, i: number): ItemDetails {
       : {}),
   };
 }
+
+/**
+ * THE FLAGSHIP SAMPLE GIVES ARE WRITTEN BY HAND, not derived, so the demo reads
+ * like a real posting: an explicit window, a real frequency, a real place.
+ * A developer can still edit any of these through the admin item editor — the
+ * edit flag then stops them being re-derived.
+ */
+const FIXTURE_DETAILS: Record<string, ItemDetails> = {
+  "seed-giulia-give-0": {
+    days: ["tues"],
+    time: "7–9 pm",
+    duration: "60 min",
+    cadence: "weekly",
+    where: "west end",
+    extras: { subject: "chemistry and physics", "level / grade": "high school" },
+  },
+  "seed-giulia-give-1": {
+    days: ["thurs"],
+    time: "6–7 pm",
+    duration: "1 hour",
+    cadence: "weekly",
+    where: "her kitchen table, west end",
+  },
+  "seed-sofia-give-0": {
+    days: ["sun"],
+    time: "2–5 pm",
+    duration: "45 min",
+    cadence: "weekly",
+    where: "north side",
+  },
+  "seed-robin-give-0": {
+    days: ["fri", "sat"],
+    time: "6–11 pm",
+    duration: "an evening",
+    cadence: "one time",
+    where: "your place",
+  },
+  "seed-marcus-give-0": {
+    days: ["mon", "wed"],
+    time: "5–7 pm",
+    duration: "1 hour",
+    cadence: "weekly",
+    where: "the park or a phone call",
+  },
+};
+
+/** The written fixture wins; everything else is derived. */
+const detailsFor = (id: string, text: string, mi: number, i: number): ItemDetails =>
+  FIXTURE_DETAILS[id] ?? seedDetails(text, mi, i);
+
+
 
 
 /**

@@ -6,7 +6,7 @@ import { G_FONT } from "@/components/living-g/g-type";
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
 
 import type { RegionKey } from "@/components/living-g/LivingG";
-import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES } from "@/components/living-g/EarSelector";
 import { buzz, haptics } from "@/lib/haptics";
 
 /**

@@ -213,8 +213,8 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-    /* MY G IS A SEAT; SEARCH IS RESERVED AND UNREACHABLE, so it can never be
-     held here. */
+    /* THE SIX FIXED SEATS: my g (12) · give · wish · borrow · lend (9) ·
+     trade (3). */
   const [seat, setSeatState] = useState<ActivitySeat | "giver">("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
@@ -418,7 +418,7 @@ function Index() {
   /**
    * MY G AT 12 O'CLOCK, ONCE IT HAS BEEN FOUND. Before the discovery there is
    * nothing there; afterwards the seat exists permanently, whether or not a
-   * single field was ever filled in. SEARCH (6 o'clock) stays unbuilt.
+   * single field was ever filled in. LEND sits at 9 o'clock, TRADE at 3.
    */
   const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
     ? (["giver", ...ACTIVITY_SEATS] as const)

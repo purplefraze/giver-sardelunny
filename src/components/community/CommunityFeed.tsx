@@ -13,6 +13,7 @@ import { activityStatus } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { buzz } from "@/lib/haptics";
+import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 
 /**
  * THE COMMUNITY IS ONE MIXED FLOW OF REAL ACTIVITY.
@@ -137,7 +138,7 @@ export function CommunityFeed({
               type="button"
               onClick={() => setSort(s)}
               className={sort === s ? "opacity-100" : undefined}
-              style={sort === s ? { color: "var(--giver-others)" } : undefined}
+              style={sort === s ? { color: "var(--person-self)" } : undefined}
             >
               {s}
             </button>
@@ -189,7 +190,7 @@ export function CommunityFeed({
                     if (owner) onOpenProfile?.(owner.id);
                   }}
                   className="font-black underline decoration-current/40 underline-offset-4"
-                  style={{ color: "var(--giver-others)" }}
+                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
                 >
                   {owner ? owner.username : "someone"}
                 </button>

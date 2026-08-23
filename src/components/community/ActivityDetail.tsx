@@ -19,6 +19,7 @@ import { useMemberEdits } from "@/hooks/use-member-edits";
 import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemFacts, itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
+import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 
 
 /**
@@ -136,7 +137,7 @@ export function ActivityDetail({
               onOpenProfile?.(owner.id);
             }}
             className="font-black underline decoration-current/40 underline-offset-4"
-            style={{ color: "var(--giver-others)" }}
+            style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
           >
             {owner.username}
           </button>
@@ -180,7 +181,10 @@ export function ActivityDetail({
             />
           )}
           <span className="min-w-0">
-            <span className="g-name block" style={{ color: "var(--giver-others)" }}>
+            <span
+              className="g-name block"
+              style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
+            >
               {owner.username}
             </span>
             <span className="g-meta mt-1 block opacity-55">
@@ -250,7 +254,7 @@ export function ActivityDetail({
               myProfileStore.useSparkle(item.id);
             }}
             className="text-[12px] font-black lowercase tracking-[0.26em] disabled:opacity-25"
-            style={{ color: "var(--giver-participation)" }}
+            style={{ color: "var(--giver-sparkles)" }}
           >
             {item.boostCount > 0 ? `sparkled ×${item.boostCount}` : "sparkle this"}
           </button>

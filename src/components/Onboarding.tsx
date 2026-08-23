@@ -30,12 +30,13 @@ const CHOICE_SEAT: Record<Member["world"], Mode> = {
   borrowing: "borrow",
 };
 
+/* THE OTHER PERSON WEARS THE COLOUR OF WHAT THEY ARE DOING: yellow when they
+   are offering, red when they are asking, orange when they are trading. */
 const ROLE_COLOUR: Record<Member["world"], string> = {
-  /* ANOTHER PERSON IS YELLOW — blue is reserved for borrow, always. */
-  giving: "var(--giver-community)",
-  wishing: "var(--giver-community)",
-  trading: "var(--giver-community)",
-  borrowing: "var(--giver-community)",
+  giving: "var(--person-other-give)",
+  wishing: "var(--person-other-wish)",
+  trading: "var(--person-other-trade)",
+  borrowing: "var(--person-other-wish)",
 };
 
 export function Onboarding({

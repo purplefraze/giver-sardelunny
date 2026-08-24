@@ -451,13 +451,15 @@
   --world-accent: var(--person-self);
 }
 
-/* Community — the shared space of other people: yellow. */
+/* Community — the big lower loop: RED + YELLOW together. Red leads the G,
+   yellow is its inseparable second colour (type + accent). */
 [data-world="community"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-yellow);
-  --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-yellow-complement);
-  --world-accent: var(--person-self);
+  --world-g: var(--giver-community);
+  --world-g-second: var(--giver-community-second);
+  --world-ink: oklch(0.46 0.22 26);
+  --world-text: var(--giver-community-second);
+  --world-accent: var(--giver-community-second);
 }
 
 /* ---- A CONNECTION LIVES IN ITS RELATIONSHIP STATE ----

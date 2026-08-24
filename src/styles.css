@@ -184,7 +184,10 @@
   /* Me / others / community, expressed in the new system. */
   --giver-me: var(--giver-blue); /* MY G — always my vibrant blue */
   --giver-others: var(--person-self); /* a person acting, in blue */
-  --giver-community: var(--giver-yellow); /* other people, collectively */
+  /* COMMUNITY = RED + YELLOW TOGETHER. The big lower loop is the community
+     world: red leads it, yellow is its inseparable second colour. */
+  --giver-community: var(--giver-red);
+  --giver-community-second: var(--giver-yellow);
   --giver-connection: var(--state-wish);
   --giver-participation: var(--state-trade);
   --giver-generosity: var(--state-give);
@@ -197,12 +200,11 @@
   --giver-yellow-complement: oklch(0.52 0.27 285); /* yellow -> electric violet */
   --giver-orange-complement: oklch(0.52 0.27 265); /* orange -> royal blue */
 
-  --giver-me-complement: var(--giver-green-complement);
+  --giver-me-complement: var(--giver-blue-complement);
   --giver-others-complement: var(--giver-blue-complement);
-  --giver-community-complement: var(--giver-yellow-complement);
-  --giver-connection-complement: var(--giver-purple-complement);
-  --giver-participation-complement: var(--giver-orange-complement);
-  --giver-generosity-complement: var(--giver-green-complement);
+  /* Community type sits in its own second colour: yellow on red. */
+  --giver-community-complement: var(--giver-community-second);
+
 
   /* ---- LIVING G MODE COLOURS ----
        give / lend = green (offering), wish / borrow = purple (asking),

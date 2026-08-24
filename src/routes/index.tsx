@@ -691,7 +691,9 @@ function Index() {
               else if (id === "locked") setLocked(false);
             }}
             slots={[
-              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */
+              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question —
+                 and, when a give is typed but the account cannot publish it
+                 yet, it says so and leads to the one place that fixes it. */
               {
                 id: "locked",
                 open: locked,
@@ -699,6 +701,15 @@ function Index() {
                 world: "community",
                 children: locked ? (
                   <CommunityLocked
+                    {...(publishBlocked
+                      ? {
+                          blocked: publishBlocked,
+                          onFinishAccount: () => {
+                            setLocked(false);
+                            setEditor({ kind: "about" });
+                          },
+                        }
+                      : {})}
                     onGive={() => {
                       setLocked(false);
                       setSeat("give");
@@ -708,6 +719,7 @@ function Index() {
                   />
                 ) : null,
               },
+
 
               /* FIRST-TIME EXPLANATION -> straight into my <type>. */
               {

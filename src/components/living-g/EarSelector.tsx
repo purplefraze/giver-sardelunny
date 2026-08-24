@@ -173,9 +173,10 @@ const MODE_COLOUR: Record<Seat, string> = {
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
-  search: "var(--person-self)",
+  lend: "var(--mode-lend)",
 
 };
+
 
 
 export function EarSelector({

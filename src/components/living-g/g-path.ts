@@ -9,12 +9,15 @@ export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
 /**
  * The FRAME: the artwork's box plus the room the mode selector's assembly needs
  * across its ENTIRE travel around the middle loop (ring centre orbit radius 300
- * about (272,298), ring outer radius 79 → x -107..651, y -81..). The frame is
- * kept SYMMETRIC about the artwork's own centre line (x = 288) so centring the
- * frame also centres the canonical G horizontally. Nothing decorative lives
- * here: every extra unit shrinks the G on screen.
+ * about (272,298), ring outer radius 79 → x -107..651, y -81..677).
+ *
+ * THE FRAME IS THE THING THAT MUST FIT THE SCREEN. It is measured to the real
+ * travel extents and nothing more — no symmetric padding, no decoration —
+ * because <GStage> sizes THIS box to the viewport so no seat of the toggle can
+ * ever be clipped by an edge, on any phone.
  */
-export const LIVING_G_FRAME = { x: -107, y: -81, width: 790, height: 1214 } as const;
+export const LIVING_G_FRAME = { x: -107, y: -81, width: 758, height: 1214 } as const;
+
 
 
 /** Path space (after the flip transform) */

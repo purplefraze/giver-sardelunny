@@ -71,34 +71,33 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
  * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN where the spine
- * leaves it. The selector is a bead on that wire: its angle lives on ONE
- * CONTINUOUS LINE that runs from trade (the hard clockwise end) anticlockwise
- * all the way round to borrow (the other lip). There is no wrap-around, so the
- * bead can never teleport across the gap.
+ * leaves it, between roughly 4 o'clock and 6 o'clock. The selector is a bead on
+ * that wire: its angle lives on ONE CONTINUOUS LINE that runs from trade (the
+ * hard clockwise end, beside one lip of the break) anticlockwise all the way
+ * round to borrow (8 o'clock, the other lip). There is no wrap-around, so the
+ * bead can never teleport across the gap, interpolate through empty space, or
+ * take the shortest geometric route between two seats.
  *
- * THE SIX FIXED CLOCK POSITIONS — THE SOURCE OF TRUTH. Deliberately asymmetric;
- * never redistributed evenly or derived from the category list.
- *   giver  12:00  (-90°)  my g
- *   give    1:30  (-45°)
- *   lend    3:00  (  0°)
- *   trade   4:30  ( 45°)  hard clockwise end
- *   wish   10:45  (-127.5°)
- *   borrow  9:30  (-165°)  hard anticlockwise end
- * COMMUNITY is not a seat: it is the big bottom loop itself.
+ * THE SIX POSITIONS — THE SOURCE OF TRUTH:
+ *   trade    0°    3 o'clock, right-side middle — hard clockwise end
+ *   give   -44°
+ *   giver  -90°    12 o'clock (my g)
+ *   wish  -136°
+ *   lend  -180°    9 o'clock, left-side middle
+ *   borrow -210°  (= 8 o'clock) hard end on the other lip of the break
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-165),
-  wish: rad(-127.5),
+  borrow: rad(-210),
+  lend: rad(-180),
+  wish: rad(-136),
   giver: rad(-90),
-  give: rad(-45),
-  lend: rad(0),
-  trade: rad(45),
+  give: rad(-44),
+  trade: rad(0),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
 const TRACK_MIN = SEAT_ANGLE.borrow;
 const TRACK_MAX = SEAT_ANGLE.trade;
-
 
 const TAU = Math.PI * 2;
 
@@ -446,14 +445,14 @@ export function EarSelector({
           width={STEM_TO - STEM_FROM}
           height={STEM_HALF * 2}
           rx={STEM_HALF * 0.5}
-          fill="var(--world-selector)"
+          fill="var(--world-g)"
         />
         <circle
           cx={TRACK_C.x + TRACK_R}
           cy={TRACK_C.y}
           r={RING_MID}
           fill="none"
-          stroke="var(--world-selector)"
+          stroke="var(--world-g)"
           strokeWidth={RING_W}
         />
       </g>
@@ -536,7 +535,7 @@ export function EarSelector({
         y={ear.y}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="var(--world-selector)"
+        fill="var(--world-g)"
         className="font-black lowercase"
         pointerEvents="none"
         style={{

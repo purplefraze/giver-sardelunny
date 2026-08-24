@@ -3,13 +3,17 @@ import type { ItemType } from "@/data/items";
 /**
  * THE ONE PLACE COLOUR MEANING IS RESOLVED FROM AN EXCHANGE.
  *
- * GREEN  = me, my world — and the shared state of giving and lending.
- * PURPLE = wishing and borrowing: somebody is asking.
- * BLUE   = the initiating person in an interaction (normally me).
- * RED    = the other person on the wish / borrow side.
- * YELLOW = the other person on the give / lend side.
- * ORANGE = trade, kept apart from the wish/give mixing entirely.
+ * BLUE            = ME, always. My identity never changes colour.
+ * PURPLE          = wish.
+ * HOT PINK        = borrow.
+ * GREEN           = give.
+ * SEAFOAM         = lend.
+ * ORANGE          = trade.
+ * RED + YELLOW    = THE COMMUNITY, as a pair. The big lower loop of the
+ *   Living G is the community world: red leads it, yellow is its second
+ *   colour. Yellow is NOT "the person receiving" — it belongs to community.
  */
+
 
 export type ExchangeState = "wish" | "give" | "trade";
 
@@ -72,3 +76,15 @@ export function tradePerspective(lead: TradeLead) {
     : { lead: STATE_COLOUR.trade, counter: SELF_COLOUR };
 }
 
+
+/**
+ * THE COMMUNITY IS RED + YELLOW. The big lower loop of the Living G is the
+ * community world, and it always carries both colours: red leads, yellow is
+ * the inseparable second colour used for its type and accents.
+ */
+export const COMMUNITY_COLOUR = "var(--giver-community)";
+export const COMMUNITY_SECOND_COLOUR = "var(--giver-community-second)";
+export const COMMUNITY_PAIR = {
+  lead: COMMUNITY_COLOUR,
+  second: COMMUNITY_SECOND_COLOUR,
+} as const;

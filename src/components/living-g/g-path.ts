@@ -112,7 +112,14 @@ export const EAR_GEOMETRY = {
   gap: 24.5,
   cutR: 100,
   cutStemWidth: 54,
+  /**
+   * The invisible TOUCH disc that travels with the ring: generously bigger than
+   * the ring itself, and the value LIVING_G_FRAME is measured against, so the
+   * whole tappable area is always inside the viewport.
+   */
+  gripR: 96,
 } as const;
+
 
 /**
  * THE STATIC EAR CUT — one clean angular wedge around the canonical ear and its

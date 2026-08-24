@@ -200,8 +200,8 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-  /* EVERY SEAT ON THE WIRE IS REACHABLE — MY G (4:00), LEND (3:00), GIVE (2:00),
-     WISH (10:00), BORROW (9:00), TRADE (6:00). */
+  /* EVERY SEAT ON THE WIRE IS REACHABLE — MY G (12:00), LEND (3:00), GIVE (1:30),
+     WISH (10:45), BORROW (9:30), TRADE (4:30). */
   const [seat, setSeatState] = useState<Seat>("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
@@ -380,7 +380,7 @@ function Index() {
 
   /**
    * THE TOGGLE IS THE WORLD: wish | give | trade | borrow | lend — plus MY G,
-   * the destination seat at 4 o'clock. `activity` is the item world, and it is
+   * the destination seat at 12:00. `activity` is the item world, and it is
    * null while the toggle sits on My G. LEND is the offering side of borrowing,
    * so its items are borrows held from the lending side.
    */
@@ -412,8 +412,8 @@ function Index() {
   };
 
   /**
-   * EVERY SEAT PRESENT: the four activity modes plus LEND at 3 o'clock always
-   * exist on the wire; MY G at 4 o'clock appears once it has been found.
+   * EVERY SEAT PRESENT: the four activity modes plus LEND at 3:00 always
+   * exist on the wire; MY G at 12:00 appears once it has been found.
    */
   const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
     ? (["giver", "lend", ...MODES_ONLY] as const)

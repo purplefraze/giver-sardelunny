@@ -18,11 +18,10 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * cut in <LivingG> (see EAR_GEOMETRY), so the rim underneath stays a perfectly
  * smooth curve in every mode.
  *
- * TWO MIRRORED PAIRS:
- *   wish   ~10 o'clock  <->  give  ~2 o'clock  (canonical home)
- *   borrow ~8 o'clock   <->  trade ~4 o'clock
+ * THE CLOCK MAP (spatial), read around the middle loop:
+ *   borrow 9:30 · wish 10:45 · MY G 12:00 · give 1:30 · lend 3:00 · trade 4:30
  *
- * The S-curve is never a mode destination.
+ * The S-curve is never a mode destination, and the big lower loop is COMMUNITY.
  */
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
@@ -30,15 +29,15 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 4 o'clock, and LEND at 3 o'clock. Both are LOCKED
- * until the person has a profile and one active give of their own, so
- * onboarding only ever offers MODES.
+ * activities: GIVER = ME at 12:00, and LEND at 3:00. Both are LOCKED until the
+ * person has a profile and one active give of their own, so onboarding only
+ * ever offers MODES.
  */
 export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order. Lend is reserved, not built yet. */
-export const FULL_SEATS = ["trade", "borrow", "wish", "give", "lend", "giver"] as const;
+/** Every seat on the wire, in travel order (borrow 9:30 → trade 4:30). */
+export const FULL_SEATS = ["borrow", "wish", "giver", "give", "lend", "trade"] as const;
 
 
 
@@ -73,30 +72,30 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 /**
  * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN where the spine
  * leaves it. The selector is a bead on that wire: its angle lives on ONE
- * CONTINUOUS LINE that runs from trade (6 o'clock, one lip of the break)
- * anticlockwise round to my g (4 o'clock, the other lip). There is no
- * wrap-around, so the bead can never teleport across the gap.
+ * CONTINUOUS LINE that runs from borrow (9:30, one end) clockwise round the top
+ * to trade (4:30, the other end). There is no wrap-around, so the bead can
+ * never teleport across the gap.
  *
- * THE SIX FIXED SEATS (12 o'clock stays deliberately EMPTY):
- *   trade  -270°  =  6 o'clock  hard end
- *   borrow -180°  =  9 o'clock
- *   wish   -120°  = 10 o'clock
- *   give    -30°  =  2 o'clock
- *   lend      0°  =  3 o'clock
- *   giver   +30°  =  4 o'clock  hard end — MY G
+ * THE SIX FIXED CLOCK SEATS — THE SPATIAL MAP (source of truth):
+ *   borrow  9:30  = -165°    hard end   (upper-left)
+ *   wish   10:45  = -127.5°             (upper-left)
+ *   giver  12:00  =  -90°               MY G, the top
+ *   give    1:30  =  -45°              (upper-right)
+ *   lend    3:00  =    0°              (right)
+ *   trade   4:30  =   45°    hard end  (lower-right)
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  trade: rad(-270),
-  borrow: rad(-180),
-  wish: rad(-120),
-  give: rad(-30),
+  borrow: rad(-165),
+  wish: rad(-127.5),
+  giver: rad(-90),
+  give: rad(-45),
   lend: rad(0),
-  giver: rad(30),
+  trade: rad(45),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.trade;
-const TRACK_MAX = SEAT_ANGLE.giver;
+const TRACK_MIN = SEAT_ANGLE.borrow;
+const TRACK_MAX = SEAT_ANGLE.trade;
 
 
 const TAU = Math.PI * 2;

@@ -76,3 +76,15 @@ export function tradePerspective(lead: TradeLead) {
     : { lead: STATE_COLOUR.trade, counter: SELF_COLOUR };
 }
 
+
+/**
+ * THE COMMUNITY IS RED + YELLOW. The big lower loop of the Living G is the
+ * community world, and it always carries both colours: red leads, yellow is
+ * the inseparable second colour used for its type and accents.
+ */
+export const COMMUNITY_COLOUR = "var(--giver-community)";
+export const COMMUNITY_SECOND_COLOUR = "var(--giver-community-second)";
+export const COMMUNITY_PAIR = {
+  lead: COMMUNITY_COLOUR,
+  second: COMMUNITY_SECOND_COLOUR,
+} as const;

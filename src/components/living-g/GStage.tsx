@@ -1,4 +1,10 @@
-import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
+import {
+  LIVING_G_BOX,
+  LIVING_G_FRAME,
+  STAGE_OVERDRAW,
+  STAGE_PAN_VAR,
+  STAGE_WINDOW,
+} from "./g-path";
 
 /**
  * THE ONE canonical stage for every full-screen Living G.
@@ -8,11 +14,11 @@ import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
  * the persistent workspace) mounts this stage and inherits the exact same
  * artwork dimensions at a given viewport.
  *
- * The stage measures the ARTWORK — the canonical G silhouette — not the frame.
- * The frame is wider/taller only so the mode selector's full travel can never
- * clip; that overflow is allowed to bleed past the viewport and NEVER changes
- * the artwork's size or its horizontal centring, because the frame is symmetric
- * about the artwork's own centre line.
+ * THE WORLD IS SIZED FIRST. The stage measures the ARTWORK — the canonical G
+ * silhouette — against the screen, and the frame's extra room for the selector's
+ * travel is simply allowed to bleed past the edges. Sizing the whole envelope
+ * instead would cost the world a third of its width on a phone; keeping the
+ * toggles reachable is the camera's job, not the world's (see stagePanPercent).
  */
 const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
 
@@ -27,16 +33,18 @@ export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 export const CTA_BAND = "2.6rem";
 
 /**
- * THE FRAME FITS THE SCREEN — ALWAYS, ON EVERY PHONE.
+ * THE WORLD FILLS THE PHONE.
  *
- * The sized box is the FRAME (artwork + the selector's full travel), never the
- * artwork alone: that is the one arrangement in which no toggle seat, and no
- * intermediate position during a drag, can be clipped by a viewport edge.
- * Width comes from the real viewport with a comfortable margin; height comes
- * from --app-h (a measured height) so a collapsing address bar cannot resize
- * the artwork mid-animation.
+ * Width: the artwork takes `artworkFit` of the screen, so the sized box — which
+ * is the drawing surface, not the artwork — is that much wider again.
+ * Height: bounded by --app-h (a measured height) so a collapsing address bar
+ * cannot resize the artwork mid-animation. On tall/narrow phones width wins and
+ * the world is as big as the glass allows; on short/wide screens height wins and
+ * the whole frame, selector travel included, fits with room to spare.
  */
-const CANONICAL_WIDTH = `min(95%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.995 * ${FRAME_ASPECT.toFixed(5)}))`;
+const WIDTH_LIMIT = `${(STAGE_WINDOW.artworkFit * STAGE_OVERDRAW * 100).toFixed(3)}%`;
+const HEIGHT_LIMIT = `calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.995 * ${FRAME_ASPECT.toFixed(5)})`;
+const CANONICAL_WIDTH = `min(${WIDTH_LIMIT}, ${HEIGHT_LIMIT})`;
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (
@@ -47,15 +55,18 @@ export function GStage({ children }: { children: React.ReactNode }) {
       style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
     >
       <div
-        // EXPLICIT centring, not flex alignment: the frame is sized to fit
-        // inside the viewport, and left/translate pins its centre line to the
-        // screen's centre line while shrink-0 + min-width make shrinking
-        // impossible.
-        className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto -translate-x-1/2"
+        // EXPLICIT centring, not flex alignment: left/translate pins the frame's
+        // centre line to the screen's centre line, while shrink-0 + min-width
+        // make shrinking impossible. The pan rides in the SAME transform, in
+        // percentages of this box, so the camera can slide the world sideways
+        // just far enough to bring a live toggle inside the glass.
+        className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto"
         style={{
           width: CANONICAL_WIDTH,
           minWidth: CANONICAL_WIDTH,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
+          transform: `translateX(calc(-50% + var(${STAGE_PAN_VAR}, 0%)))`,
+          transition: "transform 140ms cubic-bezier(0.22, 0.9, 0.24, 1)",
         }}
       >
         {children}
@@ -63,4 +74,3 @@ export function GStage({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-

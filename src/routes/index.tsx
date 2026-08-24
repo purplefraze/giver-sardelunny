@@ -362,6 +362,14 @@ function Index() {
    * once during onboarding.
    */
   const canCommunity = hasActiveGive(items);
+  /**
+   * A TYPED GIVE THAT CANNOT PUBLISH YET IS NOT A LOCKED COMMUNITY — it is an
+   * unfinished account. The door needs to know the difference, or it would send
+   * the person back into the same form for ever.
+   */
+  const publishBlocked =
+    !canCommunity && !firstArrivalPending ? (myProfileStore.canPublish().say ?? null) : null;
+
 
   /* THE KEY TURNING is worth exactly one moment, and never repeats. */
   useEffect(() => {

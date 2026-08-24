@@ -88,7 +88,8 @@ import type { Currency } from "@/data/ledger";
 import { World } from "@/components/World";
 import { DevControls } from "@/components/DevControls";
 import { lifecycleStore } from "@/data/lifecycle";
-import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
+import { removeLegacyAutomaticProfile, replayOnboarding } from "@/data/dev-fixture";
+import { consumeOnboardingRequest } from "@/lib/preview-mode";
 import { initializeFirstUse } from "@/data/first-use";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
@@ -174,6 +175,15 @@ function Index() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     setHydrated(true);
+    /* AN EXPLICIT WAY BACK TO THE WELCOME. ?onboarding=1 (or #onboarding) puts
+       the person at the very first frame of the opening again, without touching
+       the sample community. */
+    if (consumeOnboardingRequest()) {
+      replayOnboarding();
+      setReplaying(true);
+      setSessionEntered(false);
+      return;
+    }
     /* Restore the inherited first-use mode before the empty G is first shown. */
     const remembered = readFirstUseSeat();
     if (remembered && !lifecycleStore.get().profileSetupCompletedAt) {
@@ -182,7 +192,10 @@ function Index() {
   }, []);
 
   const [sessionEntered, setSessionEntered] = useState(false);
-  const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
+  /** A requested replay outranks any remembered "onboarding already happened". */
+  const [replaying, setReplaying] = useState(false);
+  const entered =
+    !replaying && (Boolean(lifecycle.onboardingCompletedAt) || sessionEntered);
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already
@@ -493,6 +506,7 @@ function Index() {
             /* A NEW PERSON GETS A CLEAN, IDEMPOTENT HANDOVER. Sample people and
                their community records are never projected into this profile. */
             initializeFirstUse(earned);
+            setReplaying(false);
             setSessionEntered(true);
           }}
         />

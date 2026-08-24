@@ -367,8 +367,10 @@ function Index() {
    * unfinished account. The door needs to know the difference, or it would send
    * the person back into the same form for ever.
    */
+  const eligibility = myProfileStore.canPublish();
   const publishBlocked =
-    !canCommunity && me.built ? (myProfileStore.canPublish().say ?? null) : null;
+    !canCommunity && me.built && !eligibility.ok ? eligibility.say : null;
+
 
 
 

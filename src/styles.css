@@ -148,14 +148,16 @@
   --giver-paper: oklch(0.985 0.008 100);
   --giver-ink: oklch(0.16 0.01 100);
 
-  /* ---- THE GIVER COLOUR SYSTEM v2 — ONE MEANING PER COLOUR ----
-     GREEN   = me. My identity, my G, my home world — and the shared state of
-               giving and lending (offering / helping).
-     PURPLE  = wishing and borrowing. Someone is asking for something.
-     BLUE    = the initiating person in an interaction (normally me).
-     RED     = the responding other person in a WISH / BORROW interaction.
-     YELLOW  = the responding other person in a GIVE / LEND interaction.
-     ORANGE  = trade. Kept outside the wish/give mixing logic entirely.
+  /* ---- THE GIVER COLOUR SYSTEM v6 — ONE MEANING PER COLOUR ----
+     BLUE      = ME. My identity, my G, my home — always blue, in every world.
+     PURPLE    = wish.
+     HOT PINK  = borrow.
+     GREEN     = give.
+     SEAFOAM   = lend.
+     ORANGE    = trade.
+     RED + YELLOW TOGETHER = THE COMMUNITY. The big lower loop is the community
+       world; red and yellow belong to it as a pair. Yellow is NOT "the person
+       receiving" — it is half of the community's colour language.
      Nothing else carries meaning. Every token below resolves to one of these. */
   --giver-green: oklch(0.74 0.22 145); /* GREEN — bright, joyful giving */
   --giver-purple: oklch(0.68 0.18 302); /* PURPLE — dreamy lavender wishing */

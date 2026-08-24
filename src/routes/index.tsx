@@ -368,7 +368,8 @@ function Index() {
    * the person back into the same form for ever.
    */
   const publishBlocked =
-    !canCommunity && !firstArrivalPending ? (myProfileStore.canPublish().say ?? null) : null;
+    !canCommunity && me.built ? (myProfileStore.canPublish().say ?? null) : null;
+
 
 
   /* THE KEY TURNING is worth exactly one moment, and never repeats. */

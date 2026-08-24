@@ -162,8 +162,8 @@
   --giver-green: oklch(0.74 0.22 145); /* GREEN — bright, joyful giving */
   --giver-purple: oklch(0.68 0.18 302); /* PURPLE — dreamy lavender wishing */
   --giver-blue: oklch(0.63 0.22 258); /* BLUE — ME, vibrant and playful */
-  --giver-red: oklch(0.64 0.28 26); /* RED — the other person, wish side */
-  --giver-yellow: oklch(0.78 0.17 92); /* YELLOW — the other person, give side */
+  --giver-red: oklch(0.64 0.28 26); /* RED — community, first half */
+  --giver-yellow: oklch(0.78 0.17 92); /* YELLOW — community, second half */
   --giver-orange: oklch(0.72 0.2 48); /* ORANGE — trade, on its own */
 
   /* THE TWO RELATIONSHIP STATES a conversation can inhabit. */
@@ -171,7 +171,9 @@
   --state-give: var(--giver-green);
   --state-trade: var(--giver-orange);
 
-  /* THE PEOPLE. Me is always blue as a participant; my own identity stays green. */
+  /* THE PEOPLE. I am always blue. The other person carries the community
+     pair — red on the asking side, yellow on the offering side — because the
+     other person is the community. */
   --person-self: var(--giver-blue);
   --person-other-wish: var(--giver-red);
   --person-other-give: var(--giver-yellow);

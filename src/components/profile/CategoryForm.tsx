@@ -198,6 +198,7 @@ export function CategoryForm({
   category,
   side: decidedSide,
   onDone,
+  onCommunity,
 }: {
   category: Category;
   /**
@@ -207,7 +208,10 @@ export function CategoryForm({
    */
   side?: BorrowSide;
   onDone: () => void;
+  /** THE WAY ONWARD once what was typed is a real record. */
+  onCommunity?: () => void;
 }) {
+
   const me = useMyProfile();
   /* THE DRAFT SURVIVES LEAVING AND RELOADING — it is persisted, not held. */
   const stored = useRef(draftsStore.get(category)).current;

@@ -395,13 +395,14 @@
   --world-accent: var(--person-self);
 }
 
-/* Meeting other people — the collective: yellow. */
+/* Meeting other people — the community pair: red led, yellow second. */
 [data-world="meet"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-yellow);
-  --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-yellow-complement);
-  --world-accent: var(--person-self);
+  --world-g: var(--giver-community);
+  --world-g-second: var(--giver-community-second);
+  --world-ink: oklch(0.46 0.22 26);
+  --world-text: var(--giver-community-second);
+  --world-accent: var(--giver-community-second);
 }
 
 /* ---- ANOTHER PERSON. The state they are in decides their colour: ----

@@ -9,18 +9,76 @@ export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
 /**
  * The FRAME: the artwork's box plus the room the mode selector needs across its
  * ENTIRE travel around the middle loop — measured to the selector's TOUCH disc,
- * not only its visible ring, so a generous tap target can never be clipped by a
- * viewport edge either at rest or mid-drag.
+ * not only its visible ring, so a generous tap target is never cut in half.
  *
  * ring centre orbit radius 300 about (272,298), grip radius 96
  *   → x 272 ± 396 = -124..668 · y top 298 - 396 = -98
  *
- * THE FRAME IS THE THING THAT MUST FIT THE SCREEN: <GStage> sizes THIS box to
- * the viewport, so every seat and every intermediate drag position — including
- * borrow at 9:30 and the my g → lend → give stretch — stays fully on screen on
- * the narrowest iPhone, with the artwork itself still filling the paper.
+ * THE FRAME IS THE DRAWING SURFACE, NOT THE THING THAT MUST FIT THE SCREEN.
+ * Making the whole travel envelope fit a phone would cost the world a THIRD of
+ * its size (the artwork is only 576 of these 792 units wide) — so <GStage> sizes
+ * the ARTWORK to the viewport and lets the selector's envelope bleed past the
+ * edges, and STAGE_WINDOW below keeps whichever seat is live inside the glass.
  */
 export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as const;
+
+/**
+ * THE GLASS — what a phone actually shows of the frame, and the one place that
+ * knows it.
+ *
+ * `artworkFit` is the share of the viewport's width the Living G itself takes:
+ * the world is sized to be immersive first. Everything else here is derived, so
+ * the camera pan and the stage can never disagree about where the edges are.
+ */
+export const STAGE_WINDOW = {
+  /** The world's own width, as a share of the screen. */
+  artworkFit: 0.94,
+  /**
+   * Clear space kept between a live touch disc and the edge of the glass. Sized
+   * generously so a fast drag — where the camera is easing a frame behind the
+   * finger — still never lets the disc touch an edge.
+   */
+  margin: 40,
+} as const;
+
+/** How much wider the drawing surface is than the world drawn inside it. */
+export const STAGE_OVERDRAW = LIVING_G_FRAME.width / LIVING_G_BOX.width;
+
+/** Frame units visible across the screen once the artwork fills `artworkFit`. */
+const VISIBLE_UNITS = LIVING_G_BOX.width / STAGE_WINDOW.artworkFit;
+/** The frame is centred on the screen, so the glass is centred on ITS centre. */
+const GLASS_CENTRE = LIVING_G_FRAME.x + LIVING_G_FRAME.width / 2;
+export const STAGE_GLASS = {
+  left: GLASS_CENTRE - VISIBLE_UNITS / 2,
+  right: GLASS_CENTRE + VISIBLE_UNITS / 2,
+} as const;
+
+/**
+ * THE CAMERA FOLLOWS THE TOGGLE — instead of the world shrinking to hold it.
+ *
+ * Given where the selector's touch disc is right now, this returns how far the
+ * whole stage slides, as a share of the frame's width (so it is resolution
+ * independent, and reads straight into a percentage translate). Zero for every
+ * seat that is already comfortably inside the glass; a gentle slide for borrow
+ * at 9:30 and lend at 3:00, whose discs reach past the world's own edges. The
+ * far side of the G simply passes off-screen, which is what being inside the G
+ * has always looked like.
+ */
+export function stagePanPercent(cx: number, gripR: number = 96) {
+  const left = cx - gripR;
+  const right = cx + gripR;
+  let pan = 0;
+  if (left < STAGE_GLASS.left + STAGE_WINDOW.margin) {
+    pan = STAGE_GLASS.left + STAGE_WINDOW.margin - left;
+  } else if (right > STAGE_GLASS.right - STAGE_WINDOW.margin) {
+    pan = STAGE_GLASS.right - STAGE_WINDOW.margin - right;
+  }
+  return (pan / LIVING_G_FRAME.width) * 100;
+}
+
+/** The CSS custom property the stage reads for that slide. */
+export const STAGE_PAN_VAR = "--g-pan";
+
 
 
 

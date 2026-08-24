@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
-import { EAR_GEOMETRY, LOOP_CENTRE, LOOP_RIM_RADIUS, LOOP_SAFE_RADIUS } from "./g-path";
+import {
+  EAR_GEOMETRY,
+  LOOP_CENTRE,
+  LOOP_RIM_RADIUS,
+  LOOP_SAFE_RADIUS,
+  STAGE_PAN_VAR,
+  stagePanPercent,
+} from "./g-path";
 import { LOOP_ROLE_STYLE } from "./type-scale";
 
 /**
@@ -309,6 +316,26 @@ export function EarSelector({
   const deg = (angle * 180) / Math.PI;
   /** Where the ring actually is right now — text and hit area follow it. */
   const ear = at(angle, TRACK_R);
+
+  /**
+   * THE CAMERA FOLLOWS THE BEAD. The world is sized to be as large as the phone
+   * allows, so borrow at 9:30 and lend at 3:00 reach past its edges. Rather than
+   * shrinking the G to hold them, the stage slides by exactly as much as the live
+   * touch disc needs — at rest, at every seat, and continuously while dragging.
+   */
+  useEffect(() => {
+    const doc = document.documentElement;
+    doc.style.setProperty(STAGE_PAN_VAR, `${stagePanPercent(ear.x, EAR_GEOMETRY.gripR).toFixed(3)}%`);
+  }, [ear.x]);
+
+  /** The world settles back the moment this track is gone. */
+  useEffect(
+    () => () => {
+      document.documentElement.style.setProperty(STAGE_PAN_VAR, "0%");
+    },
+    [],
+  );
+
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {
     const svg = e.currentTarget.ownerSVGElement;

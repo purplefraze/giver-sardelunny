@@ -208,22 +208,25 @@
   --giver-others-complement: var(--giver-blue-complement);
   /* Community type sits in its own second colour: yellow on red. */
   --giver-community-complement: var(--giver-community-second);
+  --giver-connection-complement: var(--giver-purple-complement);
+  --giver-participation-complement: var(--giver-orange-complement);
+  --giver-generosity-complement: var(--giver-green-complement);
 
 
   /* ---- LIVING G MODE COLOURS ----
-       give / lend = green (offering), wish / borrow = purple (asking),
-       trade = orange, on the 6 o'clock toggle, deliberately apart. */
+       wish = purple, borrow = hot pink, give = green, lend = seafoam,
+       trade = orange. Community (the big lower loop) is red + yellow. */
   --mode-give: var(--state-give);
   --mode-lend: oklch(0.74 0.12 192); /* SEAFOAM — blue-green lending */
   --mode-wish: var(--state-wish);
-  --mode-borrow: oklch(0.5 0.29 300); /* ELECTRIC PURPLE — deeper, richer */
+  --mode-borrow: oklch(0.66 0.27 350); /* HOT PINK — borrowing */
   --mode-trade: var(--state-trade);
   --mode-lend-complement: oklch(0.58 0.24 22); /* seafoam -> warm coral */
 
   --mode-give-complement: var(--giver-green-complement);
   --mode-wish-complement: var(--giver-purple-complement);
   --mode-trade-complement: var(--giver-orange-complement);
-  --mode-borrow-complement: var(--giver-purple-complement);
+  --mode-borrow-complement: oklch(0.68 0.2 150); /* hot pink -> spring green */
 
   /* ---- TRADE IS THE ONLY TWO-SIDED WORLD: THE PROPOSER LEADS IT ----
      Whoever proposed the trade owns the immersive world colour; the other

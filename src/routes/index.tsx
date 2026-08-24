@@ -362,6 +362,17 @@ function Index() {
    * once during onboarding.
    */
   const canCommunity = hasActiveGive(items);
+  /**
+   * A TYPED GIVE THAT CANNOT PUBLISH YET IS NOT A LOCKED COMMUNITY — it is an
+   * unfinished account. The door needs to know the difference, or it would send
+   * the person back into the same form for ever.
+   */
+  const eligibility = myProfileStore.canPublish();
+  const publishBlocked =
+    !canCommunity && me.built && !eligibility.ok ? eligibility.say : null;
+
+
+
 
   /* THE KEY TURNING is worth exactly one moment, and never repeats. */
   useEffect(() => {
@@ -691,7 +702,9 @@ function Index() {
               else if (id === "locked") setLocked(false);
             }}
             slots={[
-              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */
+              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question —
+                 and, when a give is typed but the account cannot publish it
+                 yet, it says so and leads to the one place that fixes it. */
               {
                 id: "locked",
                 open: locked,
@@ -699,6 +712,15 @@ function Index() {
                 world: "community",
                 children: locked ? (
                   <CommunityLocked
+                    {...(publishBlocked
+                      ? {
+                          blocked: publishBlocked,
+                          onFinishAccount: () => {
+                            setLocked(false);
+                            setEditor({ kind: "about" });
+                          },
+                        }
+                      : {})}
                     onGive={() => {
                       setLocked(false);
                       setSeat("give");
@@ -708,6 +730,7 @@ function Index() {
                   />
                 ) : null,
               },
+
 
               /* FIRST-TIME EXPLANATION -> straight into my <type>. */
               {
@@ -775,7 +798,19 @@ function Index() {
                       category={editor.category}
                       {...(editor.side ? { side: editor.side } : {})}
                       onDone={() => setEditor(null)}
+                      /* POSTING SOMETHING LEADS SOMEWHERE: the community it
+                         was posted into, one press away. */
+                      onCommunity={() => {
+                        const type = editor.category as ItemType;
+                        setEditor(null);
+                        if (!hasActiveGive(itemsStore.get())) {
+                          setLocked(true);
+                          return;
+                        }
+                        setBrowse({ type });
+                      }}
                     />
+
 
                   ) : null,
               },

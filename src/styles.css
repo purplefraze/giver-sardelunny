@@ -266,7 +266,7 @@
   --giver-trade: var(--state-trade);
   --giver-trade-complement: var(--giver-orange-complement);
   --giver-borrow: var(--mode-borrow);
-  --giver-borrow-complement: var(--giver-purple-complement);
+  --giver-borrow-complement: var(--mode-borrow-complement);
   --giver-discovery: var(--giver-community);
   --giver-discovery-complement: var(--giver-community-complement);
 

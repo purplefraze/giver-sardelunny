@@ -138,7 +138,7 @@ export function CommunityFeed({
               type="button"
               onClick={() => setSort(s)}
               className={sort === s ? "opacity-100" : undefined}
-              style={sort === s ? { color: "var(--person-self-community)" } : undefined}
+              style={sort === s ? { color: "var(--person-self)" } : undefined}
             >
               {s}
             </button>
@@ -190,7 +190,7 @@ export function CommunityFeed({
                     if (owner) onOpenProfile?.(owner.id);
                   }}
                   className="font-black underline decoration-current/40 underline-offset-4"
-                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type, item.side)] }}
+                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
                 >
                   {owner ? owner.username : "someone"}
                 </button>

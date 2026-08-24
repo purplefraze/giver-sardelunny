@@ -602,7 +602,7 @@ export function EarSelector({
       <circle
         cx={ear.x}
         cy={ear.y}
-        r={110}
+        r={EAR_GEOMETRY.gripR}
         fill="transparent"
         className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
         // touch-action lives in inline style, not a utility class: the browser

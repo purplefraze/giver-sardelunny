@@ -7,16 +7,21 @@ export const LIVING_G_PATH = "M4846 11320 c-66 -12 -173 -49 -218 -77 -21 -13 -42
 export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
 
 /**
- * The FRAME: the artwork's box plus the room the mode selector's assembly needs
- * across its ENTIRE travel around the middle loop (ring centre orbit radius 300
- * about (272,298), ring outer radius 79 → x -107..651, y -81..677).
+ * The FRAME: the artwork's box plus the room the mode selector needs across its
+ * ENTIRE travel around the middle loop — measured to the selector's TOUCH disc,
+ * not only its visible ring, so a generous tap target can never be clipped by a
+ * viewport edge either at rest or mid-drag.
  *
- * THE FRAME IS THE THING THAT MUST FIT THE SCREEN. It is measured to the real
- * travel extents and nothing more — no symmetric padding, no decoration —
- * because <GStage> sizes THIS box to the viewport so no seat of the toggle can
- * ever be clipped by an edge, on any phone.
+ * ring centre orbit radius 300 about (272,298), grip radius 96
+ *   → x 272 ± 396 = -124..668 · y top 298 - 396 = -98
+ *
+ * THE FRAME IS THE THING THAT MUST FIT THE SCREEN: <GStage> sizes THIS box to
+ * the viewport, so every seat and every intermediate drag position — including
+ * borrow at 9:30 and the my g → lend → give stretch — stays fully on screen on
+ * the narrowest iPhone, with the artwork itself still filling the paper.
  */
-export const LIVING_G_FRAME = { x: -107, y: -81, width: 758, height: 1214 } as const;
+export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as const;
+
 
 
 
@@ -107,7 +112,14 @@ export const EAR_GEOMETRY = {
   gap: 24.5,
   cutR: 100,
   cutStemWidth: 54,
+  /**
+   * The invisible TOUCH disc that travels with the ring: generously bigger than
+   * the ring itself, and the value LIVING_G_FRAME is measured against, so the
+   * whole tappable area is always inside the viewport.
+   */
+  gripR: 96,
 } as const;
+
 
 /**
  * THE STATIC EAR CUT — one clean angular wedge around the canonical ear and its

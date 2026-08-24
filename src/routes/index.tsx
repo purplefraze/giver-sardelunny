@@ -52,20 +52,9 @@ import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/
  */
 const MODES_ONLY = MODES;
 
-/**
- * THE SIX POSITIONS, FIXED: my g (12) · give · wish · borrow · lend (9) ·
- * trade (3). LEND is its own seat; underneath it is the lending side of the
- * borrow world, so it keeps one content model and its own colour.
- */
-const ACTIVITY_SEATS = [...MODES, "lend"] as const;
-type ActivitySeat = (typeof ACTIVITY_SEATS)[number];
-
-/** The item world a seat reads from. Lend shares borrow's records. */
-const seatMode = (s: ActivitySeat): Mode => (s === "lend" ? "borrow" : s);
-
 const FIRST_USE_SEAT_KEY = "giver.first-use.seat";
 
-function rememberFirstUseSeat(seat: ActivitySeat) {
+function rememberFirstUseSeat(seat: Mode) {
   try {
     window.localStorage.setItem(FIRST_USE_SEAT_KEY, seat);
   } catch {
@@ -73,12 +62,10 @@ function rememberFirstUseSeat(seat: ActivitySeat) {
   }
 }
 
-function readFirstUseSeat(): ActivitySeat | null {
+function readFirstUseSeat(): Mode | null {
   try {
     const raw = window.localStorage.getItem(FIRST_USE_SEAT_KEY);
-    return raw && (ACTIVITY_SEATS as readonly string[]).includes(raw)
-      ? (raw as ActivitySeat)
-      : null;
+    return raw && (MODES_ONLY as readonly string[]).includes(raw) ? (raw as Mode) : null;
   } catch {
     return null;
   }
@@ -213,12 +200,14 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-    /* THE SIX FIXED SEATS: my g (12) · give · wish · borrow · lend (9) ·
-     trade (3). */
-  const [seat, setSeatState] = useState<ActivitySeat | "giver">("give");
+    /* MY G IS A SEAT; SEARCH IS RESERVED AND UNREACHABLE, so it can never be
+     held here. */
+  const [seat, setSeatState] = useState<Mode | "giver">("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
+    /* SEARCH IS RESERVED, NOT BUILT: the toggle cannot come to rest there. */
+    if (next === "search") return;
     setSeatState(next);
     /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
        remembered as the first-use mode. */
@@ -310,9 +299,8 @@ function Index() {
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
     if (seat === "giver") return;
-    const topic = seatMode(seat);
-    if (introSeenStore.get()[topic]) return;
-    showIntro(topic);
+    if (introSeenStore.get()[seat]) return;
+    showIntro(seat);
   }, [entered, seat]);
 
   /**
@@ -394,9 +382,9 @@ function Index() {
    * destination seat at 12 o'clock. `mode` is the activity world, and it is
    * null while the toggle is sitting on My G.
    */
-  const activity: ActivitySeat | null = seat === "giver" ? null : seat;
+  const activity: Mode | null = seat === "giver" ? null : seat;
   /* The last activity world still owns the loops' grammar when My G is held. */
-  const mode: Mode = seatMode(activity ?? "give");
+  const mode: Mode = activity ?? "give";
   const content = MODE_CONTENT[mode];
 
   /**
@@ -418,11 +406,11 @@ function Index() {
   /**
    * MY G AT 12 O'CLOCK, ONCE IT HAS BEEN FOUND. Before the discovery there is
    * nothing there; afterwards the seat exists permanently, whether or not a
-   * single field was ever filled in. LEND sits at 9 o'clock, TRADE at 3.
+   * single field was ever filled in. SEARCH (6 o'clock) stays unbuilt.
    */
   const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
-    ? (["giver", ...ACTIVITY_SEATS] as const)
-    : ACTIVITY_SEATS;
+    ? (["giver", ...MODES_ONLY] as const)
+    : MODES_ONLY;
 
   /**
    * TOP = ME. MY G is not a content type and never a toggle seat: it is the
@@ -556,11 +544,7 @@ function Index() {
                     setup();
                     return;
                   }
-                  setEditor({
-                    kind: "category",
-                    category: mode,
-                    ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
-                  });
+                  setEditor({ kind: "category", category: mode });
                 },
 
                 render: (anchor) =>

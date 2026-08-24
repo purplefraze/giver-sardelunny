@@ -796,7 +796,19 @@ function Index() {
                       category={editor.category}
                       {...(editor.side ? { side: editor.side } : {})}
                       onDone={() => setEditor(null)}
+                      /* POSTING SOMETHING LEADS SOMEWHERE: the community it
+                         was posted into, one press away. */
+                      onCommunity={() => {
+                        const type = editor.category as ItemType;
+                        setEditor(null);
+                        if (!hasActiveGive(itemsStore.get())) {
+                          setLocked(true);
+                          return;
+                        }
+                        setBrowse({ type });
+                      }}
                     />
+
 
                   ) : null,
               },

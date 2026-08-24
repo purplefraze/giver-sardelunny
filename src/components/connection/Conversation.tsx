@@ -79,8 +79,7 @@ export function Conversation({
   const themColour =
     state === "trade" ? trade.counter : OTHER_PERSON_COLOUR[state];
   /* WHO IS SPEAKING: me blue, them red / yellow / orange. Never by who posted. */
-  const toneOf = (fromId: string) =>
-    fromId === ME_ID ? (state === "trade" ? trade.lead : SELF_COLOUR) : themColour;
+  const toneOf = (fromId: string) => (fromId === ME_ID ? SELF_COLOUR : themColour);
   const nameOf = (fromId: string) => (fromId === ME_ID ? myName : theirName);
   const nameColour = toneOf;
 

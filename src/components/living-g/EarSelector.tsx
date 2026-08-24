@@ -30,15 +30,16 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12 o'clock, and SEARCH at 6 o'clock (the community,
- * explored). Both are LOCKED until the person has a profile and one active give
- * of their own, so onboarding only ever offers MODES.
+ * activities: GIVER = ME at 4 o'clock, and LEND at 3 o'clock. Both are LOCKED
+ * until the person has a profile and one active give of their own, so
+ * onboarding only ever offers MODES.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow", "search"] as const;
+export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order. Search is reserved, not built yet. */
-export const FULL_SEATS = ["search", "borrow", "wish", "giver", "give", "trade"] as const;
+/** Every seat on the wire, in travel order. Lend is reserved, not built yet. */
+export const FULL_SEATS = ["trade", "borrow", "wish", "give", "lend", "giver"] as const;
+
 
 
 

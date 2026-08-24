@@ -19,10 +19,6 @@ const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
 /** Kept as the record of what the frame is built around. */
 export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 
-/** How much of the FRAME the artwork itself occupies. */
-const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
-const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
-
 /**
  * THE CLEAN BOTTOM BAND. The one strip of paper the artwork never enters, so a
  * bottom text action ("let's giver") can sit centred, outside the G's stroke.
@@ -30,10 +26,17 @@ const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
  */
 export const CTA_BAND = "2.6rem";
 
-/** The canonical artwork target: 94% of the usable height, 96% of the width. */
-/* Height comes from --app-h (a real measured viewport height) so a collapsing
-   Android address bar can never resize the artwork mid-animation. */
-const CANONICAL_WIDTH = `min(${(96 * BOX_W).toFixed(3)}%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.99 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`;
+/**
+ * THE FRAME FITS THE SCREEN — ALWAYS, ON EVERY PHONE.
+ *
+ * The sized box is the FRAME (artwork + the selector's full travel), never the
+ * artwork alone: that is the one arrangement in which no toggle seat, and no
+ * intermediate position during a drag, can be clipped by a viewport edge.
+ * Width comes from the real viewport with a comfortable margin; height comes
+ * from --app-h (a measured height) so a collapsing address bar cannot resize
+ * the artwork mid-animation.
+ */
+const CANONICAL_WIDTH = `min(95%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.995 * ${FRAME_ASPECT.toFixed(5)}))`;
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (
@@ -44,11 +47,10 @@ export function GStage({ children }: { children: React.ReactNode }) {
       style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
     >
       <div
-        // EXPLICIT centring, not flex alignment: the frame is intentionally
-        // wider than the viewport (selector clearance), and a centred flex item
-        // that overflows can be nudged or shrunk by the browser. left/translate
-        // pins the artwork's own centre line to the screen's centre line, and
-        // shrink-0 + min-width make shrinking impossible.
+        // EXPLICIT centring, not flex alignment: the frame is sized to fit
+        // inside the viewport, and left/translate pins its centre line to the
+        // screen's centre line while shrink-0 + min-width make shrinking
+        // impossible.
         className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto -translate-x-1/2"
         style={{
           width: CANONICAL_WIDTH,
@@ -61,3 +63,4 @@ export function GStage({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

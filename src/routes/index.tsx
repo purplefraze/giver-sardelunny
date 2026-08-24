@@ -200,20 +200,19 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-    /* MY G IS A SEAT; SEARCH IS RESERVED AND UNREACHABLE, so it can never be
-     held here. */
-  const [seat, setSeatState] = useState<Mode | "giver">("give");
+  /* EVERY SEAT ON THE WIRE IS REACHABLE — MY G (4:00), LEND (3:00), GIVE (2:00),
+     WISH (10:00), BORROW (9:00), TRADE (6:00). */
+  const [seat, setSeatState] = useState<Seat>("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
-    /* LEND IS RESERVED, NOT BUILT: the toggle cannot come to rest there. */
-    if (next === "lend") return;
     setSeatState(next);
 
-    /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
-       remembered as the first-use mode. */
-    if (next !== "giver") rememberFirstUseSeat(next);
+    /* MY G AND LEND ARE DESTINATIONS, NOT INHERITED MODES: only activity seats
+       are remembered as the first-use mode. */
+    if (next !== "giver" && next !== "lend") rememberFirstUseSeat(next);
   };
+
 
   /**
    * FIRST-TIME WORLD EXPLANATION. Giver explains wish / give / trade / borrow
@@ -379,14 +378,21 @@ function Index() {
   const unread = unreadCount(links, ME_ID);
 
   /**
-   * THE TOGGLE IS THE WORLD: wish | give | trade | borrow — plus MY G, the one
-   * destination seat at 12 o'clock. `mode` is the activity world, and it is
-   * null while the toggle is sitting on My G.
+   * THE TOGGLE IS THE WORLD: wish | give | trade | borrow | lend — plus MY G,
+   * the destination seat at 4 o'clock. `activity` is the item world, and it is
+   * null while the toggle sits on My G. LEND is the offering side of borrowing,
+   * so its items are borrows held from the lending side.
    */
-  const activity: Mode | null = seat === "giver" ? null : seat;
+  const activity: Mode | null =
+    seat === "giver" ? null : seat === "lend" ? "borrow" : (seat as Mode);
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = activity ?? "give";
   const content = MODE_CONTENT[mode];
+  /** The seat's own word: lending is not borrowing, even on the same items. */
+  const seatPlural = seat === "lend" ? "lends" : CATEGORY_PLURAL[mode];
+  /** The world the whole screen is painted in — lend has its own seafoam. */
+  const seatWorld = seat === "lend" ? "lend" : (activity ?? "profile");
+
 
   /**
    * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
@@ -405,13 +411,13 @@ function Index() {
   };
 
   /**
-   * MY G AT 12 O'CLOCK, ONCE IT HAS BEEN FOUND. Before the discovery there is
-   * nothing there; afterwards the seat exists permanently, whether or not a
-   * single field was ever filled in. SEARCH (6 o'clock) stays unbuilt.
+   * EVERY SEAT PRESENT: the four activity modes plus LEND at 3 o'clock always
+   * exist on the wire; MY G at 4 o'clock appears once it has been found.
    */
   const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
-    ? (["giver", ...MODES_ONLY] as const)
-    : MODES_ONLY;
+    ? (["giver", "lend", ...MODES_ONLY] as const)
+    : (["lend", ...MODES_ONLY] as const);
+
 
   /**
    * TOP = ME. MY G is not a content type and never a toggle seat: it is the
@@ -487,7 +493,7 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={activity ?? "profile"}
+            world={seatWorld}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -562,7 +568,7 @@ function Index() {
                       activity === null || !myMode
                         ? []
                         : [
-                            { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
+                            { text: `my ${seatPlural}`, role: "secondary" as const },
                             {
                               text: clampField(myMode),
                               role: "primary" as const,
@@ -608,7 +614,7 @@ function Index() {
                         ? []
                         : [
                             {
-                              text: `communi-g ${CATEGORY_PLURAL[mode]}`,
+                              text: `communi-g ${seatPlural}`,
                               role: "secondary" as const,
                               fill: ACTIVITY_FILL[mode as ItemType],
                             },

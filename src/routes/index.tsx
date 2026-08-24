@@ -298,7 +298,8 @@ function Index() {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
-    if (seat === "giver") return;
+    /* MY G AND LEND ARE DESTINATIONS, NOT CATEGORIES: they have no intro. */
+    if (seat === "giver" || seat === "lend") return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
   }, [entered, seat]);

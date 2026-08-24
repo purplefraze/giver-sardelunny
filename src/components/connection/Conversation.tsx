@@ -15,6 +15,8 @@ import {
   STATE_COLOUR,
   STATE_WORLD,
   exchangeState,
+  tradeLead,
+  tradePerspective,
 } from "@/lib/exchange-colours";
 
 /**
@@ -69,8 +71,13 @@ export function Conversation({
   const myName = (me.username || "you").replace(/^@/, "") || "you";
   /* THE STATE THIS THREAD LIVES IN — purple asking, green offering, orange trade. */
   const state = exchangeState(item ? item.type : "wish");
-  const stateColour = STATE_COLOUR[state];
-  const themColour = OTHER_PERSON_COLOUR[state];
+  /* TRADE IS PROPOSER-LED: whoever proposed it owns the world's colour, and the
+     other participant stays visibly present as the counterpart. */
+  const lead = tradeLead(item ? item.ownerId === ME_ID : true);
+  const trade = tradePerspective(lead);
+  const stateColour = state === "trade" ? trade.lead : STATE_COLOUR[state];
+  const themColour =
+    state === "trade" ? trade.counter : OTHER_PERSON_COLOUR[state];
   /* WHO IS SPEAKING: me blue, them red / yellow / orange. Never by who posted. */
   const toneOf = (fromId: string) => (fromId === ME_ID ? SELF_COLOUR : themColour);
   const nameOf = (fromId: string) => (fromId === ME_ID ? myName : theirName);
@@ -95,6 +102,7 @@ export function Conversation({
   return (
     <div
       data-world={STATE_WORLD[state]}
+      {...(state === "trade" ? { "data-trade-lead": lead } : {})}
       className="relative flex h-full w-full flex-col overflow-y-auto px-6 pb-5 pt-16"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >

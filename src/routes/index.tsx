@@ -206,9 +206,10 @@ function Index() {
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
-    /* SEARCH IS RESERVED, NOT BUILT: the toggle cannot come to rest there. */
-    if (next === "search") return;
+    /* LEND IS RESERVED, NOT BUILT: the toggle cannot come to rest there. */
+    if (next === "lend") return;
     setSeatState(next);
+
     /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
        remembered as the first-use mode. */
     if (next !== "giver") rememberFirstUseSeat(next);

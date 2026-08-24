@@ -30,15 +30,16 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12 o'clock, and SEARCH at 6 o'clock (the community,
- * explored). Both are LOCKED until the person has a profile and one active give
- * of their own, so onboarding only ever offers MODES.
+ * activities: GIVER = ME at 4 o'clock, and LEND at 3 o'clock. Both are LOCKED
+ * until the person has a profile and one active give of their own, so
+ * onboarding only ever offers MODES.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow", "search"] as const;
+export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order. Search is reserved, not built yet. */
-export const FULL_SEATS = ["search", "borrow", "wish", "giver", "give", "trade"] as const;
+/** Every seat on the wire, in travel order. Lend is reserved, not built yet. */
+export const FULL_SEATS = ["trade", "borrow", "wish", "give", "lend", "giver"] as const;
+
 
 
 
@@ -71,32 +72,32 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
  * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN where the spine
- * leaves it, between roughly 4 o'clock and 6 o'clock. The selector is a bead on
- * that wire: its angle lives on ONE CONTINUOUS LINE that runs from trade (the
- * hard clockwise end, beside one lip of the break) anticlockwise all the way
- * round to search (6 o'clock, the other lip). There is no wrap-around, so the
- * bead can never teleport across the gap, interpolate through empty space, or
- * take the shortest geometric route between two seats.
+ * leaves it. The selector is a bead on that wire: its angle lives on ONE
+ * CONTINUOUS LINE that runs from trade (6 o'clock, one lip of the break)
+ * anticlockwise round to my g (4 o'clock, the other lip). There is no
+ * wrap-around, so the bead can never teleport across the gap.
  *
- *   trade  +30°   hard end — cannot continue clockwise, there is no stroke
- *   give   -44°
- *   giver  -90°   12 o'clock
- *   wish   -136°
- *   borrow -210°  (= 8 o'clock)
- *   search -270°  (= 6 o'clock) hard end on the other lip of the break
+ * THE SIX FIXED SEATS (12 o'clock stays deliberately EMPTY):
+ *   trade  -270°  =  6 o'clock  hard end
+ *   borrow -180°  =  9 o'clock
+ *   wish   -120°  = 10 o'clock
+ *   give    -30°  =  2 o'clock
+ *   lend      0°  =  3 o'clock
+ *   giver   +30°  =  4 o'clock  hard end — MY G
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  search: rad(-270),
-  borrow: rad(-210),
-  wish: rad(-136),
-  giver: rad(-90),
-  give: rad(-44),
-  trade: rad(30),
+  trade: rad(-270),
+  borrow: rad(-180),
+  wish: rad(-120),
+  give: rad(-30),
+  lend: rad(0),
+  giver: rad(30),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.search;
-const TRACK_MAX = SEAT_ANGLE.trade;
+const TRACK_MIN = SEAT_ANGLE.trade;
+const TRACK_MAX = SEAT_ANGLE.giver;
+
 
 const TAU = Math.PI * 2;
 
@@ -172,9 +173,10 @@ const MODE_COLOUR: Record<Seat, string> = {
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
-  search: "var(--person-self)",
+  lend: "var(--mode-lend)",
 
 };
+
 
 
 export function EarSelector({

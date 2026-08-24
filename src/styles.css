@@ -157,9 +157,9 @@
      YELLOW  = the responding other person in a GIVE / LEND interaction.
      ORANGE  = trade. Kept outside the wish/give mixing logic entirely.
      Nothing else carries meaning. Every token below resolves to one of these. */
-  --giver-green: oklch(0.62 0.19 145); /* GREEN — me, my world, giving */
-  --giver-purple: oklch(0.55 0.24 300); /* PURPLE — wishing, borrowing */
-  --giver-blue: oklch(0.58 0.19 250); /* BLUE — the initiating person */
+  --giver-green: oklch(0.74 0.22 145); /* GREEN — bright, joyful giving */
+  --giver-purple: oklch(0.68 0.18 302); /* PURPLE — dreamy lavender wishing */
+  --giver-blue: oklch(0.63 0.22 258); /* BLUE — ME, vibrant and playful */
   --giver-red: oklch(0.64 0.28 26); /* RED — the other person, wish side */
   --giver-yellow: oklch(0.78 0.17 92); /* YELLOW — the other person, give side */
   --giver-orange: oklch(0.72 0.2 48); /* ORANGE — trade, on its own */
@@ -182,7 +182,7 @@
   --giver-messages: var(--person-self);
 
   /* Me / others / community, expressed in the new system. */
-  --giver-me: var(--giver-green); /* my identity, never remapped by mode */
+  --giver-me: var(--giver-blue); /* MY G — always my vibrant blue */
   --giver-others: var(--person-self); /* a person acting, in blue */
   --giver-community: var(--giver-yellow); /* other people, collectively */
   --giver-connection: var(--state-wish);
@@ -208,15 +208,22 @@
        give / lend = green (offering), wish / borrow = purple (asking),
        trade = orange, on the 6 o'clock toggle, deliberately apart. */
   --mode-give: var(--state-give);
-  --mode-lend: oklch(0.48 0.15 150); /* deeper green — the lending side of green */
+  --mode-lend: oklch(0.74 0.12 192); /* SEAFOAM — blue-green lending */
   --mode-wish: var(--state-wish);
-  --mode-borrow: oklch(0.46 0.2 305); /* deeper purple — the borrowing side */
+  --mode-borrow: oklch(0.5 0.29 300); /* ELECTRIC PURPLE — deeper, richer */
   --mode-trade: var(--state-trade);
+  --mode-lend-complement: oklch(0.58 0.24 22); /* seafoam -> warm coral */
 
   --mode-give-complement: var(--giver-green-complement);
   --mode-wish-complement: var(--giver-purple-complement);
   --mode-trade-complement: var(--giver-orange-complement);
   --mode-borrow-complement: var(--giver-purple-complement);
+
+  /* ---- TRADE IS THE ONLY TWO-SIDED WORLD: THE PROPOSER LEADS IT ----
+     Whoever proposed the trade owns the immersive world colour; the other
+     participant stays visibly present as the counterpart accent. */
+  --trade-lead: var(--state-trade);
+  --trade-counter: var(--person-self);
 
   /* ---- ACTIVITY TEXT COLOUR = ITS WORLD'S G COLOUR ---- */
   --activity-wish: var(--mode-wish);
@@ -347,8 +354,8 @@
 [data-world="lend"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-lend);
-  --world-ink: oklch(0.4 0.14 150);
-  --world-text: var(--mode-give-complement);
+  --world-ink: oklch(0.44 0.09 195);
+  --world-text: var(--mode-lend-complement);
   --world-accent: var(--person-self);
 }
 
@@ -429,9 +436,9 @@
 [data-world="me"],
 [data-world="profile"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-green);
-  --world-ink: oklch(0.42 0.15 145);
-  --world-text: var(--giver-green-complement);
+  --world-g: var(--giver-me);
+  --world-ink: oklch(0.42 0.16 258);
+  --world-text: var(--giver-blue-complement);
   --world-accent: var(--person-self);
 }
 
@@ -468,11 +475,29 @@
 
 [data-world="connection-trade"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--state-trade);
+  --world-g: var(--trade-lead);
   --world-ink: oklch(0.44 0.16 48);
   --world-text: var(--giver-orange-complement);
-  --world-accent: var(--person-self);
+  --world-accent: var(--trade-counter);
   --convo-other: var(--person-other-trade);
+}
+
+/* ---- WHO PROPOSED THE TRADE LEADS ITS WORLD ----
+   I proposed it: the world is blue-led with orange as the counterpart.
+   They proposed it: the world is orange-led with my blue as the counterpart.
+   The other participant's colour is always still visibly present. */
+[data-trade-lead="me"] {
+  --trade-lead: var(--person-self);
+  --trade-counter: var(--state-trade);
+  --world-ink: oklch(0.42 0.16 258);
+  --world-text: var(--giver-blue-complement);
+}
+
+[data-trade-lead="them"] {
+  --trade-lead: var(--state-trade);
+  --trade-counter: var(--person-self);
+  --world-ink: oklch(0.44 0.16 48);
+  --world-text: var(--giver-orange-complement);
 }
 
 

@@ -18,11 +18,10 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * cut in <LivingG> (see EAR_GEOMETRY), so the rim underneath stays a perfectly
  * smooth curve in every mode.
  *
- * TWO MIRRORED PAIRS:
- *   wish   ~10 o'clock  <->  give  ~2 o'clock  (canonical home)
- *   borrow ~8 o'clock   <->  trade ~4 o'clock
+ * THE CLOCK MAP (spatial), read around the middle loop:
+ *   borrow 9:30 · wish 10:45 · MY G 12:00 · give 1:30 · lend 3:00 · trade 4:30
  *
- * The S-curve is never a mode destination.
+ * The S-curve is never a mode destination, and the big lower loop is COMMUNITY.
  */
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
@@ -30,15 +29,15 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 4 o'clock, and LEND at 3 o'clock. Both are LOCKED
- * until the person has a profile and one active give of their own, so
- * onboarding only ever offers MODES.
+ * activities: GIVER = ME at 12:00, and LEND at 3:00. Both are LOCKED until the
+ * person has a profile and one active give of their own, so onboarding only
+ * ever offers MODES.
  */
 export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order. Lend is reserved, not built yet. */
-export const FULL_SEATS = ["trade", "borrow", "wish", "give", "lend", "giver"] as const;
+/** Every seat on the wire, in travel order (borrow 9:30 → trade 4:30). */
+export const FULL_SEATS = ["borrow", "wish", "giver", "give", "lend", "trade"] as const;
 
 
 

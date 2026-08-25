@@ -31,15 +31,29 @@ export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as c
  * the camera pan and the stage can never disagree about where the edges are.
  */
 export const STAGE_WINDOW = {
-  /** The world's own width, as a share of the screen. */
-  artworkFit: 0.94,
+  /** The world's own width, as a share of the screen. Edge padding only. */
+  artworkFit: 0.995,
   /**
    * Clear space kept between a live touch disc and the edge of the glass. Sized
    * generously so a fast drag — where the camera is easing a frame behind the
-   * finger — still never lets the disc touch an edge.
+   * finger — still never lets the disc touch an edge. Kept small so the camera
+   * only ever slides the world by a few pixels: the toggle asks the camera for
+   * room, never the world for size.
    */
-  margin: 40,
+  margin: 20,
 } as const;
+
+/**
+ * THE ONLY VERTICAL ROOM THE TOGGLE IS ALLOWED TO ASK FOR.
+ *
+ * The selector's TOUCH disc reaches 98 units above the artwork at 12:00, but the
+ * VISIBLE ring only reaches 81. The G is therefore sized against the artwork
+ * plus this reserve — never against the whole travel envelope — so the toggle
+ * can never make the world smaller than "as big as the glass allows, with the
+ * ring still on screen".
+ */
+export const STAGE_TOP_RESERVE = 81;
+
 
 /** How much wider the drawing surface is than the world drawn inside it. */
 export const STAGE_OVERDRAW = LIVING_G_FRAME.width / LIVING_G_BOX.width;

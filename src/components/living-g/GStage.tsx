@@ -3,6 +3,7 @@ import {
   LIVING_G_FRAME,
   STAGE_OVERDRAW,
   STAGE_PAN_VAR,
+  STAGE_TOP_RESERVE,
   STAGE_WINDOW,
 } from "./g-path";
 
@@ -20,8 +21,6 @@ import {
  * instead would cost the world a third of its width on a phone; keeping the
  * toggles reachable is the camera's job, not the world's (see stagePanPercent).
  */
-const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
-
 /** Kept as the record of what the frame is built around. */
 export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 

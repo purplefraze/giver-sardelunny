@@ -36,9 +36,11 @@ export const STAGE_WINDOW = {
   /**
    * Clear space kept between a live touch disc and the edge of the glass. Sized
    * generously so a fast drag — where the camera is easing a frame behind the
-   * finger — still never lets the disc touch an edge.
+   * finger — still never lets the disc touch an edge. Kept small so the camera
+   * only ever slides the world by a few pixels: the toggle asks the camera for
+   * room, never the world for size.
    */
-  margin: 40,
+  margin: 20,
 } as const;
 
 /**

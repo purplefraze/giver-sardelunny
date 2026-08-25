@@ -43,8 +43,15 @@ export const CTA_BAND = "2.6rem";
  * the whole frame, selector travel included, fits with room to spare.
  */
 const WIDTH_LIMIT = `${(STAGE_WINDOW.artworkFit * STAGE_OVERDRAW * 100).toFixed(3)}%`;
-const HEIGHT_LIMIT = `calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.995 * ${FRAME_ASPECT.toFixed(5)})`;
+/**
+ * Height is measured against the ARTWORK plus the toggle's visible ring reserve
+ * only (STAGE_TOP_RESERVE) — never the selector's whole travel envelope — so the
+ * toggle can never be the reason the world is small.
+ */
+const VERTICAL_UNITS = LIVING_G_BOX.height + STAGE_TOP_RESERVE;
+const HEIGHT_LIMIT = `calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${(LIVING_G_FRAME.width / VERTICAL_UNITS).toFixed(5)})`;
 const CANONICAL_WIDTH = `min(${WIDTH_LIMIT}, ${HEIGHT_LIMIT})`;
+
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (

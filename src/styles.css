@@ -218,6 +218,8 @@
        trade = orange. Community (the big lower loop) is red + yellow. */
   --mode-give: var(--state-give);
   --mode-lend: oklch(0.74 0.12 192); /* SEAFOAM — blue-green lending */
+  --mode-giver: oklch(0.76 0.13 190); /* TURQUOISE — my own G, the default seat */
+
   --mode-wish: var(--state-wish);
   --mode-borrow: oklch(0.66 0.27 350); /* HOT PINK — borrowing */
   --mode-trade: var(--state-trade);

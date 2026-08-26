@@ -42,7 +42,6 @@ type Props = {
   /** Interactive layer drawn above the Living G (e.g. top-loop selector). */
   overlay?: React.ReactNode;
   /** True when the mode selector owns the small top circle (static ear cut). */
-  earCut?: boolean;
   children?: React.ReactNode;
 };
 
@@ -60,7 +59,6 @@ export function World({
   contentKey,
 
   overlay,
-  earCut = false,
   children,
 }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
@@ -123,7 +121,6 @@ export function World({
           showLabels={teach}
           {...(contentKey === undefined ? {} : { contentKey })}
           overlay={overlay}
-          earCut={earCut}
           regions={{
             top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },
             middle: {

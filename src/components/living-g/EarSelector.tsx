@@ -25,9 +25,10 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * smooth curve in every mode.
  *
  * THE CLOCK MAP (spatial), read around the middle loop:
- *   borrow 9:30 · wish 10:45 · MY G 12:00 · give 1:30 · lend 3:00 · trade 4:30
+ *   borrow 9:00 · wish 10:30 · MY G 12:00 · give 1:30 · lend 3:00 · trade 6:00
  *
- * The S-curve is never a mode destination, and the big lower loop is COMMUNITY.
+ * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
+
  */
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;

@@ -53,11 +53,19 @@ export const STAGE_WINDOW = {
  * from LOOP_CENTRE.middle + 300 track radius + 79 ring radius). Sizing reads
  * this so no satellite is ever clipped by the glass.
  */
+export const SATELLITE_ORBIT = {
+  /** Optical centre of the WHOLE object, not of one loop. */
+  cx: 288,
+  cy: 520,
+  rx: 300,
+  ry: 440,
+} as const;
+
 export const SATELLITE_ENVELOPE = {
-  left: -107,
-  right: 563,
+  left: -91,
+  right: 579,
   width: 670,
-  centre: 228,
+  centre: 244,
 } as const;
 
 /**

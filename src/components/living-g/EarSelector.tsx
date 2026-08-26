@@ -2,11 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
 import {
   EAR_GEOMETRY,
-  LIVING_G_FRAME,
-  LOOP_CENTRE,
-  LOOP_RIM_RADIUS,
   LOOP_SAFE_RADIUS,
-  STAGE_WINDOW,
+  SATELLITE_ORBIT,
 } from "./g-path";
 import { LOOP_ROLE_STYLE } from "./type-scale";
 
@@ -42,19 +39,16 @@ export const FULL_SEATS = SEATS;
 
 type P = { x: number; y: number };
 
-/** THE ONE TRACK — the middle loop's measured centre and outer rim. */
-const TRACK_C: P = LOOP_CENTRE.middle;
-const RIM_R = LOOP_RIM_RADIUS.middle;
-
-/** Ring radius derived from the rim: rim + gap + the ring's own radius. */
-const TRACK_R = RIM_R + EAR_GEOMETRY.gap + EAR_GEOMETRY.outerR;
-
+/**
+ * THE ORBIT. The five satellites sit on one ellipse around the WHOLE object's
+ * optical centre — measured once in g-path.ts — so they read as balanced around
+ * the Living G rather than bunched round a single loop.
+ */
 const RING_MID = (EAR_GEOMETRY.innerR + EAR_GEOMETRY.outerR) / 2;
 const RING_W = EAR_GEOMETRY.outerR - EAR_GEOMETRY.innerR;
 
-/** The stem: root tucked under the rim, tip buried in the ring's stroke. */
-const STEM_FROM = RIM_R - 8;
-const STEM_TO = TRACK_R - EAR_GEOMETRY.innerR - 6;
+/** The stem: it runs from the ring's stroke inward, toward the G's body. */
+const STEM_LEN = 58;
 const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 
 /** THE GENEROUS INVISIBLE TOUCH TARGET, one per satellite. */
@@ -71,16 +65,16 @@ const SEAT_ANGLE: Record<Seat, number> = {
   wish: rad(-135), // 10:30
 };
 
-const at = (angle: number, r: number): P => ({
-  x: TRACK_C.x + r * Math.cos(angle),
-  y: TRACK_C.y + r * Math.sin(angle),
+const at = (angle: number): P => ({
+  x: SATELLITE_ORBIT.cx + SATELLITE_ORBIT.rx * Math.cos(angle),
+  y: SATELLITE_ORBIT.cy + SATELLITE_ORBIT.ry * Math.sin(angle),
 });
 
 /**
  * THE LIVE CENTRE OF A SEAT'S RING. Anything travelling "into the loop" asks
  * for this instead of hard-coding a coordinate.
  */
-export const seatCentre = (seat: Seat): P => at(SEAT_ANGLE[seat], TRACK_R);
+export const seatCentre = (seat: Seat): P => at(SEAT_ANGLE[seat]);
 
 /** The captured word lives in the ring's own negative space. */
 const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.42);

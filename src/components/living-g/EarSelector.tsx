@@ -77,35 +77,38 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE WIRE, NOT A CIRCLE. The selector is a bead on ONE CONTINUOUS LINE that
- * runs from borrow (9:00, one end) clockwise round the top and down the right
- * side to trade (6:00, the other end). There is no wrap-around, so the bead can
- * never teleport across the ends.
+ * THE WIRE, NOT A CIRCLE. The selector is a bead on ONE OPEN ARC whose two
+ * physical ends are MY G (~5 o'clock) and TRADE (6 o'clock). The tiny span
+ * between 5 and 6 o'clock is the wire's PHYSICAL GAP and can never be crossed:
+ * to travel from my g to trade the bead must go the long way, counterclockwise
+ * all the way round the loop.
  *
- * THE SIX FIXED CLOCK SEATS — THE SPATIAL MAP (source of truth):
- *   borrow  9:00  = 180°     hard end   (left)
- *   wish   10:30  = -135°               (upper-left)
- *   giver  12:00  =  -90°               MY G, the top
- *   give    1:30  =  -45°               (upper-right)
- *   lend    3:00  =    0°               (right)
- *   trade   6:00  =   90°    hard end   (bottom, over the LOWER loop)
+ * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth), written as UNWRAPPED
+ * angles so travel is plain distance along the wire and never a wraparound:
+ *   my g   ~5:00  =   60°   hard end   (lower-right, the START of the wire)
+ *   lend    3:00  =    0°              (right)
+ *   give    1:30  =  -45°              (upper-right)
+ *   —      12:00           NO SEAT: the bead simply passes through the top
+ *   wish   10:30  = -135°              (upper-left)
+ *   borrow  9:00  = -180°              (left)
+ *   trade   6:00  = -270°   hard end   (bottom, over the LOWER loop)
  *
- * TRADE IS THE BOTTOM SEAT: at 6:00 the piece rides down past the middle loop
- * and overlaps the big lower loop, exactly as the reference shows. Overlapping
- * the G is correct — the G itself never moves to make room for it.
+ * TRADE'S -270° is the same visual direction as 6 o'clock, but unwrapped: it is
+ * only reachable after the whole counterclockwise journey. Overlapping the big
+ * lower loop there is correct — the G never moves to make room for the toggle.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-180),
-  wish: rad(-135),
-  giver: rad(-90),
-  give: rad(-45),
+  giver: rad(60),
   lend: rad(0),
-  trade: rad(90),
+  give: rad(-45),
+  wish: rad(-135),
+  borrow: rad(-180),
+  trade: rad(-270),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.borrow;
-const TRACK_MAX = SEAT_ANGLE.trade;
+const TRACK_MIN = SEAT_ANGLE.trade;
+const TRACK_MAX = SEAT_ANGLE.giver;
 
 
 
@@ -116,6 +119,7 @@ const shortest = (a: number, b: number) => b - a;
 
 /** The bead can only be where the stroke is. */
 const clampTrack = (a: number) => Math.min(TRACK_MAX, Math.max(TRACK_MIN, a));
+
 
 /**
  * A raw finger angle (-π..π] expressed as the point ON THE WIRE nearest the

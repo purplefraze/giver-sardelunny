@@ -285,6 +285,7 @@ export function EarSelector({
   const dragging = drag !== null;
   const overlayRef = useRef<SVGGElement | null>(null);
   const [overlayShift, setOverlayShift] = useState<P>({ x: 0, y: 0 });
+  const [seatShifts, setSeatShifts] = useState<Record<Seat, P>>(DEFAULT_SEAT_SHIFTS);
   const last = useRef<Seat>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);

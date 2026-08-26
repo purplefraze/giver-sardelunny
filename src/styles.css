@@ -446,11 +446,26 @@
 [data-world="me"],
 [data-world="profile"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-me);
-  --world-ink: oklch(0.42 0.16 258);
-  --world-text: var(--giver-blue-complement);
+  --world-g: var(--mode-giver);
+  --world-ink: oklch(0.42 0.1 195);
+  --world-text: var(--mode-lend-complement);
   --world-accent: var(--person-self);
 }
+
+/* ---------------------------------------------------------------
+   THE TOUCH ANSWER. While a finger is DOWN on the toggle, the whole
+   Living G takes the purple touch colour; the moment it lifts, the G
+   settles into electric orange. Pure state, driven by real pointer
+   events on the toggle — never a decoration.
+   --------------------------------------------------------------- */
+:root[data-g-touch="down"] [data-world] {
+  --world-g: var(--mode-wish);
+}
+
+:root[data-g-touch="up"] [data-world] {
+  --world-g: var(--mode-trade);
+}
+
 
 /* Community — the big lower loop: RED + YELLOW together. Red leads the G,
    yellow is its inseparable second colour (type + accent). */

@@ -177,25 +177,13 @@ export const EAR_GEOMETRY = {
 
 
 /**
- * THE STATIC EAR CUT — one clean angular wedge around the canonical ear and its
- * stem, measured from the MIDDLE LOOP'S centre. It begins just INSIDE the rim's
- * outer edge so no fragment of the old stem flare survives, and the rim itself
- * is then restored by RIM_PATCH below: one smooth arc of the loop's own stroke.
- * The canonical path is never edited.
+ * THE LIVING G IS IMMUTABLE. There is deliberately no ear cut and no rim patch
+ * any more: the canonical artwork is drawn whole, identical pixel for pixel in
+ * every selector state. The toggle is an independent overlay drawn ABOVE the G —
+ * it may overlap the middle loop, the spine or the big lower loop, but nothing
+ * about the G is ever masked, cut, patched, deformed or redrawn for it.
  */
-export const EAR_CUT = { a0: -64, a1: -24, r0: 184, r1: 440 } as const;
 
-/**
- * THE RIM PATCH — the middle loop's measured stroke (inner 143, outer 196.5)
- * redrawn as a perfect arc across the cut, a little wider on both sides, so the
- * 2 o'clock section reads as ONE continuous circular curve in every mode.
- */
-export const RIM_PATCH = {
-  a0: -80,
-  a1: -8,
-  rMid: 169.75,
-  width: 53.5,
-} as const;
 
 type Pt = { x: number; y: number };
 const rad = (d: number) => (d * Math.PI) / 180;

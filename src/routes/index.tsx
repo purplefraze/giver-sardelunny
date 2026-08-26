@@ -532,7 +532,6 @@ function Index() {
               talking === null &&
               !threads
             }
-            earCut
             overlay={
               <EarSelector
                 mode={seat}

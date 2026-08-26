@@ -19,13 +19,15 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * apart, because they are defined relative to the same axis and placed by ONE
  * rotation about ONE centre with ONE angle.
  *
- * The canonical Living G is NEVER rotated, copied, deformed or cut at the
- * selector's live position. Its original ear is removed once by a tight static
- * cut in <LivingG> (see EAR_GEOMETRY), so the rim underneath stays a perfectly
- * smooth curve in every mode.
+ * The canonical Living G is NEVER rotated, copied, deformed, masked, cut or
+ * redrawn — not statically and certainly not at the selector's live position.
+ * The piece is a pure OVERLAY drawn above the untouched artwork, so the G looks
+ * pixel-identical at every toggle position; where the piece and the G meet, the
+ * piece simply sits on top.
  *
- * THE CLOCK MAP (spatial), read around the middle loop:
- *   borrow 9:00 · wish 10:30 · MY G 12:00 · give 1:30 · lend 3:00 · trade 6:00
+ * THE CLOCK MAP (spatial), read along the wire from its my-g end:
+ *   MY G ~5:00 · lend 3:00 · give 1:30 · (no seat at 12:00) · wish 10:30 ·
+ *   borrow 9:00 · trade 6:00
  *
  * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
 
@@ -36,15 +38,19 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12:00, and LEND at 3:00. Both are LOCKED until the
+ * activities: GIVER = ME at ~5:00, and LEND at 3:00. Both are LOCKED until the
  * person has a profile and one active give of their own, so onboarding only
  * ever offers MODES.
  */
 export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order (borrow 9:30 → trade 4:30). */
-export const FULL_SEATS = ["borrow", "wish", "giver", "give", "lend", "trade"] as const;
+/**
+ * Every seat on the wire, IN PHYSICAL TRAVEL ORDER along the open arc:
+ * my g (~5:00, one end) → lend → give → past 12:00 (no seat) → wish → borrow →
+ * trade (6:00, the other end).
+ */
+export const FULL_SEATS = ["giver", "lend", "give", "wish", "borrow", "trade"] as const;
 
 
 
@@ -77,35 +83,38 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE WIRE, NOT A CIRCLE. The selector is a bead on ONE CONTINUOUS LINE that
- * runs from borrow (9:00, one end) clockwise round the top and down the right
- * side to trade (6:00, the other end). There is no wrap-around, so the bead can
- * never teleport across the ends.
+ * THE WIRE, NOT A CIRCLE. The selector is a bead on ONE OPEN ARC whose two
+ * physical ends are MY G (~5 o'clock) and TRADE (6 o'clock). The tiny span
+ * between 5 and 6 o'clock is the wire's PHYSICAL GAP and can never be crossed:
+ * to travel from my g to trade the bead must go the long way, counterclockwise
+ * all the way round the loop.
  *
- * THE SIX FIXED CLOCK SEATS — THE SPATIAL MAP (source of truth):
- *   borrow  9:00  = 180°     hard end   (left)
- *   wish   10:30  = -135°               (upper-left)
- *   giver  12:00  =  -90°               MY G, the top
- *   give    1:30  =  -45°               (upper-right)
- *   lend    3:00  =    0°               (right)
- *   trade   6:00  =   90°    hard end   (bottom, over the LOWER loop)
+ * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth), written as UNWRAPPED
+ * angles so travel is plain distance along the wire and never a wraparound:
+ *   my g   ~5:00  =   60°   hard end   (lower-right, the START of the wire)
+ *   lend    3:00  =    0°              (right)
+ *   give    1:30  =  -45°              (upper-right)
+ *   —      12:00           NO SEAT: the bead simply passes through the top
+ *   wish   10:30  = -135°              (upper-left)
+ *   borrow  9:00  = -180°              (left)
+ *   trade   6:00  = -270°   hard end   (bottom, over the LOWER loop)
  *
- * TRADE IS THE BOTTOM SEAT: at 6:00 the piece rides down past the middle loop
- * and overlaps the big lower loop, exactly as the reference shows. Overlapping
- * the G is correct — the G itself never moves to make room for it.
+ * TRADE'S -270° is the same visual direction as 6 o'clock, but unwrapped: it is
+ * only reachable after the whole counterclockwise journey. Overlapping the big
+ * lower loop there is correct — the G never moves to make room for the toggle.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-180),
-  wish: rad(-135),
-  giver: rad(-90),
-  give: rad(-45),
+  giver: rad(60),
   lend: rad(0),
-  trade: rad(90),
+  give: rad(-45),
+  wish: rad(-135),
+  borrow: rad(-180),
+  trade: rad(-270),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.borrow;
-const TRACK_MAX = SEAT_ANGLE.trade;
+const TRACK_MIN = SEAT_ANGLE.trade;
+const TRACK_MAX = SEAT_ANGLE.giver;
 
 
 
@@ -116,6 +125,7 @@ const shortest = (a: number, b: number) => b - a;
 
 /** The bead can only be where the stroke is. */
 const clampTrack = (a: number) => Math.min(TRACK_MAX, Math.max(TRACK_MIN, a));
+
 
 /**
  * A raw finger angle (-π..π] expressed as the point ON THE WIRE nearest the
@@ -408,7 +418,7 @@ export function EarSelector({
   return (
     <g>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          MY G IS ONE OF THEM: at ~5 o'clock it is the same small, soft, close-in
           dot as every other inactive destination — its hue is red, nothing else
           about it is louder. The moment the toggle arrives it disappears under
           the piece itself, which then reads "my g". */}

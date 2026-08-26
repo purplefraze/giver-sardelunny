@@ -2,7 +2,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buzz, haptics } from "@/lib/haptics";
 import {
+  EAR_GEOMETRY,
   LOOP_CENTRE,
+  LOOP_RIM_RADIUS,
   G_ANCHORS,
   G_REGION_BANDS,
   LIVING_G_PATH,
@@ -44,6 +46,8 @@ type Props = {
   showLabels?: boolean;
   /** Interactive layer drawn above the artwork (eg the top-loop selector). */
   overlay?: React.ReactNode;
+  /** True when the original ear is carried by the selector overlay. */
+  movableEar?: boolean;
   /**
    * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (eg the current mode).
    * When it changes, every loop's content is UNMOUNTED and rebuilt, so no
@@ -136,6 +140,7 @@ export function LivingG({
   className,
   showLabels = true,
   overlay,
+  movableEar = false,
   contentKey = "",
   weight = "normal",
 }: Props) {
@@ -190,6 +195,7 @@ export function LivingG({
     [],
   );
   const uid = useId().replace(/:/g, "");
+  const artworkMask = movableEar ? `url(#${uid}-movable-ear-mask)` : undefined;
 
   /** PRESS AND HOLD teaches the loop again — a soft fade, never a tooltip. */
   const holdCue = (key: RegionKey) => {
@@ -225,6 +231,32 @@ export function LivingG({
         or rectangle is ever visible.
       */}
       <defs>
+        {movableEar ? (
+          <mask id={`${uid}-movable-ear-mask`} maskUnits="userSpaceOnUse">
+            <rect
+              x={-220}
+              y={-220}
+              width={1200}
+              height={1600}
+              fill="white"
+            />
+            <line
+              x1={LOOP_CENTRE.middle.x + Math.cos((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 36)}
+              y1={LOOP_CENTRE.middle.y + Math.sin((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 36)}
+              x2={EAR_GEOMETRY.home.x}
+              y2={EAR_GEOMETRY.home.y}
+              stroke="black"
+              strokeWidth={EAR_GEOMETRY.stemWidth * 4.8}
+              strokeLinecap="round"
+            />
+            <circle
+              cx={EAR_GEOMETRY.home.x}
+              cy={EAR_GEOMETRY.home.y}
+              r={EAR_GEOMETRY.outerR + 54}
+              fill="black"
+            />
+          </mask>
+        ) : null}
         {/*
           Soft radial falloffs centred on each loop, so a swell reads as that
           loop breathing and dissolves organically into the rest of the stroke —
@@ -259,8 +291,10 @@ export function LivingG({
       <g>
         {/* THE IMMUTABLE ASSET. The canonical artwork is drawn whole — never
             masked, cut, patched or redrawn for the selector's sake. */}
-        <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-          <path data-living-g-artwork="base" d={LIVING_G_PATH} {...heavy} />
+        <g {...(artworkMask ? { mask: artworkMask } : {})}>
+          <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+            <path data-living-g-artwork="base" d={LIVING_G_PATH} {...heavy} />
+          </g>
         </g>
 
         {ORDER.map((key) => {
@@ -275,8 +309,10 @@ export function LivingG({
                   transformOrigin: `${ring.x}px ${ring.y}px`,
                 }}
               >
-                <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                  <path d={LIVING_G_PATH} {...heavy} />
+                <g {...(artworkMask ? { mask: artworkMask } : {})}>
+                  <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
+                    <path d={LIVING_G_PATH} {...heavy} />
+                  </g>
                 </g>
               </g>
             </g>

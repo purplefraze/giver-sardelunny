@@ -25,7 +25,7 @@ import { buzz, haptics } from "@/lib/haptics";
  *   gift   the remaining 50, waiting to be moved into the giving loop
  *
  * TWO PATHS. Complete the spark interaction and the richer onboarding follows.
- * Linger past roughly thirty seconds and Giver quietly opens My G instead —
+   * Linger past three full minutes and Giver quietly opens My G instead —
  * no failure, no explanation, no countdown.
  *
  * TYPOGRAPHY IS QUIET. Copy is set small and centred in the loops' own interior
@@ -235,6 +235,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
          giver = turquoise · give = green · wish = purple · borrow = hot pink · trade = orange. */
       world={seat}
       press={press}
+      movableEar
       overlay={
         <>
           {copy}

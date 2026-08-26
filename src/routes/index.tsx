@@ -520,6 +520,7 @@ function Index() {
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
             world={seatWorld}
+            movableEar
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={

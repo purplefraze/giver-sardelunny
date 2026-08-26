@@ -84,26 +84,25 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth):
- *   my g 5:00          =   60° at the middle-loop opening (one endpoint)
- *   lend right         =    0°
- *   give right-upper   =  -45°
- *   wish left-upper    = -135°
- *   borrow left        = -180°
- *   trade 6:00         = -270° over the LOWER/LARGE loop (other endpoint)
+ * THE FIVE FIXED SEATS — THE SPATIAL MAP (source of truth):
+ *   giver 4:30         =   45° (the default seat, one endpoint) — turquoise
+ *   give 1:30          =  -45° — bright green
+ *   wish 10:30         = -135° — dreamy purple
+ *   borrow 9:00        = -180° — hot pink
+ *   trade 6:00         = -270° over the LOWER/LARGE loop (other endpoint) — orange
  *
- * Angles are deliberately UNWRAPPED. The open wire runs the long way from My G
- * to Trade; its tiny physical 5-to-6 gap is not part of the track. There is no
- * seat at -90°/12:00 and no selector-driven camera pan.
+ * Angles are deliberately UNWRAPPED. The open wire runs the long way from Giver
+ * to Trade; the tiny physical 4:30-to-6 gap is not part of the track. There is
+ * no seat at -90°/12:00 and no selector-driven camera pan.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  giver: rad(60),
-  lend: rad(0),
+  giver: rad(45),
   give: rad(-45),
   wish: rad(-135),
   borrow: rad(-180),
   trade: rad(-270),
 };
+
 
 /** The wire's two physical ends. Nothing may travel outside them. */
 const TRACK_MIN = SEAT_ANGLE.trade;

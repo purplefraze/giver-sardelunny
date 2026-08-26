@@ -216,15 +216,15 @@ function Index() {
   /* EVERY SEAT ON THE OPEN WIRE IS REACHABLE — MY G starts at the middle-loop
      5:00 opening; the long route passes LEND, GIVE, WISH and BORROW before
      ending at TRADE 6:00 over the lower/large loop. There is no 12:00 seat. */
-  const [seat, setSeatState] = useState<Seat>("give");
+  const [seat, setSeatState] = useState<Seat>("giver");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
     setSeatState(next);
 
-    /* MY G AND LEND ARE DESTINATIONS, NOT INHERITED MODES: only activity seats
+    /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats
        are remembered as the first-use mode. */
-    if (next !== "giver" && next !== "lend") rememberFirstUseSeat(next);
+    if (next !== "giver") rememberFirstUseSeat(next);
   };
 
 
@@ -312,8 +312,8 @@ function Index() {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
-    /* MY G AND LEND ARE DESTINATIONS, NOT CATEGORIES: they have no intro. */
-    if (seat === "giver" || seat === "lend") return;
+    /* MY G IS A DESTINATION, NOT A CATEGORY: it has no intro. */
+    if (seat === "giver") return;
     if (introSeenStore.get()[seat]) return;
     showIntro(seat);
   }, [entered, seat]);
@@ -404,20 +404,19 @@ function Index() {
   const unread = unreadCount(links, ME_ID);
 
   /**
-   * THE TOGGLE IS THE WORLD: wish | give | trade | borrow | lend — plus MY G,
-   * the destination seat at the middle-loop 5:00 opening. `activity` is the item
-   * world, and it is null while the toggle sits on My G. LEND is the offering
-   * side of borrowing, so its items are borrows held from the lending side.
+   * THE TOGGLE IS THE WORLD: give 1:30 | wish 10:30 | borrow 9:00 | trade 6:00
+   * — plus GIVER, the default destination seat at 4:30. `activity` is the item
+   * world, and it is null while the toggle sits on My G.
    */
   const activity: Mode | null =
-    seat === "giver" ? null : seat === "lend" ? "borrow" : (seat as Mode);
+    seat === "giver" ? null : (seat as Mode);
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = activity ?? "give";
   const content = MODE_CONTENT[mode];
   /** The seat's own word: lending is not borrowing, even on the same items. */
-  const seatPlural = seat === "lend" ? "lends" : CATEGORY_PLURAL[mode];
+  const seatPlural = CATEGORY_PLURAL[mode];
   /** The world the whole screen is painted in — lend has its own seafoam. */
-  const seatWorld = seat === "lend" ? "lend" : (activity ?? "profile");
+  const seatWorld = activity ?? "profile";
 
 
   /**
@@ -437,8 +436,8 @@ function Index() {
   };
 
   /**
-    * EVERY SEAT PRESENT, ALWAYS — the six fixed controls on one open arc:
-    * MY G 5:00 endpoint · lend 3:00 · give 1:30 · wish 10:30 · borrow 9:00 ·
+    * EVERY SEAT PRESENT, ALWAYS — the five fixed controls on one open arc:
+    * GIVER 4:30 endpoint · give 1:30 · wish 10:30 · borrow 9:00 ·
     * trade 6:00 endpoint over the lower/large loop. There is no 12:00 seat.
    */
   const myGSeats: readonly Seat[] = FULL_SEATS;

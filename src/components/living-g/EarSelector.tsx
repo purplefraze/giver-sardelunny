@@ -28,10 +28,11 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * piece simply sits on top.
  *
  * THE CLOCK MAP (spatial), read along the one open wire:
- *   MY G 5:00 endpoint · lend 3:00 · give 1:30 · pass 12:00 with NO seat ·
+ *   GIVER 4:30 endpoint (the default) · give 1:30 · pass 12:00 with NO seat ·
  *   wish 10:30 · borrow 9:00 · trade 6:00 endpoint over the lower/large loop
  *
  * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
+ * There is ONLY EVER ONE toggle piece on the wire — five seats, one bead.
 
  */
 
@@ -39,19 +40,18 @@ export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
 /**
- * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at the middle loop's 5:00 opening, and LEND at 3:00. Both are
- * locked until the person has a profile and one active give of their own, so
- * onboarding only ever offers MODES.
+ * THE FULL TRACK, ONCE IT IS EARNED. One destination sits outside the four
+ * activities: GIVER = ME at 4:30, the wire's default endpoint.
  */
-export const SEATS = ["giver", "lend", "give", "wish", "borrow", "trade"] as const;
+export const SEATS = ["giver", "give", "wish", "borrow", "trade"] as const;
 export type Seat = (typeof SEATS)[number];
 
 /**
  * Every seat on the wire, IN PHYSICAL TRAVEL ORDER around the stationary G:
- * my g → lend → give → (12:00, no seat) → wish → borrow → trade.
+ * giver → give → (12:00, no seat) → wish → borrow → trade.
  */
 export const FULL_SEATS = SEATS;
+
 
 
 
@@ -84,26 +84,25 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth):
- *   my g 5:00          =   60° at the middle-loop opening (one endpoint)
- *   lend right         =    0°
- *   give right-upper   =  -45°
- *   wish left-upper    = -135°
- *   borrow left        = -180°
- *   trade 6:00         = -270° over the LOWER/LARGE loop (other endpoint)
+ * THE FIVE FIXED SEATS — THE SPATIAL MAP (source of truth):
+ *   giver 4:30         =   45° (the default seat, one endpoint) — turquoise
+ *   give 1:30          =  -45° — bright green
+ *   wish 10:30         = -135° — dreamy purple
+ *   borrow 9:00        = -180° — hot pink
+ *   trade 6:00         = -270° over the LOWER/LARGE loop (other endpoint) — orange
  *
- * Angles are deliberately UNWRAPPED. The open wire runs the long way from My G
- * to Trade; its tiny physical 5-to-6 gap is not part of the track. There is no
- * seat at -90°/12:00 and no selector-driven camera pan.
+ * Angles are deliberately UNWRAPPED. The open wire runs the long way from Giver
+ * to Trade; the tiny physical 4:30-to-6 gap is not part of the track. There is
+ * no seat at -90°/12:00 and no selector-driven camera pan.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  giver: rad(60),
-  lend: rad(0),
+  giver: rad(45),
   give: rad(-45),
   wish: rad(-135),
   borrow: rad(-180),
   trade: rad(-270),
 };
+
 
 /** The wire's two physical ends. Nothing may travel outside them. */
 const TRACK_MIN = SEAT_ANGLE.trade;
@@ -153,7 +152,6 @@ const SELECTOR_EDGE_MARGIN = STAGE_WINDOW.margin;
 const ZERO_SHIFT: P = { x: 0, y: 0 };
 const DEFAULT_SEAT_SHIFTS: Record<Seat, P> = {
   giver: ZERO_SHIFT,
-  lend: ZERO_SHIFT,
   give: ZERO_SHIFT,
   wish: ZERO_SHIFT,
   borrow: ZERO_SHIFT,
@@ -224,12 +222,11 @@ const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
 /** The locked seat colours, for seats that state a person's history. */
 const MODE_COLOUR: Record<Seat, string> = {
-  giver: "var(--giver-me)",
+  giver: "var(--mode-giver)",
   wish: "var(--mode-wish)",
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
-  lend: "var(--mode-lend)",
 
 };
 
@@ -317,6 +314,21 @@ export function EarSelector({
   useEffect(() => () => {
     if (peekTimer.current) clearTimeout(peekTimer.current);
   }, []);
+
+  /**
+   * THE TOUCH ANSWER, driven by REAL pointer events on the toggle: while a
+   * finger is down the whole Living G takes the purple touch colour; the moment
+   * it lifts, the G settles into electric orange. The flag lives on the document
+   * root, so every world painted from --world-g answers together.
+   */
+  const touch = (state: "down" | "up" | null) => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (state === null) root.removeAttribute("data-g-touch");
+    else root.setAttribute("data-g-touch", state);
+  };
+  useEffect(() => () => touch(null), []);
+
 
   /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
@@ -414,7 +426,6 @@ export function EarSelector({
       const { x, y } = shiftForAngle(angle);
       const nextSeatShifts: Record<Seat, P> = {
         giver: shiftForAngle(SEAT_ANGLE.giver),
-        lend: shiftForAngle(SEAT_ANGLE.lend),
         give: shiftForAngle(SEAT_ANGLE.give),
         wish: shiftForAngle(SEAT_ANGLE.wish),
         borrow: shiftForAngle(SEAT_ANGLE.borrow),
@@ -511,6 +522,9 @@ export function EarSelector({
       }
     }
     activeId.current = null;
+    /* FINGER LIFTED: the G returns to electric orange. */
+    touch("up");
+
     const g = gesture.current;
     const wasHeld = held.current;
     stopPeek();
@@ -774,6 +788,8 @@ export function EarSelector({
           // A second finger never joins an active gesture.
           if (activeId.current !== null) return;
           activeId.current = e.pointerId;
+          /* FINGER DOWN: the G takes the purple touch colour immediately. */
+          touch("down");
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
           startPeek();

@@ -315,6 +315,21 @@ export function EarSelector({
     if (peekTimer.current) clearTimeout(peekTimer.current);
   }, []);
 
+  /**
+   * THE TOUCH ANSWER, driven by REAL pointer events on the toggle: while a
+   * finger is down the whole Living G takes the purple touch colour; the moment
+   * it lifts, the G settles into electric orange. The flag lives on the document
+   * root, so every world painted from --world-g answers together.
+   */
+  const touch = (state: "down" | "up" | null) => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (state === null) root.removeAttribute("data-g-touch");
+    else root.setAttribute("data-g-touch", state);
+  };
+  useEffect(() => () => touch(null), []);
+
+
   /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
 

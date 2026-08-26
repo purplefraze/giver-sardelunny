@@ -2,10 +2,10 @@ import {
   LIVING_G_BOX,
   LIVING_G_FRAME,
   STAGE_OVERDRAW,
-  STAGE_PAN_VAR,
   STAGE_TOP_RESERVE,
   STAGE_WINDOW,
 } from "./g-path";
+
 
 /**
  * THE ONE canonical stage for every full-screen Living G.

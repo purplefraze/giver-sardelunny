@@ -41,6 +41,8 @@ type Props = {
 
   /** Interactive layer drawn above the Living G (e.g. top-loop selector). */
   overlay?: React.ReactNode;
+  /** The overlay owns the G's small ear, so the base artwork must not show another one. */
+  movableEar?: boolean;
   children?: React.ReactNode;
 };
 
@@ -58,6 +60,7 @@ export function World({
   contentKey,
 
   overlay,
+  movableEar = false,
   children,
 }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
@@ -135,6 +138,7 @@ export function World({
           className={G_PRESENCE}
           showLabels={teach}
           {...(contentKey === undefined ? {} : { contentKey })}
+          movableEar={movableEar}
           overlay={overlay}
           regions={{
             top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },

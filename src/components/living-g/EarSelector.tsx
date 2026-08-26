@@ -322,23 +322,13 @@ export function EarSelector({
   const ear = at(angle, TRACK_R);
 
   /**
-   * THE CAMERA FOLLOWS THE BEAD. The world is sized to be as large as the phone
-   * allows, so borrow at 9:30 and lend at 3:00 reach past its edges. Rather than
-   * shrinking the G to hold them, the stage slides by exactly as much as the live
-   * touch disc needs — at rest, at every seat, and continuously while dragging.
+   * THE G NEVER MOVES FOR THE TOGGLE. The selector travels alone: its ring,
+   * stem, word and hit areas follow the live angle, while the stage stays a
+   * fixed canvas. Seats near the world's edges simply overlap the artwork
+   * instead of pushing it sideways.
    */
-  useEffect(() => {
-    const doc = document.documentElement;
-    doc.style.setProperty(STAGE_PAN_VAR, `${stagePanPercent(ear.x, EAR_GEOMETRY.gripR).toFixed(3)}%`);
-  }, [ear.x]);
 
-  /** The world settles back the moment this track is gone. */
-  useEffect(
-    () => () => {
-      document.documentElement.style.setProperty(STAGE_PAN_VAR, "0%");
-    },
-    [],
-  );
+
 
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {

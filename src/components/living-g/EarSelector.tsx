@@ -19,8 +19,8 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * smooth curve in every mode.
  *
  * TWO MIRRORED PAIRS:
- *   wish   ~10 o'clock  <->  give  ~2 o'clock  (canonical home)
- *   lend    9 o'clock   <->  trade  3 o'clock
+ *   wish 10:30 <-> borrow 1:30
+ *   lend  7:30 <-> trade  4:30, with give at 6:00 over the lower loop
  *
  * The S-curve is never a mode destination.
  */
@@ -30,7 +30,7 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME around 4:30, and LEND between borrow and trade. My G is
+ * activities: GIVER = ME at 9 o'clock, and LEND at 7:30 between give and my g. My G is
  * LOCKED until the person has discovered their profile, so onboarding only ever
  * offers the activity seats.
  */
@@ -38,7 +38,7 @@ export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as con
 export type Seat = (typeof SEATS)[number];
 
 /** Every seat on the wire, in travel order (one end of the break -> the other). */
-export const FULL_SEATS = ["trade", "lend", "borrow", "wish", "give", "giver"] as const;
+export const FULL_SEATS = ["give", "lend", "giver", "wish", "borrow", "trade"] as const;
 
 
 
@@ -79,20 +79,21 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * teleport across the gap or take a shortcut through empty space.
  *
  * THE SEATS — THE SOURCE OF TRUTH (clock positions):
- *   giver   +45°   4:30 (my g), just inside the clockwise end
- *   give    -45°   1:30
- *   wish   -135°  10:30
- *   borrow -180°   9:00
+ *   give   -270°   6:00, the anticlockwise end on the far lip of the break,
+ *                  where the node intentionally overlaps the lower loop
  *   lend   -225°   7:30
- *   trade  -270°   6:00, the anticlockwise end on the far lip of the break
+ *   giver  -180°   9:00 (my profile)
+ *   wish   -135°  10:30
+ *   borrow  -45°   1:30
+ *   trade   +45°   4:30, just inside the clockwise end
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  trade: rad(-270),
+  give: rad(-270),
   lend: rad(-225),
-  borrow: rad(-180),
+  giver: rad(-180),
   wish: rad(-135),
-  give: rad(-45),
-  giver: rad(45),
+  borrow: rad(-45),
+  trade: rad(45),
 };
 
 /** The wire's two physical ends — the two lips of the break. Nothing passes. */
@@ -388,7 +389,7 @@ export function EarSelector({
   return (
     <g>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          MY G IS ONE OF THEM: at 9 o'clock it is the same small, soft, close-in
           dot as every other inactive destination — its hue is red, nothing else
           about it is louder. The moment the toggle arrives it disappears under
           the piece itself, which then reads "my g". */}

@@ -19,9 +19,9 @@ const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
 /** Kept as the record of what the frame is built around. */
 export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 
-/** How much of the FRAME the artwork itself occupies. */
-const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
-const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
+/** Kept as the record of how much of the FRAME the artwork itself occupies. */
+export const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
+
 
 /**
  * THE CLEAN BOTTOM BAND. The one strip of paper the artwork never enters, so a

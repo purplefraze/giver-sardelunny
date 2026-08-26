@@ -542,6 +542,7 @@ export function EarSelector({
           the piece itself, which then reads "my g". */}
       {seats.map((m) => {
         const hint = at(SEAT_ANGLE[m], RIM_R + 16);
+        const shift = seatShifts[m];
         const active = mode === m && !dragging;
         // On a person's screen the seats TELL THEIR STORY: a seat they have
         // taken part in reads in that mode's own colour, a little stronger.
@@ -550,8 +551,8 @@ export function EarSelector({
         return (
           <circle
             key={m}
-            cx={hint.x}
-            cy={hint.y}
+            cx={hint.x + shift.x}
+            cy={hint.y + shift.y}
             r={told ? 8 : 5}
             fill={isMe ? "var(--giver-me)" : told ? MODE_COLOUR[m] : "var(--world-g)"}
             pointerEvents="none"
@@ -711,11 +712,12 @@ export function EarSelector({
         ? seats.map((m) => {
             if (m === mode) return null;
             const spot = at(SEAT_ANGLE[m], TRACK_R);
+            const shift = seatShifts[m];
             return (
               <circle
                 key={`seat-${m}`}
-                cx={spot.x}
-                cy={spot.y}
+                cx={spot.x + shift.x}
+                cy={spot.y + shift.y}
                 r={60}
                 fill="transparent"
                 pointerEvents="all"

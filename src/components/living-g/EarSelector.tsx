@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
 import {
   EAR_GEOMETRY,
+  LIVING_G_FRAME,
   LOOP_CENTRE,
   LOOP_RIM_RADIUS,
   LOOP_SAFE_RADIUS,
+  STAGE_WINDOW,
 } from "./g-path";
 import { LOOP_ROLE_STYLE } from "./type-scale";
 
@@ -25,9 +27,9 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * pixel-identical at every toggle position; where the piece and the G meet, the
  * piece simply sits on top.
  *
- * THE CLOCK MAP (spatial), read along the wire from its my-g end:
- *   MY G ~5:00 · lend 3:00 · give 1:30 · (no seat at 12:00) · wish 10:30 ·
- *   borrow 9:00 · trade 6:00
+ * THE CLOCK MAP (spatial), read around the visible loop:
+ *   borrow left · wish left-to-upper · MY G 12:00 · give right-upper ·
+ *   lend right-to-lower · trade 6:00 over the lower/large loop
  *
  * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
 
@@ -38,19 +40,18 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at ~5:00, and LEND at 3:00. Both are LOCKED until the
- * person has a profile and one active give of their own, so onboarding only
- * ever offers MODES.
+ * activities: GIVER = ME at 12:00, and LEND on the right-lower side. Both are
+ * locked until the person has a profile and one active give of their own, so
+ * onboarding only ever offers MODES.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
+export const SEATS = ["borrow", "wish", "giver", "give", "lend", "trade"] as const;
 export type Seat = (typeof SEATS)[number];
 
 /**
- * Every seat on the wire, IN PHYSICAL TRAVEL ORDER along the open arc:
- * my g (~5:00, one end) → lend → give → past 12:00 (no seat) → wish → borrow →
- * trade (6:00, the other end).
+ * Every seat on the wire, IN PHYSICAL TRAVEL ORDER around the stationary G:
+ * borrow → wish → my g → give → lend → trade.
  */
-export const FULL_SEATS = ["giver", "lend", "give", "wish", "borrow", "trade"] as const;
+export const FULL_SEATS = SEATS;
 
 
 
@@ -83,38 +84,29 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE WIRE, NOT A CIRCLE. The selector is a bead on ONE OPEN ARC whose two
- * physical ends are MY G (~5 o'clock) and TRADE (6 o'clock). The tiny span
- * between 5 and 6 o'clock is the wire's PHYSICAL GAP and can never be crossed:
- * to travel from my g to trade the bead must go the long way, counterclockwise
- * all the way round the loop.
+ * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth):
+ *   borrow left        = -180°
+ *   wish left-upper    = -135°
+ *   my g 12:00         =  -90°
+ *   give right-upper   =  -45°
+ *   lend right-lower   =   35°
+ *   trade 6:00         =   90° over the LOWER/LARGE loop
  *
- * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth), written as UNWRAPPED
- * angles so travel is plain distance along the wire and never a wraparound:
- *   my g   ~5:00  =   60°   hard end   (lower-right, the START of the wire)
- *   lend    3:00  =    0°              (right)
- *   give    1:30  =  -45°              (upper-right)
- *   —      12:00           NO SEAT: the bead simply passes through the top
- *   wish   10:30  = -135°              (upper-left)
- *   borrow  9:00  = -180°              (left)
- *   trade   6:00  = -270°   hard end   (bottom, over the LOWER loop)
- *
- * TRADE'S -270° is the same visual direction as 6 o'clock, but unwrapped: it is
- * only reachable after the whole counterclockwise journey. Overlapping the big
- * lower loop there is correct — the G never moves to make room for the toggle.
+ * This angle range is an open wire from Borrow to Trade. There is no old 4:30
+ * trade seat, no hidden 5:00 home, and no selector-driven camera pan.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  giver: rad(60),
-  lend: rad(0),
-  give: rad(-45),
-  wish: rad(-135),
   borrow: rad(-180),
-  trade: rad(-270),
+  wish: rad(-135),
+  giver: rad(-90),
+  give: rad(-45),
+  lend: rad(35),
+  trade: rad(90),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.trade;
-const TRACK_MAX = SEAT_ANGLE.giver;
+const TRACK_MIN = SEAT_ANGLE.borrow;
+const TRACK_MAX = SEAT_ANGLE.trade;
 
 
 
@@ -154,6 +146,39 @@ const at = (angle: number, r: number): P => ({
   x: TRACK_C.x + r * Math.cos(angle),
   y: TRACK_C.y + r * Math.sin(angle),
 });
+
+const SELECTOR_EDGE_MARGIN = STAGE_WINDOW.margin;
+
+function selectorBox(a: number) {
+  const c = at(a, TRACK_R);
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const tx = -sin;
+  const ty = cos;
+  const points: P[] = [
+    { x: c.x - EAR_GEOMETRY.gripR, y: c.y - EAR_GEOMETRY.gripR },
+    { x: c.x + EAR_GEOMETRY.gripR, y: c.y + EAR_GEOMETRY.gripR },
+  ];
+
+  for (const r of [STEM_FROM, STEM_TO]) {
+    for (const side of [-STEM_HALF, STEM_HALF]) {
+      points.push({
+        x: TRACK_C.x + cos * r + tx * side,
+        y: TRACK_C.y + sin * r + ty * side,
+      });
+    }
+  }
+
+  return points.reduce(
+    (box, p) => ({
+      minX: Math.min(box.minX, p.x),
+      maxX: Math.max(box.maxX, p.x),
+      minY: Math.min(box.minY, p.y),
+      maxY: Math.max(box.maxY, p.y),
+    }),
+    { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
+  );
+}
 
 /**
  * THE LIVE CENTRE OF THE TOP LOOP — the small circular selector itself, wherever
@@ -222,7 +247,7 @@ export function EarSelector({
   photo?: string;
   /** The modes this person has taken part in, told by the seats themselves. */
   history?: Seat[];
-  /** Which seats this track offers. My own G offers all five (giver = me). */
+  /** Which seats this track offers. My own G offers all six (giver = me). */
   seats?: readonly Seat[];
   /** What the piece SAYS at rest, when the seat's own name is not the word. */
   word?: string;
@@ -247,6 +272,8 @@ export function EarSelector({
 
   const [drag, setDrag] = useState<number | null>(null);
   const dragging = drag !== null;
+  const overlayRef = useRef<SVGGElement | null>(null);
+  const [overlayShift, setOverlayShift] = useState<P>({ x: 0, y: 0 });
   const last = useRef<Seat>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
@@ -332,11 +359,60 @@ export function EarSelector({
   const ear = at(angle, TRACK_R);
 
   /**
-   * THE G NEVER MOVES FOR THE TOGGLE. The selector travels alone: its ring,
-   * stem, word and hit areas follow the live angle, while the stage stays a
-   * fixed canvas. Seats near the world's edges simply overlap the artwork
-   * instead of pushing it sideways.
+   * THE G NEVER MOVES FOR THE TOGGLE. The selector is mounted in a separate SVG
+   * overlay layer. If the visual piece would clip against the phone glass, this
+   * correction translates ONLY that overlay group; the stage and artwork keep
+   * their invariant transform.
    */
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const update = () => {
+      const group = overlayRef.current;
+      const svg = group?.ownerSVGElement;
+      if (!svg) return;
+      const glass = svg.closest("[data-world]") ?? svg.parentElement;
+      if (!glass) return;
+
+      const svgRect = svg.getBoundingClientRect();
+      const glassRect = glass.getBoundingClientRect();
+      if (svgRect.width <= 0 || svgRect.height <= 0) return;
+
+      const ux = LIVING_G_FRAME.width / svgRect.width;
+      const uy = LIVING_G_FRAME.height / svgRect.height;
+      const visible = {
+        left: LIVING_G_FRAME.x + (glassRect.left - svgRect.left) * ux,
+        right: LIVING_G_FRAME.x + (glassRect.right - svgRect.left) * ux,
+        top: LIVING_G_FRAME.y + (glassRect.top - svgRect.top) * uy,
+        bottom: LIVING_G_FRAME.y + (glassRect.bottom - svgRect.top) * uy,
+      };
+      const mx = SELECTOR_EDGE_MARGIN * ux;
+      const my = SELECTOR_EDGE_MARGIN * uy;
+      const box = selectorBox(angle);
+
+      let x = 0;
+      let y = 0;
+      if (box.minX < visible.left + mx) x = visible.left + mx - box.minX;
+      if (box.maxX + x > visible.right - mx) x = visible.right - mx - box.maxX;
+      if (box.minY < visible.top + my) y = visible.top + my - box.minY;
+      if (box.maxY + y > visible.bottom - my) y = visible.bottom - my - box.maxY;
+
+      setOverlayShift((prev) =>
+        Math.abs(prev.x - x) > 0.25 || Math.abs(prev.y - y) > 0.25
+          ? { x, y }
+          : prev,
+      );
+    };
+
+    const frame = window.requestAnimationFrame(update);
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+    };
+  }, [angle]);
 
 
 
@@ -349,9 +425,10 @@ export function EarSelector({
     p.x = e.clientX;
     p.y = e.clientY;
     const local = p.matrixTransform(ctm.inverse());
-    const raw = Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x);
+    const point = { x: local.x - overlayShift.x, y: local.y - overlayShift.y };
+    const raw = Math.atan2(point.y - TRACK_C.y, point.x - TRACK_C.x);
     return {
-      point: { x: local.x, y: local.y } as P,
+      point,
       // FINGER FREE, BEAD RAILED: only the angle is taken from the finger, and
       // it is resolved onto the WIRE nearest the bead and clamped to its ends —
       // so a finger swung across the break holds the bead at the nearest lip
@@ -416,9 +493,18 @@ export function EarSelector({
   const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
 
   return (
-    <g>
+    <g
+      ref={overlayRef}
+      data-living-g-selector="true"
+      pointerEvents="none"
+      transform={
+        overlayShift.x || overlayShift.y
+          ? `translate(${overlayShift.x} ${overlayShift.y})`
+          : undefined
+      }
+    >
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at ~5 o'clock it is the same small, soft, close-in
+          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
           dot as every other inactive destination — its hue is red, nothing else
           about it is louder. The moment the toggle arrives it disappears under
           the piece itself, which then reads "my g". */}
@@ -598,8 +684,9 @@ export function EarSelector({
                 key={`seat-${m}`}
                 cx={spot.x}
                 cy={spot.y}
-                r={78}
+                r={60}
                 fill="transparent"
+                pointerEvents="all"
                 role="button"
                 aria-label={m}
                 className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
@@ -635,6 +722,7 @@ export function EarSelector({
         cy={ear.y}
         r={EAR_GEOMETRY.gripR}
         fill="transparent"
+        pointerEvents="all"
         className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
         // touch-action lives in inline style, not a utility class: the browser
         // must see it on THIS element to hand the gesture over instead of

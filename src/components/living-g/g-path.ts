@@ -7,18 +7,16 @@ export const LIVING_G_PATH = "M4846 11320 c-66 -12 -173 -49 -218 -77 -21 -13 -42
 export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
 
 /**
- * The FRAME: the artwork's box plus the room the mode selector needs across its
- * ENTIRE travel around the middle loop — measured to the selector's TOUCH disc,
- * not only its visible ring, so a generous tap target is never cut in half.
- *
- * ring centre orbit radius 300 about (272,298), grip radius 96
- *   → x 272 ± 396 = -124..668 · y top 298 - 396 = -98
+ * The FRAME: a fixed drawing surface around the immutable artwork. It is not a
+ * camera and it is not stateful: the Living G is always placed at the same
+ * viewport transform. Selector/toggle controls live in their own overlay layer
+ * and may be clamped there; this frame is never moved to rescue them.
  *
  * THE FRAME IS THE DRAWING SURFACE, NOT THE THING THAT MUST FIT THE SCREEN.
  * Making the whole travel envelope fit a phone would cost the world a THIRD of
  * its size (the artwork is only 576 of these 792 units wide) — so <GStage> sizes
  * the ARTWORK to the viewport and lets the selector's envelope bleed past the
- * edges, and STAGE_WINDOW below keeps whichever seat is live inside the glass.
+ * edges. No selector state is allowed to change this box.
  */
 export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as const;
 
@@ -26,24 +24,18 @@ export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as c
  * THE GLASS — what a phone actually shows of the frame, and the one place that
  * knows it.
  *
- * `artworkFit` is the share of the viewport's width the Living G itself takes.
- * It is ONE STATIC NUMBER, chosen once: the glass is wide enough to hold the
- * selector's whole horizontal travel (its ring at borrow 9:00 and at lend 3:00)
- * with a hair of clearance, so the world can stay perfectly still in every
- * selector state instead of sliding sideways to rescue a control.
- *
- *   ring reach from the middle loop's centre
- *     rim 196.5 + gap 24.5 + ringOuter 79 (orbit 300) + ringOuter 79 = 379
- *   glass needed = 2 x 379 + 2 x margin(8) = 774 frame units
- *   artworkFit   = 576 / 774 = 0.744
+ * `artworkFit` is the share of the viewport's width the Living G artwork takes.
+ * It is ONE STATIC NUMBER, chosen once for a large immersive G. Toggle geometry
+ * is deliberately ignored here: if a selector approaches an edge, only the
+ * selector overlay is adjusted. The artwork never pans, shrinks or recentres.
  *
  * This is deliberately NOT state dependent: no seat, drag, label or toggle
  * width may ever change it, which is what makes the G pixel-stationary.
  */
 export const STAGE_WINDOW = {
   /** The world's own width, as a share of the screen. One static value. */
-  artworkFit: 0.744,
-  /** Clear paper kept between the selector's visible ring and the glass edge. */
+  artworkFit: 0.995,
+  /** Clear paper kept between an overlay control and the glass edge. */
   margin: 8,
 
 } as const;

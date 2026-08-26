@@ -51,11 +51,6 @@ type Props = {
    */
   contentKey?: string;
   /**
-   * THE SELECTOR'S HOME. When the mode selector owns the small top circle, the
-   * canonical ear + stem are removed ONCE by a tight static cut — applied to
-   * the base artwork and every swell copy, so no fragment can peek back.
-   */
-  /**
    * LOGO WEIGHT ONLY. Adds an outer stroke of the same colour so the Living G
    * reads as one heavy glyph beside bold type, without redrawing the path.
    */
@@ -209,15 +204,18 @@ export function LivingG({
 
 
   return (
-    <svg
-      viewBox={LIVING_G_VIEWBOX}
-      className={cn("h-full w-full select-none overflow-visible", className)}
+    <div
+      className={cn("relative h-full w-full select-none", className)}
       // DIRECT MANIPULATION SURFACE. The G is dragged, not scrolled: the browser
       // must be told here, on the element itself, or Android hands the gesture
       // to the page scroller halfway through a drag. Scrolling everywhere else
       // (panels, forms, lists) is untouched.
       style={{ touchAction: "none", WebkitTapHighlightColor: "transparent" }}
     >
+      <svg
+        viewBox={LIVING_G_VIEWBOX}
+        className="absolute inset-0 h-full w-full overflow-visible"
+      >
 
       {/*
         Canonical geometry, drawn once and never transformed, plus one
@@ -262,7 +260,7 @@ export function LivingG({
         {/* THE IMMUTABLE ASSET. The canonical artwork is drawn whole — never
             masked, cut, patched or redrawn for the selector's sake. */}
         <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-          <path d={LIVING_G_PATH} {...heavy} />
+          <path data-living-g-artwork="base" d={LIVING_G_PATH} {...heavy} />
         </g>
 
         {ORDER.map((key) => {
@@ -434,8 +432,18 @@ export function LivingG({
         );
       })}
 
-      {overlay}
-    </svg>
+      </svg>
+
+      {overlay ? (
+        <svg
+          viewBox={LIVING_G_VIEWBOX}
+          className="absolute inset-0 h-full w-full overflow-visible"
+          style={{ touchAction: "none", WebkitTapHighlightColor: "transparent", pointerEvents: "none" }}
+        >
+          {overlay}
+        </svg>
+      ) : null}
+    </div>
 
   );
 }

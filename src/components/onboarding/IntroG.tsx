@@ -65,7 +65,7 @@ export function IntroG({
   stage?: React.CSSProperties;
   /** LOGO WEIGHT ONLY: thicken the Living G so it balances heavy type. */
   weight?: "normal" | "heavy";
-  /** Remove the artwork's static ear when a live selector rides the rim. */
+  /** Optional children drawn outside the Living G stage. */
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {

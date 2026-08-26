@@ -151,6 +151,14 @@ const at = (angle: number, r: number): P => ({
 const SELECTOR_EDGE_MARGIN = STAGE_WINDOW.margin;
 
 const ZERO_SHIFT: P = { x: 0, y: 0 };
+const DEFAULT_SEAT_SHIFTS: Record<Seat, P> = {
+  giver: ZERO_SHIFT,
+  lend: ZERO_SHIFT,
+  give: ZERO_SHIFT,
+  wish: ZERO_SHIFT,
+  borrow: ZERO_SHIFT,
+  trade: ZERO_SHIFT,
+};
 
 function selectorBox(a: number) {
   const c = at(a, TRACK_R);

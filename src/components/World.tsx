@@ -41,7 +41,6 @@ type Props = {
 
   /** Interactive layer drawn above the Living G (e.g. top-loop selector). */
   overlay?: React.ReactNode;
-  /** True when the mode selector owns the small top circle (static ear cut). */
   children?: React.ReactNode;
 };
 

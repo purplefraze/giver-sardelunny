@@ -27,9 +27,9 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * pixel-identical at every toggle position; where the piece and the G meet, the
  * piece simply sits on top.
  *
- * THE CLOCK MAP (spatial), read around the visible loop:
- *   borrow left · wish left-to-upper · MY G 12:00 · give right-upper ·
- *   lend right-to-lower · trade 6:00 over the lower/large loop
+ * THE CLOCK MAP (spatial), read along the one open wire:
+ *   MY G 5:00 endpoint · lend 3:00 · give 1:30 · pass 12:00 with NO seat ·
+ *   wish 10:30 · borrow 9:00 · trade 6:00 endpoint over the lower/large loop
  *
  * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
 
@@ -40,16 +40,16 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12:00, and LEND on the right-lower side. Both are
+ * activities: GIVER = ME at the middle loop's 5:00 opening, and LEND at 3:00. Both are
  * locked until the person has a profile and one active give of their own, so
  * onboarding only ever offers MODES.
  */
-export const SEATS = ["borrow", "wish", "giver", "give", "lend", "trade"] as const;
+export const SEATS = ["giver", "lend", "give", "wish", "borrow", "trade"] as const;
 export type Seat = (typeof SEATS)[number];
 
 /**
  * Every seat on the wire, IN PHYSICAL TRAVEL ORDER around the stationary G:
- * borrow → wish → my g → give → lend → trade.
+ * my g → lend → give → (12:00, no seat) → wish → borrow → trade.
  */
 export const FULL_SEATS = SEATS;
 
@@ -85,28 +85,29 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
  * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth):
- *   borrow left        = -180°
- *   wish left-upper    = -135°
- *   my g 12:00         =  -90°
+ *   my g 5:00          =   60° at the middle-loop opening (one endpoint)
+ *   lend right         =    0°
  *   give right-upper   =  -45°
- *   lend right-lower   =   35°
- *   trade 6:00         =   90° over the LOWER/LARGE loop
+ *   wish left-upper    = -135°
+ *   borrow left        = -180°
+ *   trade 6:00         = -270° over the LOWER/LARGE loop (other endpoint)
  *
- * This angle range is an open wire from Borrow to Trade. There is no old 4:30
- * trade seat, no hidden 5:00 home, and no selector-driven camera pan.
+ * Angles are deliberately UNWRAPPED. The open wire runs the long way from My G
+ * to Trade; its tiny physical 5-to-6 gap is not part of the track. There is no
+ * seat at -90°/12:00 and no selector-driven camera pan.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-180),
-  wish: rad(-135),
-  giver: rad(-90),
+  giver: rad(60),
+  lend: rad(0),
   give: rad(-45),
-  lend: rad(35),
-  trade: rad(90),
+  wish: rad(-135),
+  borrow: rad(-180),
+  trade: rad(-270),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.borrow;
-const TRACK_MAX = SEAT_ANGLE.trade;
+const TRACK_MIN = SEAT_ANGLE.trade;
+const TRACK_MAX = SEAT_ANGLE.giver;
 
 
 
@@ -489,8 +490,8 @@ export function EarSelector({
   };
 
 
-  /** Seats in travel order, so the keyboard walks the track, not the array. */
-  const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
+  /** My G-to-Trade travel order, so the keyboard walks the open track. */
+  const ring = [...seats].sort((a, b) => SEAT_ANGLE[b] - SEAT_ANGLE[a]);
 
   return (
     <g
@@ -504,7 +505,7 @@ export function EarSelector({
       }
     >
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          MY G IS ONE OF THEM: at the 5 o'clock opening it is the same small, soft, close-in
           dot as every other inactive destination — its hue is red, nothing else
           about it is louder. The moment the toggle arrives it disappears under
           the piece itself, which then reads "my g". */}
@@ -787,11 +788,11 @@ export function EarSelector({
           const i = ring.indexOf(mode);
           if (e.key === "ArrowRight" || e.key === "ArrowDown") {
             e.preventDefault();
-            commit(ring[(i + 1) % ring.length]!);
+            commit(ring[Math.min(i + 1, ring.length - 1)]!);
           }
           if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
             e.preventDefault();
-            commit(ring[(i + ring.length - 1) % ring.length]!);
+            commit(ring[Math.max(i - 1, 0)]!);
           }
 
           if (e.key === "Enter" || e.key === " ") {

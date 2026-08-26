@@ -213,9 +213,9 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-  /* EVERY SEAT ON THE WIRE IS REACHABLE — BORROW left, WISH left-upper,
-     MY G 12:00, GIVE right-upper, LEND right-lower, TRADE 6:00 overlapping
-     the lower/large loop. */
+  /* EVERY SEAT ON THE OPEN WIRE IS REACHABLE — MY G starts at the middle-loop
+     5:00 opening; the long route passes LEND, GIVE, WISH and BORROW before
+     ending at TRADE 6:00 over the lower/large loop. There is no 12:00 seat. */
   const [seat, setSeatState] = useState<Seat>("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
@@ -437,9 +437,9 @@ function Index() {
   };
 
   /**
-    * EVERY SEAT PRESENT, ALWAYS — the six fixed controls:
-    * borrow left · wish left-upper · MY G 12:00 · give right-upper ·
-    * lend right-lower · trade 6:00 over the lower/large loop.
+    * EVERY SEAT PRESENT, ALWAYS — the six fixed controls on one open arc:
+    * MY G 5:00 endpoint · lend 3:00 · give 1:30 · wish 10:30 · borrow 9:00 ·
+    * trade 6:00 endpoint over the lower/large loop. There is no 12:00 seat.
    */
   const myGSeats: readonly Seat[] = FULL_SEATS;
 

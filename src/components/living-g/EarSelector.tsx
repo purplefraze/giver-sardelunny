@@ -684,7 +684,7 @@ export function EarSelector({
                 key={`seat-${m}`}
                 cx={spot.x}
                 cy={spot.y}
-                r={78}
+                r={60}
                 fill="transparent"
                 pointerEvents="all"
                 role="button"

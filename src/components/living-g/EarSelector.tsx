@@ -100,15 +100,6 @@ const paint = (seat: Seat | null) => {
   root.setAttribute("data-g-touch", seat ? "down" : "up");
 };
 
-const ZERO: P = { x: 0, y: 0 };
-const NO_SHIFT: Record<Seat, P> = {
-  giver: ZERO,
-  give: ZERO,
-  wish: ZERO,
-  borrow: ZERO,
-  trade: ZERO,
-};
-
 export function EarSelector({
   mode,
   onChange,
@@ -182,75 +173,6 @@ export function EarSelector({
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const update = () => {
-      const group = overlayRef.current;
-      const svg = group?.ownerSVGElement;
-      if (!svg) return;
-      const glass = svg.closest("[data-world]") ?? svg.parentElement;
-      if (!glass) return;
-      const svgRect = svg.getBoundingClientRect();
-      const glassRect = glass.getBoundingClientRect();
-      if (svgRect.width <= 0 || svgRect.height <= 0) return;
-      const ux = LIVING_G_FRAME.width / svgRect.width;
-      const uy = LIVING_G_FRAME.height / svgRect.height;
-      /* THE REAL GLASS: the world element, never wider than the phone. */
-      const view = {
-        left: Math.max(glassRect.left, 0),
-        right: Math.min(glassRect.right, window.innerWidth),
-        top: Math.max(glassRect.top, 0),
-        bottom: Math.min(glassRect.bottom, window.innerHeight),
-      };
-      const bounds = {
-        left: LIVING_G_FRAME.x + (view.left - svgRect.left) * ux,
-        right: LIVING_G_FRAME.x + (view.right - svgRect.left) * ux,
-        top: LIVING_G_FRAME.y + (view.top - svgRect.top) * uy,
-        bottom: LIVING_G_FRAME.y + (view.bottom - svgRect.top) * uy,
-      };
-      const mx = STAGE_WINDOW.margin * ux;
-      const my = STAGE_WINDOW.margin * uy;
-      const clampFor = (r: number) => {
-        const out = {} as Record<Seat, P>;
-        for (const seat of SEATS) {
-          const c = at(SEAT_ANGLE[seat], TRACK_R);
-          let x = 0;
-          let y = 0;
-          if (c.x - r < bounds.left + mx) x = bounds.left + mx - (c.x - r);
-          if (c.x + r + x > bounds.right - mx) x = bounds.right - mx - (c.x + r);
-          if (c.y - r < bounds.top + my) y = bounds.top + my - (c.y - r);
-          if (c.y + r + y > bounds.bottom - my) y = bounds.bottom - my - (c.y + r);
-          out[seat] = { x, y };
-        }
-        return out;
-      };
-      const changed = (prev: Record<Seat, P>, next: Record<Seat, P>) =>
-        SEATS.some(
-          (seat) =>
-            Math.abs(prev[seat].x - next[seat].x) > 0.25 ||
-            Math.abs(prev[seat].y - next[seat].y) > 0.25,
-        );
-      const nextRings = clampFor(EAR_GEOMETRY.outerR);
-      const nextHits = clampFor(HIT_R);
-      setShifts((prev) => (changed(prev, nextRings) ? nextRings : prev));
-      setHitShifts((prev) => (changed(prev, nextHits) ? nextHits : prev));
-    };
-    const frame = window.requestAnimationFrame(update);
-    /* Layout settles over a couple of frames; measure again once it has. */
-    const timers = [60, 240, 700].map((ms) => window.setTimeout(update, ms));
-    const observer = new ResizeObserver(update);
-    if (overlayRef.current?.ownerSVGElement) observer.observe(overlayRef.current.ownerSVGElement);
-    window.addEventListener("resize", update);
-    window.visualViewport?.addEventListener("resize", update);
-    return () => {
-      timers.forEach((t) => window.clearTimeout(t));
-      observer.disconnect();
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("resize", update);
-    };
-  }, []);
-
   /** On arrival the word speaks up, then settles back. */
   const [reveal, setReveal] = useState(false);
   useEffect(() => {
@@ -304,24 +226,22 @@ export function EarSelector({
   const visible = seats.includes(mode) ? seats : ([...seats, mode] as Seat[]);
 
   return (
-    <g ref={overlayRef} data-living-g-selector="true" pointerEvents="none">
+    <g data-living-g-selector="true" pointerEvents="none">
       {visible.map((seat) => {
         const a = SEAT_ANGLE[seat];
         const deg = (a * 180) / Math.PI;
-        const c = at(a, TRACK_R);
+        const c = at(a);
         const isActive = seat === mode;
         const isPressed = pressed === seat;
-        const shift = shifts[seat];
-        const nudge = shift.x || shift.y ? `translate(${shift.x} ${shift.y})` : undefined;
         return (
-          <g key={`sat-${seat}`} transform={nudge}>
+          <g key={`sat-${seat}`}>
             {/*
-              ONE RIGID ASSEMBLY per satellite: authored on the +x radial axis in
-              local terms, then placed by a single rotation about the track
-              centre — so the ring can never drift from its stem.
+              ONE RIGID ASSEMBLY per satellite: ring plus one short stem running
+              back toward the G's body, authored on the +x axis and rotated into
+              place about the ring's own centre, so it can never drift.
             */}
             <g
-              transform={`rotate(${deg} ${TRACK_C.x} ${TRACK_C.y})`}
+              transform={`rotate(${deg + 180} ${c.x} ${c.y})`}
               pointerEvents="none"
               style={{
                 transformBox: "view-box",
@@ -333,27 +253,22 @@ export function EarSelector({
                 style={{
                   transform: `scale(${isPressed ? 1.09 : isActive ? 1.02 : 1})`,
                   transformBox: "view-box",
-                  transformOrigin: `${TRACK_C.x + TRACK_R}px ${TRACK_C.y}px`,
+                  transformOrigin: `${c.x}px ${c.y}px`,
                   transition: "transform 180ms cubic-bezier(0.22,1,0.36,1)",
                 }}
               >
-                <circle
-                  cx={TRACK_C.x + TRACK_R}
-                  cy={TRACK_C.y}
-                  r={EAR_GEOMETRY.outerR}
-                  fill="var(--world-bg)"
-                />
+                <circle cx={c.x} cy={c.y} r={EAR_GEOMETRY.outerR} fill="var(--world-bg)" />
                 <rect
-                  x={TRACK_C.x + STEM_FROM}
-                  y={TRACK_C.y - STEM_HALF}
-                  width={STEM_TO - STEM_FROM}
+                  x={c.x + EAR_GEOMETRY.innerR}
+                  y={c.y - STEM_HALF}
+                  width={STEM_LEN}
                   height={STEM_HALF * 2}
                   rx={STEM_HALF * 0.5}
                   fill="var(--world-g)"
                 />
                 <circle
-                  cx={TRACK_C.x + TRACK_R}
-                  cy={TRACK_C.y}
+                  cx={c.x}
+                  cy={c.y}
                   r={RING_MID}
                   fill="none"
                   stroke="var(--world-g)"
@@ -447,8 +362,8 @@ export function EarSelector({
 
             {/* GENEROUS INVISIBLE TOUCH TARGET, one per satellite. */}
             <circle
-              cx={c.x + hitShifts[seat].x - shift.x}
-              cy={c.y + hitShifts[seat].y - shift.y}
+              cx={c.x}
+              cy={c.y}
               r={HIT_R}
               fill="transparent"
               pointerEvents="all"

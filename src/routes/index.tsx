@@ -405,9 +405,9 @@ function Index() {
 
   /**
    * THE TOGGLE IS THE WORLD: wish | give | trade | borrow | lend — plus MY G,
-   * the destination seat at 12:00. `activity` is the item world, and it is
-   * null while the toggle sits on My G. LEND is the offering side of borrowing,
-   * so its items are borrows held from the lending side.
+   * the destination seat at the middle-loop 5:00 opening. `activity` is the item
+   * world, and it is null while the toggle sits on My G. LEND is the offering
+   * side of borrowing, so its items are borrows held from the lending side.
    */
   const activity: Mode | null =
     seat === "giver" ? null : seat === "lend" ? "borrow" : (seat as Mode);

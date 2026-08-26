@@ -43,11 +43,11 @@ export const STAGE_WINDOW = {
 /**
  * THE ONLY VERTICAL ROOM THE TOGGLE IS ALLOWED TO ASK FOR.
  *
- * The selector's TOUCH disc reaches 98 units above the artwork at 12:00, but the
- * VISIBLE ring only reaches 81. The G is therefore sized against the artwork
- * plus this reserve — never against the whole travel envelope — so the toggle
- * can never make the world smaller than "as big as the glass allows, with the
- * ring still on screen".
+ * The selector's visible ring can travel above the artwork while crossing the
+ * top of the open arc, but that pass-through point is NOT a seat. The G is sized
+ * against the artwork plus this reserve — never against the whole travel
+ * envelope — so the toggle can never make the world smaller than "as big as the
+ * glass allows, with the ring still on screen".
  */
 export const STAGE_TOP_RESERVE = 81;
 

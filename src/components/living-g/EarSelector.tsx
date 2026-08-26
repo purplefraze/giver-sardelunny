@@ -28,10 +28,11 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * piece simply sits on top.
  *
  * THE CLOCK MAP (spatial), read along the one open wire:
- *   MY G 5:00 endpoint · lend 3:00 · give 1:30 · pass 12:00 with NO seat ·
+ *   GIVER 4:30 endpoint (the default) · give 1:30 · pass 12:00 with NO seat ·
  *   wish 10:30 · borrow 9:00 · trade 6:00 endpoint over the lower/large loop
  *
  * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
+ * There is ONLY EVER ONE toggle piece on the wire — five seats, one bead.
 
  */
 
@@ -39,19 +40,18 @@ export const MODES = ["wish", "give", "trade", "borrow"] as const;
 export type Mode = (typeof MODES)[number];
 
 /**
- * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at the middle loop's 5:00 opening, and LEND at 3:00. Both are
- * locked until the person has a profile and one active give of their own, so
- * onboarding only ever offers MODES.
+ * THE FULL TRACK, ONCE IT IS EARNED. One destination sits outside the four
+ * activities: GIVER = ME at 4:30, the wire's default endpoint.
  */
-export const SEATS = ["giver", "lend", "give", "wish", "borrow", "trade"] as const;
+export const SEATS = ["giver", "give", "wish", "borrow", "trade"] as const;
 export type Seat = (typeof SEATS)[number];
 
 /**
  * Every seat on the wire, IN PHYSICAL TRAVEL ORDER around the stationary G:
- * my g → lend → give → (12:00, no seat) → wish → borrow → trade.
+ * giver → give → (12:00, no seat) → wish → borrow → trade.
  */
 export const FULL_SEATS = SEATS;
+
 
 
 

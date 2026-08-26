@@ -15,12 +15,12 @@ import {
  * the persistent workspace) mounts this stage and inherits the exact same
  * artwork dimensions at a given viewport.
  *
- * THE WORLD IS SIZED FIRST. The stage measures the ARTWORK — the canonical G
- * silhouette — against the screen, and the frame's extra room for the selector's
- * travel is simply allowed to bleed past the edges. Sizing the whole envelope
- * instead would cost the world a third of its width on a phone; keeping the
- * toggles reachable is the camera's job, not the world's (see stagePanPercent).
+ * THE WORLD IS STATIONARY. The stage measures the ARTWORK — the canonical G
+ * silhouette — against the screen once, and never moves or resizes it again:
+ * the selector is an independent layer drawn over the same fixed canvas, so no
+ * seat, drag or label can shift the G by a single pixel.
  */
+
 /** Kept as the record of what the frame is built around. */
 export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
 

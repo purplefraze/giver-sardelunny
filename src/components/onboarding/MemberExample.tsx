@@ -202,9 +202,9 @@ export function MemberExample({
           key={member.id}
           className={G_PRESENCE}
           showLabels
-          movableEar
           /* ONE SEAT = ONE MODE = ONE SET OF WORDS in the loops. */
           contentKey={`${member.id}-${seat}`}
+          earCut
           overlay={
             <>
               {/* THE RAIL LAYER. The user's one bundle of sparks rests ON the

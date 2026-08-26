@@ -44,7 +44,7 @@ import type { Category } from "@/data/my-profile";
 import { CATEGORY_PLURAL, myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, FULL_SEATS, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
 
 /**
  * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
@@ -52,9 +52,20 @@ import { EarSelector, FULL_SEATS, MODES, type Mode, type Seat } from "@/componen
  */
 const MODES_ONLY = MODES;
 
+/**
+ * THE SIX POSITIONS, FIXED: my g (12) · give · wish · borrow · lend (9) ·
+ * trade (3). LEND is its own seat; underneath it is the lending side of the
+ * borrow world, so it keeps one content model and its own colour.
+ */
+const ACTIVITY_SEATS = [...MODES, "lend"] as const;
+type ActivitySeat = (typeof ACTIVITY_SEATS)[number];
+
+/** The item world a seat reads from. Lend shares borrow's records. */
+const seatMode = (s: ActivitySeat): Mode => (s === "lend" ? "borrow" : s);
+
 const FIRST_USE_SEAT_KEY = "giver.first-use.seat";
 
-function rememberFirstUseSeat(seat: Mode) {
+function rememberFirstUseSeat(seat: ActivitySeat) {
   try {
     window.localStorage.setItem(FIRST_USE_SEAT_KEY, seat);
   } catch {
@@ -62,10 +73,12 @@ function rememberFirstUseSeat(seat: Mode) {
   }
 }
 
-function readFirstUseSeat(): Mode | null {
+function readFirstUseSeat(): ActivitySeat | null {
   try {
     const raw = window.localStorage.getItem(FIRST_USE_SEAT_KEY);
-    return raw && (MODES_ONLY as readonly string[]).includes(raw) ? (raw as Mode) : null;
+    return raw && (ACTIVITY_SEATS as readonly string[]).includes(raw)
+      ? (raw as ActivitySeat)
+      : null;
   } catch {
     return null;
   }
@@ -88,8 +101,7 @@ import type { Currency } from "@/data/ledger";
 import { World } from "@/components/World";
 import { DevControls } from "@/components/DevControls";
 import { lifecycleStore } from "@/data/lifecycle";
-import { removeLegacyAutomaticProfile, replayOnboarding } from "@/data/dev-fixture";
-import { consumeOnboardingRequest } from "@/lib/preview-mode";
+import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
@@ -175,15 +187,6 @@ function Index() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     setHydrated(true);
-    /* AN EXPLICIT WAY BACK TO THE WELCOME. ?onboarding=1 (or #onboarding) puts
-       the person at the very first frame of the opening again, without touching
-       the sample community. */
-    if (consumeOnboardingRequest()) {
-      replayOnboarding();
-      setReplaying(true);
-      setSessionEntered(false);
-      return;
-    }
     /* Restore the inherited first-use mode before the empty G is first shown. */
     const remembered = readFirstUseSeat();
     if (remembered && !lifecycleStore.get().profileSetupCompletedAt) {
@@ -192,10 +195,7 @@ function Index() {
   }, []);
 
   const [sessionEntered, setSessionEntered] = useState(false);
-  /** A requested replay outranks any remembered "onboarding already happened". */
-  const [replaying, setReplaying] = useState(false);
-  const entered =
-    !replaying && (Boolean(lifecycle.onboardingCompletedAt) || sessionEntered);
+  const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already
@@ -213,20 +213,17 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-  /* EVERY SEAT ON THE OPEN WIRE IS REACHABLE — MY G starts at the middle-loop
-     5:00 opening; the long route passes LEND, GIVE, WISH and BORROW before
-     ending at TRADE 6:00 over the lower/large loop. There is no 12:00 seat. */
-  const [seat, setSeatState] = useState<Seat>("giver");
+    /* THE SIX FIXED SEATS: my g (12) · give · wish · borrow · lend (9) ·
+     trade (3). */
+  const [seat, setSeatState] = useState<ActivitySeat | "giver">("give");
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
     setSeatState(next);
-
-    /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats
-       are remembered as the first-use mode. */
+    /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
+       remembered as the first-use mode. */
     if (next !== "giver") rememberFirstUseSeat(next);
   };
-
 
   /**
    * FIRST-TIME WORLD EXPLANATION. Giver explains wish / give / trade / borrow
@@ -312,10 +309,10 @@ function Index() {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
-    /* MY G IS A DESTINATION, NOT A CATEGORY: it has no intro. */
     if (seat === "giver") return;
-    if (introSeenStore.get()[seat]) return;
-    showIntro(seat);
+    const topic = seatMode(seat);
+    if (introSeenStore.get()[topic]) return;
+    showIntro(topic);
   }, [entered, seat]);
 
   /**
@@ -376,17 +373,6 @@ function Index() {
    * once during onboarding.
    */
   const canCommunity = hasActiveGive(items);
-  /**
-   * A TYPED GIVE THAT CANNOT PUBLISH YET IS NOT A LOCKED COMMUNITY — it is an
-   * unfinished account. The door needs to know the difference, or it would send
-   * the person back into the same form for ever.
-   */
-  const eligibility = myProfileStore.canPublish();
-  const publishBlocked =
-    !canCommunity && me.built && !eligibility.ok ? eligibility.say : null;
-
-
-
 
   /* THE KEY TURNING is worth exactly one moment, and never repeats. */
   useEffect(() => {
@@ -404,20 +390,14 @@ function Index() {
   const unread = unreadCount(links, ME_ID);
 
   /**
-   * THE TOGGLE IS THE WORLD: give 1:30 | wish 10:30 | borrow 9:00 | trade 6:00
-   * — plus GIVER, the default destination seat at 4:30. `activity` is the item
-   * world, and it is null while the toggle sits on My G.
+   * THE TOGGLE IS THE WORLD: wish | give | trade | borrow — plus MY G, the one
+   * destination seat at 12 o'clock. `mode` is the activity world, and it is
+   * null while the toggle is sitting on My G.
    */
-  const activity: Mode | null =
-    seat === "giver" ? null : (seat as Mode);
+  const activity: ActivitySeat | null = seat === "giver" ? null : seat;
   /* The last activity world still owns the loops' grammar when My G is held. */
-  const mode: Mode = activity ?? "give";
+  const mode: Mode = seatMode(activity ?? "give");
   const content = MODE_CONTENT[mode];
-  /** The seat's own word: lending is not borrowing, even on the same items. */
-  const seatPlural = CATEGORY_PLURAL[mode];
-  /** The world the whole screen is painted in — lend has its own seafoam. */
-  const seatWorld = activity ?? "profile";
-
 
   /**
    * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
@@ -436,13 +416,13 @@ function Index() {
   };
 
   /**
-    * EVERY SEAT PRESENT, ALWAYS — the five fixed controls on one open arc:
-    * GIVER 4:30 endpoint · give 1:30 · wish 10:30 · borrow 9:00 ·
-    * trade 6:00 endpoint over the lower/large loop. There is no 12:00 seat.
+   * MY G AT 12 O'CLOCK, ONCE IT HAS BEEN FOUND. Before the discovery there is
+   * nothing there; afterwards the seat exists permanently, whether or not a
+   * single field was ever filled in. LEND sits at 9 o'clock, TRADE at 3.
    */
-  const myGSeats: readonly Seat[] = FULL_SEATS;
-
-
+  const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
+    ? (["giver", ...ACTIVITY_SEATS] as const)
+    : ACTIVITY_SEATS;
 
   /**
    * TOP = ME. MY G is not a content type and never a toggle seat: it is the
@@ -476,8 +456,8 @@ function Index() {
        the right size and the G is already there, simply not yet awake. */
     return (
       <main
-        className="g-canvas-h g-canvas-w relative mx-auto overflow-clip"
-        style={{ overflow: "clip", background: "var(--giver-paper)" }}
+        className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden"
+        style={{ background: "var(--giver-paper)" }}
         aria-busy="true"
       >
         <div className="absolute inset-0 opacity-[0.07]">
@@ -494,7 +474,7 @@ function Index() {
   }
 
   return (
-    <main className="g-canvas-h g-canvas-w relative mx-auto overflow-clip" style={{ overflow: "clip" }}>
+    <main className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden">
 
       <DevControls />
       {!entered ? (
@@ -506,7 +486,6 @@ function Index() {
             /* A NEW PERSON GETS A CLEAN, IDEMPOTENT HANDOVER. Sample people and
                their community records are never projected into this profile. */
             initializeFirstUse(earned);
-            setReplaying(false);
             setSessionEntered(true);
           }}
         />
@@ -519,8 +498,7 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={seatWorld}
-            movableEar
+            world={activity ?? "profile"}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -534,6 +512,7 @@ function Index() {
               talking === null &&
               !threads
             }
+            earCut
             overlay={
               <EarSelector
                 mode={seat}
@@ -577,7 +556,11 @@ function Index() {
                     setup();
                     return;
                   }
-                  setEditor({ kind: "category", category: mode });
+                  setEditor({
+                    kind: "category",
+                    category: mode,
+                    ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
+                  });
                 },
 
                 render: (anchor) =>
@@ -594,7 +577,7 @@ function Index() {
                       activity === null || !myMode
                         ? []
                         : [
-                            { text: `my ${seatPlural}`, role: "secondary" as const },
+                            { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
                             {
                               text: clampField(myMode),
                               role: "primary" as const,
@@ -640,7 +623,7 @@ function Index() {
                         ? []
                         : [
                             {
-                              text: `communi-g ${seatPlural}`,
+                              text: `communi-g ${CATEGORY_PLURAL[mode]}`,
                               role: "secondary" as const,
                               fill: ACTIVITY_FILL[mode as ItemType],
                             },
@@ -716,9 +699,7 @@ function Index() {
               else if (id === "locked") setLocked(false);
             }}
             slots={[
-              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question —
-                 and, when a give is typed but the account cannot publish it
-                 yet, it says so and leads to the one place that fixes it. */
+              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */
               {
                 id: "locked",
                 open: locked,
@@ -726,15 +707,6 @@ function Index() {
                 world: "community",
                 children: locked ? (
                   <CommunityLocked
-                    {...(publishBlocked
-                      ? {
-                          blocked: publishBlocked,
-                          onFinishAccount: () => {
-                            setLocked(false);
-                            setEditor({ kind: "about" });
-                          },
-                        }
-                      : {})}
                     onGive={() => {
                       setLocked(false);
                       setSeat("give");
@@ -744,7 +716,6 @@ function Index() {
                   />
                 ) : null,
               },
-
 
               /* FIRST-TIME EXPLANATION -> straight into my <type>. */
               {
@@ -812,19 +783,7 @@ function Index() {
                       category={editor.category}
                       {...(editor.side ? { side: editor.side } : {})}
                       onDone={() => setEditor(null)}
-                      /* POSTING SOMETHING LEADS SOMEWHERE: the community it
-                         was posted into, one press away. */
-                      onCommunity={() => {
-                        const type = editor.category as ItemType;
-                        setEditor(null);
-                        if (!hasActiveGive(itemsStore.get())) {
-                          setLocked(true);
-                          return;
-                        }
-                        setBrowse({ type });
-                      }}
                     />
-
 
                   ) : null,
               },

@@ -198,7 +198,6 @@ export function CategoryForm({
   category,
   side: decidedSide,
   onDone,
-  onCommunity,
 }: {
   category: Category;
   /**
@@ -208,10 +207,7 @@ export function CategoryForm({
    */
   side?: BorrowSide;
   onDone: () => void;
-  /** THE WAY ONWARD once what was typed is a real record. */
-  onCommunity?: () => void;
 }) {
-
   const me = useMyProfile();
   /* THE DRAFT SURVIVES LEAVING AND RELOADING — it is persisted, not held. */
   const stored = useRef(draftsStore.get(category)).current;
@@ -1145,29 +1141,8 @@ export function CategoryForm({
           </div>
         )}
 
-        {/*
-          A POSTED GIVE IS A COMPLETED ACT, NOT A DEAD END. The moment this
-          draft is a real published record, the way onward to the community is
-          right here — the person never has to find their way back out.
-        */}
-        {liveId && onCommunity ? (
-          <button
-            type="button"
-            onClick={() => {
-              save();
-              haptics.light();
-              onCommunity();
-            }}
-            className="g-heading mt-10 block text-left transition-transform active:scale-95"
-            style={{ color: colour }}
-          >
-            see the communi-g
-          </button>
-        ) : null}
-
         <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
       </div>
-
 
       {/* THE WAY BACK IS ALWAYS THERE — one small line, never over content. */}
       <div

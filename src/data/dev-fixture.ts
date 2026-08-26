@@ -9,6 +9,7 @@ import { tutorialSeenStore } from "@/data/tutorial-seen";
 const CHOICE_KEY = "giver.dev-state-chosen.v1";
 
 export function replayOnboarding() {
+  if (!import.meta.env.DEV) return;
   myProfileStore.reset();
   itemsStore.clearMine();
   draftsStore.clearAll();
@@ -19,6 +20,7 @@ export function replayOnboarding() {
 }
 
 export function resetNewUser() {
+  if (!import.meta.env.DEV) return;
   myProfileStore.reset();
   itemsStore.clearMine();
   draftsStore.clearAll();
@@ -29,6 +31,7 @@ export function resetNewUser() {
 }
 
 export function completeOnboarding() {
+  if (!import.meta.env.DEV) return;
   myProfileStore.reset();
   itemsStore.clearMine();
   draftsStore.clearAll();

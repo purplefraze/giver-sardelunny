@@ -60,12 +60,7 @@ export function AboutForm({
   const [showPass, setShowPass] = useState(false);
   const photo = useProfilePhoto();
   const [photoMenu, setPhotoMenu] = useState(false);
-  /**
-   * SETTINGS OPEN THEMSELVES when the one thing standing between a written give
-   * and the community is a password that was never set.
-   */
-  const [settings, setSettings] = useState(!me.password);
-
+  const [settings, setSettings] = useState(false);
 
   const handle = normaliseHandle(me.username);
   const named = Boolean(handle) && handle !== "you";

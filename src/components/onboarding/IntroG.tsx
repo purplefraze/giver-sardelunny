@@ -38,10 +38,10 @@ export function IntroG({
   onAdvance,
   copyOpacity = 1,
   overlay,
-  movableEar = false,
   stage,
   weight = "normal",
   press,
+  earCut = false,
   children,
 }: {
   world: string;
@@ -58,8 +58,6 @@ export function IntroG({
   copyOpacity?: number;
   /** Interactive layer drawn above the artwork (e.g. the travelling spark). */
   overlay?: React.ReactNode;
-  /** The overlay owns the G's small ear, so the base artwork must not show another one. */
-  movableEar?: boolean;
   /**
    * THE CAMERA. A transform applied to the STAGE only (never the paper), so the
    * very same Living G that spells GIVER can be zoomed into at full size. The
@@ -68,7 +66,8 @@ export function IntroG({
   stage?: React.CSSProperties;
   /** LOGO WEIGHT ONLY: thicken the Living G so it balances heavy type. */
   weight?: "normal" | "heavy";
-  /** Optional children drawn outside the Living G stage. */
+  /** Remove the artwork's static ear when a live selector rides the rim. */
+  earCut?: boolean;
   children?: React.ReactNode;
 }) {
   const region = (key: RegionKey, copy: LoopCopy | undefined) => {
@@ -121,7 +120,7 @@ export function IntroG({
                 className={G_PRESENCE}
                 showLabels={false}
                 weight={weight}
-                movableEar={movableEar}
+                earCut={earCut}
                 {...(overlay ? { overlay } : {})}
                 regions={{
                   ...region("top", top),

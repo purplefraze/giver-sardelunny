@@ -7,97 +7,14 @@ export const LIVING_G_PATH = "M4846 11320 c-66 -12 -173 -49 -218 -77 -21 -13 -42
 export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
 
 /**
- * The FRAME: a fixed drawing surface around the immutable artwork. It is not a
- * camera and it is not stateful: the Living G is always placed at the same
- * viewport transform. Selector/toggle controls live in their own overlay layer
- * and may be clamped there; this frame is never moved to rescue them.
- *
- * THE FRAME IS THE DRAWING SURFACE, NOT THE THING THAT MUST FIT THE SCREEN.
- * Making the whole travel envelope fit a phone would cost the world a THIRD of
- * its size (the artwork is only 576 of these 792 units wide) — so <GStage> sizes
- * the ARTWORK to the viewport and lets the selector's envelope bleed past the
- * edges. No selector state is allowed to change this box.
+ * The FRAME: the artwork's box plus the room the mode selector's assembly needs
+ * across its ENTIRE travel around the middle loop (ring centre orbit radius 300
+ * about (272,298), ring outer radius 79 → x -107..651, y -81..). The frame is
+ * kept SYMMETRIC about the artwork's own centre line (x = 288) so centring the
+ * frame also centres the canonical G horizontally. Nothing decorative lives
+ * here: every extra unit shrinks the G on screen.
  */
-export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as const;
-
-/**
- * THE GLASS — what a phone actually shows of the frame, and the one place that
- * knows it.
- *
- * `artworkFit` is the share of the viewport's width the Living G artwork takes.
- * It is ONE STATIC NUMBER, chosen once for a large immersive G. Toggle geometry
- * is deliberately ignored here: if a selector approaches an edge, only the
- * selector overlay is adjusted. The artwork never pans, shrinks or recentres.
- *
- * This is deliberately NOT state dependent: no seat, drag, label or toggle
- * width may ever change it, which is what makes the G pixel-stationary.
- */
-export const STAGE_WINDOW = {
-  /** The world's own width, as a share of the screen. One static value. */
-  artworkFit: 0.995,
-  /**
-   * THE FIVE SATELLITES ARE PART OF THE OBJECT, so the screen is sized against
-   * the artwork PLUS their rings: this share of the width is what the whole
-   * five-satellite silhouette takes. One static value — no seat, press or drag
-   * may change it, which is what keeps the G pixel-stationary.
-   */
-  envelopeFit: 0.985,
-  /** Clear paper kept between an overlay control and the glass edge. */
-  margin: 8,
-
-} as const;
-
-/**
- * THE SILHOUETTE OF THE WHOLE OBJECT: the canonical artwork together with the
- * five satellite rings that orbit the middle loop (measured, in viewBox units,
- * from LOOP_CENTRE.middle + 300 track radius + 79 ring radius). Sizing reads
- * this so no satellite is ever clipped by the glass.
- */
-export const SATELLITE_ORBIT = {
-  /** Optical centre of the WHOLE object, not of one loop. */
-  cx: 288,
-  cy: 520,
-  rx: 300,
-  ry: 440,
-} as const;
-
-export const SATELLITE_ENVELOPE = {
-  left: -91,
-  right: 579,
-  width: 670,
-  centre: 244,
-} as const;
-
-/**
- * THE ONLY VERTICAL ROOM THE TOGGLE IS ALLOWED TO ASK FOR.
- *
- * The selector's visible ring can travel above the artwork while crossing the
- * top of the open arc, but that pass-through point is NOT a seat. The G is sized
- * against the artwork plus this reserve — never against the whole travel
- * envelope — so the toggle can never make the world smaller than "as big as the
- * glass allows, with the ring still on screen".
- */
-export const STAGE_TOP_RESERVE = 81;
-
-
-/** How much wider the drawing surface is than the world drawn inside it. */
-export const STAGE_OVERDRAW = LIVING_G_FRAME.width / LIVING_G_BOX.width;
-
-/**
- * THE LIVING G IS STATIONARY. The stage is a FIXED canvas: the artwork's centre
- * line is pinned to the screen's centre line and NOTHING — not the selector's
- * seat, not a drag in flight, not a label's width — may translate, scale or
- * re-centre it. The selector is a separate interaction layer that travels over
- * the G's own geometry and is allowed to overlap it; the world never moves to
- * make room for a control.
- *
- * (There is deliberately no camera pan here any more. If a control needs room,
- * the control moves — never the G.)
- */
-
-
-
-
+export const LIVING_G_FRAME = { x: -107, y: -81, width: 790, height: 1214 } as const;
 
 
 /** Path space (after the flip transform) */
@@ -177,6 +94,7 @@ export const LOOP_RIM_RADIUS = {
  *   innerR/outerR   the ring's measured hole and outer edge
  *   stemWidth measured width of the stem that joins it to the middle loop
  *   gap       clearance between the middle loop's rim and the ring's outer edge
+ *   cut*      the TIGHT static cut that removes the original ear + stem only
  */
 export const EAR_GEOMETRY = {
   home: { x: 499.4, y: 78.5 },
@@ -184,23 +102,30 @@ export const EAR_GEOMETRY = {
   outerR: 79,
   stemWidth: 34,
   gap: 24.5,
-  /**
-   * The invisible TOUCH disc that travels with the ring: generously bigger than
-   * the ring itself, and the value LIVING_G_FRAME is measured against, so the
-   * whole tappable area is always inside the viewport.
-   */
-  gripR: 96,
+  cutR: 100,
+  cutStemWidth: 54,
 } as const;
 
+/**
+ * THE STATIC EAR CUT — one clean angular wedge around the canonical ear and its
+ * stem, measured from the MIDDLE LOOP'S centre. It begins just INSIDE the rim's
+ * outer edge so no fragment of the old stem flare survives, and the rim itself
+ * is then restored by RIM_PATCH below: one smooth arc of the loop's own stroke.
+ * The canonical path is never edited.
+ */
+export const EAR_CUT = { a0: -64, a1: -24, r0: 184, r1: 440 } as const;
 
 /**
- * THE LIVING G IS IMMUTABLE. There is deliberately no ear cut and no rim patch
- * any more: the canonical artwork is drawn whole, identical pixel for pixel in
- * every selector state. The toggle is an independent overlay drawn ABOVE the G —
- * it may overlap the middle loop, the spine or the big lower loop, but nothing
- * about the G is ever masked, cut, patched, deformed or redrawn for it.
+ * THE RIM PATCH — the middle loop's measured stroke (inner 143, outer 196.5)
+ * redrawn as a perfect arc across the cut, a little wider on both sides, so the
+ * 2 o'clock section reads as ONE continuous circular curve in every mode.
  */
-
+export const RIM_PATCH = {
+  a0: -80,
+  a1: -8,
+  rMid: 169.75,
+  width: 53.5,
+} as const;
 
 type Pt = { x: number; y: number };
 const rad = (d: number) => (d * Math.PI) / 180;

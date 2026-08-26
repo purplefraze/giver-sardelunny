@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { GStage } from "@/components/living-g/GStage";
 import { G_PRESENCE, LivingG, type RegionKey } from "@/components/living-g/LivingG";
@@ -41,8 +41,8 @@ type Props = {
 
   /** Interactive layer drawn above the Living G (e.g. top-loop selector). */
   overlay?: React.ReactNode;
-  /** The overlay owns the G's small ear, so the base artwork must not show another one. */
-  movableEar?: boolean;
+  /** True when the mode selector owns the small top circle (static ear cut). */
+  earCut?: boolean;
   children?: React.ReactNode;
 };
 
@@ -60,22 +60,10 @@ export function World({
   contentKey,
 
   overlay,
-  movableEar = false,
+  earCut = false,
   children,
 }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
-  const canvasRef = useRef<HTMLDivElement | null>(null);
-
-  const pinCanvasScroll = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    if (canvas.scrollLeft !== 0) canvas.scrollLeft = 0;
-    if (canvas.scrollTop !== 0) canvas.scrollTop = 0;
-  };
-
-  useEffect(() => {
-    pinCanvasScroll();
-  });
 
   const setPanel = (key: RegionKey | null) => {
     setOpen(key);
@@ -98,15 +86,11 @@ export function World({
 
   return (
     <div
-      ref={canvasRef}
       data-world={world}
-      className="relative flex h-full w-full flex-col overflow-clip"
-      onScroll={pinCanvasScroll}
-      onPointerDownCapture={pinCanvasScroll}
+      className="relative flex h-full w-full flex-col overflow-hidden"
       style={{
         background: "var(--world-bg)",
         color: "var(--world-ink)",
-        overflow: "clip",
         pointerEvents: active ? undefined : "none",
       }}
     >
@@ -138,8 +122,8 @@ export function World({
           className={G_PRESENCE}
           showLabels={teach}
           {...(contentKey === undefined ? {} : { contentKey })}
-          movableEar={movableEar}
           overlay={overlay}
+          earCut={earCut}
           regions={{
             top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },
             middle: {

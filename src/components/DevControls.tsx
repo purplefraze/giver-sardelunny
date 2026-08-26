@@ -10,15 +10,13 @@ import { demoRepliesStore } from "@/data/demo-replies";
 import { memberEditsStore } from "@/data/member-edits";
 import { useAdmin } from "@/hooks/use-admin";
 import { HapticsCheck } from "@/components/HapticsCheck";
-import { isTestingSurface } from "@/lib/preview-mode";
 
 export function DevControls() {
   const [open, setOpen] = useState(false);
   const [haptics, setHaptics] = useState(false);
   /** ADMIN EDITING lives on this switch and nowhere else. */
   const admin = useAdmin();
-  /* The testing paths must be reachable in the preview, not only locally. */
-  if (!isTestingSurface()) return null;
+  if (!import.meta.env.DEV) return null;
 
   const run = (action: () => void) => {
     action();

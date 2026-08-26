@@ -1,11 +1,4 @@
-import {
-  LIVING_G_BOX,
-  LIVING_G_FRAME,
-  SATELLITE_ENVELOPE,
-  STAGE_TOP_RESERVE,
-  STAGE_WINDOW,
-} from "./g-path";
-
+import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
 
 /**
  * THE ONE canonical stage for every full-screen Living G.
@@ -15,14 +8,20 @@ import {
  * the persistent workspace) mounts this stage and inherits the exact same
  * artwork dimensions at a given viewport.
  *
- * THE WORLD IS STATIONARY. The stage measures the ARTWORK — the canonical G
- * silhouette — against the screen once, and never moves or resizes it again:
- * the selector is an independent layer drawn over the same fixed canvas, so no
- * seat, drag or label can shift the G by a single pixel.
+ * The stage measures the ARTWORK — the canonical G silhouette — not the frame.
+ * The frame is wider/taller only so the mode selector's full travel can never
+ * clip; that overflow is allowed to bleed past the viewport and NEVER changes
+ * the artwork's size or its horizontal centring, because the frame is symmetric
+ * about the artwork's own centre line.
  */
+const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
 
 /** Kept as the record of what the frame is built around. */
 export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
+
+/** How much of the FRAME the artwork itself occupies. */
+const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
+const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
 
 /**
  * THE CLEAN BOTTOM BAND. The one strip of paper the artwork never enters, so a
@@ -31,35 +30,10 @@ export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;
  */
 export const CTA_BAND = "2.6rem";
 
-/**
- * THE WORLD FILLS THE PHONE.
- *
-   * Width: the artwork takes `artworkFit` of the screen, so the sized box — which
-   * is the drawing surface, not the artwork — is that much wider again.
-   * Height: bounded by --app-h (a measured height) so a collapsing address bar
-   * cannot resize the artwork mid-animation. Toggle controls are ignored by this
-   * sizing: they are an overlay and never make the Living G smaller.
- */
-const WIDTH_LIMIT = `${(
-  (STAGE_WINDOW.envelopeFit * LIVING_G_FRAME.width * 100) / SATELLITE_ENVELOPE.width
-).toFixed(3)}%`;
-/**
- * The five satellites are not symmetrical about the artwork, so the SILHOUETTE's
- * centre line — not the frame's — is pinned to the screen's centre line.
- */
-const CENTRE_OFFSET = `${(
-  ((LIVING_G_FRAME.x + LIVING_G_FRAME.width / 2 - SATELLITE_ENVELOPE.centre) * 100) /
-  LIVING_G_FRAME.width
-).toFixed(4)}%`;
-/**
- * Height is measured against the ARTWORK plus the toggle's visible ring reserve
- * only (STAGE_TOP_RESERVE) — never the selector's whole travel envelope — so the
- * toggle can never be the reason the world is small.
- */
-const VERTICAL_UNITS = LIVING_G_BOX.height + STAGE_TOP_RESERVE;
-const HEIGHT_LIMIT = `calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${(LIVING_G_FRAME.width / VERTICAL_UNITS).toFixed(5)})`;
-const CANONICAL_WIDTH = `min(${WIDTH_LIMIT}, ${HEIGHT_LIMIT})`;
-
+/** The canonical artwork target: 94% of the usable height, 96% of the width. */
+/* Height comes from --app-h (a real measured viewport height) so a collapsing
+   Android address bar can never resize the artwork mid-animation. */
+const CANONICAL_WIDTH = `min(${(96 * BOX_W).toFixed(3)}%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.99 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`;
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (
@@ -70,19 +44,18 @@ export function GStage({ children }: { children: React.ReactNode }) {
       style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
     >
       <div
-        // A FIXED CANVAS. left/translate pins the frame's centre line to the
-        // screen's centre line, once and forever: there is no state, no seat and
-        // no control width in this transform, so the Living G occupies the exact
-        // same pixels in every selector state and throughout a drag.
-        className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto"
+        // EXPLICIT centring, not flex alignment: the frame is intentionally
+        // wider than the viewport (selector clearance), and a centred flex item
+        // that overflows can be nudged or shrunk by the browser. left/translate
+        // pins the artwork's own centre line to the screen's centre line, and
+        // shrink-0 + min-width make shrinking impossible.
+        className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto -translate-x-1/2"
         style={{
           width: CANONICAL_WIDTH,
           minWidth: CANONICAL_WIDTH,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
-          transform: `translateX(calc(-50% + ${CENTRE_OFFSET}))`,
         }}
       >
-
         {children}
       </div>
     </div>

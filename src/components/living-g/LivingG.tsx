@@ -2,9 +2,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { buzz, haptics } from "@/lib/haptics";
 import {
-  EAR_GEOMETRY,
+  EAR_CUT,
+  RIM_PATCH,
   LOOP_CENTRE,
-  LOOP_RIM_RADIUS,
+  arcPath,
+  wedgePath,
   G_ANCHORS,
   G_REGION_BANDS,
   LIVING_G_PATH,
@@ -46,14 +48,18 @@ type Props = {
   showLabels?: boolean;
   /** Interactive layer drawn above the artwork (eg the top-loop selector). */
   overlay?: React.ReactNode;
-  /** True when the original ear is carried by the selector overlay. */
-  movableEar?: boolean;
   /**
    * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (eg the current mode).
    * When it changes, every loop's content is UNMOUNTED and rebuilt, so no
    * previous state's words, fades or timers can survive underneath the new one.
    */
   contentKey?: string;
+  /**
+   * THE SELECTOR'S HOME. When the mode selector owns the small top circle, the
+   * canonical ear + stem are removed ONCE by a tight static cut — applied to
+   * the base artwork and every swell copy, so no fragment can peek back.
+   */
+  earCut?: boolean;
   /**
    * LOGO WEIGHT ONLY. Adds an outer stroke of the same colour so the Living G
    * reads as one heavy glyph beside bold type, without redrawing the path.
@@ -128,6 +134,23 @@ export const RHYTHM = {
 } as const;
 
 /**
+ * THE SMOOTH RIM. After the static ear cut, the middle loop's own stroke is
+ * redrawn as one perfect arc across that span, so the 2 o'clock section of the
+ * G is a single continuous curve — no bump, kink or flat spot, in any mode.
+ */
+function rimPatch() {
+  return (
+    <path
+      d={arcPath(LOOP_CENTRE.middle, RIM_PATCH.a0, RIM_PATCH.a1, RIM_PATCH.rMid)}
+      fill="none"
+      stroke="var(--world-g)"
+      strokeWidth={RIM_PATCH.width}
+      strokeLinecap="butt"
+    />
+  );
+}
+
+/**
  * The Living G.
  *
  * The visible artwork is the canonical traced geometry and NEVER changes shape:
@@ -140,8 +163,8 @@ export function LivingG({
   className,
   showLabels = true,
   overlay,
-  movableEar = false,
   contentKey = "",
+  earCut = false,
   weight = "normal",
 }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
@@ -195,7 +218,6 @@ export function LivingG({
     [],
   );
   const uid = useId().replace(/:/g, "");
-  const artworkMask = movableEar ? `url(#${uid}-movable-ear-mask)` : undefined;
 
   /** PRESS AND HOLD teaches the loop again — a soft fade, never a tooltip. */
   const holdCue = (key: RegionKey) => {
@@ -210,18 +232,15 @@ export function LivingG({
 
 
   return (
-    <div
-      className={cn("relative h-full w-full select-none", className)}
+    <svg
+      viewBox={LIVING_G_VIEWBOX}
+      className={cn("h-full w-full select-none overflow-visible", className)}
       // DIRECT MANIPULATION SURFACE. The G is dragged, not scrolled: the browser
       // must be told here, on the element itself, or Android hands the gesture
       // to the page scroller halfway through a drag. Scrolling everywhere else
       // (panels, forms, lists) is untouched.
       style={{ touchAction: "none", WebkitTapHighlightColor: "transparent" }}
     >
-      <svg
-        viewBox={LIVING_G_VIEWBOX}
-        className="absolute inset-0 h-full w-full overflow-visible"
-      >
 
       {/*
         Canonical geometry, drawn once and never transformed, plus one
@@ -231,39 +250,6 @@ export function LivingG({
         or rectangle is ever visible.
       */}
       <defs>
-        {movableEar ? (
-          <mask id={`${uid}-movable-ear-mask`} maskUnits="userSpaceOnUse">
-            <rect
-              x={-220}
-              y={-220}
-              width={1200}
-              height={1600}
-              fill="white"
-            />
-            {/*
-              THE ONE PLACE THE ARTWORK IS TOUCHED: the canonical G's own small
-              ear is lifted out so the five satellites are the only rings on the
-              screen. Nothing else about the geometry changes — the mask is kept
-              tight to the ear and its stem so no loop is ever cut.
-            */}
-            <line
-              x1={LOOP_CENTRE.middle.x + Math.cos((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 30)}
-              y1={LOOP_CENTRE.middle.y + Math.sin((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 30)}
-              x2={EAR_GEOMETRY.home.x}
-              y2={EAR_GEOMETRY.home.y}
-              stroke="black"
-              strokeWidth={EAR_GEOMETRY.stemWidth * 1.7}
-              strokeLinecap="round"
-            />
-            <circle
-              cx={EAR_GEOMETRY.home.x}
-              cy={EAR_GEOMETRY.home.y}
-              r={EAR_GEOMETRY.outerR + 12}
-              fill="black"
-            />
-
-          </mask>
-        ) : null}
         {/*
           Soft radial falloffs centred on each loop, so a swell reads as that
           loop breathing and dissolves organically into the rest of the stroke —
@@ -293,16 +279,37 @@ export function LivingG({
             />
           </mask>
         ))}
+        {/*
+          THE STATIC EAR CUT — a tight disc over the small top circle plus a
+          short band over its stem, stopping just outside the middle loop's rim
+          so the rim, the spine and every neighbouring stroke are untouched.
+          One cut, applied once, identical in every mode.
+        */}
+        {earCut ? (
+          <mask id={`${uid}-earcut`} maskUnits="userSpaceOnUse">
+            <rect x="-200" y="-200" width="1200" height="1600" fill="#fff" />
+            <path
+              d={wedgePath(
+                LOOP_CENTRE.middle,
+                EAR_CUT.a0,
+                EAR_CUT.a1,
+                EAR_CUT.r0,
+                EAR_CUT.r1,
+              )}
+              fill="#000"
+            />
+          </mask>
+        ) : null}
       </defs>
 
       <g>
-        {/* THE IMMUTABLE ASSET. The canonical artwork is drawn whole — never
-            masked, cut, patched or redrawn for the selector's sake. */}
-        <g {...(artworkMask ? { mask: artworkMask } : {})}>
+        {/* The cut applies to the ARTWORK only; the rim patch is drawn on top. */}
+        <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
           <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-            <path data-living-g-artwork="base" d={LIVING_G_PATH} {...heavy} />
+            <path d={LIVING_G_PATH} {...heavy} />
           </g>
         </g>
+        {earCut ? rimPatch() : null}
 
         {ORDER.map((key) => {
           const isPressed = pressed === key;
@@ -316,11 +323,12 @@ export function LivingG({
                   transformOrigin: `${ring.x}px ${ring.y}px`,
                 }}
               >
-                <g {...(artworkMask ? { mask: artworkMask } : {})}>
+                <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
                   <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
                     <path d={LIVING_G_PATH} {...heavy} />
                   </g>
                 </g>
+                {earCut ? rimPatch() : null}
               </g>
             </g>
           );
@@ -475,18 +483,8 @@ export function LivingG({
         );
       })}
 
-      </svg>
-
-      {overlay ? (
-        <svg
-          viewBox={LIVING_G_VIEWBOX}
-          className="absolute inset-0 h-full w-full overflow-visible"
-          style={{ touchAction: "none", WebkitTapHighlightColor: "transparent", pointerEvents: "none" }}
-        >
-          {overlay}
-        </svg>
-      ) : null}
-    </div>
+      {overlay}
+    </svg>
 
   );
 }

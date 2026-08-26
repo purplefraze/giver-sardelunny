@@ -6,7 +6,7 @@ import { G_FONT } from "@/components/living-g/g-type";
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
 
 import type { RegionKey } from "@/components/living-g/LivingG";
-import { EarSelector, FULL_SEATS, type Seat } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES } from "@/components/living-g/EarSelector";
 import { buzz, haptics } from "@/lib/haptics";
 
 /**
@@ -25,7 +25,7 @@ import { buzz, haptics } from "@/lib/haptics";
  *   gift   the remaining 50, waiting to be moved into the giving loop
  *
  * TWO PATHS. Complete the spark interaction and the richer onboarding follows.
-   * Linger past three full minutes and Giver quietly opens My G instead —
+ * Linger past roughly thirty seconds and Giver quietly opens My G instead —
  * no failure, no explanation, no countdown.
  *
  * TYPOGRAPHY IS QUIET. Copy is set small and centred in the loops' own interior
@@ -95,6 +95,9 @@ function Line({
 
 }
 
+const PLAY_SEATS = [...MODES, "lend"] as const;
+type PlaySeat = (typeof PLAY_SEATS)[number];
+
 export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
   const [phase, setPhase] = useState<Phase>("quiet");
   /**
@@ -102,7 +105,9 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
    * in that territory's canonical colour — it never navigates, never reveals
    * content, and never counts toward the spark interaction.
    */
-  const [seat, setSeat] = useState<Seat>("giver");
+  /* THE SIX POSITIONS ARE FIXED APP-WIDE: play offers the five activity seats
+     (my g at 12 o'clock is not reachable until the profile is discovered). */
+  const [seat, setSeat] = useState<PlaySeat>("give");
   
   const [taps, setTaps] = useState(0);
   /** A transient answer to a casual touch, once the G has already spoken. */
@@ -232,10 +237,10 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
   return (
     <IntroG
       /* THE TOGGLE IS THE ONLY SOURCE OF THE G'S COLOUR — from the first frame.
-         giver = turquoise · give = green · wish = purple · borrow = hot pink · trade = orange. */
+         wish = purple · give = green · trade = orange · borrow = blue. */
       world={seat}
+      earCut
       press={press}
-      movableEar
       overlay={
         <>
           {copy}
@@ -274,11 +279,13 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
             </>
           ) : null}
 
-          {/* THE ONE TOGGLE, FULLY PLAYABLE — the G answers in colour. */}
+          {/* THE EXISTING TOGGLE, FULLY PLAYABLE — the G answers in colour. */}
           <EarSelector
             mode={seat}
-            seats={FULL_SEATS}
-            onChange={setSeat}
+            seats={PLAY_SEATS}
+            onChange={(next) => {
+              setSeat(next as PlaySeat);
+            }}
           />
 
           {/* THE HALVES, drawn LAST so my green 50 read inside the toggle loop's

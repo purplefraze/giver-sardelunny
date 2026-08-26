@@ -6,8 +6,8 @@ export type Lifecycle = {
   firstUseInitializedAt: number | null;
   /**
    * MY G IS DISCOVERED, NOT ANNOUNCED. The first time a person opens their own
-   * profile setup from the empty Living G, the middle-loop 5 o'clock destination
-   * unlocks — permanently, even if they press back without typing a word.
+   * profile setup from the empty Living G, the 12 o'clock destination unlocks —
+   * permanently, even if they press back without typing a word.
    */
   profileDiscoveredAt: number | null;
 };

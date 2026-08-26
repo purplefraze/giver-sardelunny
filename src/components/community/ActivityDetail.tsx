@@ -18,7 +18,6 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useMemberEdits } from "@/hooks/use-member-edits";
 import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemFacts, itemKindWord } from "@/components/profile/ItemFacts";
-import { tradeLead, tradePerspective } from "@/lib/exchange-colours";
 import { buzz } from "@/lib/haptics";
 import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 
@@ -92,12 +91,7 @@ export function ActivityDetail({
   const others = connectionsForItem(links, item.id).filter(
     (c) => isOpen(c) && c.helperId !== ME_ID,
   ).length;
-  /* TRADE IS PROPOSER-LED: the person who proposed it leads its colour, with the
-     other participant's colour present as the counterpart. */
-  const lead = tradeLead(isMine);
-  const trade = tradePerspective(lead);
-  const fill = item.type === "trade" ? trade.lead : ACTIVITY_FILL[item.type];
-  const counter = item.type === "trade" ? trade.counter : fill;
+  const fill = ACTIVITY_FILL[item.type];
 
   /**
    * ONE DOOR, TWO WAYS THROUGH IT. Messaging and responding both open the
@@ -118,14 +112,13 @@ export function ActivityDetail({
   return (
     <div
       data-world="community"
-      {...(item.type === "trade" ? { "data-trade-lead": lead } : {})}
       className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--giver-ink)" }}
     >
       <BackArrow onClick={onClose} label="back" sticky />
 
       {/* WHAT THIS IS, SAID EXACTLY: borrowing and lending are not the same. */}
-      <span className="g-heading" style={{ color: counter }}>
+      <span className="g-heading" style={{ color: fill }}>
         {itemKindWord(item)}
       </span>
       <h1 className="g-display mt-4" style={{ color: fill }}>

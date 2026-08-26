@@ -444,7 +444,8 @@
   --world-accent: var(--person-self);
 }
 
-/* ---- ME — my own profile and my own information: GREEN. ---- */
+/* ---- GIVER / ME — the default five-state seat: turquoise. ---- */
+[data-world="giver"],
 [data-world="me"],
 [data-world="profile"] {
   --world-bg: var(--giver-paper);

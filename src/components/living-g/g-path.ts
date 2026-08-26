@@ -26,21 +26,26 @@ export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as c
  * THE GLASS — what a phone actually shows of the frame, and the one place that
  * knows it.
  *
- * `artworkFit` is the share of the viewport's width the Living G itself takes:
- * the world is sized to be immersive first. Everything else here is derived, so
- * the camera pan and the stage can never disagree about where the edges are.
+ * `artworkFit` is the share of the viewport's width the Living G itself takes.
+ * It is ONE STATIC NUMBER, chosen once: the glass is wide enough to hold the
+ * selector's whole horizontal travel (its ring at borrow 9:00 and at lend 3:00)
+ * with a hair of clearance, so the world can stay perfectly still in every
+ * selector state instead of sliding sideways to rescue a control.
+ *
+ *   ring reach from the middle loop's centre
+ *     rim 196.5 + gap 24.5 + ringOuter 79 (orbit 300) + ringOuter 79 = 379
+ *   glass needed = 2 x 379 + 2 x margin(8) = 774 frame units
+ *   artworkFit   = 576 / 774 = 0.744
+ *
+ * This is deliberately NOT state dependent: no seat, drag, label or toggle
+ * width may ever change it, which is what makes the G pixel-stationary.
  */
 export const STAGE_WINDOW = {
-  /** The world's own width, as a share of the screen. Edge padding only. */
-  artworkFit: 0.995,
-  /**
-   * Clear space kept between a live touch disc and the edge of the glass. Sized
-   * generously so a fast drag — where the camera is easing a frame behind the
-   * finger — still never lets the disc touch an edge. Kept small so the camera
-   * only ever slides the world by a few pixels: the toggle asks the camera for
-   * room, never the world for size.
-   */
-  margin: 20,
+  /** The world's own width, as a share of the screen. One static value. */
+  artworkFit: 0.744,
+  /** Clear paper kept between the selector's visible ring and the glass edge. */
+  margin: 8,
+
 } as const;
 
 /**

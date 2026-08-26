@@ -1,20 +1,21 @@
-# Fix stationary Living G navigation geometry
+# Correct the Living G selector open arc
 
 ## What will change
 
-- Remove the selector-driven camera pan so the canonical Living G stage remains centred at the exact same viewport coordinates in every state and throughout dragging.
-- Keep the selector as an independent SVG interaction layer: its ring, stem, labels, hints, hit targets, and animation move while the underlying G remains fixed.
-- Restore the six-seat map in visual order: Borrow (left), Wish, My G (12:00), Give (right), Lend, Trade (6:00 overlapping the lower loop).
-- Extend the selector’s continuous drag track to the 6:00 Trade endpoint without changing the Living G path, stroke, frame, scale, or loop geometry.
+- Keep the canonical Living G on one fixed, invariant stage and retain the selector as a separate SVG overlay that cannot affect artwork layout, masking, sizing, or transforms.
+- Replace the current Borrow-to-Trade wire with the clarified open arc: My G at about 5 o’clock is one endpoint; the long route passes Lend, Give, 12 o’clock with no seat, Wish, Borrow, and ends at Trade at 6 o’clock over the lower loop.
+- Use continuous unwrapped angles (`My G +60°`, `Lend 0°`, `Give -45°`, `Wish -135°`, `Borrow -180°`, `Trade -270°`) so the forbidden short 5-to-6 gap cannot be crossed.
+- Keep all six workspace seats present and keyboard navigation ordered along physical track travel; clamp only the selector overlay when needed.
 
 ## Verification
 
-- On narrow and standard phone viewports, capture the Living G path bounding box for every seat and confirm its x/y/width/height remain pixel-identical.
-- Confirm all six controls are present and reachable, the visible selector stays on-screen, and Trade lands at the bottom over the lower loop rather than beside the middle loop.
-- Check drag and tap selection behavior, then confirm the preview build and runtime logs remain clean.
+- Capture and inspect all six selector states on phone viewports.
+- Measure the canonical artwork bounding box in every state and require identical x/y/width/height.
+- Confirm My G at the middle-loop lower-right opening, no 12-o’clock seat, Wish present, and Trade at 6 o’clock overlapping the lower loop.
+- Exercise dragging from My G toward the forbidden gap and confirm the selector cannot jump directly to Trade, then drag the long route to Trade.
+- Run type/build/runtime diagnostics and confirm every selector remains fully visible without moving the G.
 
 ## Technical details
 
-- `GStage` will use one invariant `translateX(-50%)`; selector state will no longer write a global stage transform variable.
-- `EarSelector` will own the six angular destinations and use a continuous non-wrapping rail from Borrow through Trade, with Trade at 90° in SVG space.
-- The canonical traced path and its artwork constants remain untouched.
+- The track uses a non-wrapping interval from `-270°` through `+60°`; pointer angles are unwrapped relative to the live bead before clamping.
+- The artwork and selector remain sibling SVG layers. Only the selector group may receive an edge-correction translate.

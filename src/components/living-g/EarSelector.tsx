@@ -571,6 +571,54 @@ export function EarSelector({
           />
         );
       })}
+
+      {/*
+        SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one
+        generous invisible disc per destination. These live OUTSIDE the active
+        selector transform, so each destination stays fixed to its own clamped
+        overlay coordinate while the moving piece alone travels.
+      */}
+      {!locked
+        ? seats.map((m) => {
+            if (m === mode) return null;
+            const spot = at(SEAT_ANGLE[m], TRACK_R);
+            const shift = seatShifts[m];
+            return (
+              <circle
+                key={`seat-${m}`}
+                cx={spot.x + shift.x}
+                cy={spot.y + shift.y}
+                r={60}
+                fill="transparent"
+                pointerEvents="all"
+                role="button"
+                aria-label={m}
+                className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+                style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  if (activeId.current !== null) return;
+                  activeId.current = e.pointerId;
+                  (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  if (activeId.current !== e.pointerId) return;
+                  activeId.current = null;
+                  try {
+                    e.currentTarget.releasePointerCapture?.(e.pointerId);
+                  } catch {
+                    /* already released */
+                  }
+                  commit(m);
+                }}
+                onPointerCancel={(e) => {
+                  if (activeId.current === e.pointerId) activeId.current = null;
+                }}
+              />
+            );
+          })
+        : null}
       <g transform={activeShift}>
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,
@@ -700,54 +748,6 @@ export function EarSelector({
         {mode === "giver" ? "my g" : (word ?? mode)}
 
       </text>
-
-      {/*
-        SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one
-        generous invisible disc per destination, painted BEFORE the grip so the
-        piece itself always wins the overlap. Same pointer events, same commit —
-        no separate touch implementation anywhere.
-      */}
-      {!locked
-        ? seats.map((m) => {
-            if (m === mode) return null;
-            const spot = at(SEAT_ANGLE[m], TRACK_R);
-            const shift = seatShifts[m];
-            return (
-              <circle
-                key={`seat-${m}`}
-                cx={spot.x + shift.x}
-                cy={spot.y + shift.y}
-                r={60}
-                fill="transparent"
-                pointerEvents="all"
-                role="button"
-                aria-label={m}
-                className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
-                style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  if (activeId.current !== null) return;
-                  activeId.current = e.pointerId;
-                  (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
-                }}
-                onPointerUp={(e) => {
-                  e.stopPropagation();
-                  if (activeId.current !== e.pointerId) return;
-                  activeId.current = null;
-                  try {
-                    e.currentTarget.releasePointerCapture?.(e.pointerId);
-                  } catch {
-                    /* already released */
-                  }
-                  commit(m);
-                }}
-                onPointerCancel={(e) => {
-                  if (activeId.current === e.pointerId) activeId.current = null;
-                }}
-              />
-            );
-          })
-        : null}
 
       {/* Invisible grip, travelling with the ring. */}
       <circle

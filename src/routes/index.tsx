@@ -44,7 +44,7 @@ import type { Category } from "@/data/my-profile";
 import { CATEGORY_PLURAL, myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { EarSelector, FULL_SEATS, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
 
 /**
  * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.

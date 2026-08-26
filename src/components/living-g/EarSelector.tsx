@@ -142,14 +142,11 @@ export function EarSelector({
   /** Which satellite currently has a finger on it. */
   const [pressed, setPressed] = useState<Seat | null>(null);
   /**
-   * THE G NEVER MOVES FOR A SATELLITE. If a ring would clip against the phone
-   * glass, ONLY that satellite is nudged inward — the artwork keeps its
-   * invariant transform.
+   * THE G NEVER MOVES FOR A SATELLITE, and no satellite is ever nudged either:
+   * the stage is sized against the whole five-satellite silhouette, so every
+   * ring and every touch disc is on the glass by construction.
    */
-  const overlayRef = useRef<SVGGElement | null>(null);
-  const [shifts, setShifts] = useState<Record<Seat, P>>(NO_SHIFT);
-  /** The touch disc is bigger than the ring, so it is clamped on its own. */
-  const [hitShifts, setHitShifts] = useState<Record<Seat, P>>(NO_SHIFT);
+
   const activeId = useRef<number | null>(null);
   const moved = useRef(false);
 

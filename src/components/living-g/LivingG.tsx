@@ -198,17 +198,6 @@ export function LivingG({
   const uid = useId().replace(/:/g, "");
   const artworkMask = movableEar ? `url(#${uid}-movable-ear-mask)` : undefined;
 
-  const earPatch = movableEar ? (
-    <path
-      d={arcPath(LOOP_CENTRE.middle, -62, -30, LOOP_RIM_RADIUS.middle)}
-      fill="none"
-      stroke="var(--world-g)"
-      strokeWidth={EAR_GEOMETRY.stemWidth * 2.4}
-      strokeLinecap="round"
-      pointerEvents="none"
-    />
-  ) : null;
-
   /** PRESS AND HOLD teaches the loop again — a soft fade, never a tooltip. */
   const holdCue = (key: RegionKey) => {
     if (holdTimer.current) clearTimeout(holdTimer.current);
@@ -308,7 +297,6 @@ export function LivingG({
             <path data-living-g-artwork="base" d={LIVING_G_PATH} {...heavy} />
           </g>
         </g>
-        {earPatch}
 
         {ORDER.map((key) => {
           const isPressed = pressed === key;
@@ -327,7 +315,6 @@ export function LivingG({
                     <path d={LIVING_G_PATH} {...heavy} />
                   </g>
                 </g>
-                {earPatch}
               </g>
             </g>
           );

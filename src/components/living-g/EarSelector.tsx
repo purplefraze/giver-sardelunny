@@ -255,7 +255,7 @@ export function EarSelector({
   photo?: string;
   /** The modes this person has taken part in, told by the seats themselves. */
   history?: Seat[];
-  /** Which seats this track offers. My own G offers all six (giver = me). */
+  /** Which seats this track offers. My own G offers the five-state open arc. */
   seats?: readonly Seat[];
   /** What the piece SAYS at rest, when the seat's own name is not the word. */
   word?: string;
@@ -549,42 +549,8 @@ export function EarSelector({
       data-living-g-selector="true"
       pointerEvents="none"
     >
-      {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at the 5 o'clock opening it is the same small, soft, close-in
-          dot as every other inactive destination — its hue is red, nothing else
-          about it is louder. The moment the toggle arrives it disappears under
-          the piece itself, which then reads "my g". */}
-      {seats.map((m) => {
-        const hint = at(SEAT_ANGLE[m], RIM_R + 16);
-        const shift = seatShifts[m];
-        const active = mode === m && !dragging;
-        // On a person's screen the seats TELL THEIR STORY: a seat they have
-        // taken part in reads in that mode's own colour, a little stronger.
-        const told = m === "giver" ? false : (history?.includes(m) ?? false);
-        const isMe = m === "giver";
-        return (
-          <circle
-            key={m}
-            cx={hint.x + shift.x}
-            cy={hint.y + shift.y}
-            r={told ? 8 : 5}
-            fill={isMe ? "var(--giver-me)" : told ? MODE_COLOUR[m] : "var(--world-g)"}
-            pointerEvents="none"
-            style={{
-              opacity:
-                active || Math.abs(shortest(angle, SEAT_ANGLE[m])) < 0.22
-                  ? 0
-                  : told
-                    ? 0.85
-                    : isMe
-                      ? 0.32
-                      : 0.22,
-
-              transition: "opacity 200ms ease-out",
-            }}
-          />
-        );
-      })}
+      {/* No visible destination marks. There is only one visible toggle; the
+          generous seat targets below are transparent and never become loops. */}
 
       {/*
         SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one
@@ -613,6 +579,7 @@ export function EarSelector({
                   e.stopPropagation();
                   if (activeId.current !== null) return;
                   activeId.current = e.pointerId;
+                  touch("down");
                   (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
                 }}
                 onPointerUp={(e) => {
@@ -624,10 +591,12 @@ export function EarSelector({
                   } catch {
                     /* already released */
                   }
+                  touch("up");
                   commit(m);
                 }}
                 onPointerCancel={(e) => {
                   if (activeId.current === e.pointerId) activeId.current = null;
+                  touch("up");
                 }}
               />
             );

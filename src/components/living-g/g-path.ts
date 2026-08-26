@@ -35,9 +35,29 @@ export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as c
 export const STAGE_WINDOW = {
   /** The world's own width, as a share of the screen. One static value. */
   artworkFit: 0.995,
+  /**
+   * THE FIVE SATELLITES ARE PART OF THE OBJECT, so the screen is sized against
+   * the artwork PLUS their rings: this share of the width is what the whole
+   * five-satellite silhouette takes. One static value — no seat, press or drag
+   * may change it, which is what keeps the G pixel-stationary.
+   */
+  envelopeFit: 0.985,
   /** Clear paper kept between an overlay control and the glass edge. */
   margin: 8,
 
+} as const;
+
+/**
+ * THE SILHOUETTE OF THE WHOLE OBJECT: the canonical artwork together with the
+ * five satellite rings that orbit the middle loop (measured, in viewBox units,
+ * from LOOP_CENTRE.middle + 300 track radius + 79 ring radius). Sizing reads
+ * this so no satellite is ever clipped by the glass.
+ */
+export const SATELLITE_ENVELOPE = {
+  left: -107,
+  right: 563,
+  width: 670,
+  centre: 228,
 } as const;
 
 /**

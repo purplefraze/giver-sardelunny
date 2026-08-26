@@ -456,18 +456,37 @@
 }
 
 /* ---------------------------------------------------------------
-   THE TOUCH ANSWER. While a finger is DOWN on the toggle, the whole
-   Living G takes the purple touch colour; the moment it lifts, the G
-   settles into electric orange. Pure state, driven by real pointer
-   events on the toggle — never a decoration.
+   THE TOUCH ANSWER. Each satellite is a control for the WHOLE Living G:
+   while a finger is DOWN on a satellite the entire G takes THAT
+   satellite's assigned colour; the moment it lifts, the whole G settles
+   back into the resting electric orange. Pure state, driven by real
+   pointer events — never a decoration.
    --------------------------------------------------------------- */
+:root[data-g-touch="up"] [data-world],
 :root[data-g-touch="down"] [data-world] {
+  --world-g: var(--mode-trade); /* THE RESTING STATE IS ORANGE. */
+}
+
+:root[data-g-press="give"] [data-world] {
+  --world-g: var(--mode-give);
+}
+
+:root[data-g-press="giver"] [data-world] {
+  --world-g: var(--mode-giver);
+}
+
+:root[data-g-press="wish"] [data-world] {
   --world-g: var(--mode-wish);
 }
 
-:root[data-g-touch="up"] [data-world] {
+:root[data-g-press="borrow"] [data-world] {
+  --world-g: var(--mode-borrow);
+}
+
+:root[data-g-press="trade"] [data-world] {
   --world-g: var(--mode-trade);
 }
+
 
 
 /* Community — the big lower loop: RED + YELLOW together. Red leads the G,

@@ -1,7 +1,7 @@
 import {
   LIVING_G_BOX,
   LIVING_G_FRAME,
-  STAGE_OVERDRAW,
+  SATELLITE_ENVELOPE,
   STAGE_TOP_RESERVE,
   STAGE_WINDOW,
 } from "./g-path";
@@ -40,7 +40,17 @@ export const CTA_BAND = "2.6rem";
    * cannot resize the artwork mid-animation. Toggle controls are ignored by this
    * sizing: they are an overlay and never make the Living G smaller.
  */
-const WIDTH_LIMIT = `${(STAGE_WINDOW.artworkFit * STAGE_OVERDRAW * 100).toFixed(3)}%`;
+const WIDTH_LIMIT = `${(
+  (STAGE_WINDOW.envelopeFit * LIVING_G_FRAME.width * 100) / SATELLITE_ENVELOPE.width
+).toFixed(3)}%`;
+/**
+ * The five satellites are not symmetrical about the artwork, so the SILHOUETTE's
+ * centre line — not the frame's — is pinned to the screen's centre line.
+ */
+const CENTRE_OFFSET = `${(
+  ((LIVING_G_FRAME.x + LIVING_G_FRAME.width / 2 - SATELLITE_ENVELOPE.centre) * 100) /
+  LIVING_G_FRAME.width
+).toFixed(4)}%`;
 /**
  * Height is measured against the ARTWORK plus the toggle's visible ring reserve
  * only (STAGE_TOP_RESERVE) — never the selector's whole travel envelope — so the
@@ -69,7 +79,7 @@ export function GStage({ children }: { children: React.ReactNode }) {
           width: CANONICAL_WIDTH,
           minWidth: CANONICAL_WIDTH,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
-          transform: "translateX(-50%)",
+          transform: `translateX(calc(-50% + ${CENTRE_OFFSET}))`,
         }}
       >
 

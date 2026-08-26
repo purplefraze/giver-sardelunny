@@ -522,6 +522,9 @@ export function EarSelector({
       }
     }
     activeId.current = null;
+    /* FINGER LIFTED: the G returns to electric orange. */
+    touch("up");
+
     const g = gesture.current;
     const wasHeld = held.current;
     stopPeek();

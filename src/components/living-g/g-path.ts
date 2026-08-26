@@ -11,12 +11,15 @@ export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
  * across its ENTIRE travel around the middle loop (ring centre orbit radius 300
  * about (272,298), ring outer radius 79 → x -107..651, y -81..), plus a small
  * CLEARANCE so the ring is never flush with the edge at the extremes. The frame
- * is kept SYMMETRIC about the artwork's own centre line (x = 288) so centring the
- * frame also centres the canonical G horizontally, and it is FIXED: it never
+ * is derived from the selector's TRUE extremes (x -107..651 plus 10 units of
+ * clearance = -117..661), NOT from a symmetric artwork-centred box: the frame
+ * centre (x = 272) sits left of the artwork centre (x = 288), so centring the
+ * frame on screen gives the G a small CONSTANT rightward offset and lets it be
+ * as large as the geometry permits. It is FIXED: it never
  * depends on where the selector currently sits. Nothing decorative lives here:
  * every extra unit shrinks the G on screen.
  */
-export const LIVING_G_FRAME = { x: -121, y: -95, width: 818, height: 1228 } as const;
+export const LIVING_G_FRAME = { x: -117, y: -95, width: 778, height: 1228 } as const;
 
 
 

@@ -19,13 +19,15 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * apart, because they are defined relative to the same axis and placed by ONE
  * rotation about ONE centre with ONE angle.
  *
- * The canonical Living G is NEVER rotated, copied, deformed or cut at the
- * selector's live position. Its original ear is removed once by a tight static
- * cut in <LivingG> (see EAR_GEOMETRY), so the rim underneath stays a perfectly
- * smooth curve in every mode.
+ * The canonical Living G is NEVER rotated, copied, deformed, masked, cut or
+ * redrawn — not statically and certainly not at the selector's live position.
+ * The piece is a pure OVERLAY drawn above the untouched artwork, so the G looks
+ * pixel-identical at every toggle position; where the piece and the G meet, the
+ * piece simply sits on top.
  *
- * THE CLOCK MAP (spatial), read around the middle loop:
- *   borrow 9:00 · wish 10:30 · MY G 12:00 · give 1:30 · lend 3:00 · trade 6:00
+ * THE CLOCK MAP (spatial), read along the wire from its my-g end:
+ *   MY G ~5:00 · lend 3:00 · give 1:30 · (no seat at 12:00) · wish 10:30 ·
+ *   borrow 9:00 · trade 6:00
  *
  * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
 
@@ -36,15 +38,19 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12:00, and LEND at 3:00. Both are LOCKED until the
+ * activities: GIVER = ME at ~5:00, and LEND at 3:00. Both are LOCKED until the
  * person has a profile and one active give of their own, so onboarding only
  * ever offers MODES.
  */
 export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order (borrow 9:30 → trade 4:30). */
-export const FULL_SEATS = ["borrow", "wish", "giver", "give", "lend", "trade"] as const;
+/**
+ * Every seat on the wire, IN PHYSICAL TRAVEL ORDER along the open arc:
+ * my g (~5:00, one end) → lend → give → past 12:00 (no seat) → wish → borrow →
+ * trade (6:00, the other end).
+ */
+export const FULL_SEATS = ["giver", "lend", "give", "wish", "borrow", "trade"] as const;
 
 
 
@@ -412,7 +418,7 @@ export function EarSelector({
   return (
     <g>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          MY G IS ONE OF THEM: at ~5 o'clock it is the same small, soft, close-in
           dot as every other inactive destination — its hue is red, nothing else
           about it is louder. The moment the toggle arrives it disappears under
           the piece itself, which then reads "my g". */}

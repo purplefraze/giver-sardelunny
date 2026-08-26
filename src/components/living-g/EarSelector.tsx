@@ -525,17 +525,15 @@ export function EarSelector({
 
   /** My G-to-Trade travel order, so the keyboard walks the open track. */
   const ring = [...seats].sort((a, b) => SEAT_ANGLE[b] - SEAT_ANGLE[a]);
+  const activeShift = overlayShift.x || overlayShift.y
+    ? `translate(${overlayShift.x} ${overlayShift.y})`
+    : undefined;
 
   return (
     <g
       ref={overlayRef}
       data-living-g-selector="true"
       pointerEvents="none"
-      transform={
-        overlayShift.x || overlayShift.y
-          ? `translate(${overlayShift.x} ${overlayShift.y})`
-          : undefined
-      }
     >
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
           MY G IS ONE OF THEM: at the 5 o'clock opening it is the same small, soft, close-in

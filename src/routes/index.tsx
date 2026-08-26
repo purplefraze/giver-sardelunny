@@ -477,8 +477,8 @@ function Index() {
        the right size and the G is already there, simply not yet awake. */
     return (
       <main
-        className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden"
-        style={{ background: "var(--giver-paper)" }}
+        className="g-canvas-h g-canvas-w relative mx-auto overflow-clip"
+        style={{ overflow: "clip", background: "var(--giver-paper)" }}
         aria-busy="true"
       >
         <div className="absolute inset-0 opacity-[0.07]">
@@ -495,7 +495,7 @@ function Index() {
   }
 
   return (
-    <main className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden">
+    <main className="g-canvas-h g-canvas-w relative mx-auto overflow-clip" style={{ overflow: "clip" }}>
 
       <DevControls />
       {!entered ? (

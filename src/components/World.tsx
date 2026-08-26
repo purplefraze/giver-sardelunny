@@ -85,10 +85,11 @@ export function World({
   return (
     <div
       data-world={world}
-      className="relative flex h-full w-full flex-col overflow-hidden"
+      className="relative flex h-full w-full flex-col overflow-clip"
       style={{
         background: "var(--world-bg)",
         color: "var(--world-ink)",
+        overflow: "clip",
         pointerEvents: active ? undefined : "none",
       }}
     >

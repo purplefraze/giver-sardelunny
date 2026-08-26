@@ -400,20 +400,42 @@ export function EarSelector({
       };
       const mx = SELECTOR_EDGE_MARGIN * ux;
       const my = SELECTOR_EDGE_MARGIN * uy;
-      const box = selectorBox(angle);
+      const shiftForAngle = (a: number): P => {
+        const box = selectorBox(a);
+        let x = 0;
+        let y = 0;
+        if (box.minX < visible.left + mx) x = visible.left + mx - box.minX;
+        if (box.maxX + x > visible.right - mx) x = visible.right - mx - box.maxX;
+        if (box.minY < visible.top + my) y = visible.top + my - box.minY;
+        if (box.maxY + y > visible.bottom - my) y = visible.bottom - my - box.maxY;
+        return { x, y };
+      };
 
-      let x = 0;
-      let y = 0;
-      if (box.minX < visible.left + mx) x = visible.left + mx - box.minX;
-      if (box.maxX + x > visible.right - mx) x = visible.right - mx - box.maxX;
-      if (box.minY < visible.top + my) y = visible.top + my - box.minY;
-      if (box.maxY + y > visible.bottom - my) y = visible.bottom - my - box.maxY;
+      const { x, y } = shiftForAngle(angle);
+      const nextSeatShifts: Record<Seat, P> = {
+        giver: shiftForAngle(SEAT_ANGLE.giver),
+        lend: shiftForAngle(SEAT_ANGLE.lend),
+        give: shiftForAngle(SEAT_ANGLE.give),
+        wish: shiftForAngle(SEAT_ANGLE.wish),
+        borrow: shiftForAngle(SEAT_ANGLE.borrow),
+        trade: shiftForAngle(SEAT_ANGLE.trade),
+      };
 
       setOverlayShift((prev) =>
         Math.abs(prev.x - x) > 0.25 || Math.abs(prev.y - y) > 0.25
           ? { x, y }
           : prev,
       );
+      setSeatShifts((prev) => {
+        for (const seat of SEATS) {
+          const before = prev[seat];
+          const after = nextSeatShifts[seat];
+          if (Math.abs(before.x - after.x) > 0.25 || Math.abs(before.y - after.y) > 0.25) {
+            return nextSeatShifts;
+          }
+        }
+        return prev;
+      });
     };
 
     const frame = window.requestAnimationFrame(update);

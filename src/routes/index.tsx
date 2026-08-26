@@ -44,7 +44,7 @@ import type { Category } from "@/data/my-profile";
 import { CATEGORY_PLURAL, myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { EarSelector, FULL_SEATS, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
 
 /**
  * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
@@ -436,12 +436,11 @@ function Index() {
   };
 
   /**
-   * EVERY SEAT PRESENT: the four activity modes plus LEND at 3:00 always
-   * exist on the wire; MY G at 12:00 appears once it has been found.
+   * EVERY SEAT PRESENT, ALWAYS — the six fixed clock controls:
+   * borrow 9:00 · wish 10:30 · MY G 12:00 · give 1:30 · lend 3:00 · trade 6:00.
    */
-  const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
-    ? (["giver", "lend", ...MODES_ONLY] as const)
-    : (["lend", ...MODES_ONLY] as const);
+  const myGSeats: readonly Seat[] = FULL_SEATS;
+
 
 
   /**

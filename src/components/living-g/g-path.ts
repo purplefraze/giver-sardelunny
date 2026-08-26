@@ -26,21 +26,26 @@ export const LIVING_G_FRAME = { x: -124, y: -98, width: 792, height: 1231 } as c
  * THE GLASS — what a phone actually shows of the frame, and the one place that
  * knows it.
  *
- * `artworkFit` is the share of the viewport's width the Living G itself takes:
- * the world is sized to be immersive first. Everything else here is derived, so
- * the camera pan and the stage can never disagree about where the edges are.
+ * `artworkFit` is the share of the viewport's width the Living G itself takes.
+ * It is ONE STATIC NUMBER, chosen once: the glass is wide enough to hold the
+ * selector's whole horizontal travel (its ring at borrow 9:00 and at lend 3:00)
+ * with a hair of clearance, so the world can stay perfectly still in every
+ * selector state instead of sliding sideways to rescue a control.
+ *
+ *   ring reach from the middle loop's centre
+ *     rim 196.5 + gap 24.5 + ringOuter 79 (orbit 300) + ringOuter 79 = 379
+ *   glass needed = 2 x 379 + 2 x margin(8) = 774 frame units
+ *   artworkFit   = 576 / 774 = 0.744
+ *
+ * This is deliberately NOT state dependent: no seat, drag, label or toggle
+ * width may ever change it, which is what makes the G pixel-stationary.
  */
 export const STAGE_WINDOW = {
-  /** The world's own width, as a share of the screen. Edge padding only. */
-  artworkFit: 0.995,
-  /**
-   * Clear space kept between a live touch disc and the edge of the glass. Sized
-   * generously so a fast drag — where the camera is easing a frame behind the
-   * finger — still never lets the disc touch an edge. Kept small so the camera
-   * only ever slides the world by a few pixels: the toggle asks the camera for
-   * room, never the world for size.
-   */
-  margin: 20,
+  /** The world's own width, as a share of the screen. One static value. */
+  artworkFit: 0.744,
+  /** Clear paper kept between the selector's visible ring and the glass edge. */
+  margin: 8,
+
 } as const;
 
 /**
@@ -58,40 +63,18 @@ export const STAGE_TOP_RESERVE = 81;
 /** How much wider the drawing surface is than the world drawn inside it. */
 export const STAGE_OVERDRAW = LIVING_G_FRAME.width / LIVING_G_BOX.width;
 
-/** Frame units visible across the screen once the artwork fills `artworkFit`. */
-const VISIBLE_UNITS = LIVING_G_BOX.width / STAGE_WINDOW.artworkFit;
-/** The frame is centred on the screen, so the glass is centred on ITS centre. */
-const GLASS_CENTRE = LIVING_G_FRAME.x + LIVING_G_FRAME.width / 2;
-export const STAGE_GLASS = {
-  left: GLASS_CENTRE - VISIBLE_UNITS / 2,
-  right: GLASS_CENTRE + VISIBLE_UNITS / 2,
-} as const;
-
 /**
- * THE CAMERA FOLLOWS THE TOGGLE — instead of the world shrinking to hold it.
+ * THE LIVING G IS STATIONARY. The stage is a FIXED canvas: the artwork's centre
+ * line is pinned to the screen's centre line and NOTHING — not the selector's
+ * seat, not a drag in flight, not a label's width — may translate, scale or
+ * re-centre it. The selector is a separate interaction layer that travels over
+ * the G's own geometry and is allowed to overlap it; the world never moves to
+ * make room for a control.
  *
- * Given where the selector's touch disc is right now, this returns how far the
- * whole stage slides, as a share of the frame's width (so it is resolution
- * independent, and reads straight into a percentage translate). Zero for every
- * seat that is already comfortably inside the glass; a gentle slide for borrow
- * at 9:30 and lend at 3:00, whose discs reach past the world's own edges. The
- * far side of the G simply passes off-screen, which is what being inside the G
- * has always looked like.
+ * (There is deliberately no camera pan here any more. If a control needs room,
+ * the control moves — never the G.)
  */
-export function stagePanPercent(cx: number, gripR: number = 96) {
-  const left = cx - gripR;
-  const right = cx + gripR;
-  let pan = 0;
-  if (left < STAGE_GLASS.left + STAGE_WINDOW.margin) {
-    pan = STAGE_GLASS.left + STAGE_WINDOW.margin - left;
-  } else if (right > STAGE_GLASS.right - STAGE_WINDOW.margin) {
-    pan = STAGE_GLASS.right - STAGE_WINDOW.margin - right;
-  }
-  return (pan / LIVING_G_FRAME.width) * 100;
-}
 
-/** The CSS custom property the stage reads for that slide. */
-export const STAGE_PAN_VAR = "--g-pan";
 
 
 

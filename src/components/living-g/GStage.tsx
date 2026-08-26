@@ -34,12 +34,11 @@ export const CTA_BAND = "2.6rem";
 /**
  * THE WORLD FILLS THE PHONE.
  *
- * Width: the artwork takes `artworkFit` of the screen, so the sized box — which
- * is the drawing surface, not the artwork — is that much wider again.
- * Height: bounded by --app-h (a measured height) so a collapsing address bar
- * cannot resize the artwork mid-animation. On tall/narrow phones width wins and
- * the world is as big as the glass allows; on short/wide screens height wins and
- * the whole frame, selector travel included, fits with room to spare.
+   * Width: the artwork takes `artworkFit` of the screen, so the sized box — which
+   * is the drawing surface, not the artwork — is that much wider again.
+   * Height: bounded by --app-h (a measured height) so a collapsing address bar
+   * cannot resize the artwork mid-animation. Toggle controls are ignored by this
+   * sizing: they are an overlay and never make the Living G smaller.
  */
 const WIDTH_LIMIT = `${(STAGE_WINDOW.artworkFit * STAGE_OVERDRAW * 100).toFixed(3)}%`;
 /**

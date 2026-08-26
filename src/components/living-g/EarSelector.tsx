@@ -5,10 +5,9 @@ import {
   LOOP_CENTRE,
   LOOP_RIM_RADIUS,
   LOOP_SAFE_RADIUS,
-  STAGE_PAN_VAR,
-  stagePanPercent,
 } from "./g-path";
 import { LOOP_ROLE_STYLE } from "./type-scale";
+
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.

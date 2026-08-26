@@ -30,15 +30,15 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12 o'clock, and LEND at 9 o'clock. My G is LOCKED
- * until the person has discovered their profile, so onboarding only ever offers
- * the activity seats.
+ * activities: GIVER = ME around 4:30, and LEND between borrow and trade. My G is
+ * LOCKED until the person has discovered their profile, so onboarding only ever
+ * offers the activity seats.
  */
 export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order (anticlockwise end -> clockwise end). */
-export const FULL_SEATS = ["borrow", "lend", "wish", "giver", "give", "trade"] as const;
+/** Every seat on the wire, in travel order (one end of the break -> the other). */
+export const FULL_SEATS = ["trade", "lend", "borrow", "wish", "give", "giver"] as const;
 
 
 
@@ -70,34 +70,35 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN where the spine
- * leaves it, between roughly 4 o'clock and 6 o'clock. The selector is a bead on
- * that wire: its angle lives on ONE CONTINUOUS LINE that runs from trade (the
- * hard clockwise end, beside one lip of the break) anticlockwise all the way
- * round to borrow (8 o'clock, the other lip). There is no wrap-around, so the
- * bead can never teleport across the gap, interpolate through empty space, or
- * take the shortest geometric route between two seats.
+ * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN only where the
+ * spine leaves it — the small negative-space gap between roughly 5 and 6
+ * o'clock. Everywhere else the stroke is continuous, so the bead travels almost
+ * the whole circumference: from the 5 o'clock lip (+60°) ANTICLOCKWISE past
+ * 4:30, 3, 1:30, 12, 10:30, 9 and 7:30 to the 6 o'clock lip (-270°). Its angle
+ * lives on ONE CONTINUOUS LINE with no wrap-around, so the bead can never
+ * teleport across the gap or take a shortcut through empty space.
  *
- * THE SIX POSITIONS — THE SOURCE OF TRUTH:
- *   trade    0°    3 o'clock, right-side middle — hard clockwise end
- *   give   -44°
- *   giver  -90°    12 o'clock (my g)
- *   wish  -136°
- *   lend  -180°    9 o'clock, left-side middle
- *   borrow -210°  (= 8 o'clock) hard end on the other lip of the break
+ * THE SEATS — THE SOURCE OF TRUTH (clock positions):
+ *   giver   +45°   4:30 (my g), just inside the clockwise end
+ *   give    -45°   1:30
+ *   wish   -135°  10:30
+ *   borrow -180°   9:00
+ *   lend   -225°   7:30
+ *   trade  -270°   6:00, the anticlockwise end on the far lip of the break
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-210),
-  lend: rad(-180),
-  wish: rad(-136),
-  giver: rad(-90),
-  give: rad(-44),
-  trade: rad(0),
+  trade: rad(-270),
+  lend: rad(-225),
+  borrow: rad(-180),
+  wish: rad(-135),
+  give: rad(-45),
+  giver: rad(45),
 };
 
-/** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.borrow;
-const TRACK_MAX = SEAT_ANGLE.trade;
+/** The wire's two physical ends — the two lips of the break. Nothing passes. */
+const TRACK_MIN = rad(-270);
+const TRACK_MAX = rad(60);
+
 
 const TAU = Math.PI * 2;
 

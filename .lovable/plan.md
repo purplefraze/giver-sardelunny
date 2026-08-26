@@ -1,21 +1,58 @@
-# Correct the Living G selector open arc
+# Plan: finish the five-state Living G correction
 
-## What will change
+## Goal
+Make the current rendered app match the latest requested Giver interaction, especially in onboarding, without redesigning the Living G or changing unrelated product behavior.
 
-- Keep the canonical Living G on one fixed, invariant stage and retain the selector as a separate SVG overlay that cannot affect artwork layout, masking, sizing, or transforms.
-- Replace the current Borrow-to-Trade wire with the clarified open arc: My G at about 5 o’clock is one endpoint; the long route passes Lend, Give, 12 o’clock with no seat, Wish, Borrow, and ends at Trade at 6 o’clock over the lower loop.
-- Use continuous unwrapped angles (`My G +60°`, `Lend 0°`, `Give -45°`, `Wish -135°`, `Borrow -180°`, `Trade -270°`) so the forbidden short 5-to-6 gap cannot be crossed.
-- Keep all six workspace seats present and keyboard navigation ordered along physical track travel; clamp only the selector overlay when needed.
+## What I confirmed in the current app
+- The main workspace selector source now has five seats: Giver, Give, Wish, Borrow, Trade.
+- The onboarding play screen still uses the older activity-only selector and initializes at Give, which is why the live preview can still show the wrong default state and fewer than five positions.
+- The 3-minute onboarding patience timer is already present (`180000ms`) and should be preserved.
+- The canonical Living G artwork is still rendered as a whole path with `data-living-g-artwork="base"`.
+- The touch color override exists, but needs verification from the actual onboarding and workspace toggle layers.
 
-## Verification
+## Changes to make
+1. **Unify onboarding with the five-seat track**
+   - Change the onboarding selector state from the old four activity modes to the five-seat model.
+   - Start onboarding at `giver` / 4:30 by default.
+   - Pass the full five-seat list into the onboarding selector so Giver is reachable and visible there too.
+   - Preserve the existing 100-spark movement and the one-sided sensitivity behavior.
 
-- Capture and inspect all six selector states on phone viewports.
-- Measure the canonical artwork bounding box in every state and require identical x/y/width/height.
-- Confirm My G at the middle-loop lower-right opening, no 12-o’clock seat, Wish present, and Trade at 6 o’clock overlapping the lower loop.
-- Exercise dragging from My G toward the forbidden gap and confirm the selector cannot jump directly to Trade, then drag the long route to Trade.
-- Run type/build/runtime diagnostics and confirm every selector remains fully visible without moving the G.
+2. **Keep gift completion compatible**
+   - When onboarding finishes and needs to hand off an activity mode, convert `giver` safely to the intended default activity only where an activity is required.
+   - Do not allow the profile/Giver seat to break the spark gifting flow.
+
+3. **Remove stale visible multi-toggle cues**
+   - Ensure inactive destination hints are not rendered as extra loops/toggles.
+   - Keep exactly one visible selector ring/stem at a time.
+   - Keep generous invisible hit targets, but no visible second loops.
+
+4. **Verify seat positions and colors**
+   - Confirm the active selector starts at Giver 4:30 in onboarding and workspace.
+   - Confirm Give is 1:30 green, Wish is 10:30 purple, Borrow is 9:00 hot pink, and Trade is 6:00 orange overlapping the lower/larger loop.
+   - Confirm no 12:00 seat exists.
+
+5. **Verify real touch behavior**
+   - On a mobile viewport with touch enabled, press and hold the active selector.
+   - Confirm `data-g-touch="down"` appears and the Living G becomes purple.
+   - Release and confirm `data-g-touch="up"` appears and the Living G becomes electric orange.
+
+6. **Verify immutability**
+   - Measure the canonical Living G artwork bounding box across all five states.
+   - Confirm x/y/width/height are identical; only the selector bounding box changes.
 
 ## Technical details
+- Primary files to update:
+  - `src/components/onboarding/PlayIntro.tsx`
+  - `src/components/living-g/EarSelector.tsx`
+  - possibly `src/routes/index.tsx` only if handoff/default logic still restores the wrong state
+- Do not edit the canonical G path or reshape the SVG.
+- Do not add navigation, labels, cards, or new UI.
+- Do not reduce the onboarding timeout; keep it at 3 minutes.
 
-- The track uses a non-wrapping interval from `-270°` through `+60°`; pointer angles are unwrapped relative to the live bead before clamping.
-- The artwork and selector remain sibling SVG layers. Only the selector group may receive an edge-correction translate.
+## Acceptance checks
+- Latest preview, not an old commit preview, shows one visible toggle only.
+- Clean onboarding starts at Giver 4:30.
+- All five intended states are reachable.
+- The G artwork bounding box is pixel-invariant across Giver, Give, Wish, Borrow, Trade.
+- Holding the active toggle turns the G purple; releasing returns it to orange.
+- 100-spark onboarding still works and does not auto-advance at 30 seconds.

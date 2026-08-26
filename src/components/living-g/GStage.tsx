@@ -30,10 +30,15 @@ const BOX_H = LIVING_G_FRAME.height / LIVING_G_BOX.height;
  */
 export const CTA_BAND = "2.6rem";
 
-/** The canonical artwork target: 94% of the usable height, 96% of the width. */
-/* Height comes from --app-h (a real measured viewport height) so a collapsing
-   Android address bar can never resize the artwork mid-animation. */
-const CANONICAL_WIDTH = `min(${(96 * BOX_W).toFixed(3)}%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.99 * ${(BOX_H * FRAME_ASPECT).toFixed(5)}))`;
+/**
+ * THE CANONICAL SIZE. The FRAME — artwork plus the selector's full travel and
+ * its clearance — is what must fit the viewport, so the whole selector assembly
+ * is visible at every point of its travel and the G never moves as it travels.
+ * The G is therefore as large as it can be while that holds: the frame takes the
+ * full usable width, or the full usable height, whichever binds first.
+ */
+const CANONICAL_WIDTH = `min(100%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.99 * ${FRAME_ASPECT.toFixed(5)}))`;
+
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (

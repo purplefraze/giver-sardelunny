@@ -571,8 +571,7 @@ export function EarSelector({
           />
         );
       })}
-
-
+      <g transform={activeShift}>
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,
         then placed by a single rotation about the track centre. Stem root under
@@ -834,6 +833,7 @@ export function EarSelector({
           }
         }}
       />
+      </g>
 
     </g>
   );

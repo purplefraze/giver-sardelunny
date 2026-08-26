@@ -58,40 +58,18 @@ export const STAGE_TOP_RESERVE = 81;
 /** How much wider the drawing surface is than the world drawn inside it. */
 export const STAGE_OVERDRAW = LIVING_G_FRAME.width / LIVING_G_BOX.width;
 
-/** Frame units visible across the screen once the artwork fills `artworkFit`. */
-const VISIBLE_UNITS = LIVING_G_BOX.width / STAGE_WINDOW.artworkFit;
-/** The frame is centred on the screen, so the glass is centred on ITS centre. */
-const GLASS_CENTRE = LIVING_G_FRAME.x + LIVING_G_FRAME.width / 2;
-export const STAGE_GLASS = {
-  left: GLASS_CENTRE - VISIBLE_UNITS / 2,
-  right: GLASS_CENTRE + VISIBLE_UNITS / 2,
-} as const;
-
 /**
- * THE CAMERA FOLLOWS THE TOGGLE — instead of the world shrinking to hold it.
+ * THE LIVING G IS STATIONARY. The stage is a FIXED canvas: the artwork's centre
+ * line is pinned to the screen's centre line and NOTHING — not the selector's
+ * seat, not a drag in flight, not a label's width — may translate, scale or
+ * re-centre it. The selector is a separate interaction layer that travels over
+ * the G's own geometry and is allowed to overlap it; the world never moves to
+ * make room for a control.
  *
- * Given where the selector's touch disc is right now, this returns how far the
- * whole stage slides, as a share of the frame's width (so it is resolution
- * independent, and reads straight into a percentage translate). Zero for every
- * seat that is already comfortably inside the glass; a gentle slide for borrow
- * at 9:30 and lend at 3:00, whose discs reach past the world's own edges. The
- * far side of the G simply passes off-screen, which is what being inside the G
- * has always looked like.
+ * (There is deliberately no camera pan here any more. If a control needs room,
+ * the control moves — never the G.)
  */
-export function stagePanPercent(cx: number, gripR: number = 96) {
-  const left = cx - gripR;
-  const right = cx + gripR;
-  let pan = 0;
-  if (left < STAGE_GLASS.left + STAGE_WINDOW.margin) {
-    pan = STAGE_GLASS.left + STAGE_WINDOW.margin - left;
-  } else if (right > STAGE_GLASS.right - STAGE_WINDOW.margin) {
-    pan = STAGE_GLASS.right - STAGE_WINDOW.margin - right;
-  }
-  return (pan / LIVING_G_FRAME.width) * 100;
-}
 
-/** The CSS custom property the stage reads for that slide. */
-export const STAGE_PAN_VAR = "--g-pan";
 
 
 

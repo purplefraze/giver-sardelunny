@@ -77,32 +77,36 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN where the spine
- * leaves it. The selector is a bead on that wire: its angle lives on ONE
- * CONTINUOUS LINE that runs from borrow (9:30, one end) clockwise round the top
- * to trade (4:30, the other end). There is no wrap-around, so the bead can
- * never teleport across the gap.
+ * THE WIRE, NOT A CIRCLE. The selector is a bead on ONE CONTINUOUS LINE that
+ * runs from borrow (9:00, one end) clockwise round the top and down the right
+ * side to trade (6:00, the other end). There is no wrap-around, so the bead can
+ * never teleport across the ends.
  *
  * THE SIX FIXED CLOCK SEATS — THE SPATIAL MAP (source of truth):
- *   borrow  9:30  = -165°    hard end   (upper-left)
- *   wish   10:45  = -127.5°             (upper-left)
+ *   borrow  9:00  = 180°     hard end   (left)
+ *   wish   10:30  = -135°               (upper-left)
  *   giver  12:00  =  -90°               MY G, the top
- *   give    1:30  =  -45°              (upper-right)
- *   lend    3:00  =    0°              (right)
- *   trade   4:30  =   45°    hard end  (lower-right)
+ *   give    1:30  =  -45°               (upper-right)
+ *   lend    3:00  =    0°               (right)
+ *   trade   6:00  =   90°    hard end   (bottom, over the LOWER loop)
+ *
+ * TRADE IS THE BOTTOM SEAT: at 6:00 the piece rides down past the middle loop
+ * and overlaps the big lower loop, exactly as the reference shows. Overlapping
+ * the G is correct — the G itself never moves to make room for it.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-165),
-  wish: rad(-127.5),
+  borrow: rad(-180),
+  wish: rad(-135),
   giver: rad(-90),
   give: rad(-45),
   lend: rad(0),
-  trade: rad(45),
+  trade: rad(90),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
 const TRACK_MIN = SEAT_ANGLE.borrow;
 const TRACK_MAX = SEAT_ANGLE.trade;
+
 
 
 const TAU = Math.PI * 2;

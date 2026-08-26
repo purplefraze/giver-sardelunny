@@ -10,7 +10,6 @@ import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
   LIVING_G_VIEWBOX,
-  arcPath,
   
 } from "./g-path";
 
@@ -242,18 +241,18 @@ export function LivingG({
               fill="white"
             />
             <line
-              x1={LOOP_CENTRE.middle.x + Math.cos((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 14)}
-              y1={LOOP_CENTRE.middle.y + Math.sin((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 14)}
+              x1={LOOP_CENTRE.middle.x + Math.cos((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 36)}
+              y1={LOOP_CENTRE.middle.y + Math.sin((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 36)}
               x2={EAR_GEOMETRY.home.x}
               y2={EAR_GEOMETRY.home.y}
               stroke="black"
-              strokeWidth={EAR_GEOMETRY.stemWidth * 2.55}
+              strokeWidth={EAR_GEOMETRY.stemWidth * 4.8}
               strokeLinecap="round"
             />
             <circle
               cx={EAR_GEOMETRY.home.x}
               cy={EAR_GEOMETRY.home.y}
-              r={EAR_GEOMETRY.outerR + 6}
+              r={EAR_GEOMETRY.outerR + 54}
               fill="black"
             />
           </mask>

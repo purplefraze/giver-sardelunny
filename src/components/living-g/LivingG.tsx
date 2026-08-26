@@ -240,21 +240,28 @@ export function LivingG({
               height={1600}
               fill="white"
             />
+            {/*
+              THE ONE PLACE THE ARTWORK IS TOUCHED: the canonical G's own small
+              ear is lifted out so the five satellites are the only rings on the
+              screen. Nothing else about the geometry changes — the mask is kept
+              tight to the ear and its stem so no loop is ever cut.
+            */}
             <line
-              x1={LOOP_CENTRE.middle.x + Math.cos((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 36)}
-              y1={LOOP_CENTRE.middle.y + Math.sin((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 36)}
+              x1={LOOP_CENTRE.middle.x + Math.cos((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 30)}
+              y1={LOOP_CENTRE.middle.y + Math.sin((-45 * Math.PI) / 180) * (LOOP_RIM_RADIUS.middle - 30)}
               x2={EAR_GEOMETRY.home.x}
               y2={EAR_GEOMETRY.home.y}
               stroke="black"
-              strokeWidth={EAR_GEOMETRY.stemWidth * 4.8}
+              strokeWidth={EAR_GEOMETRY.stemWidth * 1.7}
               strokeLinecap="round"
             />
             <circle
               cx={EAR_GEOMETRY.home.x}
               cy={EAR_GEOMETRY.home.y}
-              r={EAR_GEOMETRY.outerR + 54}
+              r={EAR_GEOMETRY.outerR + 12}
               fill="black"
             />
+
           </mask>
         ) : null}
         {/*

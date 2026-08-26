@@ -152,7 +152,6 @@ const SELECTOR_EDGE_MARGIN = STAGE_WINDOW.margin;
 const ZERO_SHIFT: P = { x: 0, y: 0 };
 const DEFAULT_SEAT_SHIFTS: Record<Seat, P> = {
   giver: ZERO_SHIFT,
-  lend: ZERO_SHIFT,
   give: ZERO_SHIFT,
   wish: ZERO_SHIFT,
   borrow: ZERO_SHIFT,
@@ -223,12 +222,11 @@ const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
 
 /** The locked seat colours, for seats that state a person's history. */
 const MODE_COLOUR: Record<Seat, string> = {
-  giver: "var(--giver-me)",
+  giver: "var(--mode-giver)",
   wish: "var(--mode-wish)",
   give: "var(--mode-give)",
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
-  lend: "var(--mode-lend)",
 
 };
 
@@ -413,7 +411,6 @@ export function EarSelector({
       const { x, y } = shiftForAngle(angle);
       const nextSeatShifts: Record<Seat, P> = {
         giver: shiftForAngle(SEAT_ANGLE.giver),
-        lend: shiftForAngle(SEAT_ANGLE.lend),
         give: shiftForAngle(SEAT_ANGLE.give),
         wish: shiftForAngle(SEAT_ANGLE.wish),
         borrow: shiftForAngle(SEAT_ANGLE.borrow),

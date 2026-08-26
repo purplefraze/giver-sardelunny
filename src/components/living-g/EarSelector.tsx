@@ -19,8 +19,8 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * smooth curve in every mode.
  *
  * TWO MIRRORED PAIRS:
- *   wish   ~10 o'clock  <->  give  ~2 o'clock  (canonical home)
- *   lend    9 o'clock   <->  trade  3 o'clock
+ *   wish 10:30 <-> borrow 1:30
+ *   lend  7:30 <-> trade  4:30, with give at 6:00 over the lower loop
  *
  * The S-curve is never a mode destination.
  */
@@ -30,7 +30,7 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME around 4:30, and LEND between borrow and trade. My G is
+ * activities: GIVER = ME at 9 o'clock, and LEND at 7:30 between give and my g. My G is
  * LOCKED until the person has discovered their profile, so onboarding only ever
  * offers the activity seats.
  */
@@ -389,7 +389,7 @@ export function EarSelector({
   return (
     <g>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          MY G IS ONE OF THEM: at 9 o'clock it is the same small, soft, close-in
           dot as every other inactive destination — its hue is red, nothing else
           about it is louder. The moment the toggle arrives it disappears under
           the piece itself, which then reads "my g". */}

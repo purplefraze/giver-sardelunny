@@ -215,10 +215,10 @@
 
 
   /* ---- LIVING G MODE COLOURS — THE SIX TOGGLE POSITIONS ----
-       12 o'clock = my g (blue) · give = bright green · wish = dreamy purple ·
-       borrow = hot pink · 9 o'clock = lend (seafoam) ·
-       3 o'clock = trade (orange). These six are the source of truth. */
-  --mode-giver: var(--person-self); /* my g at 12 o'clock — blue */
+       9:00 = my profile (turquoise blue) · 6:00 = give (bright green) ·
+       10:30 = wish (dreamy purple) · 1:30 = borrow (bright pink) ·
+       7:30 = lend (seafoam) · 4:30 = trade (orange). Source of truth. */
+  --mode-giver: var(--person-self); /* my profile at 9 o'clock — turquoise blue */
   --mode-give: var(--giver-green); /* bright green */
   --mode-lend: var(--giver-seafoam); /* seafoam / turquoise — lending */
   --mode-wish: var(--giver-purple); /* dreamy purple */

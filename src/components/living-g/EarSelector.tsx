@@ -27,9 +27,9 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  * pixel-identical at every toggle position; where the piece and the G meet, the
  * piece simply sits on top.
  *
- * THE CLOCK MAP (spatial), read around the visible loop:
- *   borrow left · wish left-to-upper · MY G 12:00 · give right-upper ·
- *   lend right-to-lower · trade 6:00 over the lower/large loop
+ * THE CLOCK MAP (spatial), read along the one open wire:
+ *   MY G 5:00 endpoint · lend 3:00 · give 1:30 · pass 12:00 with NO seat ·
+ *   wish 10:30 · borrow 9:00 · trade 6:00 endpoint over the lower/large loop
  *
  * The big lower loop is COMMUNITY; TRADE sits at 6:00, overlapping it.
 
@@ -40,16 +40,16 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 12:00, and LEND on the right-lower side. Both are
+ * activities: GIVER = ME at the middle loop's 5:00 opening, and LEND at 3:00. Both are
  * locked until the person has a profile and one active give of their own, so
  * onboarding only ever offers MODES.
  */
-export const SEATS = ["borrow", "wish", "giver", "give", "lend", "trade"] as const;
+export const SEATS = ["giver", "lend", "give", "wish", "borrow", "trade"] as const;
 export type Seat = (typeof SEATS)[number];
 
 /**
  * Every seat on the wire, IN PHYSICAL TRAVEL ORDER around the stationary G:
- * borrow → wish → my g → give → lend → trade.
+ * my g → lend → give → (12:00, no seat) → wish → borrow → trade.
  */
 export const FULL_SEATS = SEATS;
 
@@ -85,28 +85,29 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
  * THE SIX FIXED SEATS — THE SPATIAL MAP (source of truth):
- *   borrow left        = -180°
- *   wish left-upper    = -135°
- *   my g 12:00         =  -90°
+ *   my g 5:00          =   60° at the middle-loop opening (one endpoint)
+ *   lend right         =    0°
  *   give right-upper   =  -45°
- *   lend right-lower   =   35°
- *   trade 6:00         =   90° over the LOWER/LARGE loop
+ *   wish left-upper    = -135°
+ *   borrow left        = -180°
+ *   trade 6:00         = -270° over the LOWER/LARGE loop (other endpoint)
  *
- * This angle range is an open wire from Borrow to Trade. There is no old 4:30
- * trade seat, no hidden 5:00 home, and no selector-driven camera pan.
+ * Angles are deliberately UNWRAPPED. The open wire runs the long way from My G
+ * to Trade; its tiny physical 5-to-6 gap is not part of the track. There is no
+ * seat at -90°/12:00 and no selector-driven camera pan.
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  borrow: rad(-180),
-  wish: rad(-135),
-  giver: rad(-90),
+  giver: rad(60),
+  lend: rad(0),
   give: rad(-45),
-  lend: rad(35),
-  trade: rad(90),
+  wish: rad(-135),
+  borrow: rad(-180),
+  trade: rad(-270),
 };
 
 /** The wire's two physical ends. Nothing may travel outside them. */
-const TRACK_MIN = SEAT_ANGLE.borrow;
-const TRACK_MAX = SEAT_ANGLE.trade;
+const TRACK_MIN = SEAT_ANGLE.trade;
+const TRACK_MAX = SEAT_ANGLE.giver;
 
 
 
@@ -148,6 +149,16 @@ const at = (angle: number, r: number): P => ({
 });
 
 const SELECTOR_EDGE_MARGIN = STAGE_WINDOW.margin;
+
+const ZERO_SHIFT: P = { x: 0, y: 0 };
+const DEFAULT_SEAT_SHIFTS: Record<Seat, P> = {
+  giver: ZERO_SHIFT,
+  lend: ZERO_SHIFT,
+  give: ZERO_SHIFT,
+  wish: ZERO_SHIFT,
+  borrow: ZERO_SHIFT,
+  trade: ZERO_SHIFT,
+};
 
 function selectorBox(a: number) {
   const c = at(a, TRACK_R);
@@ -274,6 +285,7 @@ export function EarSelector({
   const dragging = drag !== null;
   const overlayRef = useRef<SVGGElement | null>(null);
   const [overlayShift, setOverlayShift] = useState<P>({ x: 0, y: 0 });
+  const [seatShifts, setSeatShifts] = useState<Record<Seat, P>>(DEFAULT_SEAT_SHIFTS);
   const last = useRef<Seat>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
@@ -388,20 +400,42 @@ export function EarSelector({
       };
       const mx = SELECTOR_EDGE_MARGIN * ux;
       const my = SELECTOR_EDGE_MARGIN * uy;
-      const box = selectorBox(angle);
+      const shiftForAngle = (a: number): P => {
+        const box = selectorBox(a);
+        let x = 0;
+        let y = 0;
+        if (box.minX < visible.left + mx) x = visible.left + mx - box.minX;
+        if (box.maxX + x > visible.right - mx) x = visible.right - mx - box.maxX;
+        if (box.minY < visible.top + my) y = visible.top + my - box.minY;
+        if (box.maxY + y > visible.bottom - my) y = visible.bottom - my - box.maxY;
+        return { x, y };
+      };
 
-      let x = 0;
-      let y = 0;
-      if (box.minX < visible.left + mx) x = visible.left + mx - box.minX;
-      if (box.maxX + x > visible.right - mx) x = visible.right - mx - box.maxX;
-      if (box.minY < visible.top + my) y = visible.top + my - box.minY;
-      if (box.maxY + y > visible.bottom - my) y = visible.bottom - my - box.maxY;
+      const { x, y } = shiftForAngle(angle);
+      const nextSeatShifts: Record<Seat, P> = {
+        giver: shiftForAngle(SEAT_ANGLE.giver),
+        lend: shiftForAngle(SEAT_ANGLE.lend),
+        give: shiftForAngle(SEAT_ANGLE.give),
+        wish: shiftForAngle(SEAT_ANGLE.wish),
+        borrow: shiftForAngle(SEAT_ANGLE.borrow),
+        trade: shiftForAngle(SEAT_ANGLE.trade),
+      };
 
       setOverlayShift((prev) =>
         Math.abs(prev.x - x) > 0.25 || Math.abs(prev.y - y) > 0.25
           ? { x, y }
           : prev,
       );
+      setSeatShifts((prev) => {
+        for (const seat of SEATS) {
+          const before = prev[seat];
+          const after = nextSeatShifts[seat];
+          if (Math.abs(before.x - after.x) > 0.25 || Math.abs(before.y - after.y) > 0.25) {
+            return nextSeatShifts;
+          }
+        }
+        return prev;
+      });
     };
 
     const frame = window.requestAnimationFrame(update);
@@ -489,27 +523,26 @@ export function EarSelector({
   };
 
 
-  /** Seats in travel order, so the keyboard walks the track, not the array. */
-  const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
+  /** My G-to-Trade travel order, so the keyboard walks the open track. */
+  const ring = [...seats].sort((a, b) => SEAT_ANGLE[b] - SEAT_ANGLE[a]);
+  const activeShift = overlayShift.x || overlayShift.y
+    ? `translate(${overlayShift.x} ${overlayShift.y})`
+    : undefined;
 
   return (
     <g
       ref={overlayRef}
       data-living-g-selector="true"
       pointerEvents="none"
-      transform={
-        overlayShift.x || overlayShift.y
-          ? `translate(${overlayShift.x} ${overlayShift.y})`
-          : undefined
-      }
     >
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          MY G IS ONE OF THEM: at the 5 o'clock opening it is the same small, soft, close-in
           dot as every other inactive destination — its hue is red, nothing else
           about it is louder. The moment the toggle arrives it disappears under
           the piece itself, which then reads "my g". */}
       {seats.map((m) => {
         const hint = at(SEAT_ANGLE[m], RIM_R + 16);
+        const shift = seatShifts[m];
         const active = mode === m && !dragging;
         // On a person's screen the seats TELL THEIR STORY: a seat they have
         // taken part in reads in that mode's own colour, a little stronger.
@@ -518,8 +551,8 @@ export function EarSelector({
         return (
           <circle
             key={m}
-            cx={hint.x}
-            cy={hint.y}
+            cx={hint.x + shift.x}
+            cy={hint.y + shift.y}
             r={told ? 8 : 5}
             fill={isMe ? "var(--giver-me)" : told ? MODE_COLOUR[m] : "var(--world-g)"}
             pointerEvents="none"
@@ -539,7 +572,54 @@ export function EarSelector({
         );
       })}
 
-
+      {/*
+        SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one
+        generous invisible disc per destination. These live OUTSIDE the active
+        selector transform, so each destination stays fixed to its own clamped
+        overlay coordinate while the moving piece alone travels.
+      */}
+      {!locked
+        ? seats.map((m) => {
+            if (m === mode) return null;
+            const spot = at(SEAT_ANGLE[m], TRACK_R);
+            const shift = seatShifts[m];
+            return (
+              <circle
+                key={`seat-${m}`}
+                cx={spot.x + shift.x}
+                cy={spot.y + shift.y}
+                r={60}
+                fill="transparent"
+                pointerEvents="all"
+                role="button"
+                aria-label={m}
+                className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+                style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  if (activeId.current !== null) return;
+                  activeId.current = e.pointerId;
+                  (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation();
+                  if (activeId.current !== e.pointerId) return;
+                  activeId.current = null;
+                  try {
+                    e.currentTarget.releasePointerCapture?.(e.pointerId);
+                  } catch {
+                    /* already released */
+                  }
+                  commit(m);
+                }}
+                onPointerCancel={(e) => {
+                  if (activeId.current === e.pointerId) activeId.current = null;
+                }}
+              />
+            );
+          })
+        : null}
+      <g transform={activeShift}>
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,
         then placed by a single rotation about the track centre. Stem root under
@@ -669,53 +749,6 @@ export function EarSelector({
 
       </text>
 
-      {/*
-        SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one
-        generous invisible disc per destination, painted BEFORE the grip so the
-        piece itself always wins the overlap. Same pointer events, same commit —
-        no separate touch implementation anywhere.
-      */}
-      {!locked
-        ? seats.map((m) => {
-            if (m === mode) return null;
-            const spot = at(SEAT_ANGLE[m], TRACK_R);
-            return (
-              <circle
-                key={`seat-${m}`}
-                cx={spot.x}
-                cy={spot.y}
-                r={60}
-                fill="transparent"
-                pointerEvents="all"
-                role="button"
-                aria-label={m}
-                className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
-                style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  if (activeId.current !== null) return;
-                  activeId.current = e.pointerId;
-                  (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
-                }}
-                onPointerUp={(e) => {
-                  e.stopPropagation();
-                  if (activeId.current !== e.pointerId) return;
-                  activeId.current = null;
-                  try {
-                    e.currentTarget.releasePointerCapture?.(e.pointerId);
-                  } catch {
-                    /* already released */
-                  }
-                  commit(m);
-                }}
-                onPointerCancel={(e) => {
-                  if (activeId.current === e.pointerId) activeId.current = null;
-                }}
-              />
-            );
-          })
-        : null}
-
       {/* Invisible grip, travelling with the ring. */}
       <circle
         cx={ear.x}
@@ -787,11 +820,11 @@ export function EarSelector({
           const i = ring.indexOf(mode);
           if (e.key === "ArrowRight" || e.key === "ArrowDown") {
             e.preventDefault();
-            commit(ring[(i + 1) % ring.length]!);
+            commit(ring[Math.min(i + 1, ring.length - 1)]!);
           }
           if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
             e.preventDefault();
-            commit(ring[(i + ring.length - 1) % ring.length]!);
+            commit(ring[Math.max(i - 1, 0)]!);
           }
 
           if (e.key === "Enter" || e.key === " ") {
@@ -800,6 +833,7 @@ export function EarSelector({
           }
         }}
       />
+      </g>
 
     </g>
   );

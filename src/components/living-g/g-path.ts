@@ -43,11 +43,11 @@ export const STAGE_WINDOW = {
 /**
  * THE ONLY VERTICAL ROOM THE TOGGLE IS ALLOWED TO ASK FOR.
  *
- * The selector's TOUCH disc reaches 98 units above the artwork at 12:00, but the
- * VISIBLE ring only reaches 81. The G is therefore sized against the artwork
- * plus this reserve — never against the whole travel envelope — so the toggle
- * can never make the world smaller than "as big as the glass allows, with the
- * ring still on screen".
+ * The selector's visible ring can travel above the artwork while crossing the
+ * top of the open arc, but that pass-through point is NOT a seat. The G is sized
+ * against the artwork plus this reserve — never against the whole travel
+ * envelope — so the toggle can never make the world smaller than "as big as the
+ * glass allows, with the ring still on screen".
  */
 export const STAGE_TOP_RESERVE = 81;
 
@@ -149,7 +149,6 @@ export const LOOP_RIM_RADIUS = {
  *   innerR/outerR   the ring's measured hole and outer edge
  *   stemWidth measured width of the stem that joins it to the middle loop
  *   gap       clearance between the middle loop's rim and the ring's outer edge
- *   cut*      the TIGHT static cut that removes the original ear + stem only
  */
 export const EAR_GEOMETRY = {
   home: { x: 499.4, y: 78.5 },
@@ -157,8 +156,6 @@ export const EAR_GEOMETRY = {
   outerR: 79,
   stemWidth: 34,
   gap: 24.5,
-  cutR: 100,
-  cutStemWidth: 54,
   /**
    * The invisible TOUCH disc that travels with the ring: generously bigger than
    * the ring itself, and the value LIVING_G_FRAME is measured against, so the

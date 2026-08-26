@@ -788,6 +788,8 @@ export function EarSelector({
           // A second finger never joins an active gesture.
           if (activeId.current !== null) return;
           activeId.current = e.pointerId;
+          /* FINGER DOWN: the G takes the purple touch colour immediately. */
+          touch("down");
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
           startPeek();

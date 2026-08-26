@@ -150,6 +150,8 @@ const at = (angle: number, r: number): P => ({
 
 const SELECTOR_EDGE_MARGIN = STAGE_WINDOW.margin;
 
+const ZERO_SHIFT: P = { x: 0, y: 0 };
+
 function selectorBox(a: number) {
   const c = at(a, TRACK_R);
   const cos = Math.cos(a);

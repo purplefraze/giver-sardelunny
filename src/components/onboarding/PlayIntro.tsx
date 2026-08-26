@@ -6,7 +6,7 @@ import { G_FONT } from "@/components/living-g/g-type";
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
 
 import type { RegionKey } from "@/components/living-g/LivingG";
-import { EarSelector, MODES, type Mode } from "@/components/living-g/EarSelector";
+import { EarSelector, FULL_SEATS, type Seat } from "@/components/living-g/EarSelector";
 import { buzz, haptics } from "@/lib/haptics";
 
 /**
@@ -102,7 +102,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
    * in that territory's canonical colour — it never navigates, never reveals
    * content, and never counts toward the spark interaction.
    */
-  const [seat, setSeat] = useState<Mode>("give");
+  const [seat, setSeat] = useState<Seat>("giver");
   
   const [taps, setTaps] = useState(0);
   /** A transient answer to a casual touch, once the G has already spoken. */
@@ -232,7 +232,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
   return (
     <IntroG
       /* THE TOGGLE IS THE ONLY SOURCE OF THE G'S COLOUR — from the first frame.
-         wish = purple · give = green · trade = orange · borrow = blue. */
+         giver = turquoise · give = green · wish = purple · borrow = hot pink · trade = orange. */
       world={seat}
       press={press}
       overlay={
@@ -273,13 +273,11 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
             </>
           ) : null}
 
-          {/* THE EXISTING TOGGLE, FULLY PLAYABLE — the G answers in colour. */}
+          {/* THE ONE TOGGLE, FULLY PLAYABLE — the G answers in colour. */}
           <EarSelector
             mode={seat}
-            seats={MODES}
-            onChange={(next) => {
-              setSeat(next as Mode);
-            }}
+            seats={FULL_SEATS}
+            onChange={setSeat}
           />
 
           {/* THE HALVES, drawn LAST so my green 50 read inside the toggle loop's

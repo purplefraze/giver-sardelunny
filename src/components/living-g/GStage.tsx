@@ -61,20 +61,19 @@ export function GStage({ children }: { children: React.ReactNode }) {
       style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + ${CTA_BAND})` }}
     >
       <div
-        // EXPLICIT centring, not flex alignment: left/translate pins the frame's
-        // centre line to the screen's centre line, while shrink-0 + min-width
-        // make shrinking impossible. The pan rides in the SAME transform, in
-        // percentages of this box, so the camera can slide the world sideways
-        // just far enough to bring a live toggle inside the glass.
+        // A FIXED CANVAS. left/translate pins the frame's centre line to the
+        // screen's centre line, once and forever: there is no state, no seat and
+        // no control width in this transform, so the Living G occupies the exact
+        // same pixels in every selector state and throughout a drag.
         className="pointer-events-auto absolute bottom-0 left-1/2 shrink-0 grow-0 basis-auto"
         style={{
           width: CANONICAL_WIDTH,
           minWidth: CANONICAL_WIDTH,
           aspectRatio: `${LIVING_G_FRAME.width} / ${LIVING_G_FRAME.height}`,
-          transform: `translateX(calc(-50% + var(${STAGE_PAN_VAR}, 0%)))`,
-          transition: "transform 140ms cubic-bezier(0.22, 0.9, 0.24, 1)",
+          transform: "translateX(-50%)",
         }}
       >
+
         {children}
       </div>
     </div>

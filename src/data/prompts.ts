@@ -218,10 +218,10 @@ export function mineStatement(p: Prompt, raw: string) {
 
 /** THE SAME THOUGHT, SAID ABOUT SOMEBODY ELSE, in their own pronouns. */
 export function theirStatement(p: Prompt, raw: string, name: string, pr: Pronouns) {
-  const answer = clean(raw);
+  const answer = stripEcho(p, clean(raw));
   if (!answer) return "";
-  if (isWhole(p, answer)) return finish(toThird(answer, name, pr));
-  return finish(p.theirs(name, answer, pr));
+  if (isWhole(p, answer)) return dedupe(finish(toThird(answer, name, pr)));
+  return dedupe(finish(p.theirs(name, answer, pr)));
 }
 
 /**

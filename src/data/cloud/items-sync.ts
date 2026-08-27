@@ -151,7 +151,7 @@ export async function cloudItemId(localItemId: string): Promise<string | null> {
 /** A cloud item id -> the local id this device knows it by. */
 export function localItemIdFor(cloudId: string): string | null {
   const items = itemsStore.get().items;
-  const remote = items.find((i) => i.id === `${CLOUD}${cloudId}`);
+  const remote = items.find((i) => i.cloudId === cloudId || i.id === `${CLOUD}${cloudId}`);
   return remote ? remote.id : null;
 }
 

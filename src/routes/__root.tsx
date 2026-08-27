@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { bootCloud } from "../data/cloud/boot";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +137,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  /* THE SHARED DEV BACKEND, STARTED ONCE FOR EVERY ROUTE. */
+  useEffect(() => {
+    bootCloud();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

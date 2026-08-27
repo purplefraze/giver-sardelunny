@@ -62,7 +62,11 @@ function AdminConsole() {
       .then(({ data }) => setInvites((data ?? []) as Invite[]));
 
   useEffect(() => {
-    if (session.isAdmin) loadInvites();
+    if (!session.isAdmin) return;
+    loadInvites();
+    void messagingStore.reload();
+    void notificationsStore.reload();
+    void directoryStore.reload();
   }, [session.isAdmin]);
 
   if (session.status === "loading") {

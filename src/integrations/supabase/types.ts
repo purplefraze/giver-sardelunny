@@ -636,34 +636,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_see_conversation: {
-        Args: { _conversation: string }
-        Returns: boolean
-      }
-      update_connection_state: {
-        Args: { _action: string; _connection_id: string; _value?: boolean }
-        Returns: {
-          claimed_by: string | null
-          created_at: string
-          handed_over: boolean
-          helper_confirmed: boolean
-          helper_id: string
-          id: string
-          item_id: string
-          owner_confirmed: boolean
-          owner_id: string
-          returned: boolean
-          settled_at: string | null
-          state: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "connections"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      [_ in never]: never
     }
     Enums: {
       app_role: "admin" | "tester"

@@ -1,11 +1,11 @@
 {
-  "version": 1,
   "asset_id": "0e527f94-f0f1-4ffd-93ee-b40c31f8a45e",
-  "project_id": "031e0712-d028-4738-bf71-d2959dfa75d9",
-  "url": "/__l5e/assets-v1/0e527f94-f0f1-4ffd-93ee-b40c31f8a45e/robin.jpg",
-  "r2_key": "a/v1/031e0712-d028-4738-bf71-d2959dfa75d9/0e527f94-f0f1-4ffd-93ee-b40c31f8a45e/robin.jpg",
-  "original_filename": "robin.jpg",
-  "size": 90449,
   "content_type": "image/jpeg",
-  "created_at": "2026-08-15T13:25:09Z"
+  "created_at": "2026-08-15T13:25:09Z",
+  "original_filename": "robin.jpg",
+  "project_id": "c68cfc0b-5cbf-4de6-baaf-5193d583eaba",
+  "r2_key": "a/v1/c68cfc0b-5cbf-4de6-baaf-5193d583eaba/0e527f94-f0f1-4ffd-93ee-b40c31f8a45e/robin.jpg",
+  "size": 90449,
+  "url": "/__l5e/assets-v1/0e527f94-f0f1-4ffd-93ee-b40c31f8a45e/robin.jpg",
+  "version": 1
 }

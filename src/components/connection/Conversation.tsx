@@ -93,8 +93,10 @@ export function Conversation({
     connectionsStore.send(c.id, text, ME_ID);
     setDraft("");
     buzz();
-    /* DEMO ONLY: a sample person answers from their own stored parameters. */
-    const reply = demoReply(item, text, themId);
+    /* DEMO ONLY: a sample person answers from their own stored parameters, and
+       never repeats a phrasing they have already used in this thread. */
+    const saidBefore = messages.filter((m) => m.from === themId).map((m) => m.text);
+    const reply = demoReply(item, text, themId, saidBefore);
     if (reply)
       window.setTimeout(() => connectionsStore.send(c.id, reply, themId), 900);
   };

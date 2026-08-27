@@ -319,15 +319,14 @@ export function AboutForm({
                   show={showPass}
                   placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
                 />
-                {pass ? (
-                  <Secret
-                    label="again, exactly"
-                    value={again}
-                    onChange={setAgain}
-                    show={showPass}
-                    placeholder="the same password"
-                  />
-                ) : null}
+                <PasswordRules pass={pass} />
+                <Secret
+                  label="again, exactly"
+                  value={again}
+                  onChange={setAgain}
+                  show={showPass}
+                  placeholder="the same password"
+                />
                 <div className="flex items-baseline gap-5">
                   <button
                     type="button"
@@ -340,18 +339,11 @@ export function AboutForm({
                   >
                     {showPass ? "hide" : "show"}
                   </button>
-                  <span className="g-meta">
-                    {!pass
-                      ? "update password"
-                      : matches
-                        ? passwordStrongEnough(pass)
-                          ? "saved"
-                          : "nearly"
-                        : "these two don’t match yet"}
-                  </span>
+                  <PasswordState pass={pass} matches={matches} passwordSet={passwordSet} />
                 </div>
               </div>
             ) : null}
+
           </div>
         ) : null}
 

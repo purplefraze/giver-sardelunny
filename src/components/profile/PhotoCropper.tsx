@@ -29,7 +29,7 @@ export function PhotoCropper({
   initial?: PhotoCrop | null;
   colour?: string;
   onCancel: () => void;
-  onConfirm: (cropped: string, crop: PhotoCrop) => void;
+  onConfirm: (cropped: string, crop: PhotoCrop) => void | Promise<void>;
 }) {
   const [zoom, setZoom] = useState(initial?.zoom ?? 1);
   const [offset, setOffset] = useState({
@@ -37,6 +37,7 @@ export function PhotoCropper({
     y: initial?.y ?? 0,
   });
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const [saving, setSaving] = useState(false);
   const stage = useRef<HTMLDivElement | null>(null);
   /** Live pointers, so one finger drags and two fingers pinch. */
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -127,7 +128,9 @@ export function PhotoCropper({
 
   /** WHAT YOU SEE IS WHAT IS SAVED: the circle, redrawn exactly. */
   async function confirm() {
+    if (saving) return;
     haptics.success();
+    setSaving(true);
     const crop: PhotoCrop = { x: offset.x, y: offset.y, zoom };
     try {
       const img = new Image();
@@ -142,13 +145,18 @@ export function PhotoCropper({
       canvas.width = out;
       canvas.height = out;
       const ctx = canvas.getContext("2d");
-      if (!ctx) return onConfirm(source, crop);
+      if (!ctx) {
+        await onConfirm(source, crop);
+        return;
+      }
       const w = img.naturalWidth * Math.max(BOX / img.naturalWidth, BOX / img.naturalHeight) * zoom * k;
       const h = img.naturalHeight * Math.max(BOX / img.naturalWidth, BOX / img.naturalHeight) * zoom * k;
       ctx.drawImage(img, out / 2 - w / 2 + offset.x * k, out / 2 - h / 2 + offset.y * k, w, h);
-      onConfirm(canvas.toDataURL("image/jpeg", 0.85), crop);
+      await onConfirm(canvas.toDataURL("image/jpeg", 0.85), crop);
     } catch {
-      onConfirm(source, crop);
+      await onConfirm(source, crop);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -213,10 +221,12 @@ export function PhotoCropper({
         <button
           type="button"
           onClick={confirm}
+          disabled={saving}
+          aria-busy={saving}
           className="text-xl font-black lowercase"
-          style={{ color: colour }}
+          style={{ color: colour, opacity: saving ? 0.55 : 1 }}
         >
-          use this photo
+          {saving ? "saving photo…" : "use this photo"}
         </button>
       </div>
     </div>

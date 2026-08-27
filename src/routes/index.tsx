@@ -435,6 +435,26 @@ function Index() {
   };
 
   /**
+   * THE TOGGLE LOOP AND THE MIDDLE LOOP ARE THE SAME DOOR. At an activity seat
+   * they enter that selected world; at My G they enter the person's profile.
+   */
+  const enterSelectedWorld = () => {
+    if (activity === null) {
+      openMyG();
+      return;
+    }
+    if (firstArrival) {
+      setup();
+      return;
+    }
+    setEditor({
+      kind: "category",
+      category: mode,
+      ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
+    });
+  };
+
+  /**
    * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
    * "mine" means the one I touched last, not a ranked list.
    */
@@ -526,8 +546,8 @@ function Index() {
                 /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
                 {...(!firstArrival ? { sparks: me.sparks } : {})}
 
-                /* TOP = ME. The small loop is MY G — never search, in any mode. */
-                onTap={openMyG}
+                /* THE TOGGLE ENTERS THE WORLD IT IS CURRENTLY NAMING. */
+                onTap={enterSelectedWorld}
               />
             }
 
@@ -550,21 +570,7 @@ function Index() {
                 label: "",
                 panelTitle: content.mine.title,
                 panelBody: null,
-                onPress: () => {
-                  if (activity === null) {
-                    openMyG();
-                    return;
-                  }
-                  if (firstArrival) {
-                    setup();
-                    return;
-                  }
-                  setEditor({
-                    kind: "category",
-                    category: mode,
-                    ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
-                  });
-                },
+                onPress: enterSelectedWorld,
 
                 render: (anchor) =>
                   profileLoop({

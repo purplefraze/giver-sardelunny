@@ -3,6 +3,8 @@ import { PhotoCropper } from "@/components/profile/PhotoCropper";
 import { myProfileStore, type PhotoCrop } from "@/data/my-profile";
 import { pickOneImage } from "@/lib/pick-image";
 import { buzz } from "@/lib/haptics";
+import { dataUrlToBlob, uploadMedia } from "@/lib/media";
+import { sessionStore } from "@/data/cloud/session";
 
 /**
  * THE ONE PROFILE PHOTO FLOW, wherever a photo is chosen.
@@ -46,8 +48,19 @@ export function useProfilePhoto() {
       source={pending.source}
       initial={pending.crop}
       onCancel={() => setPending(null)}
-      onConfirm={(cropped, crop) => {
-        myProfileStore.setPhoto(cropped, pending.source, crop);
+      onConfirm={async (cropped, crop) => {
+        /*
+          CONFIRM MEANS SAVED. Keep the positioning screen present while the
+          chosen circle is uploaded, then commit the durable URL in one move.
+          If this phone is offline, the exact same circle is retained locally.
+        */
+        const blob = dataUrlToBlob(cropped);
+        const hosted = blob ? await uploadMedia(blob, { extension: "jpg" }) : null;
+        const savedPhoto = hosted ?? cropped;
+        myProfileStore.setPhoto(savedPhoto, pending.source, crop);
+        /* Do not close on a promise that the background mirror may fulfil later:
+           when a hosted URL exists, persist it to this account before confirming. */
+        if (hosted) await sessionStore.saveProfile({ photo_url: hosted });
         setPending(null);
       }}
     />

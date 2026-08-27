@@ -190,7 +190,7 @@ function AdminConsole() {
               <p className="g-name">{i.label}</p>
               <p className="g-meta opacity-55">
                 issued {stamp(i.created_at)}
-                {i.created_by ? ` · by ${nameOf(i.created_by)}` : ""}
+                {i.created_by ? ` · by ${accountName(i.created_by)}` : ""}
               </p>
               {i.accepted_at || i.accepted_profile_id ? (
                 <>

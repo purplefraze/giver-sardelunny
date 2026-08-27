@@ -263,6 +263,9 @@ export function CategoryForm({
   const [problem, setProblem] = useState<string | null>(null);
   /** WHAT JUST WENT LIVE — said once, in the world's own voice, then gone. */
   const [live, setLive] = useState<string | null>(null);
+  /** WHERE GIVER ANSWERS — the publish line and whatever it says back. */
+  const outcome = useRef<HTMLDivElement | null>(null);
+
 
   /**
    * THE ONE RECORD THIS DRAFT IS ALREADY SAVED AS. Once the draft is complete

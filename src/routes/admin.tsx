@@ -248,7 +248,7 @@ function AdminConsole() {
       <ul className="mt-4 flex flex-col gap-2">
         {activity.map((n) => (
           <li key={n.id} className="g-body">
-            <span className="g-meta mr-2">{nameOf(n.profileId)}</span>
+            <span className="g-meta mr-2">to {nameOf(n.profileId)} ·</span>
             {n.body}
           </li>
         ))}

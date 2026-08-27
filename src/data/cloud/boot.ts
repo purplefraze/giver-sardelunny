@@ -21,9 +21,12 @@ function mirrorMyProfile() {
   const s = sessionStore.get();
   if (!s.profile) return;
   const p = myProfileStore.get();
+  /* THE @NAME IS CHOSEN ONCE, AT THE DOOR. The stand-in "@you" never overwrites it. */
+  const local = normaliseHandle(p.username);
+  const chosen = local && local !== "you" ? local : s.profile.handle;
   const fields = {
-    handle: normaliseHandle(p.username) || s.profile.handle,
-    name: normaliseHandle(p.username) || s.profile.name,
+    handle: chosen,
+    name: chosen,
     photo_url: p.photo ?? null,
     about: p.aboutMe ?? "",
     by_day: p.byDay ?? "",

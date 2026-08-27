@@ -49,9 +49,7 @@ function AuthScreen() {
   async function finish() {
     const chosen = normaliseHandle(handle || myProfileStore.get().username || email.split("@")[0] || "giver");
     await joinGiver({ data: { handle: chosen, name: chosen, ...(token ? { token } : {}) } });
-    if (chosen && !normaliseHandle(myProfileStore.get().username)) {
-      myProfileStore.patch({ username: `@${chosen}` });
-    }
+    if (chosen) myProfileStore.patch({ username: `@${chosen}` });
     await sessionStore.refresh();
     window.localStorage.removeItem("giver.invite.token");
     haptics.light();

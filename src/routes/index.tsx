@@ -24,6 +24,7 @@ import { CommunityFeed } from "@/components/community/CommunityFeed";
 
 import { CommunityLocked } from "@/components/community/CommunityLocked";
 import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";
+import { publishEligibility } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 import { FullProfile } from "@/components/FullProfile";

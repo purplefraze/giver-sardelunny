@@ -486,7 +486,13 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [complete, draft, want, note, side, photos, details, liveId]);
 
+  /* THE CONFIRMATION STEPS ASIDE the moment the next thought starts. */
+  useEffect(() => {
+    if (draft) setLive(null);
+  }, [draft]);
+
   /* THE DRAFT ITSELF IS PERSISTED, so leaving mid-sentence loses nothing. */
+
   useEffect(() => {
     const t = window.setTimeout(() => {
       if (!draft && !want && !note && !photos.length && !hasDetails(details)) {

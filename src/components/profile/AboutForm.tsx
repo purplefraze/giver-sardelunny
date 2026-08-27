@@ -85,10 +85,19 @@ export function AboutForm({
     };
   }, [handle, named]);
 
+  /**
+   * A PASSWORD IS SAVED THE INSTANT IT IS TRUE — and again when the field is
+   * left, so putting the phone down never loses it.
+   */
+  const commitPassword = () => {
+    if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
+    void myProfileStore.setPassword(pass);
+  };
   useEffect(() => {
     if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
     void myProfileStore.setPassword(pass);
   }, [pass, again]);
+
 
   const openSeat = (seat: PhotoSeat) => {
     if (seat === "messages") onMessages?.();
@@ -267,6 +276,7 @@ export function AboutForm({
               label="a password"
               value={pass}
               onChange={setPass}
+              onBlur={commitPassword}
               show={showPass}
               placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
             />
@@ -276,6 +286,7 @@ export function AboutForm({
               label="again, exactly"
               value={again}
               onChange={setAgain}
+              onBlur={commitPassword}
               show={showPass}
               placeholder="the same password"
             />
@@ -318,6 +329,7 @@ export function AboutForm({
                   label="new password"
                   value={pass}
                   onChange={setPass}
+                  onBlur={commitPassword}
                   show={showPass}
                   placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
                 />
@@ -326,6 +338,7 @@ export function AboutForm({
                   label="again, exactly"
                   value={again}
                   onChange={setAgain}
+                  onBlur={commitPassword}
                   show={showPass}
                   placeholder="the same password"
                 />
@@ -405,7 +418,7 @@ function PasswordRules({ pass }: { pass: string }) {
           <p
             key={rule.label}
             className="g-meta"
-            style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.9 : 0.45 }}
+            style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.95 : 0.7 }}
           >
             {ok ? "✓" : "·"} {rule.label}
           </p>
@@ -429,23 +442,26 @@ function PasswordState({
   passwordSet: boolean;
 }) {
   const saved = matches && passwordStrongEnough(pass);
+  /* THE MISSING THING IS NAMED, never left as "see above". */
+  const missing = PASSWORD_RULES.find((rule) => !rule.test(pass));
   const say = !pass
     ? passwordSet
       ? "password saved"
       : "not saved yet"
     : saved
-      ? "saved"
-      : !passwordStrongEnough(pass)
-        ? "not saved yet — see above"
+      ? "password saved"
+      : missing
+        ? `not saved yet — needs ${missing.label}`
         : "not saved yet — these two don’t match";
   return (
     <span
-      className="g-meta"
+      className="g-body"
       style={{ color: saved || (!pass && passwordSet) ? "var(--mode-give)" : undefined }}
     >
       {say}
     </span>
   );
+
 }
 
 
@@ -462,12 +478,14 @@ function Secret({
   label,
   value,
   onChange,
+  onBlur,
   show,
   placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   show: boolean;
   placeholder: string;
 }) {
@@ -484,6 +502,7 @@ function Secret({
         autoCorrect="off"
         spellCheck={false}
         onChange={(e) => onChange(e.target.value.slice(0, 64))}
+        onBlur={onBlur}
         placeholder={placeholder}
         className="g-name mt-1 w-full bg-transparent outline-none placeholder:font-medium placeholder:opacity-30"
         style={{ textTransform: "none" }}

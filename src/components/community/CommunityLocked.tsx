@@ -12,9 +12,14 @@ import { BackArrow } from "@/components/BackArrow";
 export function CommunityLocked({
   onGive,
   onClose,
+  problem,
+  onFix,
 }: {
   onGive: () => void;
   onClose: () => void;
+  /** WHAT IS ACTUALLY IN THE WAY, when it is not the give itself. */
+  problem?: string | null;
+  onFix?: () => void;
 }) {
   return (
     <div
@@ -33,6 +38,22 @@ export function CommunityLocked({
         and everything happening near you appears.
       </p>
 
+      {problem ? (
+        <>
+          <p className="g-body mt-6 max-w-[24ch]" style={{ color: "var(--giver-me)" }}>
+            {problem}
+          </p>
+          <button
+            type="button"
+            onClick={onFix}
+            className="g-heading mt-6 text-left transition-transform active:scale-95"
+            style={{ color: "var(--giver-me)" }}
+          >
+            take me to my g
+          </button>
+        </>
+      ) : null}
+
       <button
         type="button"
         onClick={onGive}
@@ -44,3 +65,4 @@ export function CommunityLocked({
     </div>
   );
 }
+

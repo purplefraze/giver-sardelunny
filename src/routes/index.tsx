@@ -24,6 +24,7 @@ import { CommunityFeed } from "@/components/community/CommunityFeed";
 
 import { CommunityLocked } from "@/components/community/CommunityLocked";
 import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";
+import { publishEligibility } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 import { FullProfile } from "@/components/FullProfile";
@@ -376,6 +377,17 @@ function Index() {
    */
   const canCommunity = hasActiveGive(items);
 
+  /**
+   * WHY A GIVE CANNOT BECOME REAL YET — named plainly, so the locked door never
+   * asks for a give the account is not yet allowed to publish.
+   */
+  const accountEligibility = publishEligibility({
+    username: me.username,
+    birthday: me.birthday,
+  });
+  const accountProblem = accountEligibility.ok ? null : accountEligibility.say;
+
+
   /* THE KEY TURNING is worth exactly one moment, and never repeats. */
   useEffect(() => {
     if (!canCommunity) return;
@@ -716,6 +728,11 @@ function Index() {
                 world: "community",
                 children: locked ? (
                   <CommunityLocked
+                    problem={accountProblem}
+                    onFix={() => {
+                      setLocked(false);
+                      setup();
+                    }}
                     onGive={() => {
                       setLocked(false);
                       setSeat("give");
@@ -724,6 +741,7 @@ function Index() {
                     onClose={() => setLocked(false)}
                   />
                 ) : null,
+
               },
 
               /* FIRST-TIME EXPLANATION -> straight into my <type>. */

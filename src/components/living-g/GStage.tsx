@@ -26,18 +26,29 @@ export const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
 /**
  * THE CLEAN BOTTOM BAND. The one strip of paper the artwork never enters, so a
  * bottom text action ("let's giver") can sit centred, outside the G's stroke.
- * Reserved on EVERY screen so the canonical size is identical everywhere.
+ * Reserved on EVERY screen so the canonical size is identical everywhere. Kept
+ * as tight as the text itself needs, because every unit here shrinks the G.
  */
-export const CTA_BAND = "2.6rem";
+export const CTA_BAND = "2rem";
 
 /**
- * THE CANONICAL SIZE. The FRAME — artwork plus the selector's full travel and
- * its clearance — is what must fit the viewport, so the whole selector assembly
- * is visible at every point of its travel and the G never moves as it travels.
- * The G is therefore as large as it can be while that holds: the frame takes the
- * full usable width, or the full usable height, whichever binds first.
+ * WHAT MUST ACTUALLY FIT — the artwork PLUS the selector's true travel, without
+ * the frame's decorative clearance. The frame keeps its full size (so nothing
+ * inside it is ever repositioned), but the stage is sized against this inner
+ * box, which lets the clearance bleed off-screen and the G itself grow.
+ *   selector extremes measured in g-path: x -107..651, y -85..1133
  */
-const CANONICAL_WIDTH = `min(100%, calc((var(--app-h, 100dvh) - ${CTA_BAND}) * 0.99 * ${FRAME_ASPECT.toFixed(5)}))`;
+const NEEDED = { width: 758, height: 1218 } as const;
+const FRAME_OVER_W = LIVING_G_FRAME.width / NEEDED.width;
+const FRAME_OVER_H = LIVING_G_FRAME.width / NEEDED.height;
+
+/**
+ * THE CANONICAL SIZE. As large as the geometry permits: the artwork and the
+ * whole selector assembly stay visible at every point of the travel, the G
+ * never moves as it travels, and only the frame's clearance may bleed.
+ */
+const CANONICAL_WIDTH = `min(calc(100% * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
+
 
 
 export function GStage({ children }: { children: React.ReactNode }) {

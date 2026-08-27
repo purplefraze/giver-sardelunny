@@ -197,7 +197,7 @@ export function publishEligibility(facts: AccountFacts): Eligibility {
       reason: "underage",
       say: `giver needs you to be ${ADULT_AGE} or older to publish a give. your give stays here, unpublished.`,
     };
-  if (!facts.passwordSet)
+  if (!facts.passwordSet && !facts.signedIn)
     return {
       ok: false,
       reason: "password",

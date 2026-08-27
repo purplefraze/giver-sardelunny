@@ -116,7 +116,8 @@ export function AboutForm({
       <div className="g-page g-page-top g-page-bottom">
         {/* WHO I AM — photo, name, birthday. All three in one breath. */}
         <div className="flex items-start gap-5">
-          <div className="relative shrink-0" style={{ width: PHOTO, height: PHOTO }}>
+          {/* THE PHOTO COLUMN RESERVES ITS OWN WORD LANE beneath the circle. */}
+          <div className="relative shrink-0" style={{ width: PHOTO, height: PHOTO + 26 }}>
             <button
               type="button"
               onClick={() => {

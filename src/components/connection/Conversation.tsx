@@ -12,6 +12,7 @@ import {
 } from "@/data/connections";
 
 import { demoReply, demoRepliesStore, SAMPLE_CONFIRMS } from "@/data/demo-replies";
+import { notify } from "@/lib/notify";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
@@ -98,7 +99,10 @@ export function Conversation({
     const saidBefore = messages.filter((m) => m.fromId === themId).map((m) => m.text);
     const reply = demoReply(item, text, themId, saidBefore);
     if (reply)
-      window.setTimeout(() => connectionsStore.send(c.id, reply, themId), 900);
+      window.setTimeout(() => {
+        connectionsStore.send(c.id, reply, themId);
+        notify(`${theirName}: ${reply}`);
+      }, 900);
   };
 
   return (

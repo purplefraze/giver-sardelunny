@@ -271,6 +271,25 @@ function savePerson(next: Person) {
   invalidate();
 }
 
+/**
+ * THE CHOSEN CIRCLE, GIVEN A HOME. Best effort and never in the way: the photo
+ * already applies locally, and this only swaps the bytes for a link so other
+ * people can load it and the phone keeps its storage.
+ */
+async function hostPhoto(cropped: string) {
+  try {
+    const { dataUrlToBlob, uploadMedia } = await import("@/lib/media");
+    const blob = dataUrlToBlob(cropped);
+    if (!blob) return;
+    const hosted = await uploadMedia(blob, { extension: "jpg" });
+    if (!hosted) return;
+    if (person.photo !== cropped) return;
+    savePerson({ ...person, photo: hosted });
+  } catch {
+    /* Signed out, offline, or storage unavailable: the local circle stands. */
+  }
+}
+
 function hydrate() {
   if (!hydrated && typeof window !== "undefined") {
     hydrated = true;

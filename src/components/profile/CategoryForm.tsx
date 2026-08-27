@@ -413,7 +413,7 @@ export function CategoryForm({
         ...(category === "borrow" ? { side } : {}),
         details: hasDetails(cleaned) ? cleaned : {},
       });
-      return;
+      return true;
     }
     const extra = {
       ...(photos.length ? { photos } : {}),
@@ -443,12 +443,14 @@ export function CategoryForm({
             ? `a wish holds ${WISH_COST} sparks until it’s granted. give something to earn more.`
             : `you can have ${limit} at a time — remove one to add another.`,
       );
-      return;
+      return false;
     }
 
     setProblem(null);
     setLiveId(result.id ?? null);
+    return true;
   };
+
 
   /* SAVING IS CONTINUOUS, briefly debounced so we do not write per keystroke. */
   useEffect(() => {

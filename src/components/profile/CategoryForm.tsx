@@ -40,6 +40,7 @@ import { formatDateOnly } from "@/lib/date-only";
 
 
 import { pickImages } from "@/lib/pick-image";
+import { storeChosenImage } from "@/lib/media";
 import { haptics } from "@/lib/haptics";
 
 /**
@@ -393,10 +394,17 @@ export function CategoryForm({
     /* THE ONE RELIABLE PICKER — a real input, so the first attempt works. */
     const files = await pickImages({ multiple: !attachTo });
     if (!files.length) return;
-    const read = await Promise.allSettled(files.map((f) => readSmall(f)));
+    /*
+      STORED, NOT JUST SEEN. Signed in, a picture (or a GIF, animation intact)
+      becomes a hosted link other testers can load; otherwise it stays local.
+    */
+    const read = await Promise.allSettled(
+      files.map((f) => storeChosenImage(f, (file) => readSmall(file))),
+    );
     const shrunk = read
       .map((r) => (r.status === "fulfilled" ? r.value : ""))
       .filter(Boolean);
+
 
     if (!shrunk.length) return;
     if (attachTo) {

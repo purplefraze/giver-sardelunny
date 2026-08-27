@@ -1,0 +1,4 @@
+CREATE POLICY "post media readable by signed in" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'post-media');
+CREATE POLICY "upload own post media" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'post-media' AND owner = auth.uid());
+CREATE POLICY "replace own post media" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'post-media' AND owner = auth.uid()) WITH CHECK (bucket_id = 'post-media' AND owner = auth.uid());
+CREATE POLICY "remove own post media" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'post-media' AND owner = auth.uid());

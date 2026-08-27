@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS items_owner_local_key ON public.items (owner_id, local_id) WHERE local_id IS NOT NULL;

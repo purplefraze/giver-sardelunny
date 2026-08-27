@@ -85,10 +85,19 @@ export function AboutForm({
     };
   }, [handle, named]);
 
+  /**
+   * A PASSWORD IS SAVED THE INSTANT IT IS TRUE — and again when the field is
+   * left, so putting the phone down never loses it.
+   */
+  const commitPassword = () => {
+    if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
+    void myProfileStore.setPassword(pass);
+  };
   useEffect(() => {
     if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
     void myProfileStore.setPassword(pass);
   }, [pass, again]);
+
 
   const openSeat = (seat: PhotoSeat) => {
     if (seat === "messages") onMessages?.();

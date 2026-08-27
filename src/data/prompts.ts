@@ -191,7 +191,8 @@ function stripEcho(p: Prompt, answer: string) {
     if (!lead.length || !lead.every((w) => asked.has(w))) break;
     said = (m[3] ?? "").trim();
   }
-  return said;
+  /* A COPULA LEFT BEHIND BY THE ECHO IS NOT PART OF THE ANSWER. */
+  return said.replace(/^(is|are|was|be|it['’]s)\s+/i, "").trim();
 }
 
 /**
@@ -236,7 +237,21 @@ export function theirStatement(p: Prompt, raw: string, name: string, pr: Pronoun
   const answer = stripEcho(p, clean(raw));
   if (!answer) return "";
   if (isWhole(p, answer)) return dedupe(finish(toThird(answer, name, pr)));
-  return dedupe(finish(p.theirs(name, answer, pr)));
+  /* THE FRAGMENT ITSELF SPEAKS ABOUT THEM TOO: "my dogs" becomes "his dogs". */
+  return dedupe(finish(p.theirs(name, toThirdFragment(answer, pr), pr)));
+}
+
+/**
+ * THE SAME MOVE INSIDE A FRAGMENT, where the person is never the subject, so
+ * their name is never substituted — only their words for themselves.
+ */
+function toThirdFragment(text: string, p: Pronouns) {
+  let out = text;
+  out = out.replace(/(^|\s)i['’]m(\s|$)/g, `$1${p.subject} is$2`);
+  out = out.replace(/(^|\s)my(\s|$)/g, `$1${p.possessive}$2`);
+  out = out.replace(/(^|\s)mine(\s|$)/g, `$1${p.possessive}s$2`);
+  out = out.replace(/(^|\s)me(\s|$)/g, `$1${p.object}$2`);
+  return out;
 }
 
 /**

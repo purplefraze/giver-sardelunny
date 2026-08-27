@@ -111,12 +111,18 @@ export function birthdayLabel(birthday: string | null | undefined): string {
 
 /* ------------------------------ PASSWORDS -------------------------------- */
 
+/**
+ * WHAT A PASSWORD REALLY NEEDS. Long enough to be a password, simple enough
+ * that a person can actually type it on a phone. Capitals and symbols are
+ * welcome and never demanded — the old symbol rule quietly refused ordinary
+ * passwords, so nothing was ever saved.
+ */
 export const PASSWORD_RULES: { label: string; test: (v: string) => boolean }[] = [
   { label: "8 characters or more", test: (v) => v.length >= 8 },
-  { label: "one uppercase letter", test: (v) => /[A-Z]/.test(v) },
-  { label: "one lowercase letter", test: (v) => /[a-z]/.test(v) },
-  { label: "one special symbol", test: (v) => /[^A-Za-z0-9]/.test(v) },
+  { label: "at least one letter", test: (v) => /[A-Za-z]/.test(v) },
+  { label: "at least one number", test: (v) => /[0-9]/.test(v) },
 ];
+
 
 export const passwordStrongEnough = (v: string) =>
   PASSWORD_RULES.every((rule) => rule.test(v));

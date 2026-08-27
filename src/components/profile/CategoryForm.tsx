@@ -556,6 +556,9 @@ export function CategoryForm({
     setDetails({});
     draftsStore.clear(category);
     haptics.light();
+    /* THE ONE MOMENT THE ASK MAKES SENSE: something is now live, so replies can
+       arrive. Asked straight from this touch, and only ever once. */
+    if (!notifyDecided()) void askToNotify();
   };
 
 

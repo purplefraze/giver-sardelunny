@@ -43,6 +43,7 @@ import { pickImages } from "@/lib/pick-image";
 import { storeChosenImage } from "@/lib/media";
 import { haptics } from "@/lib/haptics";
 import { askToNotify, notifyDecided } from "@/lib/notify";
+import { pullItems, pushItems } from "@/data/cloud/items-sync";
 
 /**
  * DESTINATION SCREEN — the editor behind ONE loop of the Living G.
@@ -555,7 +556,7 @@ export function CategoryForm({
    * person SAYS SO, and hears back that it is live in communi-g. If the account
    * gate answers "not yet", nothing is cleared: the draft stays intact.
    */
-  const add = () => {
+  const add = async () => {
     if (full) {
       setProblem(`you can have ${limit} at a time — remove one to add another.`);
       haptics.warning();
@@ -575,6 +576,15 @@ export function CategoryForm({
       return;
     }
     if (!save()) {
+      haptics.warning();
+      showOutcome();
+      return;
+    }
+    try {
+      await pushItems();
+      await pullItems();
+    } catch {
+      setProblem("your words are safe, but communi-g couldn’t be reached. tap publish again.");
       haptics.warning();
       showOutcome();
       return;
@@ -1232,7 +1242,7 @@ export function CategoryForm({
         <div ref={outcome} className="mt-7 space-y-4">
           <button
             type="button"
-            onClick={add}
+            onClick={() => void add()}
             disabled={broke}
             className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
             style={{ color: colour }}

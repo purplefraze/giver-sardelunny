@@ -36,11 +36,13 @@ function commit(next: State) {
 async function load() {
   const profileId = sessionStore.get().profile?.id;
   if (!profileId) return;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("notifications")
     .select("*")
+    .eq("profile_id", profileId)
     .order("created_at", { ascending: false })
     .limit(100);
+  if (error) throw error;
   commit({
     list: (data ?? []).map((n) => ({
       id: n.id,
@@ -96,7 +98,7 @@ export async function notify(input: {
   conversationId?: string | null;
   itemId?: string | null;
 }) {
-  await supabase.from("notifications").insert({
+  const { error } = await supabase.from("notifications").insert({
     profile_id: input.profileId,
     kind: input.kind,
     body: input.body,
@@ -104,6 +106,7 @@ export async function notify(input: {
     conversation_id: input.conversationId ?? null,
     item_id: input.itemId ?? null,
   });
+  if (error) throw error;
   await load();
 }
 

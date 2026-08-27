@@ -61,6 +61,13 @@ function commit(next: WallState) {
 }
 
 export const wallStore = {
+  mergeCloud(compliments: Compliment[]) {
+    const grouped: WallState = {};
+    for (const compliment of compliments) {
+      grouped[compliment.aboutId] = [...(grouped[compliment.aboutId] ?? []), compliment];
+    }
+    commit(grouped);
+  },
   subscribe(listener: () => void) {
     ensure();
     listeners.add(listener);

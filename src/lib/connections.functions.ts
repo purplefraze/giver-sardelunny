@@ -12,9 +12,7 @@ export const changeConnectionState = createServerFn({ method: "POST" })
     }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    void context.userId;
-    const { data: row, error } = await supabaseAdmin
+    const { data: row, error } = await context.supabase
       .rpc("update_my_connection_state", {
         _connection_id: data.connectionId,
         _action: data.action,

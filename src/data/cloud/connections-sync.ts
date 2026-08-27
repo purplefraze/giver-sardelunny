@@ -4,6 +4,7 @@ import { itemsStore, ME_ID, type ItemType } from "@/data/items";
 import { sessionStore } from "@/data/cloud/session";
 import { localIdForProfile, profileIdForLocal } from "@/data/cloud/directory";
 import { changeConnectionState } from "@/lib/connections.functions";
+import { notify } from "@/data/cloud/notifications";
 
 let started = false;
 
@@ -65,12 +66,34 @@ export async function startConnection(itemId: string): Promise<string> {
     { onConflict: "connection_id" },
   );
   await loadConnections();
+  await notify({
+    profileId: ownerId,
+    kind: "connection",
+    body: "someone wants to connect about your activity",
+    actorProfileId: me,
+    itemId: cloudId,
+  });
   return data.id;
 }
 
 export async function updateConnection(connectionId: string, action: "handover" | "return" | "claim" | "confirm" | "dispute" | "cancel", value?: boolean) {
   await changeConnectionState({ data: { connectionId, action, ...(value === undefined ? {} : { value }) } });
   await loadConnections();
+  const connection = connectionsStore.get().connections.find((candidate) => candidate.id === connectionId);
+  const me = sessionStore.get().profile?.id;
+  if (connection && me) {
+    const otherLocal = connection.ownerId === ME_ID ? connection.helperId : connection.ownerId;
+    const other = profileIdForLocal(otherLocal);
+    if (other) {
+      await notify({
+        profileId: other,
+        kind: "exchange",
+        body: action === "confirm" ? "your giver connection was confirmed" : `your giver connection changed: ${action}`,
+        actorProfileId: me,
+        itemId: connection.itemId.startsWith("cloud:") ? connection.itemId.slice(6) : (itemsStore.get().items.find((item) => item.id === connection.itemId)?.cloudId ?? null),
+      });
+    }
+  }
 }
 
 export function startConnectionsSync() {

@@ -119,21 +119,25 @@ const BASE_MEMBERS: Member[] = [
         "someone to teach me to swim",
         "a lift to the coast on sunday",
         "company at the late film",
+        "a drummer for one open mic",
       ],
       give: [
         "science tutoring",
         "italian conversation hour",
         "sourdough starter, endless",
+        "singing warm-ups before your set",
       ],
       trade: [
         "language lessons for photography",
         "cake baking for bike repair",
         "chemistry help for guitar lessons",
+        "warm-up coaching for stage time",
       ],
       borrow: [
         "a tent for one weekend",
         "a projector for movie night",
         "waders, size 39",
+        "a looper pedal for a gig",
       ],
     },
     history: {
@@ -183,16 +187,19 @@ const BASE_MEMBERS: Member[] = [
         "a ride to the airport, tuesday",
         "someone to sit with my nonna",
         "help naming my little studio",
+        "someone to edit my first vlog",
       ],
       give: [
         "tarot readings, sundays",
         "cv and interview practice",
         "a spare seat at sunday dinner",
+        "an hour of filming your reels",
       ],
       trade: [
         "tarot readings for a haircut",
         "spreadsheet help for houseplants",
         "sunday dinner for dog sitting",
+        "reel filming for ring light",
       ],
       borrow: [
         "a suitcase for two weeks",
@@ -250,21 +257,25 @@ const BASE_MEMBERS: Member[] = [
         "a trailer for one weekend",
         "someone to teach me to sing",
         "help sanding a boat",
+        "a spare onewheel for the playa",
       ],
       give: [
         "stage lighting for your party",
         "a van and two strong arms",
         "tool sharpening, any blade",
+        "playa bike rebuilds before the burn",
       ],
       trade: [
         "firewood for a festival ticket",
         "sharpening for a car wash",
         "van runs for cooked dinners",
+        "playa bike build for camp dues",
       ],
       borrow: [
         "a ladder for an afternoon",
         "a pressure washer, sunday",
         "a suit for a wedding",
+        "a shade structure for the burn",
       ],
     },
 
@@ -318,6 +329,7 @@ const BASE_MEMBERS: Member[] = [
         "an hour of real listening",
         "help writing a hard email",
         "lifts to the hospital",
+        "onewheel lessons, flat ground first",
       ],
       trade: [
         "listening hour for cooking",
@@ -328,6 +340,7 @@ const BASE_MEMBERS: Member[] = [
         "a folding table for saturday",
         "a road bike for a month",
         "a kids' car seat, one trip",
+        "skate pads for a first lesson",
       ],
     },
     history: {

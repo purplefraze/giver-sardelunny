@@ -42,6 +42,7 @@ import { formatDateOnly } from "@/lib/date-only";
 import { pickImages } from "@/lib/pick-image";
 import { storeChosenImage } from "@/lib/media";
 import { haptics } from "@/lib/haptics";
+import { askToNotify, notifyDecided } from "@/lib/notify";
 
 /**
  * DESTINATION SCREEN — the editor behind ONE loop of the Living G.
@@ -86,11 +87,20 @@ const CATEGORY_TAGLINE: Partial<Record<Category, string>> = {
  * community was about to see it — this does, in the world's own voice.
  */
 const PUBLISH_LABEL: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
-  give: "let’s giver!",
-  wish: "make my wish!",
-  trade: "let’s trade!",
-  borrow: "let’s borrow!",
-  lend: "let’s lend!",
+  give: "publish my give to communi-g",
+  wish: "publish my wish to communi-g",
+  trade: "publish my trade to communi-g",
+  borrow: "publish my borrow to communi-g",
+  lend: "publish my lend to communi-g",
+};
+
+/** AND THE WAY ON: the same word, said as an invitation to do it again. */
+const AGAIN_LABEL: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
+  give: "add another give",
+  wish: "add another wish",
+  trade: "add another trade",
+  borrow: "add another borrow",
+  lend: "add another lend",
 };
 
 /** WHAT CAME BACK. One line, then it steps out of the way. */
@@ -547,6 +557,9 @@ export function CategoryForm({
     setDetails({});
     draftsStore.clear(category);
     haptics.light();
+    /* THE ONE MOMENT THE ASK MAKES SENSE: something is now live, so replies can
+       arrive. Asked straight from this touch, and only ever once. */
+    if (!notifyDecided()) void askToNotify();
   };
 
 
@@ -1196,9 +1209,23 @@ export function CategoryForm({
         )}
 
         {live ? (
-          <p className="mt-6 g-name" style={{ color: colour }}>
-            {live}
-          </p>
+          <div className="mt-6">
+            <p className="g-name" style={{ color: colour }}>
+              {live}
+            </p>
+            {/* AND THE OBVIOUS NEXT MOVE, said plainly. */}
+            <button
+              type="button"
+              onClick={() => {
+                haptics.light();
+                setLive(null);
+              }}
+              className="mt-3 block text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
+              style={{ color: colour }}
+            >
+              {AGAIN_LABEL[category === "borrow" ? side : category]}
+            </button>
+          </div>
         ) : (
           <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
         )}

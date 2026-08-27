@@ -94,13 +94,18 @@ export function ProfilePhotoToggle({
         );
       })}
 
-      {/* THE SELECTED SEAT SAYS ITS OWN WORD — quietly, beside the circle. */}
+      {/*
+        THE SELECTED SEAT SAYS ITS OWN WORD — in its OWN LANE, directly beneath
+        the photo. It never reaches into the column beside the picture, so a
+        word can never sit on top of the person's own copy.
+      */}
       {seat ? (
         <span
-          className="absolute whitespace-nowrap text-[11px] font-black lowercase tracking-[0.26em]"
+          className="pointer-events-none absolute whitespace-nowrap text-center text-[11px] font-black lowercase tracking-[0.26em]"
           style={{
-            left: size + 14,
-            top: radius + radius * Math.sin((SEAT_ANGLE[seat] - 90) * (Math.PI / 180)) - 7,
+            left: 0,
+            width: size,
+            top: size + 8,
             color: SEAT_COLOUR[seat],
           }}
         >

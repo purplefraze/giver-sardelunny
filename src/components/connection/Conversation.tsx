@@ -11,7 +11,8 @@ import {
   otherParty,
 } from "@/data/connections";
 
-import { demoReply } from "@/data/demo-replies";
+import { demoReply, demoRepliesStore, SAMPLE_CONFIRMS } from "@/data/demo-replies";
+import { notify } from "@/lib/notify";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
@@ -93,10 +94,15 @@ export function Conversation({
     connectionsStore.send(c.id, text, ME_ID);
     setDraft("");
     buzz();
-    /* DEMO ONLY: a sample person answers from their own stored parameters. */
-    const reply = demoReply(item, text, themId);
+    /* DEMO ONLY: a sample person answers from their own stored parameters, and
+       never repeats a phrasing they have already used in this thread. */
+    const saidBefore = messages.filter((m) => m.fromId === themId).map((m) => m.text);
+    const reply = demoReply(item, text, themId, saidBefore);
     if (reply)
-      window.setTimeout(() => connectionsStore.send(c.id, reply, themId), 900);
+      window.setTimeout(() => {
+        connectionsStore.send(c.id, reply, themId);
+        notify(`${theirName}: ${reply}`);
+      }, 900);
   };
 
   return (
@@ -219,6 +225,17 @@ export function Conversation({
               onClick={() => {
                 buzz();
                 connectionsStore.claimComplete(c.id, ME_ID);
+                /* DEMO ONLY: a sample person confirms it too, in the language of
+                   this exchange — a give is gifted, a wish is granted. */
+                if (them && demoRepliesStore.get()) {
+                  const kind = (item ? item.type : "give") as keyof typeof SAMPLE_CONFIRMS;
+                  const lines = SAMPLE_CONFIRMS[kind] ?? SAMPLE_CONFIRMS['give']!;
+                  const said = lines[Math.min(lines.length - 1, messages.length % lines.length)]!;
+                  window.setTimeout(() => {
+                    connectionsStore.send(c.id, said, themId);
+                    connectionsStore.respond(c.id, true, themId);
+                  }, 1200);
+                }
               }}
               className="g-name text-left"
               style={{ color: stateColour }}

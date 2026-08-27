@@ -24,6 +24,8 @@ import { itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
 import { itemLine } from "@/data/items";
 import { answeredStatements, pronounsFrom } from "@/data/prompts";
+import { myCompliment, wallOf, wallStore } from "@/data/wall";
+import { useWall } from "@/hooks/use-wall";
 
 
 
@@ -129,6 +131,11 @@ export function FullProfile({
   useMemberEdits();
   const [editPerson, setEditPerson] = useState(false);
   const [editItem, setEditItem] = useState<string | null>(null);
+  /* THE WALL — sentences left by people who have actually met this person. */
+  const walls = useWall();
+  const wall = wallOf(walls, member.id);
+  const [compliment, setCompliment] = useState("");
+  const [saidIt, setSaidIt] = useState(false);
 
 
   /*
@@ -154,6 +161,10 @@ export function FullProfile({
     key,
     items: myItems(state, key, member.id),
   })).filter((group) => group.items.length > 0);
+
+  /* EARNED, NEVER OPEN: a compliment is only possible after a completed act. */
+  const canCompliment =
+    !mine && earnedConnectionIds(links, ME_ID).includes(member.id);
 
   const openItem = onOpenItem ?? (() => {});
 
@@ -410,6 +421,61 @@ export function FullProfile({
         </Section>
 
         {/*
+          THE WALL. Only somebody who has completed a give, a granted wish, a
+          trade or a borrow with this person may write here — and only ever a
+          sentence, never a score.
+        */}
+        {wall.length || canCompliment ? (
+          <Section title="wall" accent="var(--giver-connection)">
+            {canCompliment ? (
+              <div className="mb-6">
+                <textarea
+                  rows={2}
+                  value={compliment}
+                  onChange={(e) => {
+                    setSaidIt(false);
+                    setCompliment(e.target.value.slice(0, 160));
+                  }}
+                  placeholder={`say something true about ${member.name.toLowerCase()}`}
+                  className="g-lede w-full resize-none bg-transparent outline-none placeholder:opacity-30"
+                  style={{ color: "var(--giver-connection)" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    buzz();
+                    wallStore.say(member.id, ME_ID, compliment);
+                    setSaidIt(true);
+                  }}
+                  disabled={!compliment.trim()}
+                  className="mt-2 text-[12px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4 disabled:opacity-30"
+                  style={{ color: "var(--giver-connection)" }}
+                >
+                  {saidIt ? "said" : "leave it on their wall"}
+                </button>
+              </div>
+            ) : null}
+
+            <ul className="space-y-5">
+              {wall.map((c) => {
+                const author =
+                  c.fromId === ME_ID
+                    ? myAsSpeaker(me)
+                    : (memberById(c.fromId)?.username ?? null);
+                return (
+                  <li key={c.id}>
+                    <p className="g-lede">{c.text}</p>
+                    <p className="g-meta mt-1 opacity-55">
+                      {author ?? "someone"}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          </Section>
+        ) : null}
+
+        {/*
           CONNECTION = me + them = purple. A connection only exists because a
           give, wish, trade or borrow was COMPLETED together — never because
           somebody messaged, followed or looked. Before the first completed act
@@ -465,6 +531,10 @@ export function FullProfile({
   );
 
 }
+
+/** WHOEVER IS SPEAKING ON A WALL, named the way Giver names people. */
+const myAsSpeaker = (me: { username?: string }) =>
+  (me.username || "you").replace(/^@/, "");
 
 /**
  * WHAT ALREADY HAPPENED, in one category. Real records where they exist (they

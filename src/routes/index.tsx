@@ -873,8 +873,20 @@ function Index() {
                       setPersonFocus(null);
                       setPerson(ownerId);
                     }}
+                    /* MY OWN GIVE REOPENS WHERE IT WAS WRITTEN. */
+                    onEditMine={(itemId) => {
+                      const mine = items.items.find((i) => i.id === itemId);
+                      if (!mine) return;
+                      setBrowse(null);
+                      setEditor({
+                        kind: "category",
+                        category: mine.type,
+                        ...(mine.side ? { side: mine.side } : {}),
+                      });
+                    }}
                     onClose={() => setBrowse(null)}
                   />
+
                 ) : null,
               },
 

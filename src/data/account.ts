@@ -17,6 +17,7 @@ import {
   yearsBetween,
 } from "@/lib/date-only";
 import { MEMBERS } from "@/data/giver";
+import { handleAvailable } from "@/lib/account.functions";
 
 /* ------------------------------- HANDLES --------------------------------- */
 
@@ -68,6 +69,12 @@ export async function checkHandle(raw: string): Promise<HandleCheck> {
   /* A tiny pause keeps the feedback honest: it is a check, not a guess. */
   await new Promise((r) => setTimeout(r, 220));
   if (RESERVED.has(handle) || TAKEN.has(handle)) return { state: "taken" };
+  try {
+    const result = await handleAvailable({ data: { handle } });
+    if (!result.available) return { state: "taken" };
+  } catch {
+    return { state: "taken" };
+  }
   return { state: "free" };
 }
 
@@ -176,7 +183,7 @@ export type AccountFacts = {
 
 export type Eligibility =
   | { ok: true }
-  | { ok: false; reason: "handle" | "birthday" | "underage"; say: string };
+  | { ok: false; reason: "handle" | "birthday" | "underage" | "account"; say: string };
 
 /**
  * THE ONE GATE. A give only ever becomes real when there is a name behind it
@@ -201,6 +208,12 @@ export function publishEligibility(facts: AccountFacts): Eligibility {
       ok: false,
       reason: "underage",
       say: `giver needs you to be ${ADULT_AGE} or older to publish a give. your give stays here, unpublished.`,
+    };
+  if (!facts.signedIn)
+    return {
+      ok: false,
+      reason: "account",
+      say: "finish joining giver in my g first — everything you’ve written is safe here.",
     };
   return { ok: true };
 }

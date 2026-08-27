@@ -51,7 +51,7 @@ type Row = {
 };
 
 function rowToItem(row: Row): Item | null {
-  const owner = localIdForProfile(row.owner_id);
+  const owner = row.owner_id === sessionStore.get().profile?.id ? ME_ID : localIdForProfile(row.owner_id);
   if (!owner) return null;
   return {
     id: `${CLOUD}${row.id}`,
@@ -80,15 +80,12 @@ function rowToItem(row: Row): Item | null {
 }
 
 export async function pullItems() {
-  const mine = sessionStore.get().profile?.id;
   const { data } = await supabase
     .from("items")
     .select("*")
-    .eq("published", true)
     .neq("status", "archived");
   const rows = (data ?? []) as unknown as Row[];
   const items = rows
-    .filter((r) => r.owner_id !== mine)
     .map(rowToItem)
     .filter((i): i is Item => Boolean(i));
   itemsStore.mergeRemote(items);
@@ -105,7 +102,7 @@ export async function pushItems() {
   try {
     const mine = itemsStore.get().items.filter((i) => i.ownerId === ME_ID);
     if (mine.length) {
-      await supabase.from("items").upsert(
+      const { error } = await supabase.from("items").upsert(
         mine.map((i) => ({
           owner_id: profileId,
           local_id: i.id,
@@ -124,6 +121,7 @@ export async function pushItems() {
         })),
         { onConflict: "owner_id,local_id" },
       );
+      if (error) throw error;
     }
   } finally {
     pushing = false;

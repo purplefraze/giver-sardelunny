@@ -1163,23 +1163,32 @@ export function CategoryForm({
               </div>
             ) : null}
 
+            {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice. */}
             <button
               type="button"
               onClick={add}
               disabled={broke}
-              className="g-heading disabled:opacity-30"
+              className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
               style={{ color: colour }}
             >
-              {category === "borrow"
-                ? side === "lend"
-                  ? "+ add a lend"
-                  : "+ add a borrow"
-                : `+ add a ${category === "wish" ? "wish" : category}`}
+              {PUBLISH_LABEL[category === "borrow" ? side : category]}
             </button>
+            {problem ? (
+              <p className="g-body" style={{ color: colour }}>
+                {problem}
+              </p>
+            ) : null}
           </div>
         )}
 
-        <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
+        {live ? (
+          <p className="mt-6 g-name" style={{ color: colour }}>
+            {live}
+          </p>
+        ) : (
+          <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
+        )}
+
       </div>
 
       {/* THE WAY BACK IS ALWAYS THERE — one small line, never over content. */}

@@ -32,13 +32,35 @@ export const Route = createFileRoute("/admin")({
   component: AdminConsole,
 });
 
+/**
+ * AN INVITE IS A RECORD, NOT A LINK. Who it was for, when it was issued, who
+ * issued it, when it was accepted, and which person and account it became.
+ */
 type Invite = {
   id: string;
   token: string;
   label: string;
+  created_at: string;
+  created_by: string | null;
   accepted_profile_id: string | null;
+  accepted_user_id: string | null;
   accepted_at: string | null;
 };
+
+/** SHORT, HUMAN, NEVER A TIMESTAMP STRING. */
+const stamp = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
+/** An account is shown as a short reference — never a full identifier. */
+const shortId = (id: string | null) => (id ? id.slice(0, 8) : "");
+
 
 function AdminConsole() {
   const session = useSession();

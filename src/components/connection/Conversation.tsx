@@ -17,6 +17,8 @@ import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { buzz } from "@/lib/haptics";
+import { updateConnection } from "@/data/cloud/connections-sync";
+import { isSampleProfile, profileIdForLocal } from "@/data/cloud/directory";
 import {
   OTHER_PERSON_COLOUR,
   SELF_COLOUR,
@@ -97,7 +99,10 @@ export function Conversation({
     /* DEMO ONLY: a sample person answers from their own stored parameters, and
        never repeats a phrasing they have already used in this thread. */
     const saidBefore = messages.filter((m) => m.fromId === themId).map((m) => m.text);
-    const reply = demoReply(item, text, themId, saidBefore);
+    const theirProfileId = profileIdForLocal(themId);
+    const reply = theirProfileId && isSampleProfile(theirProfileId)
+      ? demoReply(item, text, themId, saidBefore)
+      : null;
     if (reply)
       window.setTimeout(() => {
         connectionsStore.send(c.id, reply, themId);
@@ -170,7 +175,7 @@ export function Conversation({
                     type="button"
                     onClick={() => {
                       buzz();
-                      connectionsStore.setBorrowStage(c.id, stage, !on);
+                      void updateConnection(c.id, stage === "handedOver" ? "handover" : "return", !on);
                     }}
                     className="g-meta"
                     style={{ color: on ? stateColour : undefined, opacity: on ? 1 : 0.45 }}
@@ -198,7 +203,7 @@ export function Conversation({
                     type="button"
                     onClick={() => {
                       buzz();
-                      connectionsStore.respond(c.id, true, ME_ID);
+                      void updateConnection(c.id, "confirm");
                     }}
                     className="g-display-sm"
                     style={{ color: stateColour }}
@@ -209,7 +214,7 @@ export function Conversation({
                     type="button"
                     onClick={() => {
                       buzz();
-                      connectionsStore.respond(c.id, false, ME_ID);
+                      void updateConnection(c.id, "dispute");
                     }}
                     className="g-name"
                     style={{ opacity: 0.5 }}
@@ -224,16 +229,18 @@ export function Conversation({
               type="button"
               onClick={() => {
                 buzz();
-                connectionsStore.claimComplete(c.id, ME_ID);
+                void updateConnection(c.id, "claim");
                 /* DEMO ONLY: a sample person confirms it too, in the language of
                    this exchange — a give is gifted, a wish is granted. */
-                if (them && demoRepliesStore.get()) {
+                const theirProfileId = profileIdForLocal(themId);
+                if (them && theirProfileId && isSampleProfile(theirProfileId) && demoRepliesStore.get()) {
                   const kind = (item ? item.type : "give") as keyof typeof SAMPLE_CONFIRMS;
                   const lines = SAMPLE_CONFIRMS[kind] ?? SAMPLE_CONFIRMS['give']!;
                   const said = lines[Math.min(lines.length - 1, messages.length % lines.length)]!;
                   window.setTimeout(() => {
                     connectionsStore.send(c.id, said, themId);
-                    connectionsStore.respond(c.id, true, themId);
+                    /* Sample confirmations are completed by the admin account,
+                       never fabricated on behalf of a real participant. */
                   }, 1200);
                 }
               }}

@@ -50,10 +50,140 @@ export type Database = {
           },
         ]
       }
+      compliments: {
+        Row: {
+          about_profile_id: string
+          connection_id: string
+          created_at: string
+          from_profile_id: string
+          id: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          about_profile_id: string
+          connection_id: string
+          created_at?: string
+          from_profile_id: string
+          id?: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          about_profile_id?: string
+          connection_id?: string
+          created_at?: string
+          from_profile_id?: string
+          id?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliments_about_profile_id_fkey"
+            columns: ["about_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliments_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliments_from_profile_id_fkey"
+            columns: ["from_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connections: {
+        Row: {
+          claimed_by: string | null
+          created_at: string
+          handed_over: boolean
+          helper_confirmed: boolean
+          helper_id: string
+          id: string
+          item_id: string
+          owner_confirmed: boolean
+          owner_id: string
+          returned: boolean
+          settled_at: string | null
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          claimed_by?: string | null
+          created_at?: string
+          handed_over?: boolean
+          helper_confirmed?: boolean
+          helper_id: string
+          id?: string
+          item_id: string
+          owner_confirmed?: boolean
+          owner_id: string
+          returned?: boolean
+          settled_at?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          claimed_by?: string | null
+          created_at?: string
+          handed_over?: boolean
+          helper_confirmed?: boolean
+          helper_id?: string
+          id?: string
+          item_id?: string
+          owner_confirmed?: boolean
+          owner_id?: string
+          returned?: boolean
+          settled_at?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connections_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connections_helper_id_fkey"
+            columns: ["helper_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connections_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connections_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           a_id: string
           b_id: string
+          connection_id: string | null
           created_at: string
           id: string
           item_id: string | null
@@ -63,6 +193,7 @@ export type Database = {
         Insert: {
           a_id: string
           b_id: string
+          connection_id?: string | null
           created_at?: string
           id?: string
           item_id?: string | null
@@ -72,6 +203,7 @@ export type Database = {
         Update: {
           a_id?: string
           b_id?: string
+          connection_id?: string | null
           created_at?: string
           id?: string
           item_id?: string | null
@@ -91,6 +223,13 @@ export type Database = {
             columns: ["b_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: true
+            referencedRelation: "connections"
             referencedColumns: ["id"]
           },
           {
@@ -211,6 +350,51 @@ export type Database = {
           {
             foreignKeyName: "items_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_events: {
+        Row: {
+          amount: number
+          body: string
+          connection_id: string
+          created_at: string
+          id: string
+          kind: string
+          profile_id: string
+        }
+        Insert: {
+          amount: number
+          body?: string
+          connection_id: string
+          created_at?: string
+          id?: string
+          kind?: string
+          profile_id: string
+        }
+        Update: {
+          amount?: number
+          body?: string
+          connection_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_events_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_events_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -343,6 +527,8 @@ export type Database = {
           photo_url: string | null
           pronouns: string | null
           sample_key: string | null
+          sparkles: number
+          sparks: number
           updated_at: string
           user_id: string | null
           weekend: string
@@ -362,6 +548,8 @@ export type Database = {
           photo_url?: string | null
           pronouns?: string | null
           sample_key?: string | null
+          sparkles?: number
+          sparks?: number
           updated_at?: string
           user_id?: string | null
           weekend?: string
@@ -381,9 +569,44 @@ export type Database = {
           photo_url?: string | null
           pronouns?: string | null
           sample_key?: string | null
+          sparkles?: number
+          sparks?: number
           updated_at?: string
           user_id?: string | null
           weekend?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string
+          user_agent: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string
+          user_agent?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -413,7 +636,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_my_connection_state: {
+        Args: { _action: string; _connection_id: string; _value?: boolean }
+        Returns: {
+          claimed_by: string | null
+          created_at: string
+          handed_over: boolean
+          helper_confirmed: boolean
+          helper_id: string
+          id: string
+          item_id: string
+          owner_confirmed: boolean
+          owner_id: string
+          returned: boolean
+          settled_at: string | null
+          state: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "connections"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "tester"

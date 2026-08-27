@@ -106,22 +106,24 @@ export const sessionStore = {
   /** Write my own profile row. The Living G's own store stays the author. */
   async saveProfile(fields: Partial<ProfileRow>) {
     const { userId, profile } = state;
-    if (!userId) return null;
+    if (!userId) throw new Error("sign in first");
     if (profile) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .update(fields)
         .eq("id", profile.id)
         .select("*")
         .maybeSingle();
+      if (error) throw error;
       if (data) commit({ ...state, profile: data });
       return data ?? null;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .insert({ ...fields, user_id: userId })
       .select("*")
       .maybeSingle();
+    if (error) throw error;
     if (data) commit({ ...state, profile: data });
     return data ?? null;
   },

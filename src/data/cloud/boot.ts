@@ -10,12 +10,13 @@ import { directoryStore } from "@/data/cloud/directory";
 import { startItemsSync } from "@/data/cloud/items-sync";
 import { startMessaging } from "@/data/cloud/messaging";
 import { startNotifications } from "@/data/cloud/notifications";
+import { startConnectionsSync } from "@/data/cloud/connections-sync";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
 
 let booted = false;
 let lastPushed = "";
-let restoredPhotoForUser: string | null = null;
+let restoredForUser: string | null = null;
 
 /** MY OWN WORDS, ONE AUTHOR. The local profile stays the source; this mirrors. */
 function mirrorMyProfile() {
@@ -29,10 +30,24 @@ function mirrorMyProfile() {
    * mirror runs. Without this guard, the first scheduled mirror wrote null over
    * the cloud photo and made a successful upload appear not to stick.
    */
-  if (s.userId && restoredPhotoForUser !== s.userId) {
-    restoredPhotoForUser = s.userId;
-    if (!p.photo && s.profile.photo_url) {
-      myProfileStore.patch({ photo: s.profile.photo_url });
+  if (s.userId && restoredForUser !== s.userId) {
+    restoredForUser = s.userId;
+    const hasLocalIdentity = p.built && normaliseHandle(p.username) !== "you";
+    if (!hasLocalIdentity) {
+      myProfileStore.patch({
+        username: s.profile.handle ? `@${s.profile.handle}` : p.username,
+        photo: s.profile.photo_url ?? null,
+        aboutMe: s.profile.about,
+        byDay: s.profile.by_day,
+        byNight: s.profile.by_night,
+        weekend: s.profile.weekend,
+        gender: s.profile.gender,
+        birthday: s.profile.birthday ?? "",
+        answers: (s.profile.answers ?? {}) as Record<string, string>,
+        sparks: s.profile.sparks,
+        sparkles: s.profile.sparkles,
+        built: true,
+      });
       return;
     }
   }
@@ -54,7 +69,9 @@ function mirrorMyProfile() {
   const signature = JSON.stringify(fields);
   if (signature === lastPushed) return;
   lastPushed = signature;
-  void sessionStore.saveProfile(fields).then(() => directoryStore.reload());
+  void sessionStore.saveProfile(fields).then(() => directoryStore.reload()).catch(() => {
+    lastPushed = "";
+  });
 }
 
 export function bootCloud() {
@@ -65,6 +82,7 @@ export function bootCloud() {
   startItemsSync();
   startMessaging();
   startNotifications();
+  startConnectionsSync();
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   const schedule = () => {

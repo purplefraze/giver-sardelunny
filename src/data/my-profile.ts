@@ -21,7 +21,6 @@ import {
 import { ledgerStore } from "@/data/ledger";
 import {
   ageFrom,
-  hashPassword,
   normaliseBirthday,
   publishEligibility,
 } from "@/data/account";
@@ -462,8 +461,8 @@ export const myProfileStore = {
 
   /** THE PASSWORD IS SALTED, HASHED AND FORGOTTEN. */
   async setPassword(plain: string) {
+    void plain;
     hydrate();
-    savePerson({ ...person, password: await hashPassword(plain) });
   },
 
   /** THE CHOSEN CROP IS THE PHOTO, EVERYWHERE — with the original kept. */

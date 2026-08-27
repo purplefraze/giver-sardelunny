@@ -187,12 +187,15 @@ function Index() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     setHydrated(true);
+    /* THE SHARED DEV BACKEND. Additive: with no session Giver is unchanged. */
+    bootCloud();
     /* Restore the inherited first-use mode before the empty G is first shown. */
     const remembered = readFirstUseSeat();
     if (remembered && !lifecycleStore.get().profileSetupCompletedAt) {
       setSeatState(remembered);
     }
   }, []);
+
 
   const [sessionEntered, setSessionEntered] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;

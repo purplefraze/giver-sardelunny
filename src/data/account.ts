@@ -160,7 +160,14 @@ export type AccountFacts = {
   username: string;
   birthday: string;
   passwordSet: boolean;
+  /**
+   * A REAL SIGNED-IN ACCOUNT ALREADY HAS A PASSWORD. In the shared dev build the
+   * way in is an email and a password, so a signed-in person is never asked to
+   * invent a second local one before they may publish.
+   */
+  signedIn?: boolean;
 };
+
 
 export type Eligibility =
   | { ok: true }
@@ -190,7 +197,7 @@ export function publishEligibility(facts: AccountFacts): Eligibility {
       reason: "underage",
       say: `giver needs you to be ${ADULT_AGE} or older to publish a give. your give stays here, unpublished.`,
     };
-  if (!facts.passwordSet)
+  if (!facts.passwordSet && !facts.signedIn)
     return {
       ok: false,
       reason: "password",

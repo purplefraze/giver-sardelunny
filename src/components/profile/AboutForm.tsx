@@ -268,29 +268,15 @@ export function AboutForm({
               show={showPass}
               placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
             />
-            {pass ? (
-              <div className="space-y-1">
-                {PASSWORD_RULES.map((rule) => {
-                  const ok = rule.test(pass);
-                  return (
-                    <p
-                      key={rule.label}
-                      className="g-meta"
-                      style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.9 : 0.5 }}
-                    >
-                      {ok ? "✓" : "·"} {rule.label}
-                    </p>
-                  );
-                })}
-                <Secret
-                  label="again, exactly"
-                  value={again}
-                  onChange={setAgain}
-                  show={showPass}
-                  placeholder="the same password"
-                />
-              </div>
-            ) : null}
+            {/* THE RULES ARE NEVER A SURPRISE, and the second field is never hidden. */}
+            <PasswordRules pass={pass} />
+            <Secret
+              label="again, exactly"
+              value={again}
+              onChange={setAgain}
+              show={showPass}
+              placeholder="the same password"
+            />
             <div className="flex items-baseline gap-5">
               <button
                 type="button"
@@ -303,20 +289,11 @@ export function AboutForm({
               >
                 {showPass ? "hide" : "show"}
               </button>
-              <span className="g-meta">
-                {!pass && passwordSet
-                  ? "password saved"
-                  : !pass
-                    ? ""
-                    : matches
-                      ? passwordStrongEnough(pass)
-                        ? "saved"
-                        : "nearly — see above"
-                      : "these two don’t match yet"}
-              </span>
+              <PasswordState pass={pass} matches={matches} passwordSet={passwordSet} />
             </div>
           </div>
         ) : null}
+
 
         {/* MY SETTINGS — quiet, and the only home of a password change. */}
         {!onboarding ? (
@@ -342,15 +319,14 @@ export function AboutForm({
                   show={showPass}
                   placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
                 />
-                {pass ? (
-                  <Secret
-                    label="again, exactly"
-                    value={again}
-                    onChange={setAgain}
-                    show={showPass}
-                    placeholder="the same password"
-                  />
-                ) : null}
+                <PasswordRules pass={pass} />
+                <Secret
+                  label="again, exactly"
+                  value={again}
+                  onChange={setAgain}
+                  show={showPass}
+                  placeholder="the same password"
+                />
                 <div className="flex items-baseline gap-5">
                   <button
                     type="button"
@@ -363,18 +339,11 @@ export function AboutForm({
                   >
                     {showPass ? "hide" : "show"}
                   </button>
-                  <span className="g-meta">
-                    {!pass
-                      ? "update password"
-                      : matches
-                        ? passwordStrongEnough(pass)
-                          ? "saved"
-                          : "nearly"
-                        : "these two don’t match yet"}
-                  </span>
+                  <PasswordState pass={pass} matches={matches} passwordSet={passwordSet} />
                 </div>
               </div>
             ) : null}
+
           </div>
         ) : null}
 
@@ -424,7 +393,69 @@ export function AboutForm({
   );
 }
 
-/** A password. The one thing that cannot be printed in place. */
+/** WHAT GIVER NEEDS, TICKED OFF AS IT ARRIVES. Always visible, never a scold. */
+function PasswordRules({ pass }: { pass: string }) {
+  return (
+    <div className="space-y-1">
+      {PASSWORD_RULES.map((rule) => {
+        const ok = rule.test(pass);
+        return (
+          <p
+            key={rule.label}
+            className="g-meta"
+            style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.9 : 0.45 }}
+          >
+            {ok ? "✓" : "·"} {rule.label}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * SAVED, OR NOT SAVED YET — said out loud. The old screen stayed silent when a
+ * password failed, which is why one was never actually stored.
+ */
+function PasswordState({
+  pass,
+  matches,
+  passwordSet,
+}: {
+  pass: string;
+  matches: boolean;
+  passwordSet: boolean;
+}) {
+  const saved = matches && passwordStrongEnough(pass);
+  const say = !pass
+    ? passwordSet
+      ? "password saved"
+      : "not saved yet"
+    : saved
+      ? "saved"
+      : !passwordStrongEnough(pass)
+        ? "not saved yet — see above"
+        : "not saved yet — these two don’t match";
+  return (
+    <span
+      className="g-meta"
+      style={{ color: saved || (!pass && passwordSet) ? "var(--mode-give)" : undefined }}
+    >
+      {say}
+    </span>
+  );
+}
+
+
+
+/**
+ * A password. The one thing that cannot be printed in place.
+ *
+ * IT MUST SHOW EXACTLY WHAT WAS TYPED. The shared name register lowercases its
+ * text, which made typed capitals look rejected while the rules quietly asked
+ * for one — so this field opts out of the transform and out of every phone
+ * auto-capitalisation habit.
+ */
 function Secret({
   label,
   value,
@@ -447,10 +478,15 @@ function Secret({
         type={show ? "text" : "password"}
         value={value}
         autoComplete="new-password"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         onChange={(e) => onChange(e.target.value.slice(0, 64))}
         placeholder={placeholder}
         className="g-name mt-1 w-full bg-transparent outline-none placeholder:font-medium placeholder:opacity-30"
+        style={{ textTransform: "none" }}
       />
     </label>
   );
 }
+

@@ -26,7 +26,9 @@ import {
   publishEligibility,
 } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
+import { sessionStore } from "@/data/cloud/session";
 import { haptics } from "@/lib/haptics";
+
 
 /**
  * MY PROFILE — THE SINGLE SOURCE OF TRUTH FOR THE PERSON.
@@ -408,12 +410,23 @@ export const myProfileStore = {
   /** IS THIS ACCOUNT ALLOWED TO PUBLISH? One answer, asked from everywhere. */
   canPublish() {
     hydrate();
+    /* A SIGNED-IN DEV ACCOUNT COUNTS: its password lives with the account. */
+    let signedIn = false;
+    if (typeof window !== "undefined") {
+      try {
+        signedIn = Boolean(sessionStore.get().userId);
+      } catch {
+        signedIn = false;
+      }
+    }
     return publishEligibility({
       username: person.username,
       birthday: person.birthday,
       passwordSet: Boolean(person.password),
+      signedIn,
     });
   },
+
 
   /** THE PASSWORD IS SALTED, HASHED AND FORGOTTEN. */
   async setPassword(plain: string) {

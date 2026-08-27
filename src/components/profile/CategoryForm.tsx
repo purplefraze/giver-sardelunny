@@ -80,6 +80,29 @@ const CATEGORY_TAGLINE: Partial<Record<Category, string>> = {
   give: "give what you can. make someone happy.",
 };
 
+/**
+ * THE MOMENT OF PUBLISHING, IN WORDS. "+ add a give" told nobody that the
+ * community was about to see it — this does, in the world's own voice.
+ */
+const PUBLISH_LABEL: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
+  give: "let’s giver!",
+  wish: "make my wish!",
+  trade: "let’s trade!",
+  borrow: "let’s borrow!",
+  lend: "let’s lend!",
+};
+
+/** WHAT CAME BACK. One line, then it steps out of the way. */
+const PUBLISHED_SAY: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
+  give: "it’s live in communi-g",
+  wish: "your wish is live in communi-g",
+  trade: "your trade is live in communi-g",
+  borrow: "your borrow is live in communi-g",
+  lend: "your lend is live in communi-g",
+};
+
+
+
 
 /** BORROWING HAS TWO SIDES, and giver asks which one you mean. */
 const SIDE_ASK: Record<BorrowSide, string> = {
@@ -223,6 +246,9 @@ export function CategoryForm({
   /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */
   const [details, setDetails] = useState<ItemDetails>(stored.details);
   const [problem, setProblem] = useState<string | null>(null);
+  /** WHAT JUST WENT LIVE — said once, in the world's own voice, then gone. */
+  const [live, setLive] = useState<string | null>(null);
+
   /**
    * THE ONE RECORD THIS DRAFT IS ALREADY SAVED AS. Once the draft is complete
    * enough to be real it becomes an Item, and every later keystroke edits THAT
@@ -400,8 +426,9 @@ export function CategoryForm({
    * change patches that same record, so no screen ever holds a stale copy and
    * nothing is created twice by a rerender, a reopen or a reload.
    */
-  const save = () => {
-    if (!complete) return;
+  const save = (): boolean => {
+    if (!complete) return false;
+
     const cleaned = cleanDetails();
     if (liveId) {
       itemsStore.patch(liveId, {
@@ -412,7 +439,7 @@ export function CategoryForm({
         ...(category === "borrow" ? { side } : {}),
         details: hasDetails(cleaned) ? cleaned : {},
       });
-      return;
+      return true;
     }
     const extra = {
       ...(photos.length ? { photos } : {}),
@@ -442,12 +469,14 @@ export function CategoryForm({
             ? `a wish holds ${WISH_COST} sparks until it’s granted. give something to earn more.`
             : `you can have ${limit} at a time — remove one to add another.`,
       );
-      return;
+      return false;
     }
 
     setProblem(null);
     setLiveId(result.id ?? null);
+    return true;
   };
+
 
   /* SAVING IS CONTINUOUS, briefly debounced so we do not write per keystroke. */
   useEffect(() => {
@@ -457,7 +486,13 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [complete, draft, want, note, side, photos, details, liveId]);
 
+  /* THE CONFIRMATION STEPS ASIDE the moment the next thought starts. */
+  useEffect(() => {
+    if (draft) setLive(null);
+  }, [draft]);
+
   /* THE DRAFT ITSELF IS PERSISTED, so leaving mid-sentence loses nothing. */
+
   useEffect(() => {
     const t = window.setTimeout(() => {
       if (!draft && !want && !note && !photos.length && !hasDetails(details)) {
@@ -478,7 +513,11 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, draft, want, note, side, photos, details, liveId]);
 
-  /** START A FRESH ONE. What was typed is already saved; the field simply clears. */
+  /**
+   * PUBLISH. The words were already being saved as they were typed — this is the
+   * moment a person SAYS SO, and hears back that it is live in communi-g. If the
+   * account gate answers "not yet", nothing is cleared: the draft stays intact.
+   */
   const add = () => {
     if (!draft.trim()) return;
     if (category === "trade" && !want.trim()) {
@@ -486,8 +525,12 @@ export function CategoryForm({
       haptics.warning();
       return;
     }
-    save();
+    if (!save()) {
+      haptics.warning();
+      return;
+    }
     setProblem(null);
+    setLive(PUBLISHED_SAY[category === "borrow" ? side : category]);
     setLiveId(null);
     setDraft("");
     setWant("");
@@ -497,6 +540,7 @@ export function CategoryForm({
     draftsStore.clear(category);
     haptics.light();
   };
+
 
   /* BACK IS NOT THE SAVE BUTTON. It only flushes the pending debounce. */
   const leave = () => {
@@ -1125,23 +1169,32 @@ export function CategoryForm({
               </div>
             ) : null}
 
+            {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice. */}
             <button
               type="button"
               onClick={add}
               disabled={broke}
-              className="g-heading disabled:opacity-30"
+              className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
               style={{ color: colour }}
             >
-              {category === "borrow"
-                ? side === "lend"
-                  ? "+ add a lend"
-                  : "+ add a borrow"
-                : `+ add a ${category === "wish" ? "wish" : category}`}
+              {PUBLISH_LABEL[category === "borrow" ? side : category]}
             </button>
+            {problem ? (
+              <p className="g-body" style={{ color: colour }}>
+                {problem}
+              </p>
+            ) : null}
           </div>
         )}
 
-        <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
+        {live ? (
+          <p className="mt-6 g-name" style={{ color: colour }}>
+            {live}
+          </p>
+        ) : (
+          <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
+        )}
+
       </div>
 
       {/* THE WAY BACK IS ALWAYS THERE — one small line, never over content. */}

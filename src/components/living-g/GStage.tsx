@@ -14,7 +14,7 @@ import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
  * the artwork's size or its horizontal centring, because the frame is symmetric
  * about the artwork's own centre line.
  */
-const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
+export const FRAME_ASPECT = LIVING_G_FRAME.width / LIVING_G_FRAME.height;
 
 /** Kept as the record of what the frame is built around. */
 export const ARTWORK_ASPECT = LIVING_G_BOX.width / LIVING_G_BOX.height;

@@ -125,7 +125,8 @@ export function AboutForm({
                 if (me.photo || me.photoSource) setPhotoMenu((o) => !o);
                 else void photo.choose();
               }}
-              className="block h-full w-full transition-transform active:scale-[0.98]"
+              className="block transition-transform active:scale-[0.98]"
+              style={{ width: PHOTO, height: PHOTO }}
               aria-label={me.photo ? "photo options" : "add a photo"}
             >
               {me.photo ? (

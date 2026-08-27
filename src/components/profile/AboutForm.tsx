@@ -22,6 +22,11 @@ import { InlineEdit } from "@/components/profile/InlineEdit";
 import { BirthdayInput } from "@/components/profile/BirthdayInput";
 import { PromptAnswers } from "@/components/profile/PromptAnswers";
 import { buzz, haptics } from "@/lib/haptics";
+import { supabase } from "@/integrations/supabase/client";
+import { joinGiver } from "@/lib/invites.functions";
+import { sessionStore } from "@/data/cloud/session";
+import { pushItems } from "@/data/cloud/items-sync";
+import { useSession } from "@/hooks/use-session";
 
 /**
  * MY G — A PERSON, NOT A QUESTIONNAIRE.
@@ -57,10 +62,14 @@ export function AboutForm({
   const [handleState, setHandleState] = useState<HandleCheck>({ state: "empty" });
   const [pass, setPass] = useState("");
   const [again, setAgain] = useState("");
+  const [email, setEmail] = useState("");
+  const [accountMessage, setAccountMessage] = useState("");
+  const [joining, setJoining] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const photo = useProfilePhoto();
   const [photoMenu, setPhotoMenu] = useState(false);
   const [settings, setSettings] = useState(false);
+  const session = useSession();
 
   const handle = normaliseHandle(me.username);
   const named = Boolean(handle) && handle !== "you";
@@ -89,14 +98,7 @@ export function AboutForm({
    * A PASSWORD IS SAVED THE INSTANT IT IS TRUE — and again when the field is
    * left, so putting the phone down never loses it.
    */
-  const commitPassword = () => {
-    if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
-    void myProfileStore.setPassword(pass);
-  };
-  useEffect(() => {
-    if (!pass || pass !== again || !passwordStrongEnough(pass)) return;
-    void myProfileStore.setPassword(pass);
-  }, [pass, again]);
+  const commitPassword = () => undefined;
 
 
   const openSeat = (seat: PhotoSeat) => {
@@ -105,13 +107,70 @@ export function AboutForm({
     if (seat === "sparkles") onSparkles?.();
   };
 
-  const save = () => {
+  const save = async () => {
+    if (!session.userId) {
+      if (handleState.state !== "free") {
+        setAccountMessage("choose an available @name first.");
+        return;
+      }
+      if (!email.trim()) {
+        setAccountMessage("add your email so this giver can live on every phone.");
+        return;
+      }
+      if (pass !== again || !passwordStrongEnough(pass)) {
+        setAccountMessage("use matching passwords with 8 characters, a letter and a number.");
+        return;
+      }
+      setJoining(true);
+      setAccountMessage("making your giver…");
+      const credentials = { email: email.trim().toLowerCase(), password: pass };
+      const signedUp = await supabase.auth.signUp(credentials);
+      if (signedUp.error && !/already/i.test(signedUp.error.message)) {
+        setJoining(false);
+        setAccountMessage(signedUp.error.message.toLowerCase());
+        return;
+      }
+      if (!signedUp.data.session) {
+        const signedIn = await supabase.auth.signInWithPassword(credentials);
+        if (signedIn.error) {
+          setJoining(false);
+          setAccountMessage("check your email to confirm, then come back and sign in.");
+          return;
+        }
+      }
+      const token = window.localStorage.getItem("giver.invite.token") ?? undefined;
+      const joined = await joinGiver({ data: { handle, name: handle, ...(token ? { token } : {}) } });
+      if (!joined.ok) {
+        setJoining(false);
+        setAccountMessage(joined.reason.toLowerCase());
+        return;
+      }
+      await sessionStore.refresh();
+      myProfileStore.patch({ built: true, username: displayHandle(handle), password: "" });
+      await sessionStore.saveProfile({
+        handle,
+        name: handle,
+        birthday: me.birthday || null,
+        photo_url: me.photo,
+        about: me.aboutMe,
+        by_day: me.byDay,
+        by_night: me.byNight,
+        weekend: me.weekend,
+        gender: me.gender,
+        answers: me.answers,
+      });
+      await pushItems();
+      window.localStorage.removeItem("giver.invite.token");
+      setAccountMessage("you’re in. this giver is saved.");
+      setJoining(false);
+    } else {
+      myProfileStore.patch({ built: true, username: displayHandle(me.username), password: "" });
+    }
     buzz();
-    myProfileStore.patch({ built: true, username: displayHandle(me.username) });
     onDone();
   };
 
-  const passwordSet = Boolean(me.password);
+  const passwordSet = Boolean(session.userId);
   const matches = pass.length > 0 && pass === again;
 
   return (
@@ -120,7 +179,7 @@ export function AboutForm({
       className="relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
-      <BackArrow onClick={save} label="back to my g" sticky />
+      <BackArrow onClick={() => void save()} label="back to my g" sticky />
 
       <div className="g-page g-page-top g-page-bottom">
         {/* WHO I AM — photo, name, birthday. All three in one breath. */}
@@ -270,8 +329,12 @@ export function AboutForm({
         ) : null}
 
         {/* A PASSWORD IS ASKED FOR ONCE, while the account is being made. */}
-        {onboarding ? (
+        {onboarding && !session.userId ? (
           <div className="g-rule mt-10 space-y-5 pt-6">
+            <label className="block">
+              <span className="g-meta" style={{ color: "var(--giver-me)" }}>your email</span>
+              <input type="email" required autoComplete="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="g-name mt-1 w-full border-b border-current/20 bg-transparent pb-2 outline-none" />
+            </label>
             <Secret
               label="a password"
               value={pass}
@@ -304,12 +367,13 @@ export function AboutForm({
               </button>
               <PasswordState pass={pass} matches={matches} passwordSet={passwordSet} />
             </div>
+            {accountMessage ? <p className="g-body" style={{ color: "var(--giver-me)" }}>{accountMessage}</p> : null}
           </div>
         ) : null}
 
 
         {/* MY SETTINGS — quiet, and the only home of a password change. */}
-        {!onboarding ? (
+        {!onboarding && session.userId ? (
           <div className="g-rule mt-10 pt-6">
             <button
               type="button"
@@ -325,37 +389,10 @@ export function AboutForm({
 
             {settings ? (
               <div className="mt-5 space-y-5">
-                <Secret
-                  label="new password"
-                  value={pass}
-                  onChange={setPass}
-                  onBlur={commitPassword}
-                  show={showPass}
-                  placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
-                />
-                <PasswordRules pass={pass} />
-                <Secret
-                  label="again, exactly"
-                  value={again}
-                  onChange={setAgain}
-                  onBlur={commitPassword}
-                  show={showPass}
-                  placeholder="the same password"
-                />
-                <div className="flex items-baseline gap-5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      haptics.selection();
-                      setShowPass((s) => !s);
-                    }}
-                    className="g-meta"
-                    style={{ color: "var(--giver-me)", opacity: 0.9 }}
-                  >
-                    {showPass ? "hide" : "show"}
-                  </button>
-                  <PasswordState pass={pass} matches={matches} passwordSet={passwordSet} />
-                </div>
+                <p className="g-body">signed in as {session.email}</p>
+                <button type="button" className="g-name" style={{ color: "var(--giver-me)" }} onClick={() => void supabase.auth.resetPasswordForEmail(session.email ?? "", { redirectTo: `${window.location.origin}/reset-password` }).then(() => setAccountMessage("password link sent"))}>change password by email</button>
+                <button type="button" className="g-name" onClick={() => void supabase.auth.signOut()}>sign out</button>
+                {accountMessage ? <p className="g-body">{accountMessage}</p> : null}
               </div>
             ) : null}
 
@@ -365,11 +402,12 @@ export function AboutForm({
         <div className="mt-10 flex flex-col items-start gap-5">
           <button
             type="button"
-            onClick={save}
+            onClick={() => void save()}
+            disabled={joining}
             className="g-display-sm text-left transition-transform active:scale-[0.98]"
             style={{ color: "var(--giver-me)" }}
           >
-            ← back to my g
+            {joining ? "joining…" : "← back to my g"}
           </button>
 
           {onViewProfile && !firstSetup ? (

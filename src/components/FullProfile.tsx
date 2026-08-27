@@ -458,12 +458,15 @@ export function FullProfile({
 
             <ul className="space-y-5">
               {wall.map((c) => {
-                const author = c.fromId === ME_ID ? myAsSpeaker(me) : memberById(c.fromId);
+                const author =
+                  c.fromId === ME_ID
+                    ? myAsSpeaker(me)
+                    : (memberById(c.fromId)?.username ?? null);
                 return (
                   <li key={c.id}>
                     <p className="g-lede">{c.text}</p>
                     <p className="g-meta mt-1 opacity-55">
-                      {author ? author : "someone"}
+                      {author ?? "someone"}
                     </p>
                   </li>
                 );

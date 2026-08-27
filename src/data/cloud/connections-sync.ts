@@ -11,6 +11,10 @@ function localItemId(cloudId: string) {
   return itemsStore.get().items.find((item) => item.id === `cloud:${cloudId}` || item.cloudId === cloudId)?.id ?? `cloud:${cloudId}`;
 }
 
+export function cloudConnectionId(localId: string) {
+  return /^[0-9a-f-]{36}$/i.test(localId) ? localId : null;
+}
+
 export async function loadConnections() {
   const me = sessionStore.get().profile?.id;
   if (!me) return;

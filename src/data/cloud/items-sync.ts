@@ -54,7 +54,8 @@ function rowToItem(row: Row): Item | null {
   const owner = row.owner_id === sessionStore.get().profile?.id ? ME_ID : localIdForProfile(row.owner_id);
   if (!owner) return null;
   return {
-    id: `${CLOUD}${row.id}`,
+    id: owner === ME_ID && row.local_id ? row.local_id : `${CLOUD}${row.id}`,
+    cloudId: row.id,
     ownerId: owner,
     type: row.type as ItemType,
     text: row.text,

@@ -33,6 +33,8 @@ export type Boost = {
 
 export type Item = {
   id: string;
+  /** Durable identity after this item reaches the shared backend. */
+  cloudId?: string;
   ownerId: string;
   type: ItemType;
   /** The one line an item reads as. For a trade it is always "offer for want". */

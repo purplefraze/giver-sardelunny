@@ -20,6 +20,8 @@ import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemFacts, itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
 import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
+import { startConnection } from "@/data/cloud/connections-sync";
+import { sessionStore } from "@/data/cloud/session";
 
 
 /**
@@ -68,6 +70,7 @@ export function ActivityDetail({
   const admin = useAdmin();
   useMemberEdits();
   const [editing, setEditing] = useState(false);
+  const [problem, setProblem] = useState("");
   const item = items.items.find((i) => i.id === itemId);
 
 
@@ -98,15 +101,23 @@ export function ActivityDetail({
    * conversation that belongs TO THIS ITEM, so the other person always sees
    * what the message is about — never an unexplained generic chat.
    */
-  const open = () => {
+  const open = async () => {
     buzz();
     if (mine) {
       onOpenConnection(mine.id);
       return;
     }
     /* INTENT ONLY. This opens a conversation — it completes nothing. */
-    const result = connectionsStore.expressIntent(item.id, ME_ID);
-    if (result.ok && result.id) onOpenConnection(result.id);
+    if (!sessionStore.get().profile) {
+      setProblem("finish joining giver in my g first.");
+      return;
+    }
+    try {
+      const id = await startConnection(item.id);
+      onOpenConnection(id);
+    } catch (error) {
+      setProblem(error instanceof Error ? error.message.toLowerCase() : "that connection didn’t open");
+    }
   };
 
   return (
@@ -116,6 +127,7 @@ export function ActivityDetail({
       style={{ background: "var(--world-bg)", color: "var(--giver-ink)" }}
     >
       <BackArrow onClick={onClose} label="back" sticky />
+      {problem ? <p className="g-body mb-4" style={{ color: fill }}>{problem}</p> : null}
 
       {/* WHAT THIS IS, SAID EXACTLY: borrowing and lending are not the same. */}
       <span className="g-heading" style={{ color: fill }}>

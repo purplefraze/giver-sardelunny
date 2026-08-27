@@ -171,14 +171,33 @@ function AdminConsole() {
           new link
         </button>
       </div>
-      <ul className="mt-6 flex flex-col gap-4">
+      {/*
+        THE AUDIT LOG. Every invite reads as its own short history: issued,
+        by whom, then accepted, by which person and which account.
+      */}
+      <ul className="mt-6 flex flex-col gap-6">
         {invites.map((i) => (
           <li key={i.id} className="flex items-baseline justify-between gap-4">
             <div>
               <p className="g-name">{i.label}</p>
-              <p className="g-meta">
-                {i.accepted_profile_id ? `joined · ${nameOf(i.accepted_profile_id)}` : "not used yet"}
+              <p className="g-meta opacity-55">
+                issued {stamp(i.created_at)}
+                {i.created_by ? ` · by ${nameOf(i.created_by)}` : ""}
               </p>
+              {i.accepted_at || i.accepted_profile_id ? (
+                <>
+                  <p className="g-meta" style={{ color: "var(--giver-me)" }}>
+                    accepted {stamp(i.accepted_at)}
+                    {i.accepted_profile_id ? ` · ${nameOf(i.accepted_profile_id)}` : ""}
+                  </p>
+                  <p className="g-meta opacity-45">
+                    {i.accepted_profile_id ? `profile ${shortId(i.accepted_profile_id)}` : ""}
+                    {i.accepted_user_id ? ` · account ${shortId(i.accepted_user_id)}` : ""}
+                  </p>
+                </>
+              ) : (
+                <p className="g-meta opacity-45">not accepted yet</p>
+              )}
             </div>
             <button
               className="g-meta shrink-0 underline decoration-giver-ink/20"
@@ -193,6 +212,7 @@ function AdminConsole() {
         ))}
         {invites.length === 0 ? <li className="g-meta">no invites yet</li> : null}
       </ul>
+
 
       {/* TESTERS ---------------------------------------------------------- */}
       <h2 className="g-heading mt-14">people</h2>

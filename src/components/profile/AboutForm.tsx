@@ -418,7 +418,7 @@ function PasswordRules({ pass }: { pass: string }) {
           <p
             key={rule.label}
             className="g-meta"
-            style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.9 : 0.45 }}
+            style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.95 : 0.7 }}
           >
             {ok ? "✓" : "·"} {rule.label}
           </p>

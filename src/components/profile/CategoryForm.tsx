@@ -605,7 +605,7 @@ export function CategoryForm({
 
         {problem ? (
           <p
-            className="mt-3 text-sm font-black lowercase"
+            className="mt-3 g-body"
             style={{ color: colour }}
           >
             {problem}

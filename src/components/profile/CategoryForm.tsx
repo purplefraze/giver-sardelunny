@@ -540,20 +540,40 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, draft, want, note, side, photos, details, liveId]);
 
+  /** WHATEVER GIVER ANSWERS, YOU SEE IT. The outcome is brought into view. */
+  const showOutcome = () => {
+    window.requestAnimationFrame(() =>
+      outcome.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    );
+  };
+
   /**
-   * PUBLISH. The words were already being saved as they were typed — this is the
-   * moment a person SAYS SO, and hears back that it is live in communi-g. If the
-   * account gate answers "not yet", nothing is cleared: the draft stays intact.
+   * PUBLISH. The words were kept safe as they were typed — this is the moment a
+   * person SAYS SO, and hears back that it is live in communi-g. If the account
+   * gate answers "not yet", nothing is cleared: the draft stays intact.
    */
   const add = () => {
-    if (!draft.trim()) return;
+    if (full) {
+      setProblem(`you can have ${limit} at a time — remove one to add another.`);
+      haptics.warning();
+      showOutcome();
+      return;
+    }
+    if (!draft.trim()) {
+      setProblem(category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]);
+      haptics.warning();
+      showOutcome();
+      return;
+    }
     if (category === "trade" && !want.trim()) {
       setProblem("a trade has two sides. what would you like in return?");
       haptics.warning();
+      showOutcome();
       return;
     }
     if (!save()) {
       haptics.warning();
+      showOutcome();
       return;
     }
     setProblem(null);
@@ -566,10 +586,12 @@ export function CategoryForm({
     setDetails({});
     draftsStore.clear(category);
     haptics.light();
+    showOutcome();
     /* THE ONE MOMENT THE ASK MAKES SENSE: something is now live, so replies can
        arrive. Asked straight from this touch, and only ever once. */
     if (!notifyDecided()) void askToNotify();
   };
+
 
 
   /* BACK IS NOT THE SAVE BUTTON. It only flushes the pending debounce. */

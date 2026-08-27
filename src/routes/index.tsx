@@ -716,6 +716,11 @@ function Index() {
                 world: "community",
                 children: locked ? (
                   <CommunityLocked
+                    problem={accountProblem}
+                    onFix={() => {
+                      setLocked(false);
+                      setup();
+                    }}
                     onGive={() => {
                       setLocked(false);
                       setSeat("give");
@@ -724,6 +729,7 @@ function Index() {
                     onClose={() => setLocked(false)}
                   />
                 ) : null,
+
               },
 
               /* FIRST-TIME EXPLANATION -> straight into my <type>. */

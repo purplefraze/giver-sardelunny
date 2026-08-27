@@ -815,7 +815,13 @@ function Index() {
                       category={editor.category}
                       {...(editor.side ? { side: editor.side } : {})}
                       onDone={() => setEditor(null)}
+                      onSeeInCommunity={() => {
+                        const type = editor.category as ItemType;
+                        setEditor(null);
+                        setBrowse({ type, mine: true });
+                      }}
                     />
+
 
                   ) : null,
               },

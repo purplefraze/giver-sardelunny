@@ -424,7 +424,14 @@ export function AboutForm({
   );
 }
 
-/** A password. The one thing that cannot be printed in place. */
+/**
+ * A password. The one thing that cannot be printed in place.
+ *
+ * IT MUST SHOW EXACTLY WHAT WAS TYPED. The shared name register lowercases its
+ * text, which made typed capitals look rejected while the rules quietly asked
+ * for one — so this field opts out of the transform and out of every phone
+ * auto-capitalisation habit.
+ */
 function Secret({
   label,
   value,
@@ -447,10 +454,15 @@ function Secret({
         type={show ? "text" : "password"}
         value={value}
         autoComplete="new-password"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         onChange={(e) => onChange(e.target.value.slice(0, 64))}
         placeholder={placeholder}
         className="g-name mt-1 w-full bg-transparent outline-none placeholder:font-medium placeholder:opacity-30"
+        style={{ textTransform: "none" }}
       />
     </label>
   );
 }
+

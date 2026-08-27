@@ -706,8 +706,14 @@ function read(): ItemsState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return { items: seedItems(), boosts: [], seeded: true };
     const parsed = JSON.parse(raw) as Partial<ItemsState>;
+    const stored = (parsed.items ?? seedItems()).map(withSeedDetails);
+    /* NEW SAMPLE ACTIVITY REACHES PEOPLE WHO ARE ALREADY HERE. Only sample
+       items that have never been seen are added; nothing of a person's own is
+       touched, reordered or overwritten. */
+    const known = new Set(stored.map((i) => i.id));
+    const fresh = seedItems().filter((i) => !known.has(i.id));
     return {
-      items: (parsed.items ?? seedItems()).map(withSeedDetails),
+      items: fresh.length ? [...stored, ...fresh] : stored,
       boosts: parsed.boosts ?? [],
       seeded: true,
     };

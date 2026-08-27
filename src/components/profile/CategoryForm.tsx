@@ -500,13 +500,18 @@ export function CategoryForm({
   };
 
 
-  /* SAVING IS CONTINUOUS, briefly debounced so we do not write per keystroke. */
+  /*
+    A DRAFT IS NOT A PUBLICATION. Once a record exists, every keystroke keeps it
+    honest — but a brand new give is only ever created by the publish gesture
+    below, so pressing publish is the moment it becomes real.
+  */
   useEffect(() => {
-    if (!complete) return;
+    if (!complete || !liveId) return;
     const t = window.setTimeout(save, 600);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [complete, draft, want, note, side, photos, details, liveId]);
+
 
   /* THE CONFIRMATION STEPS ASIDE the moment the next thought starts. */
   useEffect(() => {

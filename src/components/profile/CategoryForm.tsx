@@ -232,6 +232,7 @@ export function CategoryForm({
   category,
   side: decidedSide,
   onDone,
+  onSeeInCommunity,
 }: {
   category: Category;
   /**
@@ -241,7 +242,10 @@ export function CategoryForm({
    */
   side?: BorrowSide;
   onDone: () => void;
+  /** STRAIGHT TO COMMUNI-G, scoped to my own, right after publishing. */
+  onSeeInCommunity?: () => void;
 }) {
+
   const me = useMyProfile();
   /* THE DRAFT SURVIVES LEAVING AND RELOADING — it is persisted, not held. */
   const stored = useRef(draftsStore.get(category)).current;
@@ -259,6 +263,9 @@ export function CategoryForm({
   const [problem, setProblem] = useState<string | null>(null);
   /** WHAT JUST WENT LIVE — said once, in the world's own voice, then gone. */
   const [live, setLive] = useState<string | null>(null);
+  /** WHERE GIVER ANSWERS — the publish line and whatever it says back. */
+  const outcome = useRef<HTMLDivElement | null>(null);
+
 
   /**
    * THE ONE RECORD THIS DRAFT IS ALREADY SAVED AS. Once the draft is complete
@@ -496,13 +503,18 @@ export function CategoryForm({
   };
 
 
-  /* SAVING IS CONTINUOUS, briefly debounced so we do not write per keystroke. */
+  /*
+    A DRAFT IS NOT A PUBLICATION. Once a record exists, every keystroke keeps it
+    honest — but a brand new give is only ever created by the publish gesture
+    below, so pressing publish is the moment it becomes real.
+  */
   useEffect(() => {
-    if (!complete) return;
+    if (!complete || !liveId) return;
     const t = window.setTimeout(save, 600);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [complete, draft, want, note, side, photos, details, liveId]);
+
 
   /* THE CONFIRMATION STEPS ASIDE the moment the next thought starts. */
   useEffect(() => {
@@ -531,20 +543,40 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, draft, want, note, side, photos, details, liveId]);
 
+  /** WHATEVER GIVER ANSWERS, YOU SEE IT. The outcome is brought into view. */
+  const showOutcome = () => {
+    window.requestAnimationFrame(() =>
+      outcome.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
+    );
+  };
+
   /**
-   * PUBLISH. The words were already being saved as they were typed — this is the
-   * moment a person SAYS SO, and hears back that it is live in communi-g. If the
-   * account gate answers "not yet", nothing is cleared: the draft stays intact.
+   * PUBLISH. The words were kept safe as they were typed — this is the moment a
+   * person SAYS SO, and hears back that it is live in communi-g. If the account
+   * gate answers "not yet", nothing is cleared: the draft stays intact.
    */
   const add = () => {
-    if (!draft.trim()) return;
+    if (full) {
+      setProblem(`you can have ${limit} at a time — remove one to add another.`);
+      haptics.warning();
+      showOutcome();
+      return;
+    }
+    if (!draft.trim()) {
+      setProblem(category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]);
+      haptics.warning();
+      showOutcome();
+      return;
+    }
     if (category === "trade" && !want.trim()) {
       setProblem("a trade has two sides. what would you like in return?");
       haptics.warning();
+      showOutcome();
       return;
     }
     if (!save()) {
       haptics.warning();
+      showOutcome();
       return;
     }
     setProblem(null);
@@ -557,10 +589,12 @@ export function CategoryForm({
     setDetails({});
     draftsStore.clear(category);
     haptics.light();
+    showOutcome();
     /* THE ONE MOMENT THE ASK MAKES SENSE: something is now live, so replies can
        arrive. Asked straight from this touch, and only ever once. */
     if (!notifyDecided()) void askToNotify();
   };
+
 
 
   /* BACK IS NOT THE SAVE BUTTON. It only flushes the pending debounce. */
@@ -1190,45 +1224,64 @@ export function CategoryForm({
               </div>
             ) : null}
 
-            {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice. */}
-            <button
-              type="button"
-              onClick={add}
-              disabled={broke}
-              className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
-              style={{ color: colour }}
-            >
-              {PUBLISH_LABEL[category === "borrow" ? side : category]}
-            </button>
-            {problem ? (
-              <p className="g-body" style={{ color: colour }}>
-                {problem}
-              </p>
-            ) : null}
           </div>
         )}
 
-        {live ? (
-          <div className="mt-6">
-            <p className="g-name" style={{ color: colour }}>
-              {live}
+        {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice, and
+            always the same place where giver answers back. */}
+        <div ref={outcome} className="mt-7 space-y-4">
+          <button
+            type="button"
+            onClick={add}
+            disabled={broke}
+            className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
+            style={{ color: colour }}
+          >
+            {PUBLISH_LABEL[category === "borrow" ? side : category]}
+          </button>
+
+          {problem ? (
+            <p className="g-body" style={{ color: colour }}>
+              {problem}
             </p>
-            {/* AND THE OBVIOUS NEXT MOVE, said plainly. */}
-            <button
-              type="button"
-              onClick={() => {
-                haptics.light();
-                setLive(null);
-              }}
-              className="mt-3 block text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
-              style={{ color: colour }}
-            >
-              {AGAIN_LABEL[category === "borrow" ? side : category]}
-            </button>
-          </div>
-        ) : (
-          <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
-        )}
+          ) : null}
+
+          {live ? (
+            <div>
+              <p className="g-name" style={{ color: colour }}>
+                {live}
+              </p>
+              {/* AND THE TWO OBVIOUS NEXT MOVES, said plainly. */}
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.light();
+                    setLive(null);
+                  }}
+                  className="text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
+                  style={{ color: colour }}
+                >
+                  {AGAIN_LABEL[category === "borrow" ? side : category]}
+                </button>
+                {onSeeInCommunity ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.light();
+                      onSeeInCommunity();
+                    }}
+                    className="text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
+                    style={{ color: "var(--person-self-community)" }}
+                  >
+                    see it in communi-g
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
 
       </div>
 

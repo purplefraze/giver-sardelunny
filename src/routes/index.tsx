@@ -250,7 +250,12 @@ function Index() {
    * browsing opens an activity, an activity opens a conversation, and only a
    * conversation both people verify ever settles sparks.
    */
-  const [browse, setBrowse] = useState<{ type: ItemType | null } | null>(null);
+  const [browse, setBrowse] = useState<{
+    type: ItemType | null;
+    /** MINE FIRST when arriving straight from publishing my own. */
+    mine?: boolean;
+  } | null>(null);
+
   /**
    * SEARCH IS THE TOP LOOP, AND ONLY ON MY OWN G. It opens already scoped to the
    * toggle's world, so the content type is never asked for twice.
@@ -810,7 +815,13 @@ function Index() {
                       category={editor.category}
                       {...(editor.side ? { side: editor.side } : {})}
                       onDone={() => setEditor(null)}
+                      onSeeInCommunity={() => {
+                        const type = editor.category as ItemType;
+                        setEditor(null);
+                        setBrowse({ type, mine: true });
+                      }}
                     />
+
 
                   ) : null,
               },
@@ -892,6 +903,8 @@ function Index() {
                 children: browse ? (
                   <CommunityFeed
                     initialType={browse.type}
+                    initialScope={browse.mine ? "mine" : "everyone"}
+
                     onOpen={(itemId) => setDetail(itemId)}
                     onOpenProfile={(ownerId) => {
                       setPersonFocus(null);

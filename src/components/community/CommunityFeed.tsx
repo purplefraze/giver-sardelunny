@@ -56,12 +56,15 @@ function headlineSize(text: string): string {
 
 export function CommunityFeed({
   initialType = null,
+  initialScope = "everyone",
   onOpen,
   onOpenProfile,
   onEditMine,
   onClose,
 }: {
   initialType?: ItemType | null;
+  /** OPENED ON MY OWN GIVES when arriving straight from publishing one. */
+  initialScope?: Scope;
   onOpen: (itemId: string) => void;
   /** THE PERSON IS THEIR OWN DESTINATION. */
   onOpenProfile?: (ownerId: string) => void;
@@ -73,7 +76,8 @@ export function CommunityFeed({
   const links = useConnections();
   const [type, setType] = useState<ItemType | null>(initialType);
   const [sort, setSort] = useState<Sort>("nearby");
-  const [scope, setScope] = useState<Scope>("everyone");
+  const [scope, setScope] = useState<Scope>(initialScope);
+
   /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside Communi-G. */
   const [query, setQuery] = useState("");
 

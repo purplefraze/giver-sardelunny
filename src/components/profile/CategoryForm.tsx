@@ -80,6 +80,29 @@ const CATEGORY_TAGLINE: Partial<Record<Category, string>> = {
   give: "give what you can. make someone happy.",
 };
 
+/**
+ * THE MOMENT OF PUBLISHING, IN WORDS. "+ add a give" told nobody that the
+ * community was about to see it — this does, in the world's own voice.
+ */
+const PUBLISH_LABEL: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
+  give: "let’s giver!",
+  wish: "make my wish!",
+  trade: "let’s trade!",
+  borrow: "let’s borrow!",
+  lend: "let’s lend!",
+};
+
+/** WHAT CAME BACK. One line, then it steps out of the way. */
+const PUBLISHED_SAY: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
+  give: "it’s live in communi-g",
+  wish: "your wish is live in communi-g",
+  trade: "your trade is live in communi-g",
+  borrow: "your borrow is live in communi-g",
+  lend: "your lend is live in communi-g",
+};
+
+
+
 
 /** BORROWING HAS TWO SIDES, and giver asks which one you mean. */
 const SIDE_ASK: Record<BorrowSide, string> = {

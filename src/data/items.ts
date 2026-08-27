@@ -752,6 +752,26 @@ function reindex(items: Item[], ownerId: string, type: ItemType): Item[] {
 }
 
 export const itemsStore = {
+  /**
+   * SHARED DEV COMMUNITY. Items created by other real testers arrive from the
+   * database and are merged into this one collection, keyed by their cloud id,
+   * so community, profiles and detail pages read them exactly like any other
+   * item. Nothing is duplicated: a remote item exists once, here.
+   */
+  mergeRemote(remote: Item[]) {
+    const s = ensure();
+    const incoming = new Map(remote.map((i) => [i.id, i]));
+    const kept = s.items.filter((i) => !i.id.startsWith("cloud:") || incoming.has(i.id));
+    const merged = kept.map((i) => (incoming.has(i.id) ? { ...i, ...incoming.get(i.id)! } : i));
+    const known = new Set(merged.map((i) => i.id));
+    const added = remote.filter((i) => !known.has(i.id));
+    if (!added.length && merged.length === s.items.length) {
+      const same = merged.every((i, idx) => i === s.items[idx]);
+      if (same) return;
+    }
+    commit({ ...s, items: [...merged, ...added] });
+  },
+
   subscribe(listener: () => void) {
     if (!hydrated) {
       hydrated = true;

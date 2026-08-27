@@ -26,6 +26,7 @@ import { itemLine } from "@/data/items";
 import { answeredStatements, pronounsFrom } from "@/data/prompts";
 import { myCompliment, wallOf, wallStore } from "@/data/wall";
 import { useWall } from "@/hooks/use-wall";
+import { saveCompliment } from "@/data/cloud/wall-sync";
 
 
 
@@ -136,6 +137,7 @@ export function FullProfile({
   const wall = wallOf(walls, member.id);
   const [compliment, setCompliment] = useState("");
   const [saidIt, setSaidIt] = useState(false);
+  const [wallProblem, setWallProblem] = useState("");
 
 
   /*
@@ -444,8 +446,10 @@ export function FullProfile({
                   type="button"
                   onClick={() => {
                     buzz();
-                    wallStore.say(member.id, ME_ID, compliment);
-                    setSaidIt(true);
+                    setWallProblem("");
+                    void saveCompliment(member.id, compliment)
+                      .then(() => setSaidIt(true))
+                      .catch((error) => setWallProblem(error instanceof Error ? error.message.toLowerCase() : "that didn’t save"));
                   }}
                   disabled={!compliment.trim()}
                   className="mt-2 text-[12px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4 disabled:opacity-30"
@@ -453,6 +457,7 @@ export function FullProfile({
                 >
                   {saidIt ? "said" : "leave it on their wall"}
                 </button>
+                {wallProblem ? <p className="g-body mt-2">{wallProblem}</p> : null}
               </div>
             ) : null}
 

@@ -39,6 +39,7 @@ async function load() {
   const { data } = await supabase
     .from("notifications")
     .select("*")
+    .eq("profile_id", profileId)
     .order("created_at", { ascending: false })
     .limit(100);
   commit({

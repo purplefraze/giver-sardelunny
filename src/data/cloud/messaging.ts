@@ -30,6 +30,7 @@ import { notify } from "@/data/cloud/notifications";
 
 export type CloudConversation = {
   id: string;
+  connectionId: string | null;
   itemId: string | null;
   aId: string;
   bId: string;
@@ -102,9 +103,10 @@ async function load() {
   if (!profileId) return;
   const { data: convs } = await supabase
     .from("conversations")
-    .select("id, item_id, a_id, b_id, last_message_at");
+    .select("id, connection_id, item_id, a_id, b_id, last_message_at");
   const conversations: CloudConversation[] = (convs ?? []).map((c) => ({
     id: c.id,
+    connectionId: c.connection_id,
     itemId: c.item_id,
     aId: c.a_id,
     bId: c.b_id,
@@ -158,14 +160,14 @@ export async function openCloudConversation(
   const { data } = await supabase
     .from("conversations")
     .insert({ a_id: me, b_id: otherProfileId, item_id: itemId })
-    .select("id, item_id, a_id, b_id, last_message_at")
+    .select("id, connection_id, item_id, a_id, b_id, last_message_at")
     .maybeSingle();
   if (!data) return null;
   commit({
     ...state,
     conversations: [
       ...state.conversations,
-      { id: data.id, itemId: data.item_id, aId: data.a_id, bId: data.b_id, lastMessageAt: null },
+      { id: data.id, connectionId: data.connection_id, itemId: data.item_id, aId: data.a_id, bId: data.b_id, lastMessageAt: null },
     ],
   });
   return data.id;
@@ -230,6 +232,8 @@ export async function markCloudRead(conversationId: string) {
 
 /** Make sure the conversation behind a local connection exists in the cloud. */
 async function cloudConversationFor(localConnectionId: string): Promise<string | null> {
+  const durable = state.conversations.find((conversation) => conversation.connectionId === localConnectionId);
+  if (durable) return durable.id;
   const mapped = pairs.conv[localConnectionId];
   if (mapped) return mapped;
   const s = connectionsStore.get();
@@ -275,7 +279,9 @@ async function ingestIncoming() {
     const fromLocal = localIdForProfile(m.fromProfileId);
     if (!fromLocal) continue;
 
-    let localConnection = localForCloudConv(conv.id);
+    let localConnection = conv.connectionId && connectionsStore.get().connections.some((connection) => connection.id === conv.connectionId)
+      ? conv.connectionId
+      : localForCloudConv(conv.id);
     if (!localConnection) {
       const localItem = conv.itemId ? localItemIdFor(conv.itemId) : null;
       if (conv.itemId && !localItem) {

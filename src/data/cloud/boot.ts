@@ -11,6 +11,7 @@ import { startItemsSync } from "@/data/cloud/items-sync";
 import { startMessaging } from "@/data/cloud/messaging";
 import { startNotifications } from "@/data/cloud/notifications";
 import { startConnectionsSync } from "@/data/cloud/connections-sync";
+import { startWallSync } from "@/data/cloud/wall-sync";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
 
@@ -83,6 +84,7 @@ export function bootCloud() {
   startMessaging();
   startNotifications();
   startConnectionsSync();
+  startWallSync();
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   const schedule = () => {

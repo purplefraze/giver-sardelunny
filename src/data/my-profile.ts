@@ -243,12 +243,25 @@ function writePerson(next: Person) {
     window.localStorage.setItem(KEY, JSON.stringify(next));
     return next;
   } catch {
-    const withoutPhoto = { ...next, photo: null };
+    /*
+      THE CHOSEN CIRCLE IS THE PHOTO, so it is the LAST thing to go. The
+      untouched original only exists so "reposition" can reopen; dropping it
+      first frees most of the room while the picture the person just chose
+      still applies.
+    */
+    const lighter = { ...next, photoSource: null, photoCrop: null };
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(withoutPhoto));
-      return withoutPhoto;
+      window.localStorage.setItem(KEY, JSON.stringify(lighter));
+      return lighter;
     } catch {
-      return next;
+      const withoutPhoto = { ...lighter, photo: null };
+      try {
+        window.localStorage.setItem(KEY, JSON.stringify(withoutPhoto));
+        /* IN MEMORY THE PHOTO STILL STANDS for this session. */
+        return { ...next, photoSource: null, photoCrop: null };
+      } catch {
+        return next;
+      }
     }
   }
 }
@@ -256,6 +269,25 @@ function writePerson(next: Person) {
 function savePerson(next: Person) {
   person = writePerson(withDateOnlyFields(next));
   invalidate();
+}
+
+/**
+ * THE CHOSEN CIRCLE, GIVEN A HOME. Best effort and never in the way: the photo
+ * already applies locally, and this only swaps the bytes for a link so other
+ * people can load it and the phone keeps its storage.
+ */
+async function hostPhoto(cropped: string) {
+  try {
+    const { dataUrlToBlob, uploadMedia } = await import("@/lib/media");
+    const blob = dataUrlToBlob(cropped);
+    if (!blob) return;
+    const hosted = await uploadMedia(blob, { extension: "jpg" });
+    if (!hosted) return;
+    if (person.photo !== cropped) return;
+    savePerson({ ...person, photo: hosted });
+  } catch {
+    /* Signed out, offline, or storage unavailable: the local circle stands. */
+  }
 }
 
 function hydrate() {
@@ -438,6 +470,14 @@ export const myProfileStore = {
   setPhoto(cropped: string, source: string, crop: PhotoCrop) {
     hydrate();
     savePerson({ ...person, photo: cropped, photoSource: source, photoCrop: crop });
+    /*
+      A PICTURE OTHER PEOPLE CAN SEE. The circle applies instantly from the
+      bytes we already have; hosting it is a quiet upgrade that also keeps
+      device storage small. If it can't happen, nothing changes.
+    */
+    if (typeof window !== "undefined" && !/^https?:\/\//.test(cropped)) {
+      void hostPhoto(cropped);
+    }
   },
 
 

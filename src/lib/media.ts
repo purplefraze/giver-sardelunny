@@ -59,7 +59,7 @@ export async function uploadMedia(
 }
 
 /** A data URL back to bytes, so we can upload what we already shrank. */
-function dataUrlToBlob(dataUrl: string): Blob | null {
+export function dataUrlToBlob(dataUrl: string): Blob | null {
   try {
     const [head, body] = dataUrl.split(",");
     if (!head || !body) return null;

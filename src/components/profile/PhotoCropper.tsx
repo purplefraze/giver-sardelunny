@@ -154,7 +154,7 @@ export function PhotoCropper({
 
   return (
     <div
-      className="absolute inset-0 z-40 flex flex-col items-center justify-center"
+      className="fixed inset-0 z-[70] flex flex-col items-center justify-center overflow-y-auto py-10"
       style={{ background: "var(--giver-paper, #fff)", color: "var(--world-ink)" }}
     >
       <p className="g-heading" style={{ color: colour }}>

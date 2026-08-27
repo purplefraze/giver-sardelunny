@@ -243,12 +243,25 @@ function writePerson(next: Person) {
     window.localStorage.setItem(KEY, JSON.stringify(next));
     return next;
   } catch {
-    const withoutPhoto = { ...next, photo: null };
+    /*
+      THE CHOSEN CIRCLE IS THE PHOTO, so it is the LAST thing to go. The
+      untouched original only exists so "reposition" can reopen; dropping it
+      first frees most of the room while the picture the person just chose
+      still applies.
+    */
+    const lighter = { ...next, photoSource: null, photoCrop: null };
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(withoutPhoto));
-      return withoutPhoto;
+      window.localStorage.setItem(KEY, JSON.stringify(lighter));
+      return lighter;
     } catch {
-      return next;
+      const withoutPhoto = { ...lighter, photo: null };
+      try {
+        window.localStorage.setItem(KEY, JSON.stringify(withoutPhoto));
+        /* IN MEMORY THE PHOTO STILL STANDS for this session. */
+        return { ...next, photoSource: null, photoCrop: null };
+      } catch {
+        return next;
+      }
     }
   }
 }

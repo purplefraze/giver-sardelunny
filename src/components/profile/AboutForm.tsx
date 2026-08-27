@@ -268,29 +268,15 @@ export function AboutForm({
               show={showPass}
               placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
             />
-            {pass ? (
-              <div className="space-y-1">
-                {PASSWORD_RULES.map((rule) => {
-                  const ok = rule.test(pass);
-                  return (
-                    <p
-                      key={rule.label}
-                      className="g-meta"
-                      style={{ color: ok ? "var(--mode-give)" : undefined, opacity: ok ? 0.9 : 0.5 }}
-                    >
-                      {ok ? "✓" : "·"} {rule.label}
-                    </p>
-                  );
-                })}
-                <Secret
-                  label="again, exactly"
-                  value={again}
-                  onChange={setAgain}
-                  show={showPass}
-                  placeholder="the same password"
-                />
-              </div>
-            ) : null}
+            {/* THE RULES ARE NEVER A SURPRISE, and the second field is never hidden. */}
+            <PasswordRules pass={pass} />
+            <Secret
+              label="again, exactly"
+              value={again}
+              onChange={setAgain}
+              show={showPass}
+              placeholder="the same password"
+            />
             <div className="flex items-baseline gap-5">
               <button
                 type="button"
@@ -303,20 +289,11 @@ export function AboutForm({
               >
                 {showPass ? "hide" : "show"}
               </button>
-              <span className="g-meta">
-                {!pass && passwordSet
-                  ? "password saved"
-                  : !pass
-                    ? ""
-                    : matches
-                      ? passwordStrongEnough(pass)
-                        ? "saved"
-                        : "nearly — see above"
-                      : "these two don’t match yet"}
-              </span>
+              <PasswordState pass={pass} matches={matches} passwordSet={passwordSet} />
             </div>
           </div>
         ) : null}
+
 
         {/* MY SETTINGS — quiet, and the only home of a password change. */}
         {!onboarding ? (

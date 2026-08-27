@@ -257,6 +257,7 @@ const BASE_MEMBERS: Member[] = [
         "a trailer for one weekend",
         "someone to teach me to sing",
         "help sanding a boat",
+        "a spare onewheel for the playa",
       ],
       give: [
         "stage lighting for your party",

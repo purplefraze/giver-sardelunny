@@ -65,6 +65,7 @@ export function AboutForm({
   const [email, setEmail] = useState("");
   const [accountMessage, setAccountMessage] = useState("");
   const [joining, setJoining] = useState(false);
+  const [returning, setReturning] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const photo = useProfilePhoto();
   const [photoMenu, setPhotoMenu] = useState(false);
@@ -109,7 +110,7 @@ export function AboutForm({
 
   const save = async () => {
     if (!session.userId) {
-      if (handleState.state !== "free") {
+      if (!returning && handleState.state !== "free") {
         setAccountMessage("choose an available @name first.");
         return;
       }
@@ -124,6 +125,20 @@ export function AboutForm({
       setJoining(true);
       setAccountMessage("making your giver…");
       const credentials = { email: email.trim().toLowerCase(), password: pass };
+      if (returning) {
+        const signedIn = await supabase.auth.signInWithPassword(credentials);
+        if (signedIn.error) {
+          setJoining(false);
+          setAccountMessage("that email and password didn’t match. try again or reset it.");
+          return;
+        }
+        await sessionStore.refresh();
+        setAccountMessage("welcome back. your giver is here.");
+        setJoining(false);
+        buzz();
+        onDone();
+        return;
+      }
       const signedUp = await supabase.auth.signUp(credentials);
       if (signedUp.error && !/already/i.test(signedUp.error.message)) {
         setJoining(false);
@@ -331,6 +346,10 @@ export function AboutForm({
         {/* A PASSWORD IS ASKED FOR ONCE, while the account is being made. */}
         {onboarding && !session.userId ? (
           <div className="g-rule mt-10 space-y-5 pt-6">
+            <div className="flex gap-6">
+              <button type="button" onClick={() => setReturning(false)} className="g-meta" style={{ color: !returning ? "var(--giver-me)" : undefined, opacity: !returning ? 1 : 0.45 }}>i’m new</button>
+              <button type="button" onClick={() => setReturning(true)} className="g-meta" style={{ color: returning ? "var(--giver-me)" : undefined, opacity: returning ? 1 : 0.45 }}>i already joined</button>
+            </div>
             <label className="block">
               <span className="g-meta" style={{ color: "var(--giver-me)" }}>your email</span>
               <input type="email" required autoComplete="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="g-name mt-1 w-full border-b border-current/20 bg-transparent pb-2 outline-none" />
@@ -367,6 +386,7 @@ export function AboutForm({
               </button>
               <PasswordState pass={pass} matches={matches} passwordSet={passwordSet} />
             </div>
+            {returning ? <button type="button" className="g-body underline underline-offset-4" onClick={() => void supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/reset-password` }).then(() => setAccountMessage("password link sent to your email"))}>forgot password?</button> : null}
             {accountMessage ? <p className="g-body" style={{ color: "var(--giver-me)" }}>{accountMessage}</p> : null}
           </div>
         ) : null}

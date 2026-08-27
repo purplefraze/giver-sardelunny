@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useDirectory, useSession, useCloudMessages, useNotifications } from "@/hooks/use-session";
@@ -52,6 +52,7 @@ function AdminConsole() {
   const [copied, setCopied] = useState<string | null>(null);
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [reply, setReply] = useState("");
+  const activity = notificationsStore.get().list.slice(0, 12);
 
   const loadInvites = () =>
     void supabase
@@ -122,8 +123,6 @@ function AdminConsole() {
     messages.messages.filter(
       (m) => m.conversationId === conversationId && !m.readAt && !sampleIds.has(m.fromProfileId),
     ).length;
-
-  const activity = useMemo(() => notificationsStore.get().list.slice(0, 12), [messages]);
 
   return (
     <main className="g-page min-h-screen bg-giver-paper pb-24 text-giver-ink">

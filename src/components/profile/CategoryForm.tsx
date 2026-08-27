@@ -1224,45 +1224,64 @@ export function CategoryForm({
               </div>
             ) : null}
 
-            {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice. */}
-            <button
-              type="button"
-              onClick={add}
-              disabled={broke}
-              className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
-              style={{ color: colour }}
-            >
-              {PUBLISH_LABEL[category === "borrow" ? side : category]}
-            </button>
-            {problem ? (
-              <p className="g-body" style={{ color: colour }}>
-                {problem}
-              </p>
-            ) : null}
           </div>
         )}
 
-        {live ? (
-          <div className="mt-6">
-            <p className="g-name" style={{ color: colour }}>
-              {live}
+        {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice, and
+            always the same place where giver answers back. */}
+        <div ref={outcome} className="mt-7 space-y-4">
+          <button
+            type="button"
+            onClick={add}
+            disabled={broke}
+            className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
+            style={{ color: colour }}
+          >
+            {PUBLISH_LABEL[category === "borrow" ? side : category]}
+          </button>
+
+          {problem ? (
+            <p className="g-body" style={{ color: colour }}>
+              {problem}
             </p>
-            {/* AND THE OBVIOUS NEXT MOVE, said plainly. */}
-            <button
-              type="button"
-              onClick={() => {
-                haptics.light();
-                setLive(null);
-              }}
-              className="mt-3 block text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
-              style={{ color: colour }}
-            >
-              {AGAIN_LABEL[category === "borrow" ? side : category]}
-            </button>
-          </div>
-        ) : (
-          <p className="mt-9 g-meta opacity-35">everything saves as you go</p>
-        )}
+          ) : null}
+
+          {live ? (
+            <div>
+              <p className="g-name" style={{ color: colour }}>
+                {live}
+              </p>
+              {/* AND THE TWO OBVIOUS NEXT MOVES, said plainly. */}
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.light();
+                    setLive(null);
+                  }}
+                  className="text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
+                  style={{ color: colour }}
+                >
+                  {AGAIN_LABEL[category === "borrow" ? side : category]}
+                </button>
+                {onSeeInCommunity ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.light();
+                      onSeeInCommunity();
+                    }}
+                    className="text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
+                    style={{ color: "var(--person-self-community)" }}
+                  >
+                    see it in communi-g
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
 
       </div>
 

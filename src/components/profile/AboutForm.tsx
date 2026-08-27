@@ -330,7 +330,6 @@ export function AboutForm({
                   value={pass}
                   onChange={setPass}
                   onBlur={commitPassword}
-              onBlur={commitPassword}
                   show={showPass}
                   placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
                 />
@@ -340,7 +339,6 @@ export function AboutForm({
                   value={again}
                   onChange={setAgain}
                   onBlur={commitPassword}
-              onBlur={commitPassword}
                   show={showPass}
                   placeholder="the same password"
                 />

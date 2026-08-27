@@ -9,6 +9,7 @@ import {
   itemLine,
   type ItemType,
 } from "@/data/items";
+import { itemsStore } from "@/data/items";
 import { activityStatus } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
@@ -34,6 +35,9 @@ type Sort = "nearby" | "latest" | "popular";
 
 const SORTS: Sort[] = ["nearby", "latest", "popular"];
 
+/** WHOSE ACTIVITY IS SHOWING. My own gives belong in communi-g too. */
+type Scope = "everyone" | "mine";
+
 /** GIVE COMES FIRST. Community leads with generosity, then asks. */
 const FILTERS: ItemType[] = ["give", "wish", "trade", "borrow"];
 
@@ -54,25 +58,30 @@ export function CommunityFeed({
   initialType = null,
   onOpen,
   onOpenProfile,
+  onEditMine,
   onClose,
 }: {
   initialType?: ItemType | null;
   onOpen: (itemId: string) => void;
   /** THE PERSON IS THEIR OWN DESTINATION. */
   onOpenProfile?: (ownerId: string) => void;
+  /** MY OWN POST, REOPENED WHERE IT WAS WRITTEN. */
+  onEditMine?: (itemId: string) => void;
   onClose: () => void;
 }) {
   const items = useItems();
   const links = useConnections();
   const [type, setType] = useState<ItemType | null>(initialType);
   const [sort, setSort] = useState<Sort>("nearby");
+  const [scope, setScope] = useState<Scope>("everyone");
   /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside Communi-G. */
   const [query, setQuery] = useState("");
 
   const needle = query.trim().toLowerCase();
+  /* MY PUBLISHED GIVES ARE PART OF THE COMMUNITY, not hidden from their author. */
   const list = communityItems(items, {
     ...(type ? { type } : {}),
-    excludeOwnerId: ME_ID,
+    ...(scope === "mine" ? { ownerId: ME_ID } : {}),
   })
     .filter((item) => (needle ? itemLine(item).toLowerCase().includes(needle) : true))
     .sort((a, b) => {
@@ -126,6 +135,26 @@ export function CommunityFeed({
           >
             {t}
           </button>
+        ))}
+      </div>
+
+      {/* WHOSE — EVERYONE · MY GIVES. Mine are in here, never filtered out. */}
+      <div className="mt-3 flex items-baseline gap-3 text-[11px] font-black lowercase tracking-[0.22em]">
+        {(["everyone", "mine"] as Scope[]).map((s, i) => (
+          <span key={s} className="flex items-baseline gap-3">
+            {i === 0 ? null : <span className="opacity-30">·</span>}
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                setScope(s);
+              }}
+              className={scope === s ? "opacity-100" : "opacity-35"}
+              style={scope === s ? { color: "var(--person-self-community)" } : undefined}
+            >
+              {s === "mine" ? "my gives" : "everyone"}
+            </button>
+          </span>
         ))}
       </div>
 
@@ -196,6 +225,32 @@ export function CommunityFeed({
                 </button>
                 {facts.length ? ` · ${facts.join(" · ")}` : ""}
               </p>
+
+              {/* MY OWN POST IS MINE TO CHANGE OR TAKE DOWN, right here. */}
+              {item.ownerId === ME_ID ? (
+                <div className="mt-2 flex items-baseline gap-5 text-[10px] font-black lowercase tracking-[0.24em]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      buzz();
+                      onEditMine?.(item.id);
+                    }}
+                    style={{ color: "var(--person-self-community)" }}
+                  >
+                    edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      buzz();
+                      itemsStore.remove(item.id);
+                    }}
+                    className="opacity-45"
+                  >
+                    remove
+                  </button>
+                </div>
+              ) : null}
             </li>
           );
         })}

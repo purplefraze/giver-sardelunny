@@ -442,23 +442,26 @@ function PasswordState({
   passwordSet: boolean;
 }) {
   const saved = matches && passwordStrongEnough(pass);
+  /* THE MISSING THING IS NAMED, never left as "see above". */
+  const missing = PASSWORD_RULES.find((rule) => !rule.test(pass));
   const say = !pass
     ? passwordSet
       ? "password saved"
       : "not saved yet"
     : saved
-      ? "saved"
-      : !passwordStrongEnough(pass)
-        ? "not saved yet — see above"
+      ? "password saved"
+      : missing
+        ? `not saved yet — needs ${missing.label}`
         : "not saved yet — these two don’t match";
   return (
     <span
-      className="g-meta"
+      className="g-body"
       style={{ color: saved || (!pass && passwordSet) ? "var(--mode-give)" : undefined }}
     >
       {say}
     </span>
   );
+
 }
 
 

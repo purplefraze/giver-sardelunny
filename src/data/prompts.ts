@@ -134,6 +134,52 @@ function clean(raw: string) {
 }
 
 /**
+ * WORDS THAT CARRY NO MEANING OF THEIR OWN. Used only to compare an answer's
+ * opening against the question it was given, never to rewrite what was said.
+ */
+const STOP = new Set([
+  "what", "whats", "what's", "what’s", "which", "who", "that", "this", "there",
+  "is", "are", "was", "were", "be", "been", "am", "do", "does", "did", "if",
+  "could", "would", "will", "can", "the", "a", "an", "of", "for", "on", "in",
+  "at", "to", "and", "or", "but", "with", "you", "your", "yours", "youre",
+  "you’re", "i", "i’m", "im", "me", "my", "mine", "myself", "it", "its", "it’s",
+  "most", "think", "some", "something", "thing", "things", "one", "have", "has",
+  "had", "get", "gets", "really", "very", "about", "like", "any", "rest",
+]);
+
+const words = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9’' ]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+const meaningful = (text: string) => words(text).filter((w) => !STOP.has(w));
+
+/**
+ * THE QUESTION ECHOED BACK. People often answer by repeating the question:
+ * "what makes me happy is my dogs", "my dream is to sail". Whatever the answer
+ * shares with its own question is dropped, so ONE clean sentence is rebuilt
+ * from what the person actually added.
+ */
+function stripEcho(p: Prompt, answer: string) {
+  const asked = new Set(meaningful(p.question));
+  /* MULTIPLE COPULAS: take the LAST echoed opening, so nested echoes go too. */
+  let said = answer;
+  for (let pass = 0; pass < 3; pass += 1) {
+    const m = /^(.{0,70}?)[,\s]+\b(is|are|was|would be|i['’]d be|i would be|it['’]s|its)\b[,\s]+(.+)$/i.exec(
+      said,
+    );
+    if (!m) break;
+    const lead = meaningful(m[1] ?? "");
+    /* Only an ECHO is removed: every word of the opening came from the question. */
+    if (!lead.length || !lead.every((w) => asked.has(w))) break;
+    said = (m[3] ?? "").trim();
+  }
+  return said;
+}
+
+/**
  * ALREADY A WHOLE THOUGHT? Then it is left alone. Either the prompt recognises
  * its own verb inside the answer, or the answer plainly speaks in the first
  * person about itself ("my dogs light me up") — in both cases wrapping it in a
@@ -141,19 +187,34 @@ function clean(raw: string) {
  */
 function isWhole(p: Prompt, answer: string) {
   if (p.whole?.test(answer)) return true;
-  const words = answer.split(" ");
-  return words.length >= 3 && /(^|\s)(i|i’m|i'm|me|my|mine)(\s|$)/.test(answer);
+  const said = words(answer);
+  /* A SENTENCE, NOT A FRAGMENT: it needs a verb of its own to stand alone. */
+  const hasVerb = /\b(is|are|was|makes|make|lights?|gets?|want|wants|love|loves|could|would|will|have|has|do|does|talk|talks|eat|eats|look|looks|dream|dreams)\b/.test(
+    answer,
+  );
+  return said.length >= 3 && hasVerb && /(^|\s)(i|i’m|i'm|me|my|mine)(\s|$)/.test(answer);
 }
 
 /** A sentence always ends. Question marks and exclamations are respected. */
 const finish = (line: string) => (/[.?!]$/.test(line) ? line : `${line}.`);
 
+/**
+ * NOTHING IS EVER SAID TWICE. Any phrase that ended up repeated by the rebuild
+ * (or by the person) is collapsed to one.
+ */
+function dedupe(line: string) {
+  let out = line.replace(/\b([a-z’' ]{5,40}?)\s+\1\b/gi, "$1");
+  out = out.replace(/\s{2,}/g, " ").replace(/\s+([.,!?])/g, "$1");
+  return out.trim();
+}
+
 /** MY OWN VOICE: "my dogs light me up." or "giraffes make me happy." */
 export function mineStatement(p: Prompt, raw: string) {
-  const answer = clean(raw);
+  const answer = stripEcho(p, clean(raw));
   if (!answer) return "";
-  return finish(isWhole(p, answer) ? answer : p.mine(answer));
+  return dedupe(finish(isWhole(p, answer) ? answer : p.mine(answer)));
 }
+
 
 /** THE SAME THOUGHT, SAID ABOUT SOMEBODY ELSE, in their own pronouns. */
 export function theirStatement(p: Prompt, raw: string, name: string, pr: Pronouns) {

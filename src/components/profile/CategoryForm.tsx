@@ -232,6 +232,7 @@ export function CategoryForm({
   category,
   side: decidedSide,
   onDone,
+  onSeeInCommunity,
 }: {
   category: Category;
   /**
@@ -241,7 +242,10 @@ export function CategoryForm({
    */
   side?: BorrowSide;
   onDone: () => void;
+  /** STRAIGHT TO COMMUNI-G, scoped to my own, right after publishing. */
+  onSeeInCommunity?: () => void;
 }) {
+
   const me = useMyProfile();
   /* THE DRAFT SURVIVES LEAVING AND RELOADING — it is persisted, not held. */
   const stored = useRef(draftsStore.get(category)).current;

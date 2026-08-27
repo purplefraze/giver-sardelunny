@@ -205,6 +205,21 @@ function settle(c: Connection): Connection {
 }
 
 export const connectionsStore = {
+  mergeCloud(connections: Connection[]) {
+    const s = ensure();
+    const cloudIds = new Set(connections.map((connection) => connection.id));
+    const localOnly = s.connections.filter((connection) => !/^[0-9a-f-]{36}$/i.test(connection.id) && !cloudIds.has(connection.id));
+    const past: PastConnection[] = connections.filter((connection) => connection.state === "verified").map((connection) => ({
+      id: `past:${connection.id}`,
+      connectionId: connection.id,
+      itemId: connection.itemId,
+      type: connection.type,
+      withId: otherParty(connection),
+      text: itemsStore.get().items.find((item) => item.id === connection.itemId)?.text ?? "a giver connection",
+      at: connection.settledAt ?? connection.updatedAt,
+    }));
+    commit({ ...s, connections: [...connections, ...localOnly], past });
+  },
   subscribe(listener: () => void) {
     ensure();
     listeners.add(listener);

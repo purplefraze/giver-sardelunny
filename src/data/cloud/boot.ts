@@ -10,6 +10,7 @@ import { directoryStore } from "@/data/cloud/directory";
 import { startItemsSync } from "@/data/cloud/items-sync";
 import { startMessaging } from "@/data/cloud/messaging";
 import { startNotifications } from "@/data/cloud/notifications";
+import { startConnectionsSync } from "@/data/cloud/connections-sync";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
 
@@ -81,6 +82,7 @@ export function bootCloud() {
   startItemsSync();
   startMessaging();
   startNotifications();
+  startConnectionsSync();
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   const schedule = () => {

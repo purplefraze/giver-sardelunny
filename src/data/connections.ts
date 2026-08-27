@@ -338,7 +338,54 @@ export const connectionsStore = {
    * CANCEL. The connection ends; the ACTIVITY DOES NOT. It stays active so
    * another giver can help, and nobody is paid.
    */
+  /**
+   * SHARED DEV BUILD: a conversation that started on somebody else's device.
+   * The connection is the same concept, simply learned about from the database
+   * rather than created here. Returns the local connection id.
+   */
+  ingest(input: {
+    itemId: string;
+    type: ItemType;
+    ownerId: string;
+    helperId: string;
+  }): string {
+    const s = ensure();
+    const existing = s.connections.find(
+      (c) =>
+        c.itemId === input.itemId &&
+        c.ownerId === input.ownerId &&
+        c.helperId === input.helperId,
+    );
+    if (existing) return existing.id;
+    const now = Date.now();
+    const connection: Connection = {
+      id: uid(),
+      itemId: input.itemId,
+      type: input.type,
+      ownerId: input.ownerId,
+      helperId: input.helperId,
+      state: "connecting",
+      confirmedBy: [],
+      ...(input.type === "borrow" ? { handedOver: false, returned: false } : {}),
+      createdAt: now,
+      updatedAt: now,
+    };
+    commit({ ...s, connections: [...s.connections, connection] });
+    return connection.id;
+  },
+
+  /** A MESSAGE THAT ARRIVED FROM SOMEBODY ELSE. Never re-sent to the cloud. */
+  receive(connectionId: string, fromId: string, text: string, at: number) {
+    const s = ensure();
+    if (!s.connections.some((c) => c.id === connectionId)) return;
+    if (s.messages.some((m) => m.connectionId === connectionId && m.fromId === fromId && m.at === at))
+      return;
+    const message: Message = { id: uid(), connectionId, fromId, text, at };
+    commit({ ...s, messages: [...s.messages, message].sort((a, b) => a.at - b.at) });
+  },
+
   cancel(connectionId: string) {
+
     const s = ensure();
     commit({
       ...s,

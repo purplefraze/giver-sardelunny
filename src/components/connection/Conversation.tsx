@@ -11,7 +11,7 @@ import {
   otherParty,
 } from "@/data/connections";
 
-import { demoReply } from "@/data/demo-replies";
+import { demoReply, demoRepliesStore, SAMPLE_CONFIRMS } from "@/data/demo-replies";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
 import { useMyProfile } from "@/hooks/use-my-profile";

@@ -165,24 +165,23 @@ const hex = (bytes: Uint8Array) =>
 export type AccountFacts = {
   username: string;
   birthday: string;
-  passwordSet: boolean;
   /**
-   * A REAL SIGNED-IN ACCOUNT ALREADY HAS A PASSWORD. In the shared dev build the
-   * way in is an email and a password, so a signed-in person is never asked to
-   * invent a second local one before they may publish.
+   * KEPT FOR THE PROFILE'S OWN USE. A password is how a person gets back IN;
+   * it is not a condition of giving, so the gate below never reads it.
    */
+  passwordSet?: boolean;
   signedIn?: boolean;
 };
 
 
 export type Eligibility =
   | { ok: true }
-  | { ok: false; reason: "handle" | "birthday" | "underage" | "password"; say: string };
+  | { ok: false; reason: "handle" | "birthday" | "underage"; say: string };
 
 /**
- * THE ONE GATE. A give only ever becomes real when the account behind it is
- * complete and the person is 18 or older. Nothing here ever touches a draft:
- * the answer is only ever "not yet", never "gone".
+ * THE ONE GATE. A give only ever becomes real when there is a name behind it
+ * and the person is 18 or older. Nothing here ever touches a draft: the answer
+ * is only ever "not yet", never "gone".
  */
 export function publishEligibility(facts: AccountFacts): Eligibility {
   if (!normaliseHandle(facts.username) || normaliseHandle(facts.username) === "you")
@@ -203,11 +202,6 @@ export function publishEligibility(facts: AccountFacts): Eligibility {
       reason: "underage",
       say: `giver needs you to be ${ADULT_AGE} or older to publish a give. your give stays here, unpublished.`,
     };
-  if (!facts.passwordSet && !facts.signedIn)
-    return {
-      ok: false,
-      reason: "password",
-      say: "set a password in my g to publish this — your give is saved.",
-    };
   return { ok: true };
 }
+

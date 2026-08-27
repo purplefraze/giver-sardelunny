@@ -79,7 +79,10 @@ function AdminConsole() {
   const loadInvites = () =>
     void supabase
       .from("invites")
-      .select("id, token, label, accepted_profile_id, accepted_at")
+      .select(
+        "id, token, label, created_at, created_by, accepted_profile_id, accepted_user_id, accepted_at",
+      )
+
       .order("created_at", { ascending: false })
       .then(({ data }) => setInvites((data ?? []) as Invite[]));
 

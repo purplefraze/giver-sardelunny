@@ -221,6 +221,17 @@ export function Conversation({
               onClick={() => {
                 buzz();
                 connectionsStore.claimComplete(c.id, ME_ID);
+                /* DEMO ONLY: a sample person confirms it too, in the language of
+                   this exchange — a give is gifted, a wish is granted. */
+                if (them && demoRepliesStore.get()) {
+                  const kind = (item ? item.type : "give") as keyof typeof SAMPLE_CONFIRMS;
+                  const lines = SAMPLE_CONFIRMS[kind] ?? SAMPLE_CONFIRMS.give!;
+                  const said = lines[Math.min(lines.length - 1, messages.length % lines.length)]!;
+                  window.setTimeout(() => {
+                    connectionsStore.send(c.id, said, themId);
+                    connectionsStore.respond(c.id, true, themId);
+                  }, 1200);
+                }
               }}
               className="g-name text-left"
               style={{ color: stateColour }}

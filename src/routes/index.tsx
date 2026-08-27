@@ -376,6 +376,17 @@ function Index() {
    */
   const canCommunity = hasActiveGive(items);
 
+  /**
+   * WHY A GIVE CANNOT BECOME REAL YET — named plainly, so the locked door never
+   * asks for a give the account is not yet allowed to publish.
+   */
+  const accountEligibility = publishEligibility({
+    username: me.username,
+    birthday: me.birthday,
+  });
+  const accountProblem = accountEligibility.ok ? null : accountEligibility.say;
+
+
   /* THE KEY TURNING is worth exactly one moment, and never repeats. */
   useEffect(() => {
     if (!canCommunity) return;

@@ -95,7 +95,7 @@ export function Conversation({
     buzz();
     /* DEMO ONLY: a sample person answers from their own stored parameters, and
        never repeats a phrasing they have already used in this thread. */
-    const saidBefore = messages.filter((m) => m.from === themId).map((m) => m.text);
+    const saidBefore = messages.filter((m) => m.fromId === themId).map((m) => m.text);
     const reply = demoReply(item, text, themId, saidBefore);
     if (reply)
       window.setTimeout(() => connectionsStore.send(c.id, reply, themId), 900);
@@ -225,7 +225,7 @@ export function Conversation({
                    this exchange — a give is gifted, a wish is granted. */
                 if (them && demoRepliesStore.get()) {
                   const kind = (item ? item.type : "give") as keyof typeof SAMPLE_CONFIRMS;
-                  const lines = SAMPLE_CONFIRMS[kind] ?? SAMPLE_CONFIRMS.give!;
+                  const lines = SAMPLE_CONFIRMS[kind] ?? SAMPLE_CONFIRMS['give']!;
                   const said = lines[Math.min(lines.length - 1, messages.length % lines.length)]!;
                   window.setTimeout(() => {
                     connectionsStore.send(c.id, said, themId);

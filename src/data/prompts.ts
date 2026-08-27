@@ -38,27 +38,42 @@ export function pronounsFrom(gender: string | undefined): Pronouns {
   return NEUTRAL;
 }
 
+/**
+ * THE SENTENCE HAS TO AGREE WITH ITSELF. "my dogs makes me happy" is not
+ * English: whatever the person wrote becomes the subject, so the verb follows
+ * it. Plural is read off the words themselves, never asked about.
+ */
+function plural(subject: string) {
+  const said = subject.trim().toLowerCase();
+  if (/\b(and|both|all|they|we|these|those)\b/.test(said)) return true;
+  const last = said.split(/\s+/).pop() ?? "";
+  return /[^s]s$/.test(last) && !/\b(this|его)\b/.test(last);
+}
+
+const agree = (subject: string, singular: string, plural_: string) =>
+  plural(subject) ? plural_ : singular;
+
 export const PROMPTS: Prompt[] = [
   {
     id: "happy",
     question: "what makes you happy?",
-    whole: /\bmakes me (happy|smile)\b/,
-    mine: (a) => `${a} makes me happy.`,
-    theirs: (n, a) => `${a} makes ${n} happy.`,
+    whole: /\bmakes? me (happy|smile)\b/,
+    mine: (a) => `${a} ${agree(a, "makes", "make")} me happy.`,
+    theirs: (n, a) => `${a} ${agree(a, "makes", "make")} ${n} happy.`,
   },
   {
     id: "lights-up",
     question: "what lights you up?",
     whole: /\blights? me up\b/,
-    mine: (a) => `${a} lights me up.`,
-    theirs: (n, a) => `${a} lights ${n} up.`,
+    mine: (a) => `${a} ${agree(a, "lights", "light")} me up.`,
+    theirs: (n, a) => `${a} ${agree(a, "lights", "light")} ${n} up.`,
   },
   {
     id: "excited",
     question: "what gets you excited?",
-    whole: /\b(gets me excited|lights? me up|excites me)\b/,
-    mine: (a) => `${a} gets me excited.`,
-    theirs: (n, a) => `${a} gets ${n} excited.`,
+    whole: /\b(gets? me excited|lights? me up|excites? me)\b/,
+    mine: (a) => `${a} ${agree(a, "gets", "get")} me excited.`,
+    theirs: (n, a) => `${a} ${agree(a, "gets", "get")} ${n} excited.`,
   },
   {
     id: "bucket-list",

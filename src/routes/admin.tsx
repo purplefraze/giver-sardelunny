@@ -32,13 +32,35 @@ export const Route = createFileRoute("/admin")({
   component: AdminConsole,
 });
 
+/**
+ * AN INVITE IS A RECORD, NOT A LINK. Who it was for, when it was issued, who
+ * issued it, when it was accepted, and which person and account it became.
+ */
 type Invite = {
   id: string;
   token: string;
   label: string;
+  created_at: string;
+  created_by: string | null;
   accepted_profile_id: string | null;
+  accepted_user_id: string | null;
   accepted_at: string | null;
 };
+
+/** SHORT, HUMAN, NEVER A TIMESTAMP STRING. */
+const stamp = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
+/** An account is shown as a short reference — never a full identifier. */
+const shortId = (id: string | null) => (id ? id.slice(0, 8) : "");
+
 
 function AdminConsole() {
   const session = useSession();
@@ -57,7 +79,10 @@ function AdminConsole() {
   const loadInvites = () =>
     void supabase
       .from("invites")
-      .select("id, token, label, accepted_profile_id, accepted_at")
+      .select(
+        "id, token, label, created_at, created_by, accepted_profile_id, accepted_user_id, accepted_at",
+      )
+
       .order("created_at", { ascending: false })
       .then(({ data }) => setInvites((data ?? []) as Invite[]));
 
@@ -99,6 +124,14 @@ function AdminConsole() {
     const row = directory.byId[id];
     return row ? (row.name || row.handle || "someone") : "someone";
   };
+
+  /** WHO AN ACCOUNT IS. created_by/accepted_user_id are accounts, not profiles. */
+  const accountName = (userId: string) => {
+    const row = directory.profiles.find((p) => p.user_id === userId);
+    return row ? row.name || row.handle || "someone" : `account ${shortId(userId)}`;
+  };
+
+
 
   async function sendAsSample() {
     if (!openThread || !reply.trim()) return;
@@ -146,14 +179,33 @@ function AdminConsole() {
           new link
         </button>
       </div>
-      <ul className="mt-6 flex flex-col gap-4">
+      {/*
+        THE AUDIT LOG. Every invite reads as its own short history: issued,
+        by whom, then accepted, by which person and which account.
+      */}
+      <ul className="mt-6 flex flex-col gap-6">
         {invites.map((i) => (
           <li key={i.id} className="flex items-baseline justify-between gap-4">
             <div>
               <p className="g-name">{i.label}</p>
-              <p className="g-meta">
-                {i.accepted_profile_id ? `joined · ${nameOf(i.accepted_profile_id)}` : "not used yet"}
+              <p className="g-meta opacity-55">
+                issued {stamp(i.created_at)}
+                {i.created_by ? ` · by ${accountName(i.created_by)}` : ""}
               </p>
+              {i.accepted_at || i.accepted_profile_id ? (
+                <>
+                  <p className="g-meta" style={{ color: "var(--giver-me)" }}>
+                    accepted {stamp(i.accepted_at)}
+                    {i.accepted_profile_id ? ` · ${nameOf(i.accepted_profile_id)}` : ""}
+                  </p>
+                  <p className="g-meta opacity-45">
+                    {i.accepted_profile_id ? `profile ${shortId(i.accepted_profile_id)}` : ""}
+                    {i.accepted_user_id ? ` · account ${shortId(i.accepted_user_id)}` : ""}
+                  </p>
+                </>
+              ) : (
+                <p className="g-meta opacity-45">not accepted yet</p>
+              )}
             </div>
             <button
               className="g-meta shrink-0 underline decoration-giver-ink/20"
@@ -168,6 +220,7 @@ function AdminConsole() {
         ))}
         {invites.length === 0 ? <li className="g-meta">no invites yet</li> : null}
       </ul>
+
 
       {/* TESTERS ---------------------------------------------------------- */}
       <h2 className="g-heading mt-14">people</h2>

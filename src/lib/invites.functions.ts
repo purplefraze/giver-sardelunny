@@ -95,7 +95,11 @@ export const joinGiver = createServerFn({ method: "POST" })
       if (invite && !invite.accepted_profile_id) {
         await supabaseAdmin
           .from("invites")
-          .update({ accepted_profile_id: profile.id, accepted_at: new Date().toISOString() })
+          .update({
+            accepted_profile_id: profile.id,
+            accepted_user_id: userId,
+            accepted_at: new Date().toISOString(),
+          })
           .eq("id", invite.id);
       }
     }

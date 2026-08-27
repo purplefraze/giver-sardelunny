@@ -26,7 +26,9 @@ import {
   publishEligibility,
 } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
+import { sessionStore } from "@/data/cloud/session";
 import { haptics } from "@/lib/haptics";
+
 
 /**
  * MY PROFILE — THE SINGLE SOURCE OF TRUTH FOR THE PERSON.

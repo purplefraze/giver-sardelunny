@@ -42,6 +42,7 @@ import { formatDateOnly } from "@/lib/date-only";
 import { pickImages } from "@/lib/pick-image";
 import { storeChosenImage } from "@/lib/media";
 import { haptics } from "@/lib/haptics";
+import { askToNotify, notifyDecided } from "@/lib/notify";
 
 /**
  * DESTINATION SCREEN — the editor behind ONE loop of the Living G.

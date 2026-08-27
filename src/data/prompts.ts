@@ -47,7 +47,7 @@ function plural(subject: string) {
   const said = subject.trim().toLowerCase();
   if (/\b(and|both|all|they|we|these|those)\b/.test(said)) return true;
   const last = said.split(/\s+/).pop() ?? "";
-  return /[^s]s$/.test(last) && !/\b(this|его)\b/.test(last);
+  return /[^su]s$/.test(last);
 }
 
 const agree = (subject: string, singular: string, plural_: string) =>
@@ -158,7 +158,7 @@ const STOP = new Set([
   "could", "would", "will", "can", "the", "a", "an", "of", "for", "on", "in",
   "at", "to", "and", "or", "but", "with", "you", "your", "yours", "youre",
   "you’re", "i", "i’m", "im", "me", "my", "mine", "myself", "it", "its", "it’s",
-  "most", "think", "some", "something", "thing", "things", "one", "have", "has",
+  "most", "think", "some", "i'd", "i’d", "id", "any", "animal's", "something", "thing", "things", "one", "have", "has",
   "had", "get", "gets", "really", "very", "about", "like", "any", "rest",
 ]);
 

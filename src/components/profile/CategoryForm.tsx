@@ -223,6 +223,9 @@ export function CategoryForm({
   /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */
   const [details, setDetails] = useState<ItemDetails>(stored.details);
   const [problem, setProblem] = useState<string | null>(null);
+  /** WHAT JUST WENT LIVE — said once, in the world's own voice, then gone. */
+  const [live, setLive] = useState<string | null>(null);
+
   /**
    * THE ONE RECORD THIS DRAFT IS ALREADY SAVED AS. Once the draft is complete
    * enough to be real it becomes an Item, and every later keystroke edits THAT

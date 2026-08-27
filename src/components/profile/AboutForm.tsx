@@ -276,6 +276,7 @@ export function AboutForm({
               label="a password"
               value={pass}
               onChange={setPass}
+              onBlur={commitPassword}
               show={showPass}
               placeholder={passwordSet && !pass ? "•••••••• saved" : "your password"}
             />
@@ -285,6 +286,7 @@ export function AboutForm({
               label="again, exactly"
               value={again}
               onChange={setAgain}
+              onBlur={commitPassword}
               show={showPass}
               placeholder="the same password"
             />
@@ -327,6 +329,8 @@ export function AboutForm({
                   label="new password"
                   value={pass}
                   onChange={setPass}
+                  onBlur={commitPassword}
+              onBlur={commitPassword}
                   show={showPass}
                   placeholder={passwordSet && !pass ? "•••••••• saved" : "a new password"}
                 />
@@ -335,6 +339,8 @@ export function AboutForm({
                   label="again, exactly"
                   value={again}
                   onChange={setAgain}
+                  onBlur={commitPassword}
+              onBlur={commitPassword}
                   show={showPass}
                   placeholder="the same password"
                 />
@@ -471,12 +477,14 @@ function Secret({
   label,
   value,
   onChange,
+  onBlur,
   show,
   placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   show: boolean;
   placeholder: string;
 }) {
@@ -493,6 +501,7 @@ function Secret({
         autoCorrect="off"
         spellCheck={false}
         onChange={(e) => onChange(e.target.value.slice(0, 64))}
+        onBlur={onBlur}
         placeholder={placeholder}
         className="g-name mt-1 w-full bg-transparent outline-none placeholder:font-medium placeholder:opacity-30"
         style={{ textTransform: "none" }}

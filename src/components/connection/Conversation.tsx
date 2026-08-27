@@ -3,7 +3,14 @@ import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
 import { ACTIVITY_FILL, ME_ID, itemLine } from "@/data/items";
 import { itemFacts } from "@/components/profile/ItemFacts";
-import { MESSAGE_MAX, connectionsStore, messagesOf, otherParty } from "@/data/connections";
+import {
+  MESSAGE_MAX,
+  canClaim,
+  connectionsStore,
+  messagesOf,
+  otherParty,
+} from "@/data/connections";
+
 import { demoReply } from "@/data/demo-replies";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";

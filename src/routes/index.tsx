@@ -100,6 +100,7 @@ import type { Currency } from "@/data/ledger";
 
 import { World } from "@/components/World";
 import { DevControls } from "@/components/DevControls";
+import { DevSeal } from "@/components/DevSeal";
 import { lifecycleStore } from "@/data/lifecycle";
 import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
@@ -193,6 +194,7 @@ function Index() {
       setSeatState(remembered);
     }
   }, []);
+
 
   const [sessionEntered, setSessionEntered] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
@@ -477,6 +479,7 @@ function Index() {
     <main className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden">
 
       <DevControls />
+      <DevSeal />
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding

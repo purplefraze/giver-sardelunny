@@ -353,13 +353,40 @@ const BASE_MEMBERS: Member[] = [
  */
 export const MEMBERS: Member[] = BASE_MEMBERS.map((m) => ({ ...m }));
 
-function applyMemberEdits() {
+/**
+ * REAL PEOPLE, SAME PROJECTION. In the shared dev build, invited testers arrive
+ * from the database (src/data/cloud/directory.ts) and are appended to this one
+ * array, so every existing view sees them without knowing they are remote.
+ */
+let REMOTE: Member[] = [];
+const memberListeners = new Set<() => void>();
+
+function rebuildMembers() {
   const edits = memberEditsStore.get();
-  BASE_MEMBERS.forEach((base, i) => {
-    const patch = edits[base.id];
-    MEMBERS[i] = patch ? { ...base, ...patch } : { ...base };
-  });
+  const next = [
+    ...BASE_MEMBERS.map((base) => {
+      const patch = edits[base.id];
+      return patch ? { ...base, ...patch } : { ...base };
+    }),
+    ...REMOTE,
+  ];
+  MEMBERS.length = 0;
+  MEMBERS.push(...next);
+  for (const l of memberListeners) l();
 }
+
+export function setRemoteMembers(members: Member[]) {
+  REMOTE = members;
+  rebuildMembers();
+}
+
+export function onMembersChanged(listener: () => void) {
+  memberListeners.add(listener);
+  return () => memberListeners.delete(listener);
+}
+
+const applyMemberEdits = rebuildMembers;
+
 
 memberEditsStore.subscribe(applyMemberEdits);
 applyMemberEdits();

@@ -250,7 +250,12 @@ function Index() {
    * browsing opens an activity, an activity opens a conversation, and only a
    * conversation both people verify ever settles sparks.
    */
-  const [browse, setBrowse] = useState<{ type: ItemType | null } | null>(null);
+  const [browse, setBrowse] = useState<{
+    type: ItemType | null;
+    /** MINE FIRST when arriving straight from publishing my own. */
+    mine?: boolean;
+  } | null>(null);
+
   /**
    * SEARCH IS THE TOP LOOP, AND ONLY ON MY OWN G. It opens already scoped to the
    * toggle's world, so the content type is never asked for twice.

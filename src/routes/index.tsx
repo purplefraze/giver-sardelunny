@@ -903,6 +903,8 @@ function Index() {
                 children: browse ? (
                   <CommunityFeed
                     initialType={browse.type}
+                    initialScope={browse.mine ? "mine" : "everyone"}
+
                     onOpen={(itemId) => setDetail(itemId)}
                     onOpenProfile={(ownerId) => {
                       setPersonFocus(null);

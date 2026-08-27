@@ -451,6 +451,14 @@ export const myProfileStore = {
   setPhoto(cropped: string, source: string, crop: PhotoCrop) {
     hydrate();
     savePerson({ ...person, photo: cropped, photoSource: source, photoCrop: crop });
+    /*
+      A PICTURE OTHER PEOPLE CAN SEE. The circle applies instantly from the
+      bytes we already have; hosting it is a quiet upgrade that also keeps
+      device storage small. If it can't happen, nothing changes.
+    */
+    if (typeof window !== "undefined" && !/^https?:\/\//.test(cropped)) {
+      void hostPhoto(cropped);
+    }
   },
 
 

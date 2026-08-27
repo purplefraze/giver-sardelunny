@@ -408,12 +408,23 @@ export const myProfileStore = {
   /** IS THIS ACCOUNT ALLOWED TO PUBLISH? One answer, asked from everywhere. */
   canPublish() {
     hydrate();
+    /* A SIGNED-IN DEV ACCOUNT COUNTS: its password lives with the account. */
+    let signedIn = false;
+    if (typeof window !== "undefined") {
+      try {
+        signedIn = Boolean(sessionStore.get().userId);
+      } catch {
+        signedIn = false;
+      }
+    }
     return publishEligibility({
       username: person.username,
       birthday: person.birthday,
       passwordSet: Boolean(person.password),
+      signedIn,
     });
   },
+
 
   /** THE PASSWORD IS SALTED, HASHED AND FORGOTTEN. */
   async setPassword(plain: string) {

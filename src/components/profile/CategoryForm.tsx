@@ -481,7 +481,11 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, draft, want, note, side, photos, details, liveId]);
 
-  /** START A FRESH ONE. What was typed is already saved; the field simply clears. */
+  /**
+   * PUBLISH. The words were already being saved as they were typed — this is the
+   * moment a person SAYS SO, and hears back that it is live in communi-g. If the
+   * account gate answers "not yet", nothing is cleared: the draft stays intact.
+   */
   const add = () => {
     if (!draft.trim()) return;
     if (category === "trade" && !want.trim()) {
@@ -489,8 +493,12 @@ export function CategoryForm({
       haptics.warning();
       return;
     }
-    save();
+    if (!save()) {
+      haptics.warning();
+      return;
+    }
     setProblem(null);
+    setLive(PUBLISHED_SAY[category === "borrow" ? side : category]);
     setLiveId(null);
     setDraft("");
     setWant("");
@@ -500,6 +508,7 @@ export function CategoryForm({
     draftsStore.clear(category);
     haptics.light();
   };
+
 
   /* BACK IS NOT THE SAVE BUTTON. It only flushes the pending debounce. */
   const leave = () => {

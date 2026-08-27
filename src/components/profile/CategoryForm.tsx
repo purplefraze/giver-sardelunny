@@ -400,8 +400,9 @@ export function CategoryForm({
    * change patches that same record, so no screen ever holds a stale copy and
    * nothing is created twice by a rerender, a reopen or a reload.
    */
-  const save = () => {
-    if (!complete) return;
+  const save = (): boolean => {
+    if (!complete) return false;
+
     const cleaned = cleanDetails();
     if (liveId) {
       itemsStore.patch(liveId, {

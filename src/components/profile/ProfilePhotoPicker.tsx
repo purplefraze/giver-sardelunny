@@ -4,6 +4,7 @@ import { myProfileStore, type PhotoCrop } from "@/data/my-profile";
 import { pickOneImage } from "@/lib/pick-image";
 import { buzz } from "@/lib/haptics";
 import { dataUrlToBlob, uploadMedia } from "@/lib/media";
+import { sessionStore } from "@/data/cloud/session";
 
 /**
  * THE ONE PROFILE PHOTO FLOW, wherever a photo is chosen.
@@ -55,7 +56,11 @@ export function useProfilePhoto() {
         */
         const blob = dataUrlToBlob(cropped);
         const hosted = blob ? await uploadMedia(blob, { extension: "jpg" }) : null;
-        myProfileStore.setPhoto(hosted ?? cropped, pending.source, crop);
+        const savedPhoto = hosted ?? cropped;
+        myProfileStore.setPhoto(savedPhoto, pending.source, crop);
+        /* Do not close on a promise that the background mirror may fulfil later:
+           when a hosted URL exists, persist it to this account before confirming. */
+        if (hosted) await sessionStore.saveProfile({ photo_url: hosted });
         setPending(null);
       }}
     />

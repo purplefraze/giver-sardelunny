@@ -54,7 +54,7 @@ function AuthScreen() {
     }
     await sessionStore.refresh();
     window.localStorage.removeItem("giver.invite.token");
-    haptics.tap();
+    haptics.light();
     void navigate({ to: "/" });
   }
 

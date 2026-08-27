@@ -125,6 +125,14 @@ function AdminConsole() {
     return row ? (row.name || row.handle || "someone") : "someone";
   };
 
+  /** WHO AN ACCOUNT IS. created_by/accepted_user_id are accounts, not profiles. */
+  const accountName = (userId: string) => {
+    const row = directory.profiles.find((p) => p.user_id === userId);
+    return row ? row.name || row.handle || "someone" : `account ${shortId(userId)}`;
+  };
+
+
+
   async function sendAsSample() {
     if (!openThread || !reply.trim()) return;
     const conv = messages.conversations.find((c) => c.id === openThread);

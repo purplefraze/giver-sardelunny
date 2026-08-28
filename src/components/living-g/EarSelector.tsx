@@ -20,7 +20,8 @@ import { LOOP_ROLE_STYLE } from "./type-scale";
  *
  * TWO MIRRORED PAIRS:
  *   wish 10:30 <-> borrow 1:30
- *   lend  7:30 <-> trade  4:30, with give at 6:00 over the lower loop
+ *   lend  9:00 <-> trade  4:30, with MY G at 6:00 over the lower loop and
+ *   give at 7:30 between my g and lend
  *
  * The S-curve is never a mode destination.
  */
@@ -30,7 +31,7 @@ export type Mode = (typeof MODES)[number];
 
 /**
  * THE FULL TRACK, ONCE IT IS EARNED. Two destinations sit outside the four
- * activities: GIVER = ME at 9 o'clock, and LEND at 7:30 between give and my g. My G is
+ * activities: GIVER = ME at 6 o'clock, and LEND at 9:00 between give and wish. My G is
  * LOCKED until the person has discovered their profile, so onboarding only ever
  * offers the activity seats.
  */
@@ -38,7 +39,7 @@ export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as con
 export type Seat = (typeof SEATS)[number];
 
 /** Every seat on the wire, in travel order (one end of the break -> the other). */
-export const FULL_SEATS = ["give", "lend", "giver", "wish", "borrow", "trade"] as const;
+export const FULL_SEATS = ["giver", "give", "lend", "wish", "borrow", "trade"] as const;
 
 
 
@@ -78,19 +79,20 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * lives on ONE CONTINUOUS LINE with no wrap-around, so the bead can never
  * teleport across the gap or take a shortcut through empty space.
  *
- * THE SEATS — THE SOURCE OF TRUTH (clock positions):
- *   give   -270°   6:00, the anticlockwise end on the far lip of the break,
- *                  where the node intentionally overlaps the lower loop
- *   lend   -225°   7:30
- *   giver  -180°   9:00 (my profile)
+ * THE SEATS — THE SOURCE OF TRUTH (clock positions), fixed on every Living G
+ * everywhere in the app:
+ *   giver  -270°   6:00, MY G at the anticlockwise end on the far lip of the
+ *                  break, where the node intentionally overlaps the lower loop
+ *   give   -225°   7:30, immediately to my g's left
+ *   lend   -180°   9:00
  *   wish   -135°  10:30
  *   borrow  -45°   1:30
  *   trade   +45°   4:30, just inside the clockwise end
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  give: rad(-270),
-  lend: rad(-225),
-  giver: rad(-180),
+  giver: rad(-270),
+  give: rad(-225),
+  lend: rad(-180),
   wish: rad(-135),
   borrow: rad(-45),
   trade: rad(45),

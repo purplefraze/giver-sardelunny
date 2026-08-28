@@ -136,78 +136,99 @@ export function CommunityFeed({
       <h1 className="g-display" style={{ color: "var(--giver-ink)" }}>
         communi-g
       </h1>
-      <p className="g-meta mt-2 whitespace-nowrap opacity-55">
-        it’s all happening near you, right now.
-      </p>
 
-      {/* SEARCH — a line, never a bar: no box, no icon, no button. */}
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="search communi-g"
-        className="g-rule mt-4 w-full border-0 bg-transparent pb-2 text-[15px] font-black lowercase tracking-[0.06em] outline-none placeholder:opacity-30"
-        style={{ color: "var(--giver-ink)" }}
-      />
-
-      {/* FILTERS ARE WORDS, NOT CHIPS OR ICONS. ALL · GIVE · WISH · TRADE · BORROW */}
-      <div className="g-rule mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-2 pt-3 text-[13px] font-black lowercase tracking-[0.16em]">
-        <button
-          type="button"
-          onClick={() => setType(null)}
-          className={type === null ? "opacity-100" : "opacity-35"}
+      {/* SEARCH — one big line. Type a word, see it. Tap the × to see it all again. */}
+      <div className="g-rule mt-3 flex items-center gap-3 pb-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="search"
+          autoComplete="off"
+          className="min-h-11 w-full border-0 bg-transparent text-[19px] font-black lowercase tracking-[0.02em] outline-none placeholder:opacity-30"
           style={{ color: "var(--giver-ink)" }}
-        >
-          all
-        </button>
-        {FILTERS.map((t) => (
+        />
+        {searching ? (
           <button
-            key={t}
             type="button"
-            onClick={() => setType(t)}
-            className={type === t ? "opacity-100" : "opacity-35"}
-            style={{ color: ACTIVITY_FILL[t] }}
+            aria-label="clear search"
+            onClick={() => {
+              buzz();
+              setQuery("");
+            }}
+            className="min-h-11 min-w-11 text-[22px] font-black leading-none opacity-45"
+            style={{ color: "var(--giver-ink)" }}
           >
-            {t}
+            ×
           </button>
-        ))}
+        ) : null}
       </div>
 
-      {/* WHOSE — EVERYONE · MY GIVES. Mine are in here, never filtered out. */}
-      <div className="mt-3 flex items-baseline gap-3 text-[11px] font-black lowercase tracking-[0.22em]">
-        {(["everyone", "mine"] as Scope[]).map((s, i) => (
-          <span key={s} className="flex items-baseline gap-3">
-            {i === 0 ? null : <span className="opacity-30">·</span>}
+      {searching ? (
+        /* SEARCHING IS THE WHOLE SCREEN. No filters to fight with, just answers. */
+        <p className="g-meta mt-3 opacity-55">
+          {list.length === 0
+            ? `nothing matches “${query.trim()}”`
+            : `${list.length} ${list.length === 1 ? "match" : "matches"} for “${query.trim()}”`}
+        </p>
+      ) : (
+        <>
+          {/* ONE ROW OF WORDS: EVERYTHING · GIVE · WISH · TRADE · BORROW · MINE */}
+          <div className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-[15px] font-black lowercase tracking-[0.1em]">
             <button
               type="button"
               onClick={() => {
                 buzz();
-                setScope(s);
+                setType(null);
+                setScope("everyone");
               }}
-              className={scope === s ? "opacity-100" : "opacity-35"}
-              style={scope === s ? { color: "var(--person-self-community)" } : undefined}
+              className={type === null && scope === "everyone" ? "opacity-100" : "opacity-30"}
+              style={{ color: "var(--giver-ink)" }}
             >
-              {s === "mine" ? "my gives" : "everyone"}
+              everything
             </button>
-          </span>
-        ))}
-      </div>
-
-      {/* ONE COMPACT SORT CONTROL: NEARBY · LATEST · POPULAR */}
-      <div className="mt-2.5 flex items-baseline gap-3 text-[10px] font-black lowercase tracking-[0.24em] opacity-45">
-        {SORTS.map((s, i) => (
-          <span key={s} className="flex items-baseline gap-3">
-            {i === 0 ? null : <span className="opacity-30">·</span>}
+            {FILTERS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  buzz();
+                  setType(t);
+                  setScope("everyone");
+                }}
+                className={type === t && scope === "everyone" ? "opacity-100" : "opacity-30"}
+                style={{ color: ACTIVITY_FILL[t] }}
+              >
+                {t}
+              </button>
+            ))}
             <button
               type="button"
-              onClick={() => setSort(s)}
-              className={sort === s ? "opacity-100" : undefined}
-              style={sort === s ? { color: "var(--person-self-community)" } : undefined}
+              onClick={() => {
+                buzz();
+                setType(null);
+                setScope("mine");
+              }}
+              className={scope === "mine" ? "opacity-100" : "opacity-30"}
+              style={{ color: "var(--person-self-community)" }}
             >
-              {s}
+              mine
             </button>
-          </span>
-        ))}
-      </div>
+          </div>
+
+          {/* ONE TAP CHANGES THE ORDER. No menus, no icons. */}
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              setSort(SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length]!);
+            }}
+            className="g-meta mt-3 min-h-11 self-start text-left opacity-55"
+          >
+            {sort} first — tap to change
+          </button>
+        </>
+      )}
+
 
       <ul className="mt-4 flex-1 overflow-y-auto pb-8">
         {list.length === 0 ? (

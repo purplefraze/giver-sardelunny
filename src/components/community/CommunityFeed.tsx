@@ -231,78 +231,79 @@ export function CommunityFeed({
 
 
       <ul className="mt-4 flex-1 overflow-y-auto pb-8">
-        {list.length === 0 ? (
+        {list.length === 0 && !searching ? (
           <li className="g-lede opacity-55">nothing here yet — yours could be the first</li>
         ) : null}
         {list.map((item, index) => {
           const owner = memberById(item.ownerId);
           const status = activityStatus(links, item.id, item.status);
           const line = itemLine(item);
+          /* AT MOST TWO FACTS. Distance and the one thing that matters most. */
           const facts = [
-            item.distanceKm === undefined ? null : `${item.distanceKm} km`,
-            ...detailBits(item),
-            status === "connecting" ? "connecting" : null,
+            item.distanceKm === undefined ? null : `${item.distanceKm} km away`,
+            status === "connecting" ? "connecting" : detailBits(item)[0] ?? null,
           ].filter(Boolean) as string[];
           return (
-            <li key={item.id} className={index === 0 ? "pb-3.5" : "g-rule py-3.5"}>
-              <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
-                {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
-              </span>
-
-              {/* THE HEADLINE OPENS THE ACTIVITY. */}
+            <li key={item.id} className={index === 0 ? "pb-4" : "g-rule py-4"}>
+              {/* THE WHOLE ROW OPENS THE ACTIVITY — one big, obvious target. */}
               <button
                 type="button"
-                className="g-post mt-1 block w-full overflow-hidden text-ellipsis whitespace-nowrap text-left"
-                style={{
-                  color: ACTIVITY_FILL[item.type],
-                  fontSize: headlineSize(line),
-                }}
+                className="block w-full text-left"
                 onClick={() => {
                   buzz();
                   onOpen(item.id);
                 }}
               >
-                {line}
+                <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
+                  {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
+                </span>
+                <span
+                  className="g-post mt-1 block w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                  style={{ color: ACTIVITY_FILL[item.type], fontSize: headlineSize(line) }}
+                >
+                  {line}
+                </span>
+                {facts.length ? (
+                  <span className="g-meta mt-1.5 block opacity-50">{facts.join(" · ")}</span>
+                ) : null}
               </button>
 
-              {/* ENOUGH TO DECIDE WITHOUT OPENING IT. */}
-              <p className="mt-1.5 g-meta opacity-55">
-                <button
-                  type="button"
-                  onClick={() => {
-                    buzz();
-                    if (owner) onOpenProfile?.(owner.id);
-                  }}
-                  className="font-black underline decoration-current/40 underline-offset-4"
-                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
-                >
-                  {owner ? owner.username : "someone"}
-                </button>
-                {facts.length ? ` · ${facts.join(" · ")}` : ""}
-              </p>
+              {/* THE PERSON IS THEIR OWN DESTINATION. */}
+              <button
+                type="button"
+                onClick={() => {
+                  buzz();
+                  if (owner) onOpenProfile?.(owner.id);
+                }}
+                className="g-meta mt-1.5 min-h-11 font-black underline decoration-current/40 underline-offset-4"
+                style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
+              >
+                {owner ? owner.username : "someone"}
+              </button>
 
               {/* MY OWN POST IS MINE TO CHANGE OR TAKE DOWN, right here. */}
               {item.ownerId === ME_ID ? (
-                <div className="mt-2 flex items-baseline gap-5 text-[10px] font-black lowercase tracking-[0.24em]">
+                <div className="flex items-baseline gap-6 text-[12px] font-black lowercase tracking-[0.16em]">
                   <button
                     type="button"
+                    className="min-h-11"
                     onClick={() => {
                       buzz();
                       onEditMine?.(item.id);
                     }}
                     style={{ color: "var(--person-self-community)" }}
                   >
-                    edit
+                    change it
                   </button>
                   <button
                     type="button"
+                    className="min-h-11 opacity-45"
                     onClick={() => {
                       buzz();
                       itemsStore.remove(item.id);
                     }}
-                    className="opacity-45"
                   >
-                    remove
+                    take it down
                   </button>
                 </div>
               ) : null}
@@ -310,6 +311,7 @@ export function CommunityFeed({
           );
         })}
       </ul>
+
     </div>
   );
 }

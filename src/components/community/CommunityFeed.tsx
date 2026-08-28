@@ -82,17 +82,47 @@ export function CommunityFeed({
   const [query, setQuery] = useState("");
 
   const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
+
+  /**
+   * SEARCH ALWAYS SEARCHES EVERYTHING. A word finds a match no matter which
+   * filter happened to be showing, and it looks everywhere a person would
+   * expect: the words of the activity, its note, its kind, who posted it, and
+   * the little facts underneath.
+   */
+  const haystack = (item: ReturnType<typeof communityItems>[number]): string => {
+    const owner = memberById(item.ownerId);
+    return [
+      itemLine(item),
+      item.note ?? "",
+      item.offer ?? "",
+      item.want ?? "",
+      item.type,
+      item.side ?? "",
+      owner?.username ?? "",
+      owner?.name ?? "",
+      ...detailBits(item),
+    ]
+      .join(" ")
+      .toLowerCase();
+  };
+
   /* MY PUBLISHED GIVES ARE PART OF THE COMMUNITY, not hidden from their author. */
   const list = communityItems(items, {
-    ...(type ? { type } : {}),
-    ...(scope === "mine" ? { ownerId: ME_ID } : {}),
+    ...(type && !searching ? { type } : {}),
+    ...(scope === "mine" && !searching ? { ownerId: ME_ID } : {}),
   })
-    .filter((item) => (needle ? itemLine(item).toLowerCase().includes(needle) : true))
+    .filter((item) =>
+      searching
+        ? needle.split(/\s+/).every((word) => haystack(item).includes(word))
+        : true,
+    )
     .sort((a, b) => {
       if (sort === "latest") return b.createdAt - a.createdAt;
       if (sort === "popular") return b.boostWeight - a.boostWeight || b.createdAt - a.createdAt;
       return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
     });
+
 
   return (
     <div
@@ -106,152 +136,174 @@ export function CommunityFeed({
       <h1 className="g-display" style={{ color: "var(--giver-ink)" }}>
         communi-g
       </h1>
-      <p className="g-meta mt-2 whitespace-nowrap opacity-55">
-        it’s all happening near you, right now.
-      </p>
 
-      {/* SEARCH — a line, never a bar: no box, no icon, no button. */}
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="search communi-g"
-        className="g-rule mt-4 w-full border-0 bg-transparent pb-2 text-[15px] font-black lowercase tracking-[0.06em] outline-none placeholder:opacity-30"
-        style={{ color: "var(--giver-ink)" }}
-      />
-
-      {/* FILTERS ARE WORDS, NOT CHIPS OR ICONS. ALL · GIVE · WISH · TRADE · BORROW */}
-      <div className="g-rule mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-2 pt-3 text-[13px] font-black lowercase tracking-[0.16em]">
-        <button
-          type="button"
-          onClick={() => setType(null)}
-          className={type === null ? "opacity-100" : "opacity-35"}
+      {/* SEARCH — one big line. Type a word, see it. Tap the × to see it all again. */}
+      <div className="g-rule mt-3 flex items-center gap-3 pb-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="search"
+          autoComplete="off"
+          className="min-h-11 w-full border-0 bg-transparent text-[19px] font-black lowercase tracking-[0.02em] outline-none placeholder:opacity-30"
           style={{ color: "var(--giver-ink)" }}
-        >
-          all
-        </button>
-        {FILTERS.map((t) => (
+        />
+        {searching ? (
           <button
-            key={t}
             type="button"
-            onClick={() => setType(t)}
-            className={type === t ? "opacity-100" : "opacity-35"}
-            style={{ color: ACTIVITY_FILL[t] }}
+            aria-label="clear search"
+            onClick={() => {
+              buzz();
+              setQuery("");
+            }}
+            className="min-h-11 min-w-11 text-[22px] font-black leading-none opacity-45"
+            style={{ color: "var(--giver-ink)" }}
           >
-            {t}
+            ×
           </button>
-        ))}
+        ) : null}
       </div>
 
-      {/* WHOSE — EVERYONE · MY GIVES. Mine are in here, never filtered out. */}
-      <div className="mt-3 flex items-baseline gap-3 text-[11px] font-black lowercase tracking-[0.22em]">
-        {(["everyone", "mine"] as Scope[]).map((s, i) => (
-          <span key={s} className="flex items-baseline gap-3">
-            {i === 0 ? null : <span className="opacity-30">·</span>}
+      {searching ? (
+        /* SEARCHING IS THE WHOLE SCREEN. No filters to fight with, just answers. */
+        <p className="g-meta mt-3 opacity-55">
+          {list.length === 0
+            ? `nothing matches “${query.trim()}”`
+            : `${list.length} ${list.length === 1 ? "match" : "matches"} for “${query.trim()}”`}
+        </p>
+      ) : (
+        <>
+          {/* ONE ROW OF WORDS: EVERYTHING · GIVE · WISH · TRADE · BORROW · MINE */}
+          <div className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-[15px] font-black lowercase tracking-[0.1em]">
             <button
               type="button"
               onClick={() => {
                 buzz();
-                setScope(s);
+                setType(null);
+                setScope("everyone");
               }}
-              className={scope === s ? "opacity-100" : "opacity-35"}
-              style={scope === s ? { color: "var(--person-self-community)" } : undefined}
+              className={type === null && scope === "everyone" ? "opacity-100" : "opacity-30"}
+              style={{ color: "var(--giver-ink)" }}
             >
-              {s === "mine" ? "my gives" : "everyone"}
+              everything
             </button>
-          </span>
-        ))}
-      </div>
-
-      {/* ONE COMPACT SORT CONTROL: NEARBY · LATEST · POPULAR */}
-      <div className="mt-2.5 flex items-baseline gap-3 text-[10px] font-black lowercase tracking-[0.24em] opacity-45">
-        {SORTS.map((s, i) => (
-          <span key={s} className="flex items-baseline gap-3">
-            {i === 0 ? null : <span className="opacity-30">·</span>}
+            {FILTERS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  buzz();
+                  setType(t);
+                  setScope("everyone");
+                }}
+                className={type === t && scope === "everyone" ? "opacity-100" : "opacity-30"}
+                style={{ color: ACTIVITY_FILL[t] }}
+              >
+                {t}
+              </button>
+            ))}
             <button
               type="button"
-              onClick={() => setSort(s)}
-              className={sort === s ? "opacity-100" : undefined}
-              style={sort === s ? { color: "var(--person-self-community)" } : undefined}
+              onClick={() => {
+                buzz();
+                setType(null);
+                setScope("mine");
+              }}
+              className={scope === "mine" ? "opacity-100" : "opacity-30"}
+              style={{ color: "var(--person-self-community)" }}
             >
-              {s}
+              mine
             </button>
-          </span>
-        ))}
-      </div>
+          </div>
+
+          {/* ONE TAP CHANGES THE ORDER. No menus, no icons. */}
+          <button
+            type="button"
+            onClick={() => {
+              buzz();
+              setSort(SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length]!);
+            }}
+            className="g-meta mt-3 min-h-11 self-start text-left opacity-55"
+          >
+            {sort} first — tap to change
+          </button>
+        </>
+      )}
+
 
       <ul className="mt-4 flex-1 overflow-y-auto pb-8">
-        {list.length === 0 ? (
+        {list.length === 0 && !searching ? (
           <li className="g-lede opacity-55">nothing here yet — yours could be the first</li>
         ) : null}
         {list.map((item, index) => {
           const owner = memberById(item.ownerId);
           const status = activityStatus(links, item.id, item.status);
           const line = itemLine(item);
+          /* AT MOST TWO FACTS. Distance and the one thing that matters most. */
           const facts = [
-            item.distanceKm === undefined ? null : `${item.distanceKm} km`,
-            ...detailBits(item),
-            status === "connecting" ? "connecting" : null,
+            item.distanceKm === undefined ? null : `${item.distanceKm} km away`,
+            status === "connecting" ? "connecting" : detailBits(item)[0] ?? null,
           ].filter(Boolean) as string[];
           return (
-            <li key={item.id} className={index === 0 ? "pb-3.5" : "g-rule py-3.5"}>
-              <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
-                {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
-              </span>
-
-              {/* THE HEADLINE OPENS THE ACTIVITY. */}
+            <li key={item.id} className={index === 0 ? "pb-4" : "g-rule py-4"}>
+              {/* THE WHOLE ROW OPENS THE ACTIVITY — one big, obvious target. */}
               <button
                 type="button"
-                className="g-post mt-1 block w-full overflow-hidden text-ellipsis whitespace-nowrap text-left"
-                style={{
-                  color: ACTIVITY_FILL[item.type],
-                  fontSize: headlineSize(line),
-                }}
+                className="block w-full text-left"
                 onClick={() => {
                   buzz();
                   onOpen(item.id);
                 }}
               >
-                {line}
+                <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
+                  {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
+                </span>
+                <span
+                  className="g-post mt-1 block w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                  style={{ color: ACTIVITY_FILL[item.type], fontSize: headlineSize(line) }}
+                >
+                  {line}
+                </span>
+                {facts.length ? (
+                  <span className="g-meta mt-1.5 block opacity-50">{facts.join(" · ")}</span>
+                ) : null}
               </button>
 
-              {/* ENOUGH TO DECIDE WITHOUT OPENING IT. */}
-              <p className="mt-1.5 g-meta opacity-55">
-                <button
-                  type="button"
-                  onClick={() => {
-                    buzz();
-                    if (owner) onOpenProfile?.(owner.id);
-                  }}
-                  className="font-black underline decoration-current/40 underline-offset-4"
-                  style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
-                >
-                  {owner ? owner.username : "someone"}
-                </button>
-                {facts.length ? ` · ${facts.join(" · ")}` : ""}
-              </p>
+              {/* THE PERSON IS THEIR OWN DESTINATION. */}
+              <button
+                type="button"
+                onClick={() => {
+                  buzz();
+                  if (owner) onOpenProfile?.(owner.id);
+                }}
+                className="g-meta mt-1.5 min-h-11 font-black underline decoration-current/40 underline-offset-4"
+                style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
+              >
+                {owner ? owner.username : "someone"}
+              </button>
 
               {/* MY OWN POST IS MINE TO CHANGE OR TAKE DOWN, right here. */}
               {item.ownerId === ME_ID ? (
-                <div className="mt-2 flex items-baseline gap-5 text-[10px] font-black lowercase tracking-[0.24em]">
+                <div className="flex items-baseline gap-6 text-[12px] font-black lowercase tracking-[0.16em]">
                   <button
                     type="button"
+                    className="min-h-11"
                     onClick={() => {
                       buzz();
                       onEditMine?.(item.id);
                     }}
                     style={{ color: "var(--person-self-community)" }}
                   >
-                    edit
+                    change it
                   </button>
                   <button
                     type="button"
+                    className="min-h-11 opacity-45"
                     onClick={() => {
                       buzz();
                       itemsStore.remove(item.id);
                     }}
-                    className="opacity-45"
                   >
-                    remove
+                    take it down
                   </button>
                 </div>
               ) : null}
@@ -259,6 +311,7 @@ export function CommunityFeed({
           );
         })}
       </ul>
+
     </div>
   );
 }

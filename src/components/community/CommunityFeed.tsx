@@ -82,17 +82,47 @@ export function CommunityFeed({
   const [query, setQuery] = useState("");
 
   const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
+
+  /**
+   * SEARCH ALWAYS SEARCHES EVERYTHING. A word finds a match no matter which
+   * filter happened to be showing, and it looks everywhere a person would
+   * expect: the words of the activity, its note, its kind, who posted it, and
+   * the little facts underneath.
+   */
+  const haystack = (item: ReturnType<typeof communityItems>[number]): string => {
+    const owner = memberById(item.ownerId);
+    return [
+      itemLine(item),
+      item.note ?? "",
+      item.offer ?? "",
+      item.want ?? "",
+      item.type,
+      item.side ?? "",
+      owner?.username ?? "",
+      owner?.name ?? "",
+      ...detailBits(item),
+    ]
+      .join(" ")
+      .toLowerCase();
+  };
+
   /* MY PUBLISHED GIVES ARE PART OF THE COMMUNITY, not hidden from their author. */
   const list = communityItems(items, {
-    ...(type ? { type } : {}),
-    ...(scope === "mine" ? { ownerId: ME_ID } : {}),
+    ...(type && !searching ? { type } : {}),
+    ...(scope === "mine" && !searching ? { ownerId: ME_ID } : {}),
   })
-    .filter((item) => (needle ? itemLine(item).toLowerCase().includes(needle) : true))
+    .filter((item) =>
+      searching
+        ? needle.split(/\s+/).every((word) => haystack(item).includes(word))
+        : true,
+    )
     .sort((a, b) => {
       if (sort === "latest") return b.createdAt - a.createdAt;
       if (sort === "popular") return b.boostWeight - a.boostWeight || b.createdAt - a.createdAt;
       return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
     });
+
 
   return (
     <div

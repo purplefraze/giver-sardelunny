@@ -215,19 +215,21 @@
 
 
   /* ---- LIVING G MODE COLOURS — THE SIX TOGGLE POSITIONS ----
-       9:00 = my profile (turquoise blue) · 6:00 = give (bright green) ·
-       10:30 = wish (dreamy purple) · 1:30 = borrow (bright pink) ·
-       7:30 = lend (seafoam) · 4:30 = trade (orange). Source of truth. */
-  --mode-giver: var(--person-self); /* my profile at 9 o'clock — turquoise blue */
+       6:00 = MY G (patriot blue) · 7:30 = give (bright green) ·
+       9:00 = lend (yellow) · 10:30 = wish (dreamy purple) ·
+       1:30 = borrow (hot pink with a hint of red) · 4:30 = trade (bright orange).
+       These placements and colours hold on every Living G, always. */
+  --giver-patriot: oklch(0.5 0.21 260); /* PATRIOT BLUE — my g, my profile */
+  --mode-giver: var(--giver-patriot); /* my profile at 6 o'clock — patriot blue */
   --mode-give: var(--giver-green); /* bright green */
-  --mode-lend: var(--giver-seafoam); /* seafoam / turquoise — lending */
+  --mode-lend: var(--giver-yellow); /* yellow — lending */
   --mode-wish: var(--giver-purple); /* dreamy purple */
-  --mode-borrow: var(--giver-pink); /* hot pink — borrowing */
-  --mode-trade: var(--giver-orange); /* orange */
+  --mode-borrow: oklch(0.62 0.24 14); /* hot pink with a hint of red — borrowing */
+  --mode-trade: oklch(0.73 0.2 52); /* bright orange */
 
   --mode-giver-complement: var(--giver-blue-complement);
   --mode-give-complement: var(--giver-green-complement);
-  --mode-lend-complement: var(--giver-seafoam-complement);
+  --mode-lend-complement: var(--giver-yellow-complement);
   --mode-wish-complement: var(--giver-purple-complement);
   --mode-trade-complement: var(--giver-orange-complement);
   --mode-borrow-complement: var(--giver-pink-complement);

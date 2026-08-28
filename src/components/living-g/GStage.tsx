@@ -29,7 +29,7 @@ export const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
  * Reserved on EVERY screen so the canonical size is identical everywhere. Kept
  * as tight as the text itself needs, because every unit here shrinks the G.
  */
-export const CTA_BAND = "2rem";
+export const CTA_BAND = "1.25rem";
 
 /**
  * WHAT MUST ACTUALLY FIT — the artwork PLUS the selector's true travel, without

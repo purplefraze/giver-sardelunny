@@ -550,6 +550,10 @@ export const myProfileStore = {
   /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */
   seedSparks() {
     hydrate();
+    /*
+      CLOUD WINS. If a signed-in session already restored a seeded balance,
+      never re-gift 50 over the top of what the server already holds.
+    */
     if (person.sparksSeeded) return;
     savePerson({ ...person, sparks: STARTING_SPARKS, sparksSeeded: true });
     ledgerStore.record({

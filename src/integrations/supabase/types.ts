@@ -526,9 +526,12 @@ export type Database = {
           name: string
           photo_url: string | null
           pronouns: string | null
+          reserved: Json
+          rewarded: Json
           sample_key: string | null
           sparkles: number
           sparks: number
+          sparks_seeded: boolean
           updated_at: string
           user_id: string | null
           weekend: string
@@ -547,9 +550,12 @@ export type Database = {
           name?: string
           photo_url?: string | null
           pronouns?: string | null
+          reserved?: Json
+          rewarded?: Json
           sample_key?: string | null
           sparkles?: number
           sparks?: number
+          sparks_seeded?: boolean
           updated_at?: string
           user_id?: string | null
           weekend?: string
@@ -568,9 +574,12 @@ export type Database = {
           name?: string
           photo_url?: string | null
           pronouns?: string | null
+          reserved?: Json
+          rewarded?: Json
           sample_key?: string | null
           sparkles?: number
           sparks?: number
+          sparks_seeded?: boolean
           updated_at?: string
           user_id?: string | null
           weekend?: string

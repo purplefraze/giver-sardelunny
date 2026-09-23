@@ -23,7 +23,7 @@ import { useIntroSeen } from "@/hooks/use-intro-seen";
 import { CommunityFeed } from "@/components/community/CommunityFeed";
 
 import { CommunityLocked } from "@/components/community/CommunityLocked";
-import { claimUnlockMoment, hasActiveGive } from "@/data/community-access";
+import { claimUnlockMoment, canEngageCommunity } from "@/data/community-access";
 import { publishEligibility } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
@@ -376,11 +376,12 @@ function Index() {
   }, [lifecycle.profileSetupCompletedAt, me.built]);
 
   /**
-   * THE CARDINAL GIVER RULE: one active give of my own is the key to the
-   * community. Permanent, re-checked here on every render — never a flag set
-   * once during onboarding.
+   * THE CARDINAL GIVER RULE: Communi-g is visible to everyone; engaging
+   * (respond / message / sparkle) needs one active give of my own. Permanent,
+   * re-checked here on every render — never a flag set once during onboarding.
    */
-  const canCommunity = hasActiveGive(items);
+  const canEngage = canEngageCommunity(items);
+  const canCommunity = canEngage; // unlock celebration + locked overlay dismiss
 
   /**
    * WHY A GIVE CANNOT BECOME REAL YET — named plainly, so the locked door never
@@ -625,10 +626,7 @@ function Index() {
                     : firstArrival
                       ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
                       : () => {
-                          if (!canCommunity) {
-                            setLocked(true);
-                            return;
-                          }
+                          /* VISIBLE TO EVERYONE. Interaction locks live inside the detail. */
                           setBrowse({ type: mode as ItemType });
                         },
 
@@ -637,13 +635,13 @@ function Index() {
                     anchor,
                     region: "bottom",
                     /*
-                      COMMUNITY CONTENT OR NOTHING. Until the community is truly
-                      open AND there is something in this world to show, the
-                      bottom loop stays empty — never a question, never filler.
-                      The label itself carries the activity's own colour.
+                      COMMUNITY CONTENT OR NOTHING. Communi-g is visible to
+                      everyone — the lock is on engaging, not on looking. Until
+                      there is something in this world to show, the bottom loop
+                      stays empty — never a question, never filler.
                     */
                     blocks:
-                      activity === null || !canCommunity || !community
+                      activity === null || !community
                         ? []
                         : [
                             {
@@ -723,7 +721,7 @@ function Index() {
               else if (id === "locked") setLocked(false);
             }}
             slots={[
-              /* NO ACTIVE GIVE, NO COMMUNITY. The door asks the one question. */
+              /* LOOKING IS OPEN; ENGAGING IS NOT. The door asks the one question. */
               {
                 id: "locked",
                 open: locked,
@@ -979,6 +977,11 @@ function Index() {
                     itemId={detail}
                     onOpenConnection={(id) => setTalking(id)}
                     onOpenProfile={(ownerId) => setPerson(ownerId)}
+                    onNeedGive={() => {
+                      setDetail(null);
+                      setBrowse(null);
+                      setLocked(true);
+                    }}
                     onClose={() => setDetail(null)}
                   />
                 ) : null,

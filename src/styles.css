@@ -449,8 +449,8 @@
 [data-world="me"],
 [data-world="profile"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-green);
-  --world-ink: oklch(0.42 0.15 145);
+  --world-g: var(--mode-giver);
+  --world-ink: oklch(0.38 0.16 260);
   --world-text: var(--giver-green-complement);
   --world-accent: var(--person-self);
 }

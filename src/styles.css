@@ -451,7 +451,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-giver);
   --world-ink: oklch(0.38 0.16 260);
-  --world-text: var(--giver-green-complement);
+  --world-text: var(--mode-giver-complement);
   --world-accent: var(--person-self);
 }
 

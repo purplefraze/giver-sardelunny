@@ -39,7 +39,7 @@ export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as con
 export type Seat = (typeof SEATS)[number];
 
 /** Every seat on the wire, in travel order (one end of the break -> the other). */
-export const FULL_SEATS = ["giver", "give", "lend", "wish", "borrow", "trade"] as const;
+export const FULL_SEATS = ["trade", "borrow", "wish", "give", "lend", "giver"] as const;
 
 
 
@@ -90,12 +90,12 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  *   trade   +45°   4:30, just inside the clockwise end
  */
 const SEAT_ANGLE: Record<Seat, number> = {
-  giver: rad(-270),
-  give: rad(-225),
-  lend: rad(-180),
-  wish: rad(-135),
-  borrow: rad(-45),
-  trade: rad(45),
+  trade: rad(-270), // 6:00
+  borrow: rad(-180), // 9:00
+  wish: rad(-135), // 10:30
+  give: rad(-45), // 1:30
+  lend: rad(0), // 3:00
+  giver: rad(45), // 4:30 — My G
 };
 
 /** The wire's two physical ends — the two lips of the break. Nothing passes. */

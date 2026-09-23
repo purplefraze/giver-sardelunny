@@ -610,7 +610,7 @@ export function EarSelector({
                 r={78}
                 fill="transparent"
                 role="button"
-                aria-label={m}
+                aria-label={m === "giver" ? "my g" : m}
                 className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
                 style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
                 onPointerDown={(e) => {

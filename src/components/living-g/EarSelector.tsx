@@ -427,6 +427,42 @@ export function EarSelector({
       })}
 
 
+      {/* MY G IS ALWAYS VISIBLE: a blue "my g" ear waits at 4:30 until chosen. */}
+      {seats.includes("giver") && !locked
+        ? (() => {
+            const spot = at(SEAT_ANGLE.giver, TRACK_R);
+            const hidden =
+              (mode === "giver" && !dragging) ||
+              Math.abs(shortest(angle, SEAT_ANGLE.giver)) < 0.3;
+            return (
+              <g
+                pointerEvents="none"
+                style={{ opacity: hidden ? 0 : 1, transition: "opacity 200ms ease-out" }}
+              >
+                <circle
+                  cx={spot.x}
+                  cy={spot.y}
+                  r={RING_MID * 0.72}
+                  fill="var(--world-bg)"
+                  stroke="var(--mode-giver)"
+                  strokeWidth={RING_W * 0.55}
+                />
+                <text
+                  x={spot.x}
+                  y={spot.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="var(--mode-giver)"
+                  className="font-black lowercase"
+                  style={{ fontSize: WORD_SIZE * 0.62, letterSpacing: LOOP_ROLE_STYLE.action.tracking }}
+                >
+                  my g
+                </text>
+              </g>
+            );
+          })()
+        : null}
+
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,
         then placed by a single rotation about the track centre. Stem root under

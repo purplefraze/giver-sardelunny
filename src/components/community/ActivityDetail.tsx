@@ -22,6 +22,7 @@ import { buzz } from "@/lib/haptics";
 import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 import { startConnection } from "@/data/cloud/connections-sync";
 import { sessionStore } from "@/data/cloud/session";
+import { canEngageCommunity } from "@/data/community-access";
 
 
 /**
@@ -55,12 +56,15 @@ export function ActivityDetail({
   itemId,
   onOpenConnection,
   onOpenProfile,
+  onNeedGive,
   onClose,
 }: {
   itemId: string;
   onOpenConnection: (connectionId: string) => void;
   /** The person is always their own destination. */
   onOpenProfile?: (ownerId: string) => void;
+  /** Communi-g is visible; engaging still needs one active give. */
+  onNeedGive?: () => void;
   onClose: () => void;
 }) {
   const items = useItems();
@@ -105,6 +109,11 @@ export function ActivityDetail({
     buzz();
     if (mine) {
       onOpenConnection(mine.id);
+      return;
+    }
+    /* LOOKING IS FREE. Responding needs one active give of your own. */
+    if (!canEngageCommunity(items)) {
+      onNeedGive?.();
       return;
     }
     /* INTENT ONLY. This opens a conversation — it completes nothing. */
@@ -263,6 +272,10 @@ export function ActivityDetail({
             disabled={sparkles < 1}
             onClick={() => {
               buzz();
+              if (!canEngageCommunity(items)) {
+                onNeedGive?.();
+                return;
+              }
               myProfileStore.useSparkle(item.id);
             }}
             className="text-[12px] font-black lowercase tracking-[0.26em] disabled:opacity-25"

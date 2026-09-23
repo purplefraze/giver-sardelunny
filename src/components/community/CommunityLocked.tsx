@@ -3,9 +3,9 @@ import { BackArrow } from "@/components/BackArrow";
 /**
  * THE DOOR THAT ASKS ONE QUESTION.
  *
- * The community is not hidden behind a lock icon, a paywall or a nag: it simply
- * asks the only question Giver cares about. One active give and the door is
- * open — forever, and for everyone else's eyes too.
+ * Communi-g is already visible — this is not a hiding place. It asks for one
+ * active give before a person may respond, message, sparkle or start a
+ * connection. One give and the lock lifts — forever, re-checked every time.
  *
  * No cards, no boxes, no icons: type, space and one bright way forward.
  */
@@ -34,8 +34,8 @@ export function CommunityLocked({
         <br />a giver?
       </h1>
       <p className="g-body mt-6 max-w-[22ch] opacity-60">
-        the community opens to people who are in it. give one thing — anything —
-        and everything happening near you appears.
+        you can look around communi-g. to take part — respond, message, sparkle — give one thing.
+        anything. then the lock lifts.
       </p>
 
       {problem ? (
@@ -65,4 +65,3 @@ export function CommunityLocked({
     </div>
   );
 }
-

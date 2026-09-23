@@ -95,7 +95,7 @@ const SEAT_ANGLE: Record<Seat, number> = {
   wish: rad(-135), // 10:30
   give: rad(-45), // 1:30
   lend: rad(0), // 3:00
-  giver: rad(45), // 4:30 — My G
+  giver: rad(42.5), // 4:25 — My G, nudged toward Lend to clear the S-curve
 };
 
 /** The wire's two physical ends — the two lips of the break. Nothing passes. */

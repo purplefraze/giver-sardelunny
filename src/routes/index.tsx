@@ -439,9 +439,7 @@ function Index() {
    * nothing there; afterwards the seat exists permanently, whether or not a
    * single field was ever filled in. LEND sits at 9 o'clock, TRADE at 3.
    */
-  const myGSeats: readonly Seat[] = lifecycle.profileDiscoveredAt
-    ? (["giver", ...ACTIVITY_SEATS] as const)
-    : ACTIVITY_SEATS;
+  const myGSeats: readonly Seat[] = ["giver", ...ACTIVITY_SEATS] as const;
 
   /**
    * TOP = ME. MY G is not a content type and never a toggle seat: it is the

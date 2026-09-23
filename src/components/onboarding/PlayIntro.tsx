@@ -95,7 +95,7 @@ function Line({
 
 }
 
-const PLAY_SEATS = [...MODES, "lend"] as const;
+const PLAY_SEATS = ["giver", ...MODES, "lend"] as const;
 type PlaySeat = (typeof PLAY_SEATS)[number];
 
 export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
@@ -238,7 +238,7 @@ export function PlayIntro({ onDone }: { onDone: (earned: boolean) => void }) {
     <IntroG
       /* THE TOGGLE IS THE ONLY SOURCE OF THE G'S COLOUR — from the first frame.
          wish = purple · give = green · trade = orange · borrow = blue. */
-      world={seat}
+      world={seat === "giver" ? "profile" : seat}
       earCut
       press={press}
       overlay={

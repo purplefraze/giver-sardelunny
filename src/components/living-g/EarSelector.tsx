@@ -401,14 +401,13 @@ export function EarSelector({
         // On a person's screen the seats TELL THEIR STORY: a seat they have
         // taken part in reads in that mode's own colour, a little stronger.
         const told = m === "giver" ? false : (history?.includes(m) ?? false);
-        const isMe = m === "giver";
         return (
           <circle
             key={m}
             cx={hint.x}
             cy={hint.y}
             r={told ? 8 : 5}
-            fill={isMe ? "var(--mode-giver)" : told ? MODE_COLOUR[m] : "var(--world-g)"}
+            fill={told ? MODE_COLOUR[m] : "var(--world-g)"}
             pointerEvents="none"
             style={{
               opacity:
@@ -416,52 +415,12 @@ export function EarSelector({
                   ? 0
                   : told
                     ? 0.85
-                    : isMe
-                      ? 0.32
-                      : 0.22,
-
+                    : 0.22,
               transition: "opacity 200ms ease-out",
             }}
           />
         );
       })}
-
-
-      {/* MY G IS ALWAYS VISIBLE: a blue "my g" ear waits at 4:30 until chosen. */}
-      {seats.includes("giver") && !locked
-        ? (() => {
-            const spot = at(SEAT_ANGLE.giver, TRACK_R);
-            const hidden =
-              (mode === "giver" && !dragging) ||
-              Math.abs(shortest(angle, SEAT_ANGLE.giver)) < 0.3;
-            return (
-              <g
-                pointerEvents="none"
-                style={{ opacity: hidden ? 0 : 1, transition: "opacity 200ms ease-out" }}
-              >
-                <circle
-                  cx={spot.x}
-                  cy={spot.y}
-                  r={RING_MID * 0.72}
-                  fill="var(--world-bg)"
-                  stroke="var(--mode-giver)"
-                  strokeWidth={RING_W * 0.55}
-                />
-                <text
-                  x={spot.x}
-                  y={spot.y}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="var(--mode-giver)"
-                  className="font-black lowercase"
-                  style={{ fontSize: WORD_SIZE * 0.62, letterSpacing: LOOP_ROLE_STYLE.action.tracking }}
-                >
-                  my g
-                </text>
-              </g>
-            );
-          })()
-        : null}
 
       {/*
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,

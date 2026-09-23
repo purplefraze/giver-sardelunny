@@ -222,17 +222,17 @@
   --giver-patriot: oklch(0.5 0.21 260); /* PATRIOT BLUE — my g, my profile */
   --mode-giver: var(--giver-patriot); /* my profile at 6 o'clock — patriot blue */
   --mode-give: var(--giver-green); /* bright green */
-  --mode-lend: var(--giver-yellow); /* yellow — lending */
+  --mode-lend: oklch(0.78 0.15 146); /* green tint of give */
   --mode-wish: var(--giver-purple); /* dreamy purple */
-  --mode-borrow: oklch(0.62 0.24 14); /* hot pink with a hint of red — borrowing */
+  --mode-borrow: oklch(0.7 0.16 300); /* purple tint of wish */
   --mode-trade: oklch(0.73 0.2 52); /* bright orange */
 
   --mode-giver-complement: var(--giver-blue-complement);
   --mode-give-complement: var(--giver-green-complement);
-  --mode-lend-complement: var(--giver-yellow-complement);
+  --mode-lend-complement: var(--giver-green-complement);
   --mode-wish-complement: var(--giver-purple-complement);
   --mode-trade-complement: var(--giver-orange-complement);
-  --mode-borrow-complement: var(--giver-pink-complement);
+  --mode-borrow-complement: var(--giver-purple-complement);
 
 
   /* ---- ACTIVITY TEXT COLOUR = ITS WORLD'S G COLOUR ---- */
@@ -326,9 +326,9 @@
 /* Home / Giver — my own world: green. */
 [data-world="home"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--giver-green);
-  --world-ink: oklch(0.42 0.14 145);
-  --world-text: var(--giver-green-complement);
+  --world-g: var(--mode-giver);
+  --world-ink: oklch(0.38 0.16 260);
+  --world-text: var(--mode-giver-complement);
   --world-accent: var(--person-self);
 }
 
@@ -347,7 +347,7 @@
 [data-world="borrow"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-borrow);
-  --world-ink: oklch(0.48 0.2 6);
+  --world-ink: oklch(0.42 0.18 300);
   --world-text: var(--mode-borrow-complement);
   --world-accent: var(--person-self);
 }
@@ -365,7 +365,7 @@
 [data-world="lend"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--mode-lend);
-  --world-ink: oklch(0.46 0.09 198);
+  --world-ink: oklch(0.44 0.14 146);
   --world-text: var(--mode-lend-complement);
   --world-accent: var(--person-self);
 }
@@ -423,7 +423,7 @@
 [data-world="borrowing"] {
   --world-bg: var(--giver-paper);
   --world-g: var(--person-other-wish);
-  --world-ink: oklch(0.48 0.2 6);
+  --world-ink: oklch(0.42 0.18 300);
   --world-text: var(--giver-pink-complement);
   --world-accent: var(--person-self);
 }

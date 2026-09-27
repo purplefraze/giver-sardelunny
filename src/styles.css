@@ -1200,7 +1200,7 @@
    screen, each entry in its own action's colour, muted · the plain G top left
    (no toggle, no dial) in a tight white clearing · one solid white circle
    (~300px at 390 wide) holding "giver", the field and the send circle · the
-   seat toggle riding just inside that circle's edge at the seat's clock.
+   seat toggle locked to a track just OUTSIDE that circle, at the seat's clock.
 
    COLOURS: read from the ONE app-wide map (--mode-*). One attribute
    (data-signin-seat) sets --seat, which recolours the G, the wordmark, the
@@ -1208,9 +1208,21 @@
    --------------------------------------------------------------- */
 .signin {
   --seat: var(--mode-give);
-  /* The circle: 300px on a 390px screen, never wider than the frame allows
-     (the toggle rides inside the edge, so the circle fitting = it fitting). */
-  --signin-circle: min(300px, 77cqw, 40cqh);
+  /* THE CIRCLE AND ITS TRACK. The toggle rides OUTSIDE the circle on a fixed
+     orbit about the circle's true centre:
+       R_orbit = R_circle + gap + toggle radius  (ring outer edge ≈ 17px)
+     and its white knock-out reaches 21px past that, so the whole assembly
+     spans R_circle + 43px from the centre. The circle is sized so that span
+     fits the frame with a margin: 100cqw − 96px (294px at 390, 224px at 320,
+     300px cap from 396 up), and never taller than the height allows. */
+  --signin-circle: min(300px, calc(100cqw - 96px), 40cqh);
+  --signin-orbit-gap: 5px;
+  --signin-toggle-r: 17px;
+  --signin-orbit: calc(var(--signin-circle) / 2 + var(--signin-orbit-gap) + var(--signin-toggle-r));
+  /* FUND BORDER — one variable. Transparent everywhere except fund; swap the
+     colour here (e.g. to green) and nothing else changes. */
+  --signin-edge-width: 1.75px;
+  --signin-edge: transparent;
   container-type: size;
   background: #fff;
   font-family: var(--giver-font);
@@ -1223,6 +1235,7 @@
 .signin[data-signin-seat="borrow"] { --seat: var(--mode-borrow); }
 .signin[data-signin-seat="lend"] { --seat: var(--mode-lend); }
 .signin[data-signin-seat="giver"] { --seat: var(--mode-giver); }
+.signin[data-signin-seat="fund"] { --signin-edge: var(--mode-fund); }
 
 /* THE FEED — dense rows over the whole screen, a soft fade at top and bottom.
    Each entry wears its own action's colour at a balanced strength. */
@@ -1276,6 +1289,32 @@
   line-height: 0;
   pointer-events: none;
 }
+/* THE LIVING G, drawn at the small G's exact box (46px for the artwork's
+   -12..1145 height). Its SVG frame is larger than the artwork (the frame
+   leaves room for the selector), so it is placed by the same ratio: the
+   artwork lands exactly where the static mark sat. */
+.signin-g-box {
+  position: relative;
+  width: calc(46px * 600 / 1157);
+  height: 46px;
+}
+.signin-g-breath {
+  position: absolute;
+  inset: 0;
+  /* The app's own idle motion for an entered G (styles: g-alive). */
+  animation: g-alive 7200ms ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+.signin-g-art {
+  position: absolute;
+  left: calc(46px * -105 / 1157);
+  top: calc(46px * -83 / 1157);
+  width: calc(46px * 778 / 1157);
+  height: calc(46px * 1228 / 1157);
+}
+@media (prefers-reduced-motion: reduce) {
+  .signin-g-breath { animation: none; }
+}
 .signin-g::before {
   content: "";
   position: absolute;
@@ -1289,17 +1328,23 @@
   z-index: -1;
 }
 
-/* THE CIRCLE — solid white, opaque, a soft white edge so it reads as a window. */
+/* THE CIRCLE — one clean, true circle (width = height, 50% radius, a crisp
+   edge, no soft halo) so the toggle visibly has a track to ride. The border
+   is transparent except at fund (--signin-edge); box-sizing keeps the size
+   exact either way. */
 .signin-circle {
   position: absolute;
   left: 50%;
   top: 47.4%;
+  box-sizing: border-box;
   width: var(--signin-circle);
   height: var(--signin-circle);
+  aspect-ratio: 1;
   transform: translate(-50%, -50%);
-  border-radius: 9999px;
+  border-radius: 50%;
+  border: var(--signin-edge-width) solid var(--signin-edge);
   background: #fff;
-  box-shadow: 0 0 6px 8px #fff;
+  background-clip: border-box;
   z-index: 10;
 }
 .signin-inner {
@@ -1316,7 +1361,7 @@
   left: 0;
   right: 0;
   text-align: center;
-  font-weight: 300;
+  font-weight: 500; /* two steps up from light (300 -> 500 medium) */
   font-size: 14px;
   line-height: 16px;
   letter-spacing: 0.32em;
@@ -1345,7 +1390,9 @@
   border: 0;
   border-bottom: 1px solid #ece9e4;
   border-radius: 0;
-  padding: 0 0 15px;
+  /* The words sit ON the line: baseline about 9px above the underline
+     (placeholder and typed text alike). The underline itself stays put. */
+  padding: 0 0 4px;
   outline: none;
 }
 .signin-field::placeholder {
@@ -1388,7 +1435,8 @@
 .signin-under {
   position: absolute;
   left: 50%;
-  top: calc(100% + 10px);
+  /* Below the toggle's lowest reach (6:00): gap + ring + knock-out, + air. */
+  top: calc(100% + var(--signin-orbit-gap) + var(--signin-toggle-r) + 21px + 10px);
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -1422,10 +1470,12 @@
 }
 .signin-link:disabled { opacity: 0.45; }
 
-/* THE SEAT TOGGLE — a small ring and stem riding just inside the circle's
-   edge, stem pointing in, on a white knock-out disc (the negative-space gap).
-   It sits at the current seat's clock position and SLIDES round the edge to
-   the next: one rotation about the circle's centre, transform only. */
+/* THE SEAT TOGGLE — a small ring on a stem, locked to a track OUTSIDE the
+   circle: a zero-size wrapper at the circle's true centre is ROTATED to the
+   seat's angle, and the toggle sits translated out along its +x axis by
+   exactly R_orbit, stem pointing back in to the edge. Moving between seats
+   interpolates the ANGLE only (rotate), so it always travels along the
+   circumference, never across the interior. */
 .signin-orbit {
   position: absolute;
   left: 50%;
@@ -1438,7 +1488,7 @@
 .signin-orbit[data-dragging="true"] { transition: none; }
 .signin-toggle {
   position: absolute;
-  left: calc(var(--signin-circle) / 2 - 21px - 24px);
+  left: calc(var(--signin-orbit) - 24px);
   top: -24px;
   width: 48px;
   height: 48px;

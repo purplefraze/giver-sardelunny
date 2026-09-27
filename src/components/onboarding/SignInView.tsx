@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { FULL_SEATS, type Seat } from "@/components/living-g/EarSelector";
-import { GMark } from "@/components/living-g/GMark";
+import { LivingG } from "@/components/living-g/LivingG";
 import { signInFeedLines, type SignInFeedLine } from "@/data/signin-feed";
 import { OTP_LENGTH, type OtpSignIn } from "@/components/onboarding/use-otp-sign-in";
 import { haptics } from "@/lib/haptics";
@@ -17,7 +17,7 @@ import { haptics } from "@/lib/haptics";
  *   G       the plain G top left in the seat colour — no toggle, no dial
  *   circle  one solid white circle holding "giver", the field (email, then
  *           the 6-digit code in the same place) and the send circle
- *   toggle  a small ring riding just inside the circle's edge at the seat's
+ *   toggle  a small ring locked to a track just outside the circle, at the seat's
  *           clock position. Tap it: it slides clockwise to the next seat. Drag
  *           it round the edge: it snaps to the nearest seat on release. Arrow
  *           keys step it. No text labels anywhere.
@@ -117,16 +117,13 @@ function EdgeToggle({ seat, onSeat }: { seat: Seat; onSeat: (s: Seat) => void })
   const rotRef = useRef(rot);
   rotRef.current = rot;
 
-  /* The seat's angle expressed nearest the current rotation (or strictly
-     clockwise / anticlockwise for a step), so it always slides the short,
-     honest way round the edge. */
+  /* POLAR, SHORTEST ARC. The rotation is one continuous angle; a seat's
+     angle is expressed nearest the current one (delta within ±180°), so the
+     toggle always slides the short way round the track. CSS interpolates the
+     rotate() angle itself — never x/y — so every frame sits on the orbit. */
   const nearest = (deg: number) => deg + 360 * Math.round((rotRef.current - deg) / 360);
-  const go = (next: Seat, dir: 0 | 1 | -1) => {
-    const base = SEAT_DEG[next];
-    let to = nearest(base);
-    if (dir === 1) while (to <= rotRef.current) to += 360;
-    if (dir === -1) while (to >= rotRef.current) to -= 360;
-    setRot(to);
+  const go = (next: Seat) => {
+    setRot(nearest(SEAT_DEG[next]));
     if (next !== seat) {
       haptics.light();
       onSeat(next);
@@ -135,7 +132,7 @@ function EdgeToggle({ seat, onSeat }: { seat: Seat; onSeat: (s: Seat) => void })
   const step = (by: 1 | -1) => {
     const i = FULL_SEATS.indexOf(seat as (typeof FULL_SEATS)[number]);
     const next = FULL_SEATS[(i + by + FULL_SEATS.length) % FULL_SEATS.length]!;
-    go(next, by);
+    go(next);
   };
 
   const angleAt = (e: React.PointerEvent) => {
@@ -197,12 +194,12 @@ function EdgeToggle({ seat, onSeat }: { seat: Seat; onSeat: (s: Seat) => void })
               best = s;
             }
           }
-          go(best, 0);
+          go(best);
         }}
         onPointerCancel={() => {
           gesture.current = null;
           setDragging(false);
-          go(seat, 0);
+          go(seat);
         }}
         onKeyDown={(e) => {
           if (e.key === "ArrowRight" || e.key === "ArrowDown") {
@@ -214,10 +211,13 @@ function EdgeToggle({ seat, onSeat }: { seat: Seat; onSeat: (s: Seat) => void })
           }
         }}
       >
-        {/* +x points outward along the radius; the stem points in. */}
+        {/* +x points outward along the radius. The ring's centre is the
+            orbit point (R_orbit from the circle's centre); its outer edge is
+            16.75px out, the white knock-out 21px, and the stem runs back in
+            to meet the circle's edge (gap 5 + ring 17 = 22px). */}
         <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
-          <circle cx="24" cy="24" r="20" fill="#fff" />
-          <rect x="4" y="21" width="22" height="6" rx="3" fill="var(--seat)" />
+          <circle cx="24" cy="24" r="21" fill="#fff" />
+          <rect x="1" y="21" width="23" height="6" rx="3" fill="var(--seat)" />
           <circle cx="24" cy="24" r="14" fill="#fff" stroke="var(--seat)" strokeWidth="5.5" />
         </svg>
       </button>
@@ -260,8 +260,18 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
     >
       <Feed />
 
-      <div className="signin-g">
-        <GMark colour="var(--seat)" height={46} earless />
+      {/* THE LIVING G — the app's own animated G with its idle breath, in the
+          seat colour, earless (no ring, no dial: the toggle lives on the
+          circle). Decorative and non-interactive: no regions, so no hit
+          bands, and the wrapper takes no pointer events. */}
+      <div className="signin-g" aria-hidden="true">
+        <div className="signin-g-box">
+          <div className="signin-g-breath">
+            <div className="signin-g-art" style={{ ["--world-g" as string]: "var(--seat)" }}>
+              <LivingG showLabels={false} earCut />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="signin-circle">

@@ -115,7 +115,7 @@ const BEATS: Record<Exclude<IntroTopic, "wish" | "fund">, string[][]> = {
     [
       "every give that reaches another giver: +10 sparks. ✨",
       "every wish of someone else’s you grant: +10 sparks. ✨",
-      "every wish you make costs 10 sparks.",
+      "every wish you make holds 10 sparks.",
       "so generosity is what lets you ask.",
     ],
   ],

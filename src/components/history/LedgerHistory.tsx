@@ -24,7 +24,7 @@ const COLOUR: Record<Currency, string> = {
 };
 
 const SAY: Record<Currency, string> = {
-  spark: "sparks are what a wish costs, and what generosity earns.",
+  spark: "sparks are what a wish holds, and what generosity earns.",
   sparkle: "sparkles help somebody else get seen. earned, never bought.",
 };
 

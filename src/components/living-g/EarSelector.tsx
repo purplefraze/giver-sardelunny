@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
-import { EAR_GEOMETRY, LOOP_CENTRE, LOOP_RIM_RADIUS, LOOP_SAFE_RADIUS } from "./g-path";
-import { LOOP_ROLE_STYLE } from "./type-scale";
+import { EAR_GEOMETRY, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.
@@ -172,8 +171,8 @@ function nearestOf(angle: number, seats: readonly Seat[]): Seat {
 
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 
-/** The captured word lives in the piece's own negative space. */
-const WORD_SIZE = Math.round(LOOP_SAFE_RADIUS.top * 0.5);
+/** The white knock-out beyond the ring's outer edge, in path units (~1px). */
+const PAPER = 26;
 
 /** The locked seat colours, for seats that state a person's history. */
 const MODE_COLOUR: Record<Seat, string> = {
@@ -214,7 +213,7 @@ export function EarSelector({
   history?: Seat[];
   /** Which seats this track offers. My own G offers all five (giver = me). */
   seats?: readonly Seat[];
-  /** What the piece SAYS at rest, when the seat's own name is not the word. */
+  /** Retired: the toggle carries no words (kept so callers still type-check). */
   word?: string;
   /**
    * PAST CONNECTIONS. A quiet count riding just outside the photo: proof that
@@ -356,14 +355,6 @@ export function EarSelector({
     }
   };
 
-  /** On arrival the word speaks up, then settles back into a restrained state. */
-  const [reveal, setReveal] = useState(false);
-  useEffect(() => {
-    setReveal(true);
-    const t = setTimeout(() => setReveal(false), 1400);
-    return () => clearTimeout(t);
-  }, [mode]);
-
   /**
    * ONE FINGER, ONE GESTURE. The pointer that started the drag is the only one
    * that can move or end it, so a second touch anywhere on the phone can never
@@ -444,10 +435,13 @@ export function EarSelector({
         transform={`rotate(${deg} ${TRACK_C.x} ${TRACK_C.y})`}
         pointerEvents="none"
       >
+        {/* THE WHITE GAP: the disc reaches a little past the ring (PAPER),
+            so wherever the ring meets the G's stroke a clean negative-space
+            gap parts them. Visual only — track, seats and physics unchanged. */}
         <circle
           cx={TRACK_C.x + TRACK_R}
           cy={TRACK_C.y}
-          r={EAR_GEOMETRY.outerR}
+          r={EAR_GEOMETRY.outerR + PAPER}
           fill="var(--world-bg)"
         />
         <rect
@@ -540,28 +534,8 @@ export function EarSelector({
 
 
 
-      {/* dot -> word: the mode reads inside the piece that carries it */}
-      <text
-        x={ear.x}
-        y={ear.y}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="var(--world-g)"
-        className="font-black lowercase"
-        pointerEvents="none"
-        style={{
-          fontSize: WORD_SIZE,
-          letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-          opacity: hideWord || photo ? 0 : dragging ? 0 : reveal ? 0.95 : 0.4,
-          transform: `scale(${dragging ? 0.3 : 1})`,
-          transformOrigin: `${ear.x}px ${ear.y}px`,
-          transition:
-            "opacity 200ms ease-out, transform 220ms cubic-bezier(0.22,1,0.36,1)",
-        }}
-      >
-        {mode === "giver" ? "my g" : (word ?? mode)}
-
-      </text>
+      {/* NO WORDS ON THE TOGGLE. The ring's clock position and its colour
+          are the only indicators — no action name inside or beside it. */}
 
       {/*
         SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one

@@ -233,22 +233,27 @@
        are SEAT_ANGLE in EarSelector.tsx; 12:00 is deliberately empty.
          seat    clock  colour
          give    1:30   #4BE01E  electric lime
-         lend    3:00   oklch(0.78 0.15 146)  (kept — the green tint of give)
-         my g    4:30   #23A6B0  quiet turquoise (the ONLY blue-family seat;
+         lend    3:00   #6DC2A8  sea-foam
+         my g    4:30   #3F9DBF  quiet turquoise (the ONLY blue-family seat;
                                  replaces the old patriot blue app-wide)
          trade   6:00   #FF6A13  saharan orange
          fund    7:30   #FF1F8E  hot pink
-         borrow  9:00   oklch(0.7 0.16 300)   (kept — the purple tint of wish)
+         borrow  9:00   #A58AD6  lavender
          wish    10:30  #9D00FF  prince purple
+       TEXT TINTS for the two pale seats (form headings, tags and selected
+       answers ONLY — the G, caret and send circle keep the true seat colour):
+         lend #3F977C · borrow #8B68CA  (--mode-lend-text / --mode-borrow-text)
        Complements, inks and airs below are DERIVED from these where the
        browser supports relative colour; change a seat here, nowhere else. */
   --mode-give: #4be01e;
-  --mode-lend: oklch(0.78 0.15 146);
-  --mode-giver: #23a6b0;
+  --mode-lend: #6dc2a8;
+  --mode-giver: #3f9dbf;
   --mode-trade: #ff6a13;
   --mode-fund: #ff1f8e;
-  --mode-borrow: oklch(0.7 0.16 300);
+  --mode-borrow: #a58ad6;
   --mode-wish: #9d00ff;
+  --mode-lend-text: #3f977c;
+  --mode-borrow-text: #8b68ca;
   /* Legacy name kept so nothing dangles: My G's colour IS the map's. */
   --giver-patriot: var(--mode-giver);
 
@@ -570,11 +575,9 @@
 
 
 /* ---------------------------------------------------------------
-   FORMS — THE ONE PLACE COMPLEMENTARY COLOURS LIVE.
-   Complements tell a form's HEADINGS apart from the words a person types;
-   they never appear inside the Living G's loops (loops use --world-g).
-   Type spec from the form mockups (/workspace/giver-form-mockups):
-     heading      light (300) lowercase, the seat's complement
+   FORMS — ONE PATTERN, SIX SEATS, ONE COLOUR EACH.
+   Type spec from the unified form stills (/workspace/giver-forms-unified):
+     heading      light (300) lowercase, the seat colour (pale seats: tint)
      label        11px, 0.1em tracking, warm grey #9A958D
      input text   warm charcoal #3A3733
      placeholder  warm grey #B8B3AB
@@ -588,20 +591,198 @@
   --form-label: #9a958d;
 }
 
-[data-world="give"] { --form-heading: var(--mode-give-complement); }
-[data-world="lend"] { --form-heading: var(--mode-lend-complement); }
-[data-world="wish"] { --form-heading: var(--mode-wish-complement); }
-[data-world="borrow"] { --form-heading: var(--mode-borrow-complement); }
-[data-world="trade"] { --form-heading: var(--mode-trade-complement); }
-[data-world="fund"] { --form-heading: var(--mode-fund-complement); }
+/* ONE FORM, SIX SEATS (/workspace/giver-forms-unified): the heading, the tags
+   and a selected answer wear the seat's own colour — the two pale seats read
+   in their deeper text tint. The G, caret and send circle (--form-seat) always
+   keep the TRUE seat colour. No second colour on a form. */
+[data-world="give"] { --form-heading: var(--mode-give); --form-seat: var(--mode-give); }
+[data-world="lend"] { --form-heading: var(--mode-lend-text); --form-seat: var(--mode-lend); }
+[data-world="wish"] { --form-heading: var(--mode-wish); --form-seat: var(--mode-wish); }
+[data-world="borrow"] { --form-heading: var(--mode-borrow-text); --form-seat: var(--mode-borrow); }
+[data-world="trade"] { --form-heading: var(--mode-trade); --form-seat: var(--mode-trade); }
+[data-world="fund"] { --form-heading: var(--mode-fund); --form-seat: var(--mode-fund); }
 [data-world="me"],
 [data-world="profile"],
-[data-world="home"] { --form-heading: var(--mode-giver-complement); }
+[data-world="home"] { --form-heading: var(--mode-giver); --form-seat: var(--mode-giver); }
 
-/* Inside a form every hairline (g-rule, the bottom bar) is the warm hairline. */
 .g-form {
   --edit-rule: var(--form-hairline);
 }
+
+/* ---------------------------------------------------------------
+   ONE FORM, SIX SEATS — the unified skeleton (UnifiedForm.tsx), measured off
+   /workspace/giver-forms-unified at 390x844: white paper · the G top left in
+   the seat colour · one light heading · two lines (the thing, then when)
+   with tiny grey labels on warm hairlines · 2–3 quiet tags under line 1 ·
+   one solid seat-colour send circle, bottom right. A tag that asks opens ONE
+   full-screen question with 3–4 big stacked answers.
+   --------------------------------------------------------------- */
+.uf-screen {
+  position: relative;
+  min-height: 100%;
+  background: var(--seat-bg);
+  color: var(--form-ink);
+  font-family: var(--giver-font);
+  text-transform: lowercase;
+  padding: min(262px, 31vh) 32px 160px;
+}
+.uf-g {
+  position: absolute;
+  top: min(76px, 9vh);
+  left: 22px;
+  padding: 10px;
+  line-height: 0;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.uf-heading {
+  font-weight: 300;
+  font-size: 42px;
+  line-height: 1.05;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+  color: var(--form-heading);
+  margin: 0;
+}
+.uf-fields { margin-top: 62px; }
+.uf-field { margin-bottom: 34px; }
+.uf-field--tags { margin-bottom: 40px; }
+.uf-label {
+  display: block;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  color: var(--form-label);
+  margin-bottom: 12px;
+}
+.uf-input {
+  display: block;
+  width: 100%;
+  height: 36px;
+  font-family: var(--giver-font);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 20px;
+  letter-spacing: -0.003em;
+  text-transform: lowercase;
+  color: var(--form-ink);
+  caret-color: var(--form-seat);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--form-hairline);
+  border-radius: 0;
+  padding: 0 0 16px;
+  outline: none;
+}
+.uf-input::placeholder { color: var(--form-placeholder); opacity: 1; }
+.uf-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-top: 16px;
+  min-height: 20px;
+  align-items: flex-start;
+}
+.uf-tag {
+  font-family: var(--giver-font);
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+  white-space: nowrap;
+  color: var(--form-heading);
+  padding: 0 0 3px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--form-heading) 36%, transparent);
+  border-radius: 0;
+}
+.uf-say {
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--form-heading);
+  margin-top: -8px;
+  max-width: 30ch;
+}
+.uf-send {
+  position: absolute;
+  right: 32px;
+  bottom: 56px;
+  width: 68px;
+  height: 68px;
+  border-radius: 9999px;
+  background: var(--form-seat);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 150ms var(--giver-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.uf-send:active { transform: scale(0.94); }
+.uf-send:focus-visible { outline: 1px solid var(--form-seat); outline-offset: 4px; }
+.uf-send svg { width: 26px; height: 26px; }
+
+/* THE QUESTION — one per screen, in place of the form, same white room. */
+.uf-question { min-height: 100%; }
+.uf-options { margin-top: 70px; display: flex; flex-direction: column; align-items: flex-start; }
+.uf-option {
+  font-family: var(--giver-font);
+  font-weight: 300;
+  font-size: 30px;
+  line-height: 36px;
+  letter-spacing: -0.02em;
+  text-transform: lowercase;
+  text-align: left;
+  color: var(--form-ink);
+  background: none;
+  padding: 0;
+  margin-bottom: 34px;
+}
+.uf-option[aria-checked="true"] { color: var(--form-heading); }
+.uf-amount {
+  display: block;
+  width: 100%;
+  margin-top: 64px;
+  height: 78px;
+  font-family: var(--giver-font);
+  font-weight: 300;
+  font-size: 56px;
+  line-height: 64px;
+  letter-spacing: -0.025em;
+  color: var(--form-ink);
+  caret-color: var(--form-seat);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--form-hairline);
+  border-radius: 0;
+  padding: 0 0 14px;
+  outline: none;
+}
+.uf-amount::placeholder { color: var(--form-placeholder); opacity: 1; }
+
+/* WISH + FUND ONBOARDING (/workspace/giver-onboarding): same room as a form. */
+.uf-intro-line {
+  font-size: 19px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+  color: var(--form-ink);
+  margin: 0;
+}
+.uf-count {
+  position: absolute;
+  left: 32px;
+  bottom: 80px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--form-placeholder);
+}
+
+/* WHAT IS ALREADY OUT THERE — my current records, below the fold. */
+.uf-records { padding: 0 32px 140px; background: var(--seat-bg); }
 
 /* Typed words are warm charcoal on a 1px warm hairline; placeholders warm grey.
    Colour only — sizes, behaviour and fields are untouched. */
@@ -1013,58 +1194,45 @@
 
 
 /* ---------------------------------------------------------------
-   THE SIGN-IN SCREEN (src/components/onboarding/SignInView.tsx).
-   Three layers: pure white paper · a slow teleprompter feed tinted in the
-   seat colour · one large solid-white circle holding "giver", the field and
-   the send circle. The feed is read above and below the circle and is hidden
-   while it passes behind it (the circle is opaque white with a soft edge).
+   THE SIGN-IN SCREEN (src/components/onboarding/SignInView.tsx), after the
+   v6 stills (/workspace/giver-signin-mockups/signin-v6-*.png).
+   Layers: white paper · a dense feed of sample activity wrapping the whole
+   screen, each entry in its own action's colour, muted · the plain G top left
+   (no toggle, no dial) in a tight white clearing · one solid white circle
+   (~300px at 390 wide) holding "giver", the field and the send circle · the
+   seat toggle riding just inside that circle's edge at the seat's clock.
 
-   SEAT COLOURS — SCOPED TO THIS SCREEN ONLY (the app-wide --mode-* palette
-   is untouched; that question is still open with Frazer):
-     give    #4BE01E  electric lime
-     wish    #9D00FF  prince purple
-     trade   #FF6A13  saharan orange
-     fund    #FF1F8E  the existing Fund hot pink
-     borrow  #A58AD6  muted soft purple        (picked here)
-     lend    #6DC2A8  muted sea-foam           (picked here)
-     my g    #3F9DBF  quiet turquoise blue     (picked here — the ONLY blue)
-   One attribute (data-signin-seat) swaps --signin-seat, which recolours the
-   wordmark, the send circle, the field caret, the dots and the feed tint in
-   the same frame. No colour transitions: the toggle snaps.
+   COLOURS: read from the ONE app-wide map (--mode-*). One attribute
+   (data-signin-seat) sets --seat, which recolours the G, the wordmark, the
+   caret, the send circle and the toggle in the same frame.
    --------------------------------------------------------------- */
 .signin {
-  --signin-give: #4be01e;
-  --signin-wish: #9d00ff;
-  --signin-trade: #ff6a13;
-  --signin-fund: #ff1f8e;
-  --signin-borrow: #a58ad6;
-  --signin-lend: #6dc2a8;
-  --signin-giver: #3f9dbf;
-  --signin-seat: var(--signin-give);
-  --signin-circle: min(86cqw, 52cqh, 350px);
+  --seat: var(--mode-give);
+  /* The circle: 300px on a 390px screen, never wider than the frame allows
+     (the toggle rides inside the edge, so the circle fitting = it fitting). */
+  --signin-circle: min(300px, 77cqw, 40cqh);
   container-type: size;
   background: #fff;
   font-family: var(--giver-font);
   color: var(--form-ink, #3a3733);
 }
-.signin[data-signin-seat="give"] { --signin-seat: var(--signin-give); }
-.signin[data-signin-seat="wish"] { --signin-seat: var(--signin-wish); }
-.signin[data-signin-seat="trade"] { --signin-seat: var(--signin-trade); }
-.signin[data-signin-seat="fund"] { --signin-seat: var(--signin-fund); }
-.signin[data-signin-seat="borrow"] { --signin-seat: var(--signin-borrow); }
-.signin[data-signin-seat="lend"] { --signin-seat: var(--signin-lend); }
-.signin[data-signin-seat="giver"] { --signin-seat: var(--signin-giver); }
+.signin[data-signin-seat="give"] { --seat: var(--mode-give); }
+.signin[data-signin-seat="wish"] { --seat: var(--mode-wish); }
+.signin[data-signin-seat="trade"] { --seat: var(--mode-trade); }
+.signin[data-signin-seat="fund"] { --seat: var(--mode-fund); }
+.signin[data-signin-seat="borrow"] { --seat: var(--mode-borrow); }
+.signin[data-signin-seat="lend"] { --seat: var(--mode-lend); }
+.signin[data-signin-seat="giver"] { --seat: var(--mode-giver); }
 
-/* THE FEED — a window of text, faded at the screen's top and bottom. */
+/* THE FEED — dense rows over the whole screen, a soft fade at top and bottom.
+   Each entry wears its own action's colour at a balanced strength. */
 .signin-feed {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  color: var(--signin-seat);
-  opacity: 0.34;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 128px, #000 200px, #000 calc(100% - 150px), transparent calc(100% - 56px));
-  mask-image: linear-gradient(to bottom, transparent 0, transparent 128px, #000 200px, #000 calc(100% - 150px), transparent calc(100% - 56px));
+  -webkit-mask-image: linear-gradient(to bottom, transparent 4px, rgba(0, 0, 0, 0.5) 16px, #000 60px, #000 calc(100% - 60px), rgba(0, 0, 0, 0.5) calc(100% - 16px), transparent calc(100% - 4px));
+  mask-image: linear-gradient(to bottom, transparent 4px, rgba(0, 0, 0, 0.5) 16px, #000 60px, #000 calc(100% - 60px), rgba(0, 0, 0, 0.5) calc(100% - 16px), transparent calc(100% - 4px));
 }
 @keyframes signin-feed-roll {
   from { transform: translate3d(0, 0, 0); }
@@ -1072,19 +1240,24 @@
 }
 .signin-feed-track {
   will-change: transform;
-  animation: signin-feed-roll var(--signin-feed-duration, 120s) linear infinite;
+  animation: signin-feed-roll var(--signin-feed-duration, 240s) linear infinite;
 }
-.signin-feed-line {
-  margin: 0;
-  padding: 0 12px 14px;
-  text-align: center;
+.signin-feed-row {
+  height: 23px;
+  line-height: 23px;
   white-space: nowrap;
-  font-weight: 300;
-  font-size: 16px;
-  line-height: 1.3;
-  letter-spacing: 0.05em;
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.01em;
   text-transform: lowercase;
 }
+.signin-feed-row > span { margin-right: 34px; }
+.signin-feed-row > .k-give { color: color-mix(in srgb, var(--mode-give) 38%, transparent); }
+.signin-feed-row > .k-lend { color: color-mix(in srgb, var(--mode-lend) 44%, transparent); }
+.signin-feed-row > .k-trade { color: color-mix(in srgb, var(--mode-trade) 34%, transparent); }
+.signin-feed-row > .k-fund { color: color-mix(in srgb, var(--mode-fund) 25%, transparent); }
+.signin-feed-row > .k-borrow { color: color-mix(in srgb, var(--mode-borrow) 46%, transparent); }
+.signin-feed-row > .k-wish { color: color-mix(in srgb, var(--mode-wish) 23%, transparent); }
 /* CALM BY REQUEST: a still feed, no roll. */
 @media (prefers-reduced-motion: reduce) {
   .signin-feed-track {
@@ -1093,48 +1266,86 @@
   }
 }
 
+/* THE G, TOP LEFT — 46px, on the 32px margin, a tight white clearing so no
+   feed text runs behind it. */
+.signin-g {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 76px);
+  left: 32px;
+  z-index: 12;
+  line-height: 0;
+  pointer-events: none;
+}
+.signin-g::before {
+  content: "";
+  position: absolute;
+  /* Tight, per v6: ~6px of paper beyond the G's box with a short feather
+     (sd 3px), so the paper is solid (≈98%) everywhere behind the G itself
+     and fades out within a few px — no feed text runs behind the G. */
+  inset: -6px;
+  border-radius: 11px;
+  background: #fff;
+  filter: blur(3px);
+  z-index: -1;
+}
+
 /* THE CIRCLE — solid white, opaque, a soft white edge so it reads as a window. */
 .signin-circle {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 47.4%;
   width: var(--signin-circle);
   height: var(--signin-circle);
-  transform: translate(-50%, -42%);
+  transform: translate(-50%, -50%);
   border-radius: 9999px;
   background: #fff;
-  box-shadow: 0 0 20px 16px #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: 0 0 6px 8px #fff;
   z-index: 10;
+}
+.signin-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .signin-mark {
+  position: absolute;
+  top: 20%;
+  left: 0;
+  right: 0;
+  text-align: center;
   font-weight: 300;
-  font-size: 30px;
-  line-height: 1;
-  letter-spacing: 0.28em;
-  margin-right: -0.28em;
+  font-size: 14px;
+  line-height: 16px;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
   text-transform: lowercase;
-  color: var(--signin-seat);
+  color: var(--seat);
 }
 
+/* THE FIELD — its underline stays well short of the circle's width, so the
+   edge toggle at 3:00 and 9:00 never touches it (circle − 120px). */
 .signin-field {
-  width: min(210px, 62cqw);
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform: translateX(-50%);
+  width: calc(var(--signin-circle) - 120px);
   font-family: var(--giver-font);
   font-weight: 400;
   font-size: 17px;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
+  line-height: 20px;
+  letter-spacing: -0.003em;
   text-align: center;
   color: #3a3733;
-  caret-color: var(--signin-seat);
+  caret-color: var(--seat);
   background: transparent;
   border: 0;
   border-bottom: 1px solid #ece9e4;
   border-radius: 0;
-  padding: 0 0 12px;
+  padding: 0 0 15px;
   outline: none;
 }
 .signin-field::placeholder {
@@ -1143,93 +1354,103 @@
 }
 .signin-field--code {
   letter-spacing: 0.42em;
-  margin-right: -0.42em;
+  text-indent: 0.42em;
   font-variant-numeric: tabular-nums;
 }
 .signin-field--code::placeholder {
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
+  text-indent: 0;
 }
 
-/* THE SEND CIRCLE — solid seat colour, thin white arrow, no text. */
+/* THE SEND CIRCLE — solid seat colour, heavier white arrow, no text. */
 .signin-send {
-  width: 56px;
-  height: 56px;
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 36px);
+  margin-left: -27px;
+  width: 54px;
+  height: 54px;
   border-radius: 9999px;
-  background: var(--signin-seat);
+  background: var(--seat);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 150ms var(--giver-ease);
 }
+.signin-send svg { width: 22px; height: 22px; }
 .signin-send:active { transform: scale(0.94); }
 .signin-send:disabled { opacity: 0.45; }
-.signin-send:focus-visible { outline: 1px solid var(--signin-seat); outline-offset: 4px; }
+.signin-send:focus-visible { outline: 1px solid var(--seat); outline-offset: 4px; }
 
-/* Quiet lowercase lines: the error, resend, use a different email. */
+/* Quiet lowercase lines just below the circle (clear of the toggle at every
+   seat): the error / notice, and on the code step resend · use a different
+   email. A white halo keeps them legible over the feed. */
+.signin-under {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.signin-under > * {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 6px 6px #fff;
+}
+.signin-under:empty { display: none; }
 .signin-line {
   font-weight: 300;
   font-size: 12px;
   line-height: 1.35;
   letter-spacing: 0.12em;
   text-transform: lowercase;
-  color: var(--signin-seat);
+  color: var(--seat);
+  text-align: center;
 }
 .signin-link {
   font-weight: 300;
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: lowercase;
-  color: var(--signin-seat);
+  color: var(--seat);
   background: none;
-  padding: 4px 2px;
+  padding: 2px 2px;
 }
 .signin-link:disabled { opacity: 0.45; }
 
-/* THE SEAT DOTS — the mockups' single seat dot, one per seat, in a row. */
-.signin-seats {
+/* THE SEAT TOGGLE — a small ring and stem riding just inside the circle's
+   edge, stem pointing in, on a white knock-out disc (the negative-space gap).
+   It sits at the current seat's clock position and SLIDES round the edge to
+   the next: one rotation about the circle's centre, transform only. */
+.signin-orbit {
   position: absolute;
-  top: calc(env(safe-area-inset-top) + 64px);
-  right: 30px;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  z-index: 2;
+  transition: transform 520ms var(--giver-ease);
 }
-.signin-dots {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.signin-dot {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
+.signin-orbit[data-dragging="true"] { transition: none; }
+.signin-toggle {
+  position: absolute;
+  left: calc(var(--signin-circle) / 2 - 21px - 24px);
+  top: -24px;
+  width: 48px;
+  height: 48px;
   padding: 0;
-}
-.signin-dot > span {
-  display: block;
-  width: 7px;
-  height: 7px;
+  background: none;
   border-radius: 9999px;
-  opacity: 0.4;
+  touch-action: none;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
 }
-.signin-dot[aria-checked="true"] > span {
-  width: 14px;
-  height: 14px;
-  opacity: 1;
-}
-.signin-dot:focus-visible { outline: 1px solid var(--signin-seat); outline-offset: 1px; border-radius: 9999px; }
-.signin-seat-word {
-  font-weight: 300;
-  font-size: 11px;
-  line-height: 1;
-  letter-spacing: 0.2em;
-  margin-right: -0.2em;
-  padding-right: 4px;
-  text-transform: lowercase;
-  color: var(--signin-seat);
+.signin-toggle svg { display: block; overflow: visible; }
+.signin-toggle:focus-visible { outline: 1px solid var(--seat); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .signin-orbit { transition: none; }
 }

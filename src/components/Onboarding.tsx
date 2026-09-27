@@ -1,29 +1,37 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { AuthGate } from "@/components/onboarding/AuthGate";
 import { sessionStore, type SessionState } from "@/data/cloud/session";
+import { clearOpening } from "@/data/opening";
 import type { Mode } from "@/components/living-g/EarSelector";
 
 /**
- * TESTING-PHASE ONBOARDING.
+ * TESTING-PHASE ONBOARDING — AUTH FIRST, THEN THE OPENING.
  *
- * LaunchScreen → (signed in ? done : AuthGate) → onDone({ earned: false }).
- * ENTRY PATH IS ONLY: 'giver' → 'kindness as currency' → the Living G at
- * Give (1:30). PlayIntro (the "hey, that tickles" beat), IntroG, SparkSplit
- * and MemberExample remain in the tree as files but are NOT imported or routed
- * anywhere — nothing on launch or first land can render them.
+ *   signed out      AuthGate (MagicLinkView: plain "giver", email, send link)
+ *                   -> magic-link session -> the opening -> the wheel at Give
+ *   signed in       straight to the opening -> the wheel at Give
+ *   (loading)       plain white until the session answers — not a splash
+ *
+ * The opening (LaunchScreen) is POST-AUTH only: "giver" with the Living G as
+ * its g, the toggle down/up, the spark to the i, "kindness as currency", then
+ * the wheel. PlayIntro (the "hey, that tickles" beat), IntroG, SparkSplit and
+ * MemberExample remain in the tree as files but are NOT imported or routed.
  *
  * ⚠ TESTING ONLY — NOT THE SHIPPED PRODUCT. This path deliberately SKIPS the
  * spark interaction and the welcome spark grant (`earned: false`, so
  * initializeFirstUse never seeds sparks), and skips any phone / password /
- * name / profile gate. It exists so testers can reach the Living G fast.
- * Before launch, restore an earned-sparks onboarding and a real account step.
+ * name / profile gate. Before launch, restore an earned-sparks onboarding and
+ * a real account step.
  *
- * `fromLaunch` is true when the G follows the launch screen directly (already
- * signed in), so the caller can crossfade the still wordmark into the G.
+ * `fromLaunch` is always true now: the G follows the opening directly, so the
+ * caller crossfades the still wordmark into the wheel.
  */
-type Stage = "launch" | "auth";
+type Stage = "wait" | "auth" | "opening";
+
+const stageFor = (s: SessionState): Stage =>
+  s.status === "ready" ? "opening" : s.status === "loading" ? "wait" : "auth";
 
 export function Onboarding({
   onDone,
@@ -35,37 +43,38 @@ export function Onboarding({
     fromLaunch?: boolean;
   }) => void;
 }) {
-  const [stage, setStage] = useState<Stage>("launch");
+  const [stage, setStage] = useState<Stage>(() => stageFor(sessionStore.get()));
   const finishing = useRef(false);
 
-  const complete = (fromLaunch: boolean) => {
+  /* THE SESSION DECIDES: wait for it to answer, then auth or the opening. */
+  useEffect(() => {
+    if (stage !== "wait") return;
+    const decide = () => {
+      const next = stageFor(sessionStore.get());
+      if (next !== "wait") setStage(next);
+    };
+    const unsub = sessionStore.subscribe(decide);
+    decide();
+    return () => {
+      unsub();
+    };
+  }, [stage]);
+
+  const complete = () => {
     if (finishing.current) return;
     finishing.current = true;
+    /* The opening has played here; nothing else owes it. */
+    clearOpening();
     /* TESTING SKIP: earned:false — no spark grant. Not shipped behaviour. */
-    onDone({ gaveTo: null, earned: false, fromLaunch });
+    onDone({ gaveTo: null, earned: false, fromLaunch: true });
   };
 
-  const afterLaunch = () => {
-    const go = (s: SessionState) => {
-      if (s.status === "ready") complete(true);
-      else setStage("auth");
-    };
-    const s = sessionStore.get();
-    if (s.status === "loading") {
-      const unsub = sessionStore.subscribe(() => {
-        const next = sessionStore.get();
-        if (next.status === "loading") return;
-        unsub();
-        go(next);
-      });
-      return;
-    }
-    go(s);
-  };
-
-  if (stage === "launch") {
-    return <LaunchScreen onDone={afterLaunch} />;
+  if (stage === "wait") {
+    return <div className="h-full w-full" style={{ background: "var(--seat-bg)" }} />;
   }
-
-  return <AuthGate onDone={() => complete(false)} />;
+  if (stage === "auth") {
+    /* The existing magic-link success path hands over to the opening. */
+    return <AuthGate onDone={() => setStage("opening")} />;
+  }
+  return <LaunchScreen onDone={complete} />;
 }

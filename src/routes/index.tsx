@@ -12,6 +12,8 @@ import { useAppHeight } from "@/hooks/use-app-height";
 
 import { Onboarding } from "@/components/Onboarding";
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
+import { useSession } from "@/hooks/use-session";
+import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
@@ -230,6 +232,28 @@ function Index() {
   /** True for one crossfade right after the launch screen hands over. */
   const [launchVeil, setLaunchVeil] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
+  /**
+   * THE OPENING, OWED (src/data/opening.ts): the /auth magic-link success and
+   * the dev skip land here already "entered", so the post-sign-in opening plays
+   * over the G once (magic link: only once a session is ready; dev skip: once
+   * the session has answered either way). While the session is
+   * still answering, a plain white cover keeps the G from flashing first.
+   */
+  const session = useSession();
+  const [opening, setOpening] = useState(false);
+  const owed = hydrated && entered && !opening ? openingPending() : null;
+  const openingCover = owed !== null && session.status === "loading";
+  useEffect(() => {
+    if (owed === null || session.status === "loading") return;
+    /* A magic-link opening waits for a real session; the dev skip does not. */
+    if (owed === "auth" && session.status !== "ready") return;
+    clearOpening();
+    /* The wheel the opening hands over to starts at Give (1:30). */
+    setSeatState("give");
+    setOpening(true);
+  }, [owed, session.status]);
+  /** No corner chrome ("sign in" / @name, "dev") while the opening owns the screen. */
+  const chromeQuiet = opening || openingCover || launchVeil;
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
    * the G; closing it returns to the SAME seat, with the saved data already
@@ -644,17 +668,18 @@ function Index() {
       {/* COLD OPEN IS ONLY THE WORDMARK: no dev corner or @name/sign-in seal
          over the launch/auth screens. Both return once the G is showing.
          (DevControls is also DEV-build-only; its "replay onboarding" now
-         replays LaunchScreen → AuthGate, never PlayIntro.) */}
-      {entered ? <DevControls /> : null}
-      {entered ? <DevSeal /> : null}
+         replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
+      {entered && !chromeQuiet ? <DevControls /> : null}
+      {entered && !chromeQuiet ? <DevSeal /> : null}
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
           onDone={({ earned, mode: gifted, fromLaunch }) => {
             /* CROSSFADE: the still wordmark is laid over the G and fades out. */
             if (fromLaunch) setLaunchVeil(true);
-            /* CONTINUITY: my first G opens in the exact mode I just gave in. */
-            if (gifted) setSeat(gifted);
+            /* CONTINUITY: my first G opens in the exact mode I just gave in —
+               otherwise at GIVE (1:30), where the opening's toggle rests. */
+            setSeat(gifted ?? "give");
             /* A NEW PERSON GETS A CLEAN, IDEMPOTENT HANDOVER. Sample people and
                their community records are never projected into this profile. */
             initializeFirstUse(earned);
@@ -1123,6 +1148,21 @@ function Index() {
       )}
       {/* LAUNCH → G CROSSFADE: the settled wordmark over the fresh G, fading. */}
       {entered && launchVeil ? <LaunchScreen veil onDone={() => setLaunchVeil(false)} /> : null}
+      {/* THE OWED OPENING (after /auth or the dev skip), over the G, then the
+          same veil crossfade into the wheel. */}
+      {entered && opening ? (
+        <div className="absolute inset-0 z-[70]">
+          <LaunchScreen
+            onDone={() => {
+              setLaunchVeil(true);
+              setOpening(false);
+            }}
+          />
+        </div>
+      ) : null}
+      {openingCover ? (
+        <div className="absolute inset-0 z-[70]" style={{ background: "var(--seat-bg)" }} />
+      ) : null}
     </main>
   );
 }

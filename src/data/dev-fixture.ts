@@ -1,5 +1,6 @@
 import { draftsStore } from "@/data/drafts";
 import { initializeFirstUse } from "@/data/first-use";
+import { requestOpening } from "@/data/opening";
 import { introSeenStore } from "@/data/intro-seen";
 import { itemsStore } from "@/data/items";
 import { lifecycleStore } from "@/data/lifecycle";
@@ -39,6 +40,8 @@ export function completeOnboarding() {
   initializeFirstUse(false);
   tutorialSeenStore.markSeen();
   window.localStorage.setItem(CHOICE_KEY, "complete");
+  /* THE SKIP STILL LANDS IN THE OPENING (once a session is ready). */
+  requestOpening("skip");
 }
 
 /**

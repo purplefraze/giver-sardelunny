@@ -8,6 +8,7 @@ import { sessionStore } from "@/data/cloud/session";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
 import { initializeFirstUse } from "@/data/first-use";
+import { requestOpening } from "@/data/opening";
 import { haptics } from "@/lib/haptics";
 import { MagicLinkView } from "@/components/onboarding/MagicLinkView";
 
@@ -64,6 +65,8 @@ function AuthScreen() {
     await sessionStore.refresh();
     /* TESTING SKIP (not shipped product): no spark grant on this path. */
     initializeFirstUse(false);
+    /* SIGNED IN: the opening plays over the wheel once we land on "/". */
+    requestOpening();
     try {
       window.localStorage.removeItem("giver.invite.token");
     } catch {
@@ -99,6 +102,9 @@ function AuthScreen() {
         options: { emailRedirectTo: `${window.location.origin}/` },
       });
       if (otpError) throw otpError;
+      /* The link may be opened in a new tab: the opening is owed there too
+         (index.tsx only plays it once that session is ready). */
+      requestOpening();
       setSent(true);
       haptics.light();
     } catch (err) {

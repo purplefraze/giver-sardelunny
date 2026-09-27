@@ -16,6 +16,7 @@
  */
 
 import { MEMBERS } from "@/data/giver";
+import { logGiveEnd } from "@/data/review-flags";
 
 export type ItemType = "wish" | "give" | "trade" | "borrow";
 
@@ -167,6 +168,14 @@ export type ItemDetails = {
    * jsonb column with no schema change. Never printed by detailBits.
    */
   fundTarget?: number | undefined;
+  /**
+   * GIVES: WHEN THIS STOPS BEING OFFERED, as a UTC ISO string. Lives in the
+   * existing items.details jsonb (no column exists for it). Past it, the give
+   * leaves browse and archives quietly (sweepAvailability).
+   */
+  expiresAt?: string | undefined;
+  /** GIVES: the storage path of the one photo (post-media bucket). */
+  photoPath?: string | undefined;
 };
 
 
@@ -179,6 +188,10 @@ export type ItemDetails = {
  * circulation and stays in the person's own history.
  */
 export function availabilityEnd(item: Item): number | null {
+  if (item.details?.expiresAt) {
+    const at = Date.parse(item.details.expiresAt);
+    if (!Number.isNaN(at)) return at;
+  }
   const day = item.details?.until ?? item.details?.date;
   if (!day) return null;
   const end = new Date(`${day}T23:59:59`);
@@ -940,6 +953,8 @@ export const itemsStore = {
     );
     if (!stale.length) return;
     const ids = new Set(stale.map((i) => i.id));
+    /* MY give ending unmatched is quietly logged for review (review-flags.ts). */
+    for (const i of stale) if (i.ownerId === ME_ID && i.type === "give") logGiveEnd(i.id, "unmatched", now);
     let items = s.items.map((i) =>
       ids.has(i.id) ? { ...i, status: "archived" as ItemStatus, updatedAt: now } : i,
     );
@@ -952,6 +967,9 @@ export const itemsStore = {
     const s = ensure();
     const item = s.items.find((i) => i.id === id);
     if (!item) return;
+    /* Taking down one of MY open gives is quietly logged for review. */
+    if (item.ownerId === ME_ID && item.type === "give" && item.status === "active")
+      logGiveEnd(item.id, "cancelled");
     const items = s.items.filter((i) => i.id !== id);
     commit({
       ...s,
@@ -1083,6 +1101,8 @@ export function communityItems(
   const now = Date.now();
   return state.items
     .filter((i) => i.status === "active" && i.published)
+    /* EXPIRED GIVES DROP OUT OF BROWSE at once, before the sweep archives them. */
+    .filter((i) => !itemExpired(i, now))
     .filter((i) => (query.type ? i.type === query.type : true))
     .filter((i) => (query.ownerId ? i.ownerId === query.ownerId : true))
     .filter((i) => (query.excludeOwnerId ? i.ownerId !== query.excludeOwnerId : true))

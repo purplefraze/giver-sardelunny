@@ -22,7 +22,7 @@ import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
 import { ItemRow } from "@/components/profile/ItemRow";
 import { itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
-import { itemLine } from "@/data/items";
+import { itemExpired, itemLine } from "@/data/items";
 import { answeredStatements, pronounsFrom } from "@/data/prompts";
 import { myCompliment, wallOf, wallStore } from "@/data/wall";
 import { useWall } from "@/hooks/use-wall";
@@ -575,7 +575,26 @@ function PastActivity({
   return (
     <ul className="mt-7">
       {records.map((item) =>
-        onOpenItem ? (
+        /* AN ENDED GIVE OF MINE — greyed, "ended", and a quiet "post again". */
+        item.type === "give" && item.ownerId === ME_ID && item.status === "archived" && itemExpired(item) ? (
+          <li key={item.id} className="g-rule py-4 first:border-t-0 first:pt-0" data-testid="ended-give">
+            <span className="gf-ended block">
+              <span className="g-meta block" style={{ color: ACTIVITY_FILL[type] }}>
+                ended
+              </span>
+              <span className="g-name mt-1.5 block">{itemLine(item)}</span>
+            </span>
+            <button
+              type="button"
+              className="g-meta mt-2 min-h-11 opacity-55"
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent("giver:post-again", { detail: item.id }))
+              }
+            >
+              post again
+            </button>
+          </li>
+        ) : onOpenItem ? (
           <ItemRow key={item.id} item={item} onOpen={onOpenItem} />
         ) : (
           <li key={item.id} className="g-rule py-4 first:border-t-0 first:pt-0">

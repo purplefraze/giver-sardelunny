@@ -1487,3 +1487,143 @@
 @media (prefers-reduced-motion: reduce) {
   .signin-orbit { transition: none; }
 }
+
+/* ---------------------------------------------------------------
+   GIVE, ONE LINE AT A TIME (GiveFlow.tsx) — measured off
+   /workspace/giver-give-infer/give-infer-*.png at 390x844. Same white room
+   and type as the unified form; the inferred type word is one size up from
+   the stills (15 → 17px).
+   --------------------------------------------------------------- */
+.gf-screen { --gf-word: color-mix(in oklab, var(--form-seat) 74%, #000); }
+.gf-fields { margin-top: 62px; }
+.gf-what { margin-bottom: 44px; }
+.gf-what .uf-field { margin-bottom: 0; }
+.gf-kind { display: flex; align-items: baseline; gap: 14px; margin-top: 14px; min-height: 22px; }
+.gf-kind b { font-weight: 400; font-size: 17px; letter-spacing: 0.01em; color: var(--gf-word); }
+.gf-kind button, .gf-skip, .gf-quiet, .gf-cap-quiet {
+  font-family: var(--giver-font); font-size: 12px; letter-spacing: 0.06em; color: var(--form-label);
+  background: none; border: 0; padding: 0; text-transform: lowercase;
+}
+.gf-types { margin-top: 16px; }
+.gf-types-ask { margin-bottom: 14px; }
+.gf-type-row { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.gf-type-row button {
+  font-family: var(--giver-font); font-size: 17px; letter-spacing: 0.01em; color: var(--gf-word);
+  background: none; border: 0; padding: 0 0 2px; text-transform: lowercase;
+}
+.gf-type-row button[aria-checked="true"] { border-bottom: 1px solid currentColor; }
+.gf-line { margin-bottom: 38px; }
+.gf-row { display: flex; align-items: baseline; gap: 24px; }
+.gf-skip { margin-left: auto; line-height: 20px; }
+.gf-value-row { display: flex; align-items: flex-start; border-bottom: 1px solid var(--form-hairline); height: 36px; }
+.gf-value {
+  font-family: var(--giver-font); font-size: 17px; line-height: 20px; letter-spacing: -0.003em;
+  color: var(--form-ink); background: none; border: 0; padding: 0; text-align: left;
+  text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gf-value-row > .gf-value:first-child { flex: 0 1 auto; }
+.gf-value-row .gf-skip { align-self: flex-start; }
+.gf-ph { color: var(--form-placeholder); }
+.gf-online { margin-left: 6px; }
+.gf-add {
+  font-family: var(--giver-font); font-size: 17px; line-height: 20px; color: var(--form-placeholder);
+  background: none; border: 0; padding: 0; text-transform: lowercase;
+}
+.gf-photo img { display: block; width: 100%; max-height: 280px; object-fit: cover; border-radius: 12px; }
+.gf-photo .gf-quiet { margin-top: 10px; }
+.gf-tags { gap: 24px; }
+.gf-tag {
+  font-family: var(--giver-font); font-size: 14px; line-height: 17px; letter-spacing: 0.01em;
+  color: var(--form-placeholder); background: none; border: 0; border-bottom: 1px solid var(--form-hairline);
+  padding: 0 0 4px; text-transform: lowercase; white-space: nowrap;
+}
+.gf-tag-on { color: var(--gf-word); }
+.gf-expiry {
+  font-family: var(--giver-font); font-size: 15px; letter-spacing: 0.01em; color: var(--form-label);
+  background: none; border: 0; padding: 0 0 3px; border-bottom: 1px dotted var(--form-hairline);
+  text-transform: lowercase;
+}
+.gf-live { margin-top: 14px; }
+@keyframes gf-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.gf-rise { animation: gf-rise 260ms var(--giver-ease, ease-out) both; }
+@media (prefers-reduced-motion: reduce) { .gf-rise { animation: none; } }
+
+/* WHERE IS IT? — the full-screen map (LocationPicker.tsx). */
+.gf-map-screen {
+  position: fixed; inset: 0; z-index: 60; background: #fff; overflow: hidden;
+  font-family: var(--giver-font); text-transform: lowercase; color: var(--form-ink);
+}
+.gf-map { position: absolute; left: 0; right: 0; top: 300px; bottom: 0; z-index: 1; background: #f3f1ee; }
+.gf-boundary { position: absolute; left: 0; top: 300px; z-index: 2; pointer-events: none; }
+.gf-map-top {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 3; padding: 70px 32px 0; height: 300px;
+  background: #fff;
+}
+.gf-map-top::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 48px; pointer-events: none;
+  background: linear-gradient(#fff, rgba(255, 255, 255, 0));
+}
+.gf-map-back {
+  position: absolute; top: 18px; left: 18px; width: 44px; height: 44px; font-size: 30px; line-height: 1;
+  color: var(--form-label); background: none; border: 0;
+}
+.gf-search {
+  display: block; width: 100%; height: 52px; margin-top: 4px; font-family: var(--giver-font);
+  font-size: 21px; color: var(--form-ink); caret-color: var(--form-seat); background: transparent;
+  border: 0; border-bottom: 1px solid var(--form-hairline); border-radius: 0; outline: none; padding: 0 0 12px;
+  text-transform: lowercase;
+}
+.gf-search::placeholder { color: var(--form-placeholder); opacity: 1; }
+.gf-choices { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; margin-top: 26px; }
+.gf-choice {
+  font-family: var(--giver-font); font-size: 17px; line-height: 20px; color: var(--form-ink);
+  background: none; border: 0; padding: 0; text-transform: lowercase;
+}
+.gf-choice[aria-checked="true"] { color: color-mix(in oklab, var(--form-seat) 74%, #000); }
+.gf-map-foot {
+  position: absolute; left: 32px; right: 130px; bottom: 82px; z-index: 4; margin: 0;
+  font-size: 13px; letter-spacing: 0.06em; color: #7f7a73;
+}
+.gf-map-screen::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 170px; z-index: 3; pointer-events: none;
+  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.92));
+}
+.gf-done {
+  position: absolute; right: 30px; bottom: 52px; z-index: 5; width: 80px; height: 80px; border-radius: 9999px;
+  background: var(--form-seat); border: 0; display: flex; align-items: center; justify-content: center;
+}
+.gf-done svg { width: 28px; height: 28px; }
+.gf-pin { background: none; border: 0; }
+.gf-map .leaflet-control-attribution { font-size: 9px; background: rgba(255, 255, 255, 0.7); }
+
+/* WHEN — the month grid (WhenPicker.tsx). */
+.gf-when-screen { padding-top: min(200px, 24vh); }
+.gf-month { display: flex; align-items: center; justify-content: space-between; margin-top: 40px; font-size: 17px; }
+.gf-month-nav { width: 44px; height: 44px; font-size: 24px; color: var(--form-label); background: none; border: 0; }
+.gf-month-nav:disabled { opacity: 0.25; }
+.gf-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px 0; margin-top: 14px; justify-items: center; }
+.gf-dow { font-size: 11px; letter-spacing: 0.1em; color: var(--form-label); padding-bottom: 8px; }
+.gf-day {
+  width: 40px; height: 40px; border-radius: 9999px; font-family: var(--giver-font); font-size: 16px;
+  color: var(--form-ink); background: none; border: 0;
+}
+.gf-day:disabled { opacity: 0.28; }
+.gf-day[aria-pressed="true"] { background: var(--form-seat); color: #fff; }
+.gf-times { display: flex; gap: 24px; margin-top: 30px; }
+.gf-time { flex: 1; }
+
+/* THE THREE-GIVES PROMPT (CapScreen.tsx). */
+.gf-cap { position: absolute; inset: 0; z-index: 80; background: #fff; overflow-y: auto; }
+.gf-cap-g { position: absolute; top: min(76px, 9vh); left: 32px; line-height: 0; }
+.gf-cap-line { font-size: 19px; line-height: 1.45; color: var(--form-ink); margin: 26px 0 0; max-width: 28ch; }
+.gf-cap-quiet { display: block; margin-top: 40px; font-size: 13px; min-height: 44px; }
+
+/* ONE QUICK CHECK (FirstGiveCheck.tsx). */
+.gf-check-kind { font-size: 17px; color: color-mix(in oklab, var(--form-seat) 74%, #000); margin: 14px 0 0; }
+.gf-check-line { font-size: 19px; line-height: 1.45; color: var(--form-ink); margin: 84px 0 0; max-width: 24ch; }
+.gf-check-code { margin-top: 40px; height: 52px; font-size: 21px; }
+
+/* GOT IT + faded give actions. */
+.gf-faded { opacity: 0.4; }
+.gf-listing-photo { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
+.gf-ended { opacity: 0.45; }

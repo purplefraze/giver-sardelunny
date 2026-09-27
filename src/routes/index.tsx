@@ -16,6 +16,7 @@ import { useSession } from "@/hooks/use-session";
 import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
+import { GiveFlow } from "@/components/give/GiveFlow";
 import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
 import { ChooseWorld } from "@/components/ChooseWorld";
 import { HelpIndex } from "@/components/HelpIndex";
@@ -254,13 +255,29 @@ function Index() {
    */
   const [editor, setEditor] = useState<
     | { kind: "about" }
-    | { kind: "category"; category: Category; side?: BorrowSide }
+    | { kind: "category"; category: Category; side?: BorrowSide; prefillId?: string }
     /* FUND'S SHEET — same middle-loop chamber, its own content. */
     | { kind: "fund" }
     /* FUND'S FORM — "ask for funding", the unified form over a Wish. */
     | { kind: "ask-fund" }
     | null
   >(null);
+
+  /* "POST AGAIN" on an ended give (my history) reopens the Give flow prefilled. */
+  useEffect(() => {
+    const again = (e: Event) => {
+      const itemId = (e as CustomEvent<string>).detail;
+      setPerson(null);
+      setPersonFocus(null);
+      setDetail(null);
+      setBrowse(null);
+      setSeat("give");
+      setEditor({ kind: "category", category: "give", prefillId: itemId });
+    };
+    window.addEventListener("giver:post-again", again);
+    return () => window.removeEventListener("giver:post-again", again);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   /**
@@ -861,7 +878,19 @@ function Index() {
                       : editor.category
                     : (activity ?? "profile"),
                 children:
-                  editor?.kind === "category" ? (
+                  editor?.kind === "category" && editor.category === "give" ? (
+                    /* GIVE, ONE LINE AT A TIME — the other seats keep the unified form. */
+                    <div data-world="give" className="g-form relative h-full w-full overflow-y-auto">
+                      <GiveFlow
+                        onDone={() => setEditor(null)}
+                        prefill={
+                          editor.prefillId
+                            ? (items.items.find((i) => i.id === editor.prefillId) ?? null)
+                            : null
+                        }
+                      />
+                    </div>
+                  ) : editor?.kind === "category" ? (
                     <CategoryForm
                       category={editor.category}
                       {...(editor.side ? { side: editor.side } : {})}
@@ -1059,6 +1088,13 @@ function Index() {
                       setDetail(null);
                       setBrowse(null);
                       setLocked(true);
+                    }}
+                    /* THE THREE-GIVES PROMPT'S GREEN CIRCLE: straight into a give. */
+                    onStartGive={() => {
+                      setDetail(null);
+                      setBrowse(null);
+                      setSeat("give");
+                      setEditor({ kind: "category", category: "give" });
                     }}
                     onClose={() => setDetail(null)}
                   />

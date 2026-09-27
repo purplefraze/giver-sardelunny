@@ -240,9 +240,11 @@ export function CommunityFeed({
           const line = itemLine(item);
           /* AT MOST TWO FACTS. Distance and the one thing that matters most. */
           const facts = [
+            /* A GIVE SAYS ITS NEIGHBOURHOOD — only ever the coarse label. */
+            item.type === "give" && item.details?.where ? item.details.where : null,
             item.distanceKm === undefined ? null : `${item.distanceKm} km away`,
             status === "connecting" ? "connecting" : detailBits(item)[0] ?? null,
-          ].filter(Boolean) as string[];
+          ].filter((f, i, all): f is string => Boolean(f) && all.indexOf(f) === i);
           return (
             <li key={item.id} className={index === 0 ? "pb-4" : "g-rule py-4"}>
               {/* THE WHOLE ROW OPENS THE ACTIVITY — one big, obvious target. */}
@@ -254,6 +256,16 @@ export function CommunityFeed({
                   onOpen(item.id);
                 }}
               >
+                {/* ONE PHOTO ON TOP when the give has one — none, no placeholder. */}
+                {item.type === "give" && item.photos?.[0] ? (
+                  <img
+                    src={item.photos[0]}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="gf-listing-photo"
+                  />
+                ) : null}
                 <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
                   {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
                 </span>

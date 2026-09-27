@@ -170,7 +170,7 @@
   --giver-orchid: oklch(0.624 0.191 327.6); /* #C154C1 */
   /* HOT PINK — FUND (#FF1F8E). Chosen to read clearly hot pink on white and to
      sit apart from wish purple (300°), orchid (328°) and trade orange. */
-  --giver-hot-pink: oklch(0.657 0.255 358.9); /* #FF1F8E */
+  --giver-hot-pink: var(--mode-fund); /* #FF1F8E — read from the seat map */
   --giver-blue: oklch(0.58 0.2 250); /* BLUE — me, the current user */
   --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the receiving person */
   --giver-orange: oklch(0.7 0.2 46); /* ORANGE — community, trade partner */
@@ -225,33 +225,44 @@
   --giver-generosity-complement: var(--giver-green-complement);
 
 
-  /* ---- LIVING G MODE COLOURS — THE SIX TOGGLE POSITIONS ----
-       6:00 = MY G (patriot blue) · 7:30 = give (bright green) ·
-       9:00 = lend (yellow) · 10:30 = wish (dreamy purple) ·
-       1:30 = borrow (hot pink with a hint of red) · 4:30 = trade (bright orange).
-       These placements and colours hold on every Living G, always.
-       (Stale clock map: the live one is SEAT_ANGLE in EarSelector.tsx —
-       trade 6:00 · FUND 7:30 · borrow 9:00 · wish 10:30 · give 1:30 ·
-       lend 3:00 · my g 4:25; 12:00 is deliberately empty.) */
-  --giver-patriot: oklch(0.5 0.21 260); /* PATRIOT BLUE — my g, my profile */
-  --mode-giver: var(--giver-patriot); /* my profile at 6 o'clock — patriot blue */
-  --mode-give: var(--giver-green); /* bright green */
-  --mode-lend: oklch(0.78 0.15 146); /* green tint of give */
-  --mode-wish: var(--giver-purple); /* dreamy purple */
-  --mode-borrow: oklch(0.7 0.16 300); /* purple tint of wish */
-  --mode-trade: oklch(0.73 0.2 52); /* bright orange */
-  /* FUND (7:30) — money toward someone else's Wish. HOT PINK #FF1F8E. The
-     only hot-pink token in the system; the Wish "other" is orchid now. */
-  --mode-fund: var(--giver-hot-pink); /* #FF1F8E */
+  /* ---- THE SEAT COLOUR MAP — THE ONE SOURCE OF TRUTH (approved by Frazer).
+       Every seat colour in the app reads from these seven tokens: the G and
+       the toggle (via --world-g), the loops (--world-text = --world-g), the
+       wheel, the activity/ticker tokens (--activity-*), the sign-in screen
+       and its feed (.signin in this file), and form accents. Clock positions
+       are SEAT_ANGLE in EarSelector.tsx; 12:00 is deliberately empty.
+         seat    clock  colour
+         give    1:30   #4BE01E  electric lime
+         lend    3:00   oklch(0.78 0.15 146)  (kept — the green tint of give)
+         my g    4:30   #23A6B0  quiet turquoise (the ONLY blue-family seat;
+                                 replaces the old patriot blue app-wide)
+         trade   6:00   #FF6A13  saharan orange
+         fund    7:30   #FF1F8E  hot pink
+         borrow  9:00   oklch(0.7 0.16 300)   (kept — the purple tint of wish)
+         wish    10:30  #9D00FF  prince purple
+       Complements, inks and airs below are DERIVED from these where the
+       browser supports relative colour; change a seat here, nowhere else. */
+  --mode-give: #4be01e;
+  --mode-lend: oklch(0.78 0.15 146);
+  --mode-giver: #23a6b0;
+  --mode-trade: #ff6a13;
+  --mode-fund: #ff1f8e;
+  --mode-borrow: oklch(0.7 0.16 300);
+  --mode-wish: #9d00ff;
+  /* Legacy name kept so nothing dangles: My G's colour IS the map's. */
+  --giver-patriot: var(--mode-giver);
 
   /* SEAT AIR — every toggle seat sits on plain white for now (no field or
      complementary background colour). The G itself carries the seat colour. */
   --seat-bg: oklch(1 0 0);
-  /* FUND AIR — defined (a pale tint of --mode-fund, #FFE3F0) but NOT applied:
+  /* FUND AIR — a pale tint derived from --mode-fund, defined but NOT applied:
      the Fund seat stays on --seat-bg like every other seat. One-line switch in
      [data-world="fund"] below if the owner wants pink air. */
-  --fund-air: oklch(0.942 0.035 358.9);
+  --fund-air: color-mix(in oklab, var(--mode-fund) 12%, white);
 
+  /* COMPLEMENTS (forms only). Hand-picked fallbacks first; derived from the
+     map (opposite hue, readable lightness, tamed chroma) in the @supports
+     block right after this :root. */
   --mode-giver-complement: var(--giver-blue-complement);
   --mode-give-complement: var(--giver-green-complement);
   --mode-lend-complement: var(--giver-green-complement);
@@ -310,6 +321,19 @@
   --giver-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* THE COMPLEMENTS, DERIVED FROM THE SEAT MAP (forms only — never in loops). */
+@supports (color: oklch(from red l c h)) {
+  :root {
+    --mode-giver-complement: oklch(from var(--mode-giver) 0.64 min(c, 0.2) calc(h + 180));
+    --mode-give-complement: oklch(from var(--mode-give) 0.6 min(c, 0.22) calc(h + 180));
+    --mode-lend-complement: oklch(from var(--mode-lend) 0.6 min(c, 0.2) calc(h + 180));
+    --mode-wish-complement: oklch(from var(--mode-wish) 0.66 min(c, 0.17) calc(h + 180));
+    --mode-trade-complement: oklch(from var(--mode-trade) 0.55 min(c, 0.22) calc(h + 180));
+    --mode-borrow-complement: oklch(from var(--mode-borrow) 0.66 min(c, 0.17) calc(h + 180));
+    --mode-fund-complement: oklch(from var(--mode-fund) 0.62 min(c, 0.14) calc(h + 180));
+  }
+}
+
 @theme inline {
   --font-sans: var(--giver-font);
   --font-display: var(--giver-font);
@@ -359,7 +383,7 @@
 [data-world="home"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-giver);
-  --world-ink: oklch(0.38 0.16 260);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
@@ -370,7 +394,7 @@
 [data-world="wish"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-wish);
-  --world-ink: oklch(0.4 0.2 300);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
@@ -379,7 +403,7 @@
 [data-world="borrow"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-borrow);
-  --world-ink: oklch(0.42 0.18 300);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
@@ -392,7 +416,7 @@
 [data-world="fund"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-fund);
-  --world-ink: oklch(0.45 0.2 358.9);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
@@ -401,7 +425,7 @@
 [data-world="give"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-give);
-  --world-ink: oklch(0.46 0.16 145);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
@@ -410,7 +434,7 @@
 [data-world="lend"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-lend);
-  --world-ink: oklch(0.44 0.14 146);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
@@ -420,7 +444,7 @@
 [data-world="trade"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-trade);
-  --world-ink: oklch(0.44 0.16 48);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-other-trade);
 }
@@ -495,7 +519,7 @@
 [data-world="profile"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-giver);
-  --world-ink: oklch(0.38 0.16 260);
+  --world-ink: color-mix(in oklab, var(--world-g) 60%, black); /* derived */
   --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }

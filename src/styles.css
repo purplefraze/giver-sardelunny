@@ -153,7 +153,8 @@
      saturated, clean, editorial, playful — never pastel, muted or corporate.
 
      BLUE     = me / the current user, always.
-     HOT PINK = BORROW (and the other person on the asking side).
+     HOT PINK = FUND, and only Fund (#FF1F8E, --mode-fund below).
+     ORCHID   = the other person on the asking (wish / borrow) side (#C154C1).
      PURPLE   = WISH — and the world a wish / borrow interaction lives in.
      SEAFOAM  = LEND.
      GREEN    = GIVE — and the world a give / lend interaction lives in.
@@ -163,7 +164,13 @@
   --giver-green: oklch(0.66 0.22 146); /* GREEN — giving, my own world */
   --giver-seafoam: oklch(0.75 0.1 196); /* SEAFOAM — lending (#60C0C0) */
   --giver-purple: oklch(0.55 0.26 300); /* PURPLE — wishing, asking */
-  --giver-pink: oklch(0.65 0.21 4); /* HOT PINK — borrowing (#E85088) */
+  --giver-pink: oklch(0.65 0.21 4); /* rose pink (#E85088) — action / sparkles */
+  /* ORCHID — the Wish world's "other" colour (#C154C1). Recast from hot pink
+     (--giver-pink, #E85088) so FUND alone owns hot pink. */
+  --giver-orchid: oklch(0.624 0.191 327.6); /* #C154C1 */
+  /* HOT PINK — FUND (#FF1F8E). Chosen to read clearly hot pink on white and to
+     sit apart from wish purple (300°), orchid (328°) and trade orange. */
+  --giver-hot-pink: oklch(0.657 0.255 358.9); /* #FF1F8E */
   --giver-blue: oklch(0.58 0.2 250); /* BLUE — me, the current user */
   --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the receiving person */
   --giver-orange: oklch(0.7 0.2 46); /* ORANGE — community, trade partner */
@@ -178,7 +185,9 @@
   /* THE PEOPLE. I am always blue; the other person takes the social state. */
   --person-self: var(--giver-blue);
   --person-self-community: oklch(0.52 0.22 262); /* me inside orange community */
-  --person-other-wish: var(--giver-pink); /* they are asking */
+  /* WISH PAIR = purple (--mode-wish, oklch(0.55 0.26 300)) + ORCHID other.
+     Was var(--giver-pink) (#E85088, hot pink) until Fund arrived. */
+  --person-other-wish: var(--giver-orchid); /* they are asking — #C154C1 */
   --person-other-give: var(--giver-yellow); /* they are receiving */
   --person-other-trade: var(--giver-orange); /* trade partner */
 
@@ -218,7 +227,10 @@
        6:00 = MY G (patriot blue) · 7:30 = give (bright green) ·
        9:00 = lend (yellow) · 10:30 = wish (dreamy purple) ·
        1:30 = borrow (hot pink with a hint of red) · 4:30 = trade (bright orange).
-       These placements and colours hold on every Living G, always. */
+       These placements and colours hold on every Living G, always.
+       (Stale clock map: the live one is SEAT_ANGLE in EarSelector.tsx —
+       trade 6:00 · FUND 7:30 · borrow 9:00 · wish 10:30 · give 1:30 ·
+       lend 3:00 · my g 4:25; 12:00 is deliberately empty.) */
   --giver-patriot: oklch(0.5 0.21 260); /* PATRIOT BLUE — my g, my profile */
   --mode-giver: var(--giver-patriot); /* my profile at 6 o'clock — patriot blue */
   --mode-give: var(--giver-green); /* bright green */
@@ -226,10 +238,17 @@
   --mode-wish: var(--giver-purple); /* dreamy purple */
   --mode-borrow: oklch(0.7 0.16 300); /* purple tint of wish */
   --mode-trade: oklch(0.73 0.2 52); /* bright orange */
+  /* FUND (7:30) — money toward someone else's Wish. HOT PINK #FF1F8E. The
+     only hot-pink token in the system; the Wish "other" is orchid now. */
+  --mode-fund: var(--giver-hot-pink); /* #FF1F8E */
 
   /* SEAT AIR — every toggle seat sits on plain white for now (no field or
      complementary background colour). The G itself carries the seat colour. */
   --seat-bg: oklch(1 0 0);
+  /* FUND AIR — defined (a pale tint of --mode-fund, #FFE3F0) but NOT applied:
+     the Fund seat stays on --seat-bg like every other seat. One-line switch in
+     [data-world="fund"] below if the owner wants pink air. */
+  --fund-air: oklch(0.942 0.035 358.9);
 
   --mode-giver-complement: var(--giver-blue-complement);
   --mode-give-complement: var(--giver-green-complement);
@@ -237,6 +256,7 @@
   --mode-wish-complement: var(--giver-purple-complement);
   --mode-trade-complement: var(--giver-orange-complement);
   --mode-borrow-complement: var(--giver-purple-complement);
+  --mode-fund-complement: var(--giver-pink-complement); /* hot pink -> seafoam */
 
 
   /* ---- ACTIVITY TEXT COLOUR = ITS WORLD'S G COLOUR ---- */
@@ -245,6 +265,7 @@
   --activity-give: var(--mode-give);
   --activity-lend: var(--mode-lend);
   --activity-trade: var(--mode-trade);
+  --activity-fund: var(--mode-fund);
 
   /* My own activity carries the colour of WHAT it is, not of me. */
   --me-wish: var(--activity-wish);
@@ -305,6 +326,7 @@
   --color-trade: var(--giver-participation);
   --color-discovery: var(--giver-community);
   --color-borrow: var(--mode-borrow);
+  --color-fund: var(--mode-fund);
   --color-self: var(--person-self);
   --color-other-wish: var(--person-other-wish);
   --color-other-give: var(--person-other-give);
@@ -347,12 +369,25 @@
   --world-accent: var(--person-self);
 }
 
-/* Borrow — asking to borrow: hot pink. */
+/* Borrow — asking to borrow: a purple tint of wish (never hot pink — that is Fund). */
 [data-world="borrow"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-borrow);
   --world-ink: oklch(0.42 0.18 300);
   --world-text: var(--mode-borrow-complement);
+  --world-accent: var(--person-self);
+}
+
+/* Fund — money toward someone else's Wish: HOT PINK G on white.
+   LETTER: follows the current per-seat rule (G = the seat's own colour). The
+   owner also said "the G stays blue in every world including Fund" — to do
+   that, swap the --world-g line for: --world-g: var(--mode-giver);
+   AIR: stays white (--seat-bg). Pink air would be: --world-bg: var(--fund-air); */
+[data-world="fund"] {
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-fund);
+  --world-ink: oklch(0.45 0.2 358.9);
+  --world-text: var(--mode-fund-complement);
   --world-accent: var(--person-self);
 }
 
@@ -412,7 +447,7 @@
 }
 
 /* ---- ANOTHER PERSON. The state they are in decides their colour: ----
-   someone asking (wish/borrow) is hot pink, someone receiving a give/lend is
+   someone asking (wish/borrow) is orchid, someone receiving a give/lend is
    yellow, someone trading is orange. My identity is never recoloured by
    their mode. */
 [data-world="others"] {

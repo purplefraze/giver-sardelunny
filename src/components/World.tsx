@@ -14,7 +14,16 @@ export type RegionSpec = {
 };
 
 type Props = {
-  world: "home" | "profile" | "community" | "wish" | "give" | "trade" | "borrow" | "lend";
+  world:
+    | "home"
+    | "profile"
+    | "community"
+    | "wish"
+    | "give"
+    | "trade"
+    | "borrow"
+    | "lend"
+    | "fund";
   /** Optional corner word. Omit for worlds where the G colour is the only cue. */
   word?: string;
   /** Quiet page identity: which world am I in. */

@@ -35,11 +35,11 @@ export type Mode = (typeof MODES)[number];
  * LOCKED until the person has discovered their profile, so onboarding only ever
  * offers the activity seats.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend"] as const;
+export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend", "fund"] as const;
 export type Seat = (typeof SEATS)[number];
 
 /** Every seat on the wire, in travel order (one end of the break -> the other). */
-export const FULL_SEATS = ["trade", "borrow", "wish", "give", "lend", "giver"] as const;
+export const FULL_SEATS = ["trade", "fund", "borrow", "wish", "give", "lend", "giver"] as const;
 
 
 
@@ -88,9 +88,14 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  *   wish   -135°  10:30
  *   borrow  -45°   1:30
  *   trade   +45°   4:30, just inside the clockwise end
+ *
+ * (The table above is the original layout. The LIVE map is SEAT_ANGLE:
+ *   trade 6:00 · fund 7:30 · borrow 9:00 · wish 10:30 · give 1:30 ·
+ *   lend 3:00 · my g 4:25 — and 12:00 stays EMPTY, no seat there.)
  */
 const SEAT_ANGLE: Record<Seat, number> = {
   trade: rad(-270), // 6:00
+  fund: rad(-225), // 7:30 — FUND, between trade and borrow
   borrow: rad(-180), // 9:00
   wish: rad(-135), // 10:30
   give: rad(-45), // 1:30
@@ -178,6 +183,7 @@ const MODE_COLOUR: Record<Seat, string> = {
   trade: "var(--mode-trade)",
   borrow: "var(--mode-borrow)",
   lend: "var(--mode-lend)",
+  fund: "var(--mode-fund)",
 
 };
 

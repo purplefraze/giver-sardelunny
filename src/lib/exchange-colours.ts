@@ -6,7 +6,8 @@ import type { ItemType } from "@/data/items";
  * BLUE     = me / the current user, in every interaction.
  * PURPLE   = wish + borrow: the world an asking interaction lives in.
  * GREEN    = give + lend: the world a generous interaction lives in.
- * HOT PINK = borrow, and the other person on the asking side.
+ * ORCHID   = the other person on the asking (wish / borrow) side (#C154C1).
+ * HOT PINK = FUND only (--mode-fund, #FF1F8E) — never a person colour.
  * SEAFOAM  = lend.
  * YELLOW   = the person receiving a give / lend.
  * ORANGE   = community, and the other person in a trade.
@@ -37,7 +38,7 @@ export const STATE_WORLD: Record<ExchangeState, string> = {
 
 /** The colour of the OTHER person in that state. */
 export const OTHER_PERSON_COLOUR: Record<ExchangeState, string> = {
-  wish: "var(--person-other-wish)", // hot pink — they are asking
+  wish: "var(--person-other-wish)", // orchid — they are asking
   give: "var(--person-other-give)", // yellow — they are receiving
   trade: "var(--person-other-trade)", // orange — the trade partner
 };

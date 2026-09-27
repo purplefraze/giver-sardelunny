@@ -37,6 +37,7 @@ import {
   type ItemDetails,
 } from "@/data/items";
 import { formatDateOnly } from "@/lib/date-only";
+import { formatCents, parseAmount, validTarget } from "@/data/fund-rules";
 
 
 import { pickImages } from "@/lib/pick-image";
@@ -275,7 +276,15 @@ export function CategoryForm({
    */
   const [liveId, setLiveId] = useState<string | null>(stored.liveId);
   /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
-  const [open, setOpen] = useState<"topic" | "where" | "when" | "long" | null>(null);
+  const [open, setOpen] = useState<"topic" | "where" | "when" | "long" | "cost" | null>(null);
+  /**
+   * WISHES ONLY: an optional money cost, so Fund can show a running total vs
+   * target. Typed as text, stored on details.fundTarget as integer cents.
+   */
+  const [costText, setCostText] = useState(() => {
+    const t = validTarget(stored.details.fundTarget);
+    return t === null ? "" : (t / 100).toString();
+  });
 
   /* THE FORM IS THE COLOUR OF WHAT IT MAKES: wish purple, give green,
      trade orange, borrow blue. It never inherits profile red. */
@@ -597,6 +606,7 @@ export function CategoryForm({
     setNote("");
     setPhotos([]);
     setDetails({});
+    setCostText("");
     draftsStore.clear(category);
     haptics.light();
     showOutcome();
@@ -1158,6 +1168,51 @@ export function CategoryForm({
                         ))}
                       </Line>
                     ) : null}
+                  </Field>
+                ) : null}
+
+                {/* WISHES ONLY: WHAT IT COSTS, IF MONEY WOULD HELP. Optional. Lets
+                    others pledge toward it in Fund. Nothing is charged. */}
+                {category === "wish" ? (
+                  <Field
+                    label="cost, if money would help"
+                    summary={
+                      validTarget(details.fundTarget) !== null
+                        ? formatCents(details.fundTarget!)
+                        : undefined
+                    }
+                    open={open === "cost"}
+                    colour={colour}
+                    onToggle={() => setOpen(open === "cost" ? null : "cost")}
+                  >
+                    <Line label="cost (optional)">
+                      <span className="text-sm font-medium">$</span>
+                      <input
+                        inputMode="decimal"
+                        value={costText}
+                        onChange={(e) => {
+                          const text = e.target.value.slice(0, 12);
+                          setCostText(text);
+                          const cents = parseAmount(text);
+                          setDetail({ fundTarget: validTarget(cents) ?? undefined });
+                        }}
+                        placeholder="e.g. 1200"
+                        aria-label="cost of this wish"
+                        className="w-28 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none placeholder:opacity-30"
+                      />
+                      {details.fundTarget ? (
+                        <Clear
+                          label="no cost"
+                          onPress={() => {
+                            setCostText("");
+                            setDetail({ fundTarget: undefined });
+                          }}
+                        />
+                      ) : null}
+                    </Line>
+                    <p className="w-full g-meta opacity-45">
+                      people can pledge toward it in fund · no payment is processed yet
+                    </p>
                   </Field>
                 ) : null}
 

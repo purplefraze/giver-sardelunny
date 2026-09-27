@@ -23,6 +23,12 @@ const LOOP_COPY: Record<Seat, LoopCopy> = {
   lend: { middle: "lend something", bottom: "borrow something" },
   trade: { middle: "trade for something", bottom: "trade for something" },
   /**
+   * FUND (7:30). PROPOSED WORDING — flagged for the owner: middle = your
+   * action (pledge money toward someone's wish), bottom = the other side
+   * (your wish gets money toward it).
+   */
+  fund: { middle: "fund a wish", bottom: "get funded" },
+  /**
    * My G: "my g" (the My G panel title / bead word) over "community".
    * Hinted until my profile is filled out, then both go silent together.
    */
@@ -64,10 +70,13 @@ export function hasLoopCopy(seat: Seat): boolean {
  *           stepped forward on someone's BORROW request (offered to lend)
  *   giver   (My G + its community side) my profile is FILLED OUT — see
  *           profileFilledOut below. Both go silent together.
+ *   fund    I have recorded at least one pledge (fundStore, src/data/fund.ts).
+ *           A pledge NEVER retires the give seat: give reads items only.
  */
 type HelperLink = Pick<Connection, "itemId" | "type" | "helperId" | "state">;
 type LinksState = { connections: HelperLink[] };
 type ProfileFacts = { username: string; photo: string | null };
+type FundFacts = { contributions: { funderId: string }[] };
 
 /**
  * MY G IS FILLED OUT = a real display name AND at least one visible thing.
@@ -112,6 +121,8 @@ export function seatHintRetired(
   items: ItemsState,
   links: LinksState,
   profile: ProfileFacts,
+  /** Contributions (fundStore). Only the fund seat reads this. */
+  funds: FundFacts = { contributions: [] },
 ): boolean {
   switch (seat) {
     case "give":
@@ -143,6 +154,8 @@ export function seatHintRetired(
       );
     case "giver":
       return profileFilledOut(profile);
+    case "fund":
+      return funds.contributions.some((c) => c.funderId === ME_ID);
     default:
       return true;
   }

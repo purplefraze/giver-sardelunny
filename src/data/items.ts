@@ -160,6 +160,13 @@ export type ItemDetails = {
   topic?: string | undefined;
   /** context-specific answers (subject, level, format...). */
   extras?: Record<string, string> | undefined;
+  /**
+   * WISHES ONLY, OPTIONAL: what the Wish costs in money, as integer cents
+   * (e.g. 1200000 = $12,000). Only used by Fund to show the running total vs
+   * target. Lives in `details` so it syncs through the existing items.details
+   * jsonb column with no schema change. Never printed by detailBits.
+   */
+  fundTarget?: number | undefined;
 };
 
 
@@ -631,9 +638,20 @@ const FIXTURE_DETAILS: Record<string, ItemDetails> = {
   },
 };
 
+/**
+ * THE ONE SAMPLE WISH THAT STATES A MONEY COST (integer cents), so Fund has a
+ * running total vs target to show. Demo only, like every seeded item.
+ */
+const FIXTURE_FUND_TARGET: Record<string, number> = {
+  "seed-robin-wish-3": 150000, // "a spare onewheel for the playa" — $1,500
+};
+
 /** The written fixture wins; everything else is derived. */
-const detailsFor = (id: string, text: string, mi: number, i: number): ItemDetails =>
-  FIXTURE_DETAILS[id] ?? seedDetails(text, mi, i);
+const detailsFor = (id: string, text: string, mi: number, i: number): ItemDetails => {
+  const base = FIXTURE_DETAILS[id] ?? seedDetails(text, mi, i);
+  const target = FIXTURE_FUND_TARGET[id];
+  return target === undefined ? base : { ...base, fundTarget: target };
+};
 
 
 

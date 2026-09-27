@@ -29,6 +29,10 @@ import { publishEligibility } from "@/data/account";
 import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 import { FullProfile } from "@/components/FullProfile";
+import { FundForm } from "@/components/fund/FundForm";
+import { useFund } from "@/hooks/use-fund";
+import { fundableWishes, myContributions } from "@/data/fund";
+import { formatCents } from "@/data/fund-rules";
 import { memberById } from "@/data/giver";
 import { ActivityDetail } from "@/components/community/ActivityDetail";
 import { Conversation } from "@/components/connection/Conversation";
@@ -59,11 +63,16 @@ const MODES_ONLY = MODES;
  * trade (3). LEND is its own seat; underneath it is the lending side of the
  * borrow world, so it keeps one content model and its own colour.
  */
-const ACTIVITY_SEATS = [...MODES, "lend"] as const;
+const ACTIVITY_SEATS = [...MODES, "lend", "fund"] as const;
 type ActivitySeat = (typeof ACTIVITY_SEATS)[number];
 
-/** The item world a seat reads from. Lend shares borrow's records. */
-const seatMode = (s: ActivitySeat): Mode => (s === "lend" ? "borrow" : s);
+/**
+ * The item world a seat reads from. Lend shares borrow's records. FUND (7:30)
+ * has no items of its own: it attaches money pledges TO other people's
+ * Wishes, so it reads the wish world (and its own contributions store).
+ */
+const seatMode = (s: ActivitySeat): Mode =>
+  s === "lend" ? "borrow" : s === "fund" ? "wish" : s;
 
 const FIRST_USE_SEAT_KEY = "giver.first-use.seat";
 const TOGGLE_WORDS_KEY = "giver.toggleWordsUnlocked";
@@ -229,6 +238,8 @@ function Index() {
   const [editor, setEditor] = useState<
     | { kind: "about" }
     | { kind: "category"; category: Category; side?: BorrowSide }
+    /* FUND'S SHEET — same middle-loop chamber, its own content. */
+    | { kind: "fund" }
     | null
   >(null);
 
@@ -393,6 +404,8 @@ function Index() {
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
     if (seat === "giver") return;
+    /* Fund has no world explanation (yet); it must never replay Wish's. */
+    if (seat === "fund") return;
     const topic = seatMode(seat);
     if (introSeenStore.get()[topic]) return;
     showIntro(topic);
@@ -416,8 +429,11 @@ function Index() {
   useMemberEdits();
 
   const links = useConnections();
-  /** Per-seat hint retirement — derived, reactive, from items + connections. */
-  const retiredAt = (at: Seat) => seatHintRetired(at, items, links, me);
+  /** Fund pledges — their own store; they never touch items or sparks. */
+  const funds = useFund();
+  /** Per-seat hint retirement — derived, reactive, from items + connections
+      (+ pledges, read by the fund seat only). */
+  const retiredAt = (at: Seat) => seatHintRetired(at, items, links, me, funds);
   /** The CURRENT seat's hint has been retired (always true on My G). */
   const retired = retiredAt(seat);
 
@@ -479,6 +495,8 @@ function Index() {
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = seatMode(activity ?? "give");
   const content = MODE_CONTENT[mode];
+  /** FUND IS ITS OWN SEAT: it borrows the wish world's items, never its forms. */
+  const funding = activity === "fund";
   /** The toggle hint for THIS seat, only while it is fading through. */
   const hintNow = !retired && hint !== null && hint.seat === seat ? hint : null;
   const hintCopy = hintNow ? loopCopyFor(seat) : null;
@@ -523,6 +541,11 @@ function Index() {
       openMyG();
       return;
     }
+    /* FUND opens its own pledge sheet, in the same middle-loop chamber. */
+    if (activity === "fund") {
+      setEditor({ kind: "fund" });
+      return;
+    }
     /* TAP TO ENTER (testing phase): the seat's own action screen — the
        existing CategoryForm ("what can you give today?" for Give) — opens
        even before the profile exists. It used to route first-arrival taps to
@@ -557,12 +580,31 @@ function Index() {
    * "mine" means the one I touched last, not a ranked list.
    */
   const myRecent = [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
-  const myMode = myRecent ? itemLine(myRecent) : null;
+
+  /* FUND'S TICKERS: middle = my latest pledge ("$25 to …"), bottom = wishes I
+     could fund. Same one-line ticker rules as every other seat. */
+  const myPledges = funding ? myContributions(funds, ME_ID) : [];
+  const latestPledge = myPledges[0];
+  const latestPledgeWish = latestPledge
+    ? items.items.find((i) => i.id === latestPledge.wishId)
+    : undefined;
+  const myMode = funding
+    ? latestPledge
+      ? `${formatCents(latestPledge.amountCents)} to ${latestPledgeWish ? itemLine(latestPledgeWish) : "a wish"}`
+      : null
+    : myRecent
+      ? itemLine(myRecent)
+      : null;
+  const myCount = funding ? myPledges.length : me.items[mode].length;
 
   /** COMMUNI-G <type> — the same item collection, queried by everyone else. */
-  const theirs = communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
+  const theirs = funding
+    ? fundableWishes(items, ME_ID)
+    : communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
   const firstTheirs = theirs[0];
   const community = firstTheirs ? itemLine(firstTheirs) : null;
+  /** The ticker's ink: the seat's own activity colour. */
+  const tickerFill = funding ? "var(--activity-fund)" : ACTIVITY_FILL[mode as ItemType];
 
   /**
    * NEVER A LIST INSIDE THE G: one item, then how much more there is — as
@@ -689,11 +731,7 @@ function Index() {
                   hintCopy?.middle && hintNow
                     ? loopHint("middle", hintCopy.middle, hintNow.nonce)
                     : retired && activity !== null && myMode
-                      ? loopLine(
-                          "middle",
-                          tickerText(myMode, me.items[mode].length),
-                          ACTIVITY_FILL[mode as ItemType],
-                        )
+                      ? loopLine("middle", tickerText(myMode, myCount), tickerFill)
                       : null,
               },
               /*
@@ -709,7 +747,10 @@ function Index() {
                     ? openMyG
                     : firstArrival
                       ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
-                      : () => {
+                      : funding
+                        ? /* FUND'S COMMUNI-G = wishes to fund, in its own sheet. */
+                          () => setEditor({ kind: "fund" })
+                        : () => {
                           /* VISIBLE TO EVERYONE. Interaction locks live inside the detail. */
                           setBrowse({ type: mode as ItemType });
                         },
@@ -721,11 +762,7 @@ function Index() {
                   hintCopy?.bottom && hintNow
                     ? loopHint("bottom", hintCopy.bottom, hintNow.nonce)
                     : retired && activity !== null && community
-                      ? loopLine(
-                          "bottom",
-                          tickerText(community, theirs.length),
-                          ACTIVITY_FILL[mode as ItemType],
-                        )
+                      ? loopLine("bottom", tickerText(community, theirs.length), tickerFill)
                       : null,
               },
             }}
@@ -742,6 +779,7 @@ function Index() {
           */}
           {!firstArrival &&
           activity !== null &&
+          !funding &&
           !tutorialSeen &&
           intro === null &&
           editor === null &&
@@ -784,7 +822,7 @@ function Index() {
               } else if (id === "browse") setBrowse(null);
               else if (id === "threads") setThreads(false);
               else if (id === "history") setHistory(null);
-              else if (id === "about" || id === "category") setEditor(null);
+              else if (id === "about" || id === "category" || id === "fund") setEditor(null);
               else if (id === "help") setHelp(false);
               else if (id === "choose") setChoose(false);
               else if (id === "intro") setIntro(null);
@@ -890,6 +928,16 @@ function Index() {
 
 
                   ) : null,
+              },
+
+              /* FUND'S PLEDGE SHEET — the same middle-loop chamber as a form. */
+              {
+                id: "fund",
+                open: editor?.kind === "fund",
+                anchor: "middle",
+                world: "fund",
+                children:
+                  editor?.kind === "fund" ? <FundForm onDone={() => setEditor(null)} /> : null,
               },
 
               /*

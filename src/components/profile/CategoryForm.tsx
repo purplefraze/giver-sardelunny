@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { draftsStore } from "@/data/drafts";
-import { BackArrow } from "@/components/BackArrow";
+import { EMPTY_DRAFT, draftsStore, type DraftKey } from "@/data/drafts";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import {
   CATEGORY_PLURAL,
@@ -10,21 +9,8 @@ import {
   type Category,
 } from "@/data/my-profile";
 import {
-  CADENCE_OPTIONS,
-  DAY_NAMES,
-  DURATION_OPTIONS,
-  NOTE_COUNTDOWN_AT,
-  NOTE_MAX_FOR,
-  TIME_OPTIONS,
-  TITLE_COUNTDOWN_AT,
   TITLE_MAX,
-  TOPICS,
-  ASKS_AREA,
-  ASKS_DURATION,
-  ASKS_RECURRENCE,
-  WHERE_FOR,
   classifyKind,
-  contextFieldsFor,
   detailBits,
   itemsStore,
   splitTrade,
@@ -34,11 +20,24 @@ import {
   timeWindow,
   tradeText,
   type BorrowSide,
+  type GiveKind,
   type ItemDetails,
+  type Topic,
 } from "@/data/items";
-import { formatDateOnly } from "@/lib/date-only";
-import { formatCents, parseAmount, validTarget } from "@/data/fund-rules";
-
+import {
+  FUND_TARGET_MAX_CENTS,
+  formatCents,
+  parseAmount,
+  validTarget,
+} from "@/data/fund-rules";
+import {
+  FormAmount,
+  FormG,
+  FormLine,
+  FormQuestion,
+  FormSend,
+  type FormTag,
+} from "@/components/forms/UnifiedForm";
 
 import { pickImages } from "@/lib/pick-image";
 import { storeChosenImage } from "@/lib/media";
@@ -47,62 +46,49 @@ import { askToNotify, notifyDecided } from "@/lib/notify";
 import { pullItems, pushItems } from "@/data/cloud/items-sync";
 
 /**
- * DESTINATION SCREEN — the editor behind ONE loop of the Living G.
- * add a wish, a give, a trade or a borrow; reorder or remove. Saving is
- * continuous — AUTOSAVE IS THE CONFIRMATION, so there is no checkmark and no
- * save step.
+ * DESTINATION SCREEN — the form behind ONE seat of the Living G, in the ONE
+ * unified pattern every seat shares (/workspace/giver-forms-unified): the G
+ * top left, a light heading, two lines (the thing, then when), 2–3 quiet
+ * tags under line 1 — the last one asks one full-screen question — and a
+ * solid seat-colour send circle. Nothing else on the first screen.
  *
- * GIVES HAVE NO PRICE AND NO PRIORITY. A spark balance is irrelevant to
- * posting a give, and give #1 is not more important than give #2 — the number
- * beside a give is nothing but an organisational handle while editing.
+ * Presentation only: drafts, autosave-once, the account / sparks / limit
+ * gates and publishing are unchanged. My current records (edit, reorder,
+ * remove) stay available below the fold.
  *
- * STRUCTURED DETAILS, NOT A FORM. Where, when and how long are tapped, not
- * typed, and only the questions that make sense for that kind of give are ever
- * asked. Giver never asks for an exact home address.
+ * GIVES HAVE NO PRICE AND NO PRIORITY. NO MONEY ANYWHERE EXCEPT FUND: the
+ * Fund seat ("ask for funding") is this same form over a Wish, and its
+ * follow-up question is the only one that asks for an amount.
  */
 
+type FormSeat = "give" | "lend" | "trade" | "fund" | "borrow" | "wish";
+
+/** THE SEAT'S OWN WORDS — heading, then the two line labels. */
+const SEAT_COPY: Record<FormSeat, { heading: string; l1: string; l2: string }> = {
+  give: { heading: "give something", l1: "what", l2: "when" },
+  lend: { heading: "lend something", l1: "what", l2: "when" },
+  trade: { heading: "trade", l1: "you offer", l2: "for" },
+  fund: { heading: "ask for funding", l1: "for", l2: "by" },
+  borrow: { heading: "borrow something", l1: "what", l2: "when" },
+  wish: { heading: "make a wish", l1: "wish", l2: "by" },
+};
+
+/** Grey placeholders — line 1, line 2. */
+const SEAT_PLACEHOLDER: Record<FormSeat, [string, string]> = {
+  give: ["something", "anytime"],
+  lend: ["something", "anytime"],
+  trade: ["something", "something"],
+  fund: ["something", "whenever"],
+  borrow: ["something", "anytime"],
+  wish: ["something", "whenever"],
+};
+
+/** WHAT A PROBLEM LINE ASKS FOR when line 1 is still empty. */
 const CATEGORY_ASK: Record<Category, string> = {
   wish: "what do you wish for?",
   give: "what can you give today?",
   trade: "what are you offering?",
   borrow: "what would you borrow?",
-};
-
-/**
- * THE ONE LINE UNDER THE TITLE. Said once, never repeated by the input below
- * it: the question belongs to the field, the invitation belongs to the page.
- */
-const CATEGORY_CALL: Record<Category, string> = {
-  wish: "make a wish",
-  give: "are you a giver?",
-  trade: "what are you offering?",
-  borrow: "what would you borrow?",
-};
-
-/** ONE SHORT HUMAN LINE. Only where it adds something the labels cannot. */
-const CATEGORY_TAGLINE: Partial<Record<Category, string>> = {
-  give: "give what you can. make someone happy.",
-};
-
-/**
- * THE MOMENT OF PUBLISHING, IN WORDS. "+ add a give" told nobody that the
- * community was about to see it — this does, in the world's own voice.
- */
-const PUBLISH_LABEL: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
-  give: "publish my give to communi-g",
-  wish: "publish my wish to communi-g",
-  trade: "publish my trade to communi-g",
-  borrow: "publish my borrow to communi-g",
-  lend: "publish my lend to communi-g",
-};
-
-/** AND THE WAY ON: the same word, said as an invitation to do it again. */
-const AGAIN_LABEL: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
-  give: "add another give",
-  wish: "add another wish",
-  trade: "add another trade",
-  borrow: "add another borrow",
-  lend: "add another lend",
 };
 
 /** WHAT CAME BACK. One line, then it steps out of the way. */
@@ -114,268 +100,148 @@ const PUBLISHED_SAY: Record<"give" | "wish" | "trade" | "borrow" | "lend", strin
   lend: "your lend is live in communi-g",
 };
 
-
-
-
-/** BORROWING HAS TWO SIDES, and giver asks which one you mean. */
+/** BORROWING HAS TWO SIDES; the seat (or the door) already said which. */
 const SIDE_ASK: Record<BorrowSide, string> = {
   borrow: "what would you like to borrow?",
   lend: "what are you happy to lend?",
 };
 
-/** A CHIP IS A WORD YOU CAN TAP. Never a pill, never a button. */
-function Choice({
-  label,
-  on,
-  colour,
-  onPress,
-}: {
-  label: string;
-  on: boolean;
-  colour: string;
-  onPress: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        haptics.selection();
-        onPress();
-      }}
-      className={`text-[12px] font-black lowercase tracking-[0.18em] transition-opacity ${
-        on ? "opacity-100" : "opacity-35"
-      }`}
-      style={on ? { color: colour } : { color: "var(--world-ink)" }}
-    >
-      {label}
-    </button>
-  );
-}
-
 /**
- * REMOVING AN ANSWER IS AN ACTION, NOT A FAILURE. Pink, small, and always
- * available beside anything optional that has been filled in.
+ * THE INFERRED TAG — one short word for what giver thinks this is, from the
+ * existing topic guess (suggestTopic), else from the kind (classifyKind).
+ * Deterministic, no backend.
  */
-function Clear({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        haptics.light();
-        onPress();
-      }}
-      className="text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-      style={{ color: "var(--giver-action)" }}
-    >
-      {label}
-    </button>
-  );
-}
+const TOPIC_TAG: Record<Topic, string> = {
+  "items / household": "household",
+  transportation: "transport",
+  "outdoors / recreation": "outdoors",
+  "home / repair": "repair",
+  "skills / teaching": "lessons",
+  "services / help": "help",
+  food: "food",
+  "events / experiences": "events",
+};
+const KIND_TAG: Record<GiveKind, string> = {
+  object: "things",
+  food: "food",
+  skill: "skills",
+  experience: "experiences",
+  help: "help",
+  digital: "online",
+};
 
+/** WISH ONLY: "piano lessons for my daughter" -> "for my daughter". */
+const forWhom = (text: string) => {
+  const m = /\bfor (my|a|the|our) ([a-z’']+)/i.exec(text);
+  return m ? `for ${m[1]} ${m[2]}`.toLowerCase() : null;
+};
 
-function Line({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="g-form-label">{label}</span>
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5">{children}</div>
-    </div>
-  );
-}
-
-/**
- * A COMPACT FIELD — one word, its answer beside it, and its choices only while
- * it is open. Never a settings row, never every option at once.
- */
-function Field({
-  label,
-  summary,
-  open,
-  colour,
-  onToggle,
-  children,
-}: {
-  label: string;
-  summary?: string | undefined;
-  open: boolean;
-  colour: string;
-  onToggle: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="g-rule py-5">
-      <button
-        type="button"
-        onClick={() => {
-          haptics.selection();
-          onToggle();
-        }}
-        className="flex w-full items-baseline justify-between gap-4 text-left"
-      >
-        <span className="g-form-label">{label}</span>
-        <span
-          className="min-w-0 flex-1 truncate pb-[0.12em] text-right text-[13px] font-black lowercase leading-[1.25] tracking-[0.02em]"
-          style={{ color: summary ? colour : "var(--world-ink)" }}
-        >
-          {summary || (
-            <span style={{ color: "var(--giver-action)", opacity: 0.85 }}>add</span>
-          )}
-        </span>
-      </button>
-      {open ? (
-        <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-2">
-          {children}
-        </div>
-      ) : null}
-    </div>
-  );
-}
+/** THE QUESTIONS, one per seat (Fund's is the amount, handled apart). */
+const HOW_LONG = ["a day", "a weekend", "a week", "two weeks"] as const;
+const TRADE_WHEN = ["this week", "this month", "whenever"] as const;
+const HOW_OFTEN = ["once", "weekly", "every two weeks", "monthly"] as const;
+/** How often, said the way the question says it <-> the stored cadence. */
+const CADENCE_OF: Record<string, string> = {
+  once: "one time",
+  weekly: "weekly",
+  "every two weeks": "fortnightly",
+  monthly: "monthly",
+};
+const OFTEN_OF = (cadence: string | undefined) =>
+  Object.keys(CADENCE_OF).find((k) => CADENCE_OF[k] === cadence);
+/** WHERE — never an address; a physical thing is never "online". */
+const whereFor = (kind: GiveKind) =>
+  kind === "object" || kind === "food"
+    ? ["at my place", "at yours", "nearby"]
+    : ["at my place", "at yours", "nearby", "online"];
 
 export function CategoryForm({
   category,
   side: decidedSide,
+  asksFunding = false,
   onDone,
-  onSeeInCommunity,
 }: {
   category: Category;
   /**
-   * THE DOOR ALREADY ASKED. When the three-intent door has settled keeping vs
-   * borrowing, or giving vs lending, the form never asks the same question
-   * again — it simply knows.
+   * THE DOOR ALREADY ASKED. When the three-intent door (or the Lend seat) has
+   * settled borrowing vs lending, the form simply knows. Otherwise: borrow.
    */
   side?: BorrowSide;
+  /** THE FUND SEAT: "ask for funding" — a Wish that states what it needs. */
+  asksFunding?: boolean;
   onDone: () => void;
-  /** STRAIGHT TO COMMUNI-G, scoped to my own, right after publishing. */
+  /** Kept for callers; the unified form has no links. */
   onSeeInCommunity?: () => void;
 }) {
-
   const me = useMyProfile();
-  /* THE DRAFT SURVIVES LEAVING AND RELOADING — it is persisted, not held. */
-  const stored = useRef(draftsStore.get(category)).current;
+  const side0: BorrowSide = decidedSide ?? "borrow";
+  const draftKey: DraftKey = asksFunding ? "fund" : category;
+  /* THE DRAFT SURVIVES LEAVING AND RELOADING — it is persisted, not held.
+     Lend and borrow share one draft slot; a draft from the other side is
+     never shown on this one. */
+  const stored = useRef(
+    (() => {
+      const d = draftsStore.get(draftKey);
+      return category === "borrow" && d.side !== side0 ? { ...EMPTY_DRAFT, side: side0 } : d;
+    })(),
+  ).current;
   const [draft, setDraft] = useState(stored.text);
   const [want, setWant] = useState(stored.want);
-  /** ONE OPTIONAL, SHORT LINE OF CONTEXT. Never a description box. */
+  /* Kept and saved as before (no field on the unified form). */
   const [note, setNote] = useState(stored.note);
-  /** BORROW OR LEND — answered at the door when the door knew, else asked here. */
-  const [side, setSide] = useState<BorrowSide>(decidedSide ?? stored.side);
-
-  /** OPTIONAL PHOTOS. They belong to the item the moment it exists. */
+  const side = side0;
   const [photos, setPhotos] = useState<string[]>(stored.photos);
-  /** WHERE · WHEN · HOW LONG — tapped, and all of it optional. */
   const [details, setDetails] = useState<ItemDetails>(stored.details);
   const [problem, setProblem] = useState<string | null>(null);
-  /** WHAT JUST WENT LIVE — said once, in the world's own voice, then gone. */
   const [live, setLive] = useState<string | null>(null);
-  /** WHERE GIVER ANSWERS — the publish line and whatever it says back. */
-  const outcome = useRef<HTMLDivElement | null>(null);
-
-
-  /**
-   * THE ONE RECORD THIS DRAFT IS ALREADY SAVED AS. Once the draft is complete
-   * enough to be real it becomes an Item, and every later keystroke edits THAT
-   * record — so there is never a second copy and Back is never the save button.
-   */
   const [liveId, setLiveId] = useState<string | null>(stored.liveId);
-  /** ONE SELECTOR OPEN AT A TIME. Closed is the resting state. */
-  const [open, setOpen] = useState<"topic" | "where" | "when" | "long" | "cost" | null>(null);
-  /**
-   * WISHES ONLY: an optional money cost, so Fund can show a running total vs
-   * target. Typed as text, stored on details.fundTarget as integer cents.
-   */
-  const [costText, setCostText] = useState(() => {
+  /** ONE QUESTION AT A TIME, full screen. Closed is the resting state. */
+  const [asking, setAsking] = useState(false);
+  /** FUND ONLY: the amount, typed as text, stored as integer cents. */
+  const [amountText, setAmountText] = useState(() => {
     const t = validTarget(stored.details.fundTarget);
     return t === null ? "" : (t / 100).toString();
   });
+  const [amountSay, setAmountSay] = useState<string | null>(null);
 
-  /* THE FORM IS THE COLOUR OF WHAT IT MAKES: wish purple, give green,
-     trade orange, borrow blue. It never inherits profile red. */
+  const seat: FormSeat = asksFunding
+    ? "fund"
+    : category === "borrow" && side === "lend"
+      ? "lend"
+      : category;
+  const copy = SEAT_COPY[seat];
   const colour =
     category === "borrow" && side === "lend"
       ? "var(--activity-lend)"
       : `var(--activity-${category})`;
   const limit = MAX_PER_CATEGORY[category];
-  const unlimited = !Number.isFinite(limit);
   /* THE RECORD BEING TYPED IS SHOWN IN THE FIELD, NOT TWICE IN THE LIST. */
-  const records = me.records[category].filter((i) => i.id !== liveId);
-  /* THE LIMIT COUNTS EVERY ACTIVE RECORD, including the one being typed. */
+  const records = asksFunding ? [] : me.records[category].filter((i) => i.id !== liveId);
   const full =
     category === "borrow"
       ? me.records.borrow.filter((i) => (i.side ?? "borrow") === side).length >= limit
       : me.records[category].length >= limit;
-  /** A WISH COSTS 10 SPARKS. Giving, trading and lending are free. */
-  const cost = category === "wish" ? WISH_COST : 0;
-  const broke = cost > 0 && me.sparks < cost;
   /** PHOTOS HELP FOR REAL THINGS: gives, trades and borrows. Never wishes. */
   const canPhoto = category !== "wish";
   const titleMax = TITLE_MAX[category];
-  const noteMax = NOTE_MAX_FOR[category];
-  const titleLeft = titleMax - draft.length;
-  const noteLeft = noteMax - note.length;
-  /** ONLY THE QUESTIONS THAT MAKE SENSE for this kind of thing. */
-  const extraFields = contextFieldsFor(draft);
-  /** WHAT KIND OF THING THIS IS decides which metadata is even offered. */
-  const kind = classifyKind(draft);
-  const whereOptions = WHERE_FOR[kind];
-  /**
-   * NOTHING IS ASKED BEFORE THE WORDS EXIST. Until the person has said what
-   * this is, the screen is one line and a placeholder — every follow-up appears
-   * only once giver has something to be intelligent about.
-   */
+  const said = category === "trade" ? `${draft} ${want}` : draft;
+  const kind = classifyKind(said);
+  /** NOTHING IS INFERRED BEFORE THE WORDS EXIST. */
   const described = draft.trim().length >= 3;
-  /** WHAT GIVER THINKS THIS IS. A suggestion to confirm, never a decision. */
-  const guessedTopic = suggestTopic(category === "trade" ? `${draft} ${want}` : draft);
-  const topic = details.topic ?? undefined;
-  /** BORROWING AND LENDING ARE ALWAYS A WINDOW: it starts, and it comes back. */
-  const isWindow = category === "borrow";
-  /** A ONE-OFF THING IS NEVER ASKED ABOUT A WEEKLY SCHEDULE. */
-  const asksRecurrence = ASKS_RECURRENCE[kind];
-  const whenSummary =
-    [
-      details.days?.length ? details.days.join(" + ") : null,
-      details.date ? formatDateOnly(details.date, { day: "numeric", month: "short" }) : null,
-      details.flexibleDate && !details.date ? "any day" : null,
-      details.time,
-      details.flexibleTime && !details.time ? "any time" : null,
-      details.until
-        ? `${isWindow ? "back by" : "until"} ${formatDateOnly(details.until, { day: "numeric", month: "short" })}`
-        : null,
-    ]
-      .filter(Boolean)
-      .join(" · ") || undefined;
+  const topic = details.topic ?? suggestTopic(said) ?? undefined;
+  const target = validTarget(details.fundTarget);
+  const when = details.extras?.["when"] ?? "";
 
-  const longSummary =
-    [details.cadence, details.duration].filter(Boolean).join(" · ") || undefined;
-  /**
-   * PINK IS THE COLOUR OF AN ACTION WHILE CREATING — add a photo, add a
-   * detail. The mode colour stays the identity of the thing being made, so a
-   * saved give is always green and never pink.
-   */
-  const action = colour;
-
-  /* A PHYSICAL THING CAN NEVER BE "ONLINE" — an answer that stops making
-     sense as the give is described is quietly dropped, never corrected aloud. */
+  /* A PHYSICAL THING CAN NEVER BE "ONLINE" — dropped quietly, never corrected
+     aloud. (The other answers now come from explicit questions and stay.) */
   useEffect(() => {
-    if (
-      details.where &&
-      !whereOptions.includes(details.where) &&
-      !ASKS_AREA[kind]
-    )
+    if (details.where === "online" && !whereFor(kind).includes("online"))
       setDetails((prev) => ({ ...prev, where: undefined }));
-    if (details.where === "online" && !whereOptions.includes("online"))
-      setDetails((prev) => ({ ...prev, where: undefined }));
-    if (details.duration && !ASKS_DURATION[kind])
-      setDetails((prev) => ({ ...prev, duration: undefined }));
-    if (details.cadence && !ASKS_RECURRENCE[kind] && details.cadence !== "one time")
-      setDetails((prev) => ({ ...prev, cadence: undefined }));
-  }, [kind, details.where, details.duration, details.cadence, whereOptions]);
+  }, [kind, details.where]);
 
-  /*
-    THE SUGGESTIONS ARE OFFERED ONCE, AND ONLY WHERE THE PERSON SAID SO.
-    "for the weekend" fills saturday and sunday, "every week" fills weekly —
-    both stay editable, and giver never invents a day nobody mentioned.
-  */
+  /* SUGGESTIONS, OFFERED ONCE and only where the person said so. */
   useEffect(() => {
     if (!described) return;
-    const said = category === "trade" ? `${draft} ${want}` : draft;
     setDetails((prev) => {
       const next: ItemDetails = { ...prev };
       if (!prev.topic) {
@@ -395,8 +261,6 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [described, draft, want]);
 
-  /* THE READABLE TIME IS ALWAYS BUILT FROM THE PICKERS, so a time field can
-     never end up holding a word like "butterflies". */
   useEffect(() => {
     const built = timeWindow(details.startTime, details.endTime);
     if (!details.startTime && !details.endTime) return;
@@ -404,35 +268,27 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [details.startTime, details.endTime]);
 
-
   const setDetail = (patch: Partial<ItemDetails>) =>
     setDetails((prev) => ({ ...prev, ...patch }));
 
-  const toggleDay = (day: string) =>
+  /** Line 2 ("when" / "by") lives in details.extras.when — no schema change. */
+  const setWhen = (value: string) =>
     setDetails((prev) => {
-      const days = prev.days ?? [];
-      const next = days.includes(day)
-        ? days.filter((d) => d !== day)
-        : [...DAY_NAMES.filter((d) => days.includes(d) || d === day)];
-      return { ...prev, days: next };
+      const extras: Record<string, string> = { ...(prev.extras ?? {}) };
+      if (value) extras["when"] = value;
+      else delete extras["when"];
+      return { ...prev, extras: Object.keys(extras).length ? extras : undefined };
     });
 
   const pickPhotos = async (attachTo?: string) => {
-    /* THE ONE RELIABLE PICKER — a real input, so the first attempt works. */
     const files = await pickImages({ multiple: !attachTo });
     if (!files.length) return;
-    /*
-      STORED, NOT JUST SEEN. Signed in, a picture (or a GIF, animation intact)
-      becomes a hosted link other testers can load; otherwise it stays local.
-    */
     const read = await Promise.allSettled(
       files.map((f) => storeChosenImage(f, (file) => readSmall(file))),
     );
     const shrunk = read
       .map((r) => (r.status === "fulfilled" ? r.value : ""))
       .filter(Boolean);
-
-
     if (!shrunk.length) return;
     if (attachTo) {
       for (const photo of shrunk) itemsStore.addPhoto(attachTo, photo);
@@ -442,28 +298,23 @@ export function CategoryForm({
     haptics.light();
   };
 
-  /** The structured details, with empty answers dropped. */
   const cleanDetails = (): ItemDetails => ({
     ...details,
     ...(details.days?.length ? {} : { days: undefined }),
   });
 
   const hasDetails = (d: ItemDetails) =>
-    Object.values(d).some((v) => (Array.isArray(v) ? v.length : Boolean(v)));
+    Object.values(d).some((v) =>
+      Array.isArray(v) ? v.length : v && typeof v === "object" ? Object.keys(v).length : Boolean(v),
+    );
 
   /** REAL ENOUGH TO BE A RECORD: a title, and for a trade, both sides. */
   const complete =
     draft.trim().length >= 3 && (category !== "trade" || want.trim().length >= 2);
 
-  /**
-   * AUTOSAVE, ONCE. The first time a draft is complete it becomes exactly ONE
-   * record (a wish holds its sparks at that single moment); after that every
-   * change patches that same record, so no screen ever holds a stale copy and
-   * nothing is created twice by a rerender, a reopen or a reload.
-   */
+  /** AUTOSAVE, ONCE — then every change patches that same record. */
   const save = (): boolean => {
     if (!complete) return false;
-
     const cleaned = cleanDetails();
     if (liveId) {
       itemsStore.patch(liveId, {
@@ -483,20 +334,10 @@ export function CategoryForm({
     };
     const result =
       category === "trade"
-        ? myProfileStore.addItem(
-            "trade",
-            tradeText(draft, want),
-            { offer: draft, want },
-            note,
-            extra,
-          )
+        ? myProfileStore.addItem("trade", tradeText(draft, want), { offer: draft, want }, note, extra)
         : myProfileStore.addItem(category, draft, undefined, note, extra);
     if (!result.ok) {
-      /*
-        NOT YET IS NOT NO. When the account is incomplete or the person is not
-        yet 18, the words stay exactly where they are — the draft is kept, the
-        record is simply not published.
-      */
+      /* NOT YET IS NOT NO: the words stay exactly where they are. */
       setProblem(
         result.reason === "account"
           ? (result.say ?? "finish your account in my g to publish this.")
@@ -506,18 +347,11 @@ export function CategoryForm({
       );
       return false;
     }
-
     setProblem(null);
     setLiveId(result.id ?? null);
     return true;
   };
 
-
-  /*
-    A DRAFT IS NOT A PUBLICATION. Once a record exists, every keystroke keeps it
-    honest — but a brand new give is only ever created by the publish gesture
-    below, so pressing publish is the moment it becomes real.
-  */
   useEffect(() => {
     if (!complete || !liveId) return;
     const t = window.setTimeout(save, 600);
@@ -525,77 +359,73 @@ export function CategoryForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [complete, draft, want, note, side, photos, details, liveId]);
 
-
-  /* THE CONFIRMATION STEPS ASIDE the moment the next thought starts. */
   useEffect(() => {
     if (draft) setLive(null);
   }, [draft]);
 
-  /* THE DRAFT ITSELF IS PERSISTED, so leaving mid-sentence loses nothing. */
-
   useEffect(() => {
     const t = window.setTimeout(() => {
       if (!draft && !want && !note && !photos.length && !hasDetails(details)) {
-        draftsStore.clear(category);
+        draftsStore.clear(draftKey);
         return;
       }
-      draftsStore.set(category, {
-        text: draft,
-        want,
-        note,
-        side,
-        photos,
-        details,
-        liveId,
-      });
+      draftsStore.set(draftKey, { text: draft, want, note, side, photos, details, liveId });
     }, 250);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, draft, want, note, side, photos, details, liveId]);
+  }, [draftKey, draft, want, note, side, photos, details, liveId]);
 
-  /** WHATEVER GIVER ANSWERS, YOU SEE IT. The outcome is brought into view. */
-  const showOutcome = () => {
-    window.requestAnimationFrame(() =>
-      outcome.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
-    );
+  /** FUND: the amount answers the one money question, within the rules. */
+  const commitAmount = (): boolean => {
+    const cents = parseAmount(amountText);
+    if (cents === null) {
+      setAmountSay("enter an amount, like 1200.");
+      haptics.warning();
+      return false;
+    }
+    if (validTarget(cents) === null) {
+      setAmountSay(`a wish can ask for up to ${formatCents(FUND_TARGET_MAX_CENTS)}.`);
+      haptics.warning();
+      return false;
+    }
+    setAmountSay(null);
+    setDetail({ fundTarget: cents });
+    return true;
   };
 
-  /**
-   * PUBLISH. The words were kept safe as they were typed — this is the moment a
-   * person SAYS SO, and hears back that it is live in communi-g. If the account
-   * gate answers "not yet", nothing is cleared: the draft stays intact.
-   */
+  /** PUBLISH — the send circle. The account gate's "not yet" clears nothing. */
   const add = async () => {
     if (full) {
       setProblem(`you can have ${limit} at a time — remove one to add another.`);
       haptics.warning();
-      showOutcome();
       return;
     }
     if (!draft.trim()) {
       setProblem(category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]);
       haptics.warning();
-      showOutcome();
       return;
     }
     if (category === "trade" && !want.trim()) {
       setProblem("a trade has two sides. what would you like in return?");
       haptics.warning();
-      showOutcome();
+      return;
+    }
+    /* ASK FOR FUNDING NEEDS ITS AMOUNT: straight to that one question. */
+    if (asksFunding && target === null) {
+      haptics.warning();
+      setAsking(true);
       return;
     }
     if (!save()) {
       haptics.warning();
-      showOutcome();
       return;
     }
     try {
       await pushItems();
       await pullItems();
     } catch {
-      setProblem("your words are safe, but communi-g couldn’t be reached. tap publish again.");
+      setProblem("your words are safe, but communi-g couldn’t be reached. tap send again.");
       haptics.warning();
-      showOutcome();
       return;
     }
     setProblem(null);
@@ -606,773 +436,297 @@ export function CategoryForm({
     setNote("");
     setPhotos([]);
     setDetails({});
-    setCostText("");
-    draftsStore.clear(category);
+    setAmountText("");
+    draftsStore.clear(draftKey);
     haptics.light();
-    showOutcome();
-    /* THE ONE MOMENT THE ASK MAKES SENSE: something is now live, so replies can
-       arrive. Asked straight from this touch, and only ever once. */
     if (!notifyDecided()) void askToNotify();
   };
-
-
 
   /* BACK IS NOT THE SAVE BUTTON. It only flushes the pending debounce. */
   const leave = () => {
     save();
-    haptics.light();
     onDone();
   };
 
+  /* ---- THE ONE QUESTION THIS SEAT ASKS ---- */
+  const question: {
+    tag: string;
+    heading: string;
+    options: readonly string[];
+    selected: string | undefined;
+    pick: (o: string) => void;
+  } | null =
+    seat === "give"
+      ? {
+          tag: "where?",
+          heading: "where?",
+          options: whereFor(kind),
+          selected: details.where,
+          pick: (o) => setDetail({ where: o }),
+        }
+      : seat === "lend" || seat === "borrow"
+        ? {
+            tag: "for how long?",
+            heading: "for how long?",
+            options: HOW_LONG,
+            selected: details.duration,
+            pick: (o) => setDetail({ duration: o }),
+          }
+        : seat === "trade"
+          ? {
+              tag: "when?",
+              heading: "when?",
+              options: TRADE_WHEN,
+              selected: when || undefined,
+              pick: (o) => setWhen(o),
+            }
+          : seat === "wish"
+            ? {
+                tag: "how often?",
+                heading: "how often?",
+                options: HOW_OFTEN,
+                selected: OFTEN_OF(details.cadence),
+                pick: (o) => setDetail({ cadence: CADENCE_OF[o] }),
+              }
+            : null;
+
+  const askTag: FormTag =
+    seat === "fund"
+      ? {
+          key: "ask",
+          text: target !== null ? formatCents(target) : "how much?",
+          onAsk: () => setAsking(true),
+        }
+      : {
+          key: "ask",
+          text: question?.selected ?? question?.tag ?? "",
+          onAsk: () => setAsking(true),
+        };
+  const tags: FormTag[] = described
+    ? [
+        ...(seat === "wish" && forWhom(draft)
+          ? [{ key: "for", text: forWhom(draft)! }]
+          : []),
+        { key: "topic", text: (topic ? (TOPIC_TAG as Record<string, string>)[topic] : undefined) ?? KIND_TAG[kind] },
+        askTag,
+      ]
+    : [];
+
+  if (asking && seat === "fund") {
+    return (
+      <div data-world="fund" className="g-form relative h-full w-full overflow-y-auto">
+        <FormAmount
+          heading="how much do you need?"
+          value={amountText}
+          onChange={(v) => {
+            setAmountText(v);
+            setAmountSay(null);
+          }}
+          say={amountSay}
+          onBack={() => setAsking(false)}
+          onDone={() => {
+            if (commitAmount()) setAsking(false);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (asking && question) {
+    return (
+      <div data-world={seat} className="g-form relative h-full w-full overflow-y-auto">
+        <FormQuestion
+          heading={question.heading}
+          options={question.options}
+          selected={question.selected}
+          onBack={() => setAsking(false)}
+          onPick={(o) => {
+            question.pick(o);
+            setAsking(false);
+          }}
+        />
+      </div>
+    );
+  }
+
+  const say = problem ?? live ?? (full ? `you can have ${limit} at a time — remove one to add another.` : null);
 
   return (
-    <div
-      data-world={category}
-      className="g-form relative h-full w-full overflow-y-auto"
-      style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
-    >
-      <BackArrow onClick={leave} label="back to my g" sticky />
-
-      <div className="g-page pb-[8.5rem] pt-24">
-        {/*
-          ONE TYPOGRAPHY SYSTEM, EVERYWHERE. The old oversized "add a give"
-          display type is gone: a creation screen states itself in the shared
-          heading register, in its own semantic colour, and lets the content
-          below be the loudest thing on the page.
-        */}
-        {/* FORMS ONLY: the heading wears the seat's complement (--form-heading),
-            light and lowercase, so it never reads as typed text. */}
-        <h1 className="g-form-heading">
-          my {CATEGORY_PLURAL[category]}
-        </h1>
-        <p className="g-form-lede mt-4 max-w-[24ch]">
-          {CATEGORY_CALL[category]}
-        </p>
-        {/* THE ECONOMY, IN AS FEW WORDS AS IT TAKES. Nothing is explained twice. */}
-        <p className="mt-3 g-form-label">
-          {cost
-            ? `${cost} sparks stay with each wish for 7 days · 3 at a time · you have ${me.sparks}`
-            : "no sparks needed"}
-        </p>
-        {CATEGORY_TAGLINE[category] ? (
-          <p className="mt-1 g-form-label">{CATEGORY_TAGLINE[category]}</p>
-        ) : null}
-
-
-        {problem ? (
-          <p
-            className="mt-3 g-body"
-            style={{ color: colour }}
-          >
-            {problem}
-          </p>
-        ) : null}
-
-        <ul className="mt-12 space-y-6">
-          {records.map((item, i) => {
-            /* EACH RECORD WEARS ITS OWN COLOUR — a lend is never mistaken
-               for a borrow in a list. */
-            const rowColour =
-              category === "borrow"
-                ? (item.side ?? "borrow") === "lend"
-                  ? "var(--activity-lend)"
-                  : "var(--activity-borrow)"
-                : colour;
-            return (
-            <li key={item.id} className="g-rule pt-6 first:border-0 first:pt-0">
-              {category === "borrow" ? (
-                <p
-                  className="mb-1 text-[11px] font-black lowercase tracking-[0.2em]"
-                  style={{ color: rowColour }}
-                >
-                  {(item.side ?? "borrow") === "lend" ? "lending" : "borrowing"}
-                </p>
-              ) : null}
-              <div className="flex items-start gap-3">
-                {/* GIVING IS NOT A RANKED QUEUE — only scarce asks are numbered. */}
-                {category === "give" ? null : (
-                  <span
-                    className="w-5 shrink-0 pt-1 text-[11px] font-black tracking-[0.2em] opacity-45"
-                    style={{ color: rowColour }}
-                  >
-                    {i + 1}
-                  </span>
-                )}
-
-
-                {/* ONE TRADE = ONE RECORD, two inputs, one set of controls. */}
-                {category === "trade" ? (
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <input
-                      value={item.offer ?? splitTrade(item.text).offer}
-                      onChange={(e) =>
-                        myProfileStore.editTradeSide(
-                          i,
-                          "offer",
-                          e.target.value.slice(0, titleMax),
-                        )
-                      }
-                      aria-label="offering"
-                      className="g-form-input w-full"
-                    />
-                    <p className="g-form-label pt-1">for</p>
-                    <input
-                      value={item.want ?? splitTrade(item.text).want}
-                      onChange={(e) =>
-                        myProfileStore.editTradeSide(
-                          i,
-                          "want",
-                          e.target.value.slice(0, titleMax),
-                        )
-                      }
-                      aria-label="in return"
-                      className="g-form-input w-full"
-                    />
-                  </div>
-                ) : (
-                  <input
-                    value={item.text}
-                    onChange={(e) =>
-                      myProfileStore.editItem(category, i, e.target.value.slice(0, titleMax))
-                    }
-                    className="g-form-input min-w-0 flex-1"
-                  />
-                )}
-
-                {/* THE PHOTO CONTROL SITS BESIDE THE THING ITSELF. */}
-                {canPhoto ? (
-                  item.photos?.length ? (
-                    <button
-                      type="button"
-                      aria-label={`replace photo of ${item.text}`}
-                      onClick={() => void pickPhotos(item.id)}
-                      className="h-11 w-11 shrink-0 overflow-hidden"
-                    >
-                      <img
-                        src={item.photos[0]}
-                        alt={`${item.text} photo`}
-                        className="h-full w-full object-cover"
-                      />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => void pickPhotos(item.id)}
-                      className="shrink-0 pt-1 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                      style={{ color: action }}
-                    >
-                      + add photo
-                    </button>
-                  )
-                ) : null}
-
-                {/* ↑ ↓ × — reordering exists only where order means something. */}
-                {category === "give" ? null : (
-                  <>
-                    {i === 0 ? null : (
-                      <button
-                        type="button"
-                        aria-label={`move ${item.text} up`}
-                        onClick={() => {
-                          haptics.light();
-                          myProfileStore.moveItem(category, i, -1);
-                        }}
-                        className="px-1.5 text-lg font-black"
-                      >
-                        ↑
-                      </button>
-                    )}
-                    {i === records.length - 1 ? null : (
-                      <button
-                        type="button"
-                        aria-label={`move ${item.text} down`}
-                        onClick={() => {
-                          haptics.light();
-                          myProfileStore.moveItem(category, i, 1);
-                        }}
-                        className="px-1.5 text-lg font-black"
-                      >
-                        ↓
-                      </button>
-                    )}
-                  </>
-                )}
-                <button
-                  type="button"
-                  aria-label={`remove ${item.text}`}
-                  onClick={() => {
-                    // GONE, GENTLY: a confirmation, never a celebration.
-                    haptics.light();
-                    myProfileStore.removeItem(category, i);
-                  }}
-                  className="px-1.5 text-lg font-black opacity-45"
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* WHAT SOMEBODY ELSE WOULD NEED TO KNOW, in one quiet line. */}
-              {detailBits(item).length ? (
-                <p className="ml-8 mt-2 g-form-label">
-                  {detailBits(item).join(" · ")}
-                </p>
-              ) : null}
-              {item.note ? (
-                <p className="ml-8 mt-1 g-form-label">{item.note}</p>
-              ) : null}
-            </li>
-            );
-          })}
-        </ul>
-
-        {/* PRIORITY IS FOR ASKS. Gives are never ranked against each other. */}
-        {records.length && category !== "give" ? (
-          <p className="mt-4 g-form-label">#1 is your priority</p>
-        ) : null}
-
-        {/* BORROW OR LEND — asked here ONLY when the door did not already ask.
-            The same question is never put to a person twice. */}
-        {category === "borrow" && !decidedSide ? (
-
-          <div className="mt-7 flex gap-6 text-[13px] font-black lowercase tracking-[0.24em]">
-            {(["borrow", "lend"] as BorrowSide[]).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => {
-                  haptics.selection();
-                  setSide(s);
-                }}
-                style={{
-                  color:
-                    s === "lend" ? "var(--activity-lend)" : "var(--activity-borrow)",
-                }}
-                className={side === s ? "opacity-100" : "opacity-35"}
-              >
-                {s === "borrow" ? "i want to borrow" : "i can lend"}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        {full ? (
-          <p className="mt-10 g-form-label">
-            that’s {limit}
-            {category === "borrow" ? (side === "lend" ? " lends" : " borrows") : ""} —
-            remove one to add another
-          </p>
-        ) : (
-          <div
-            className={`mt-12 space-y-8 ${
-              records.length === 0 ? "" : "g-rule pt-8"
-            }`}
-          >
-
-
-            <div className="flex items-end gap-3">
-              <input
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value.slice(0, titleMax))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && category !== "trade") add();
-                }}
-                placeholder={
-                  category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]
-                }
-                className="g-form-input min-w-0 flex-1"
-              />
-              {canPhoto && photos.length === 0 ? (
-                <button
-                  type="button"
-                  onClick={() => void pickPhotos()}
-                  className="shrink-0 text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                  style={{ color: action }}
-                >
-                  + add photo
-                </button>
-              ) : null}
-            </div>
-
-            {category === "trade" ? (
-              <input
-                value={want}
-                onChange={(e) => setWant(e.target.value.slice(0, titleMax))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") add();
-                }}
-                placeholder="what would you like in return?"
-                className="g-form-input w-full"
-              />
-            ) : null}
-
-            {/* A COUNTDOWN ONLY WHEN THE END IS IN SIGHT. */}
-            {titleLeft <= TITLE_COUNTDOWN_AT ? (
-              <p className="g-form-label">{titleLeft} characters left</p>
-            ) : null}
-
-            {/*
-              THE WORDS COME FIRST. Nothing below appears until the person has
-              said what this is — then giver asks only the next question that
-              actually matters for this kind of thing, one at a time.
-            */}
-            {described ? (
-              <div className="space-y-0">
-                {/* WHAT GIVER THINKS THIS IS — one word, tap to change. */}
-                <Field
-                  label="this is about"
-                  summary={topic ?? guessedTopic ?? undefined}
-                  open={open === "topic"}
-                  colour={colour}
-                  onToggle={() => setOpen(open === "topic" ? null : "topic")}
-                >
-                  {TOPICS.map((t) => (
-                    <Choice
-                      key={t}
-                      label={t}
-                      colour={colour}
-                      on={(topic ?? guessedTopic) === t}
-                      onPress={() => {
-                        setDetail({ topic: t });
-                        setOpen(null);
-                      }}
-                    />
-                  ))}
-                </Field>
-
-                <Field
-                  label="where"
-                  summary={details.where}
-                  open={open === "where"}
-                  colour={colour}
-                  onToggle={() => setOpen(open === "where" ? null : "where")}
-                >
-                  {whereOptions.map((w) => (
-                    <Choice
-                      key={w}
-                      label={w}
-                      colour={colour}
-                      on={details.where === w}
-                      onPress={() => {
-                        setDetail({ where: details.where === w ? undefined : w });
-                        setOpen(null);
-                      }}
-                    />
-                  ))}
-                  {ASKS_AREA[kind] ? (
-                    <input
-                      value={
-                        details.where && !whereOptions.includes(details.where)
-                          ? details.where
-                          : ""
-                      }
-                      onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
-                      placeholder="neighbourhood / area"
-                      aria-label="neighbourhood or general area"
-                      className="w-40 border-b border-current/15 bg-transparent pb-1 text-sm font-normal lowercase outline-none placeholder:opacity-30"
-                    />
-                  ) : null}
-                </Field>
-
-                {/*
-                  WHEN — PICKED, NEVER TYPED. A date comes from a date picker, a
-                  time from a time picker, and being easy about either is said
-                  precisely: flexible on the day, or flexible on the time.
-                */}
-                <Field
-                  label={isWindow ? "when, and for how long" : "when"}
-                  summary={whenSummary}
-                  open={open === "when"}
-                  colour={colour}
-                  onToggle={() => setOpen(open === "when" ? null : "when")}
-                >
-                  <div className="flex w-full flex-wrap items-baseline gap-x-4 gap-y-2">
-                    <Line label={isWindow ? "from" : "day"}>
-                      <input
-                        type="date"
-                        value={details.date ?? ""}
-                        onChange={(e) =>
-                          setDetail({
-                            date: e.target.value || undefined,
-                            ...(e.target.value ? { flexibleDate: undefined } : {}),
-                          })
-                        }
-                        aria-label={isWindow ? "first day" : "date"}
-                        className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
-                      />
-                      {details.date ? (
-                        <Clear
-                          label="clear"
-                          onPress={() => setDetail({ date: undefined })}
-                        />
-                      ) : (
-                        <Choice
-                          label="i’m flexible on the day"
-                          colour={colour}
-                          on={Boolean(details.flexibleDate)}
-                          onPress={() =>
-                            setDetail({
-                              flexibleDate: details.flexibleDate ? undefined : true,
-                            })
-                          }
-                        />
-                      )}
-                    </Line>
-
-                    <Line label={isWindow ? "back by" : "available until"}>
-                      <input
-                        type="date"
-                        value={details.until ?? ""}
-                        onChange={(e) => setDetail({ until: e.target.value || undefined })}
-                        aria-label={isWindow ? "back by" : "available until"}
-                        className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
-                      />
-                      {details.until ? (
-                        <Clear
-                          label={isWindow ? "clear" : "always available"}
-                          onPress={() => setDetail({ until: undefined })}
-                        />
-                      ) : null}
-                    </Line>
-                  </div>
-
-                  {/* THE EXACT WINDOW, FROM TWO PICKERS. 7–9 pm, not free text. */}
-                  <Line label="time">
-                    <input
-                      type="time"
-                      value={details.startTime ?? ""}
-                      onChange={(e) =>
-                        setDetail({
-                          startTime: e.target.value || undefined,
-                          ...(e.target.value ? { flexibleTime: undefined } : {}),
-                        })
-                      }
-                      aria-label="start time"
-                      className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
-                    />
-                    <span className="g-form-label">to</span>
-                    <input
-                      type="time"
-                      value={details.endTime ?? ""}
-                      onChange={(e) =>
-                        setDetail({
-                          endTime: e.target.value || undefined,
-                          ...(e.target.value ? { flexibleTime: undefined } : {}),
-                        })
-                      }
-                      aria-label="end time"
-                      className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
-                    />
-                    {details.startTime || details.endTime ? (
-                      <Clear
-                        label="clear time"
-                        onPress={() =>
-                          setDetail({
-                            startTime: undefined,
-                            endTime: undefined,
-                            time: undefined,
-                          })
-                        }
-                      />
-                    ) : (
-                      <Choice
-                        label="i’m flexible on the time"
-                        colour={colour}
-                        on={Boolean(details.flexibleTime)}
-                        onPress={() =>
-                          setDetail({
-                            flexibleTime: details.flexibleTime ? undefined : true,
-                          })
-                        }
-                      />
-                    )}
-                  </Line>
-
-                  {/* PART OF THE DAY, for anyone who thinks in mornings. */}
-                  {details.startTime || details.endTime ? null : (
-                    <Line label="or roughly">
-                      {TIME_OPTIONS.map((t) => (
-                        <Choice
-                          key={t}
-                          label={t}
-                          colour={colour}
-                          on={details.time === t}
-                          onPress={() =>
-                            setDetail({ time: details.time === t ? undefined : t })
-                          }
-                        />
-                      ))}
-                    </Line>
-                  )}
-
-                  {/* DAYS OF THE WEEK ONLY WHERE SOMETHING CAN REPEAT. */}
-                  {asksRecurrence && details.cadence !== "one time" ? (
-                    <Line label="days">
-                      {DAY_NAMES.map((d) => (
-                        <Choice
-                          key={d}
-                          label={d}
-                          colour={colour}
-                          on={Boolean(details.days?.includes(d))}
-                          onPress={() => toggleDay(d)}
-                        />
-                      ))}
-                      {details.days?.length ? (
-                        <Clear
-                          label="clear days"
-                          onPress={() => setDetail({ days: undefined })}
-                        />
-                      ) : null}
-                    </Line>
-                  ) : null}
-                </Field>
-
-                {/* HOW OFTEN, AND HOW LONG — each only where it means something. */}
-                {asksRecurrence || ASKS_DURATION[kind] ? (
-                  <Field
-                    label={asksRecurrence ? "how often, how long" : "how long"}
-                    summary={longSummary}
-                    open={open === "long"}
-                    colour={colour}
-                    onToggle={() => setOpen(open === "long" ? null : "long")}
-                  >
-                    {asksRecurrence ? (
-                      <Line label="how often">
-                        {CADENCE_OPTIONS.map((c) => (
-                          <Choice
-                            key={c}
-                            label={c}
-                            colour={colour}
-                            on={details.cadence === c}
-                            onPress={() =>
-                              setDetail({
-                                cadence: details.cadence === c ? undefined : c,
-                              })
-                            }
-                          />
-                        ))}
-                      </Line>
-                    ) : null}
-                    {ASKS_DURATION[kind] ? (
-                      <Line label="each time">
-                        {DURATION_OPTIONS.map((d) => (
-                          <Choice
-                            key={d}
-                            label={d}
-                            colour={colour}
-                            on={details.duration === d}
-                            onPress={() =>
-                              setDetail({
-                                duration: details.duration === d ? undefined : d,
-                              })
-                            }
-                          />
-                        ))}
-                      </Line>
-                    ) : null}
-                  </Field>
-                ) : null}
-
-                {/* WISHES ONLY: WHAT IT COSTS, IF MONEY WOULD HELP. Optional. Lets
-                    others pledge toward it in Fund. Nothing is charged. */}
-                {category === "wish" ? (
-                  <Field
-                    label="cost, if money would help"
-                    summary={
-                      validTarget(details.fundTarget) !== null
-                        ? formatCents(details.fundTarget!)
-                        : undefined
-                    }
-                    open={open === "cost"}
-                    colour={colour}
-                    onToggle={() => setOpen(open === "cost" ? null : "cost")}
-                  >
-                    <Line label="cost (optional)">
-                      <span className="text-sm font-medium">$</span>
-                      <input
-                        inputMode="decimal"
-                        value={costText}
-                        onChange={(e) => {
-                          const text = e.target.value.slice(0, 12);
-                          setCostText(text);
-                          const cents = parseAmount(text);
-                          setDetail({ fundTarget: validTarget(cents) ?? undefined });
-                        }}
-                        placeholder="e.g. 1200"
-                        aria-label="cost of this wish"
-                        className="w-28 border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none placeholder:opacity-30"
-                      />
-                      {details.fundTarget ? (
-                        <Clear
-                          label="no cost"
-                          onPress={() => {
-                            setCostText("");
-                            setDetail({ fundTarget: undefined });
-                          }}
-                        />
-                      ) : null}
-                    </Line>
-                    <p className="w-full g-form-label">
-                      people can pledge toward it in fund · no payment is processed yet
-                    </p>
-                  </Field>
-                ) : null}
-
-                {/* ONLY WHAT MAKES SENSE FOR THIS KIND OF THING. */}
-                {extraFields.length ? (
-                  <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4">
-                    {extraFields.map((field) => (
-                      <input
-                        key={field.key}
-                        value={details.extras?.[field.key] ?? ""}
-                        onChange={(e) =>
-                          setDetail({
-                            extras: {
-                              ...(details.extras ?? {}),
-                              [field.key]: e.target.value.slice(0, 24),
-                            },
-                          })
-                        }
-                        placeholder={field.ask}
-                        aria-label={field.ask}
-                        className="w-36 border-b border-current/15 bg-transparent pb-1 text-sm font-normal lowercase outline-none placeholder:opacity-30"
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-
-
-            {/* SHORT AND SWEET — said under the field, not above it. */}
-            <div className="space-y-2">
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value.slice(0, noteMax))}
-                placeholder="anything else we should know? (optional)"
-                className="g-form-input w-full"
-              />
-              <p className="g-form-label pt-1">
-                keep it short and sweet
-                {noteLeft <= NOTE_COUNTDOWN_AT ? ` · ${noteLeft} left` : ""}
-              </p>
-            </div>
-
-            {/* PHOTOS ARE OPTIONAL, AND THEY BELONG TO THE THING ITSELF. */}
-            {canPhoto && photos.length ? (
-              <div className="flex items-center gap-3">
-                {photos.map((p, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-label="remove photo"
-                    onClick={() => {
-                      haptics.light();
-                      setPhotos((prev) => prev.filter((_, k) => k !== i));
-                    }}
-                    className="relative h-16 w-16 overflow-hidden"
-                  >
-                    <img
-                      src={p}
-                      alt="photo of what you're offering"
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => void pickPhotos()}
-                  className="text-[11px] font-black lowercase tracking-[0.2em] underline decoration-current/40 underline-offset-4"
-                  style={{ color: action }}
-                >
-                  add another
-                </button>
-              </div>
-            ) : null}
-
-          </div>
-        )}
-
-        {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice, and
-            always the same place where giver answers back. */}
-        <div ref={outcome} className="mt-12 space-y-4">
-          <button
-            type="button"
-            onClick={() => void add()}
-            disabled={broke}
-            className="g-display-sm text-left transition-transform active:scale-[0.98] disabled:opacity-30"
-            style={{ color: colour }}
-          >
-            {PUBLISH_LABEL[category === "borrow" ? side : category]}
-          </button>
-
-          {problem ? (
-            <p className="g-body" style={{ color: colour }}>
-              {problem}
+    <div data-world={seat} className="g-form relative h-full w-full overflow-y-auto">
+      <div className="uf-screen">
+        <FormG onBack={leave} />
+        <h1 className="uf-heading">{copy.heading}</h1>
+        <div className="uf-fields">
+          <FormLine
+            label={copy.l1}
+            value={draft}
+            onChange={setDraft}
+            placeholder={SEAT_PLACEHOLDER[seat][0]}
+            maxLength={titleMax}
+            autoFocus
+            tags={tags}
+          />
+          {seat === "trade" ? (
+            <FormLine
+              label={copy.l2}
+              value={want}
+              onChange={setWant}
+              placeholder={SEAT_PLACEHOLDER[seat][1]}
+              maxLength={titleMax}
+              onEnter={() => void add()}
+            />
+          ) : (
+            <FormLine
+              label={copy.l2}
+              value={when}
+              onChange={(v) => setWhen(v.slice(0, 24))}
+              placeholder={SEAT_PLACEHOLDER[seat][1]}
+              maxLength={24}
+              onEnter={() => void add()}
+            />
+          )}
+          {say ? (
+            <p className="uf-say" aria-live="polite">
+              {say}
             </p>
           ) : null}
-
-          {live ? (
-            <div>
-              <p className="g-name" style={{ color: colour }}>
-                {live}
-              </p>
-              {/* AND THE TWO OBVIOUS NEXT MOVES, said plainly. */}
-              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptics.light();
-                    setLive(null);
-                  }}
-                  className="text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
-                  style={{ color: colour }}
-                >
-                  {AGAIN_LABEL[category === "borrow" ? side : category]}
-                </button>
-                {onSeeInCommunity ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      haptics.light();
-                      onSeeInCommunity();
-                    }}
-                    className="text-[13px] font-black lowercase tracking-[0.16em] underline decoration-current/40 underline-offset-4"
-                    style={{ color: "var(--person-self-community)" }}
-                  >
-                    see it in communi-g
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
         </div>
-
-
+        <FormSend label="send" onSend={() => void add()} />
       </div>
 
-      {/* THE WAY BACK IS ALWAYS THERE — one small line, never over content. */}
-      <div
-        className="g-page fixed bottom-0 left-0 right-0 z-30 border-t"
-        style={{
-          background: "var(--giver-paper, #fff)",
-          borderColor: "var(--edit-rule)",
-          paddingTop: "0.85rem",
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 0.85rem)",
-        }}
-      >
-        <button
-          type="button"
-          onClick={leave}
-          className="whitespace-nowrap text-[13px] font-black lowercase tracking-[0.16em] transition-transform active:scale-95"
-          style={{ color: "var(--giver-me)" }}
-        >
-          ← back to my g
-        </button>
-      </div>
+      {/* WHAT IS ALREADY OUT THERE — my current records, below the fold:
+          edit, reorder (asks only) and remove, exactly as before. */}
+      {records.length ? (
+        <div className="uf-records">
+          <p className="g-form-label mb-6">my {CATEGORY_PLURAL[category]}</p>
+          <ul className="space-y-6">
+            {records.map((item, i) => {
+              const rowColour =
+                category === "borrow"
+                  ? (item.side ?? "borrow") === "lend"
+                    ? "var(--activity-lend)"
+                    : "var(--activity-borrow)"
+                  : colour;
+              return (
+                <li key={item.id} className="g-rule pt-6 first:border-0 first:pt-0">
+                  {category === "borrow" ? (
+                    <p className="mb-1 g-form-label" style={{ color: rowColour }}>
+                      {(item.side ?? "borrow") === "lend" ? "lending" : "borrowing"}
+                    </p>
+                  ) : null}
+                  <div className="flex items-start gap-3">
+                    {category === "give" ? null : (
+                      <span className="w-5 shrink-0 pt-1 g-form-label">{i + 1}</span>
+                    )}
+                    {category === "trade" ? (
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <input
+                          value={item.offer ?? splitTrade(item.text).offer}
+                          onChange={(e) =>
+                            myProfileStore.editTradeSide(i, "offer", e.target.value.slice(0, titleMax))
+                          }
+                          aria-label="offering"
+                          className="g-form-input w-full"
+                        />
+                        <p className="g-form-label pt-1">for</p>
+                        <input
+                          value={item.want ?? splitTrade(item.text).want}
+                          onChange={(e) =>
+                            myProfileStore.editTradeSide(i, "want", e.target.value.slice(0, titleMax))
+                          }
+                          aria-label="in return"
+                          className="g-form-input w-full"
+                        />
+                      </div>
+                    ) : (
+                      <input
+                        value={item.text}
+                        onChange={(e) =>
+                          myProfileStore.editItem(category, i, e.target.value.slice(0, titleMax))
+                        }
+                        aria-label={item.text}
+                        className="g-form-input min-w-0 flex-1"
+                      />
+                    )}
+                    {canPhoto ? (
+                      item.photos?.length ? (
+                        <button
+                          type="button"
+                          aria-label={`replace photo of ${item.text}`}
+                          onClick={() => void pickPhotos(item.id)}
+                          className="h-11 w-11 shrink-0 overflow-hidden"
+                        >
+                          <img
+                            src={item.photos[0]}
+                            alt={`${item.text} photo`}
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void pickPhotos(item.id)}
+                          className="shrink-0 pt-1 g-form-label"
+                          style={{ color: "var(--form-heading)" }}
+                        >
+                          + photo
+                        </button>
+                      )
+                    ) : null}
+                    {category === "give" ? null : (
+                      <>
+                        {i === 0 ? null : (
+                          <button
+                            type="button"
+                            aria-label={`move ${item.text} up`}
+                            onClick={() => {
+                              haptics.light();
+                              myProfileStore.moveItem(category, i, -1);
+                            }}
+                            className="px-1.5 text-lg font-light"
+                          >
+                            ↑
+                          </button>
+                        )}
+                        {i === records.length - 1 ? null : (
+                          <button
+                            type="button"
+                            aria-label={`move ${item.text} down`}
+                            onClick={() => {
+                              haptics.light();
+                              myProfileStore.moveItem(category, i, 1);
+                            }}
+                            className="px-1.5 text-lg font-light"
+                          >
+                            ↓
+                          </button>
+                        )}
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={`remove ${item.text}`}
+                      onClick={() => {
+                        haptics.light();
+                        myProfileStore.removeItem(category, i);
+                      }}
+                      className="px-1.5 text-lg font-light opacity-45"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  {detailBits(item).length ? (
+                    <p className="ml-8 mt-2 g-form-label">{detailBits(item).join(" · ")}</p>
+                  ) : null}
+                  {item.note ? <p className="ml-8 mt-1 g-form-label">{item.note}</p> : null}
+                </li>
+              );
+            })}
+          </ul>
+          {category !== "give" ? <p className="mt-4 g-form-label">#1 is your priority</p> : null}
+        </div>
+      ) : null}
     </div>
-
   );
 }
 

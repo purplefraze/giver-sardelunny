@@ -33,7 +33,10 @@ export const EMPTY_DRAFT: Draft = {
 
 const KEY = "giver.drafts.v1";
 
-type Drafts = Partial<Record<ItemType, Draft>>;
+/** One slot per type, plus Fund's "ask for funding" (a Wish of its own). */
+export type DraftKey = ItemType | "fund";
+
+type Drafts = Partial<Record<DraftKey, Draft>>;
 
 function read(): Drafts {
   if (typeof window === "undefined") return {};
@@ -55,13 +58,13 @@ function write(next: Drafts) {
 }
 
 export const draftsStore = {
-  get(type: ItemType): Draft {
+  get(type: DraftKey): Draft {
     return { ...EMPTY_DRAFT, ...(read()[type] ?? {}) };
   },
-  set(type: ItemType, draft: Draft) {
+  set(type: DraftKey, draft: Draft) {
     write({ ...read(), [type]: draft });
   },
-  clear(type: ItemType) {
+  clear(type: DraftKey) {
     const all = read();
     delete all[type];
     write(all);

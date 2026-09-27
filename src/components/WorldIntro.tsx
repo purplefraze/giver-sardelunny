@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { Category } from "@/data/my-profile";
 import { CATEGORY_PLURAL } from "@/data/my-profile";
 import { buzz } from "@/lib/haptics";
+import { GMark } from "@/components/living-g/GMark";
+import { SendArrow } from "@/components/forms/UnifiedForm";
 
 /**
  * GIVER TALKING TO YOU — the first-time explanation of one activity world.
@@ -15,29 +17,46 @@ import { buzz } from "@/lib/haptics";
  * anyone into a form.
  */
 
-export type IntroTopic = Category | "sparks";
+export type IntroTopic = Category | "fund" | "sparks";
 
-const BEATS: Record<IntroTopic, string[][]> = {
-
+/**
+ * WISH + FUND — two pages each, one idea per page: a headline and at most two
+ * short lines, set like their stills (/workspace/giver-onboarding): the G top
+ * left, a light heading in the seat colour, charcoal lines, a quiet page count
+ * and the seat's send circle. Copy verbatim from current-wish-copy.md. A wish
+ * "holds" its sparks (reserved, not spent — see my-profile.ts); no vault.
+ */
+const PAGES: Partial<Record<IntroTopic, { h: string; lines: string[] }[]>> = {
   wish: [
-    [
-      "time to make a wish.",
-      "anything!",
-      "a ride to the airport? help moving a couch? someone to teach you guitar? a birthday cake? a ladder? advice from someone who knows their stuff? company on a walk?",
-      "big, small, practical, weird, meaningful — wish for it.",
-    ],
-    [
-      "each wish costs 10 sparks.",
-      "don’t be shy. you’ve got a whole community of givers who’ve got your back.",
-      "when you wish upon a spark… makes no difference who you are. ✨",
-    ],
-    [
-      "you get 3 wishes at a time.",
-      "put what you want most at the top — we’ll make it more visible to your community.",
-      "drag your wishes to reorder them any time.",
-      "so, what do you wish for?",
-    ],
+    {
+      h: "wish for anything.",
+      lines: [
+        "a ride, a ladder, a guitar lesson, a birthday cake.",
+        "big or small, your community has your back.",
+      ],
+    },
+    {
+      h: "three wishes at a time.",
+      lines: ["each one holds 10 sparks.", "the one at the top gets seen most. drag to reorder."],
+    },
   ],
+  fund: [
+    {
+      h: "fund a bigger wish.",
+      lines: [
+        "for wishes that can’t be given directly, like dental work, tuition or care at home.",
+        "anyone can put in any amount.",
+      ],
+    },
+    {
+      h: "it all goes through giver.",
+      lines: ["never person to person.", "giver keeps a small share."],
+    },
+  ],
+};
+
+const BEATS: Record<Exclude<IntroTopic, "wish" | "fund">, string[][]> = {
+
   give: [
     [
       "what have you got to give?",
@@ -117,8 +136,10 @@ export function WorldIntro({
   /** Opened voluntarily from help: explain, then simply close. */
   help?: boolean;
 }) {
-  const beats = BEATS[category];
   const [beat, setBeat] = useState(0);
+  const pages = PAGES[category];
+  if (pages) return <PagedIntro pages={pages} category={category} onDone={onDone} beat={beat} setBeat={setBeat} />;
+  const beats = BEATS[category as Exclude<IntroTopic, "wish" | "fund">];
   const lines = beats[beat] ?? [];
   const last = beat === beats.length - 1;
   const colour =
@@ -172,9 +193,58 @@ export function WorldIntro({
           ? "tap to continue"
           : help || category === "sparks"
             ? "tap to close"
-            : `tap for my ${CATEGORY_PLURAL[category]}`}
+            : `tap for my ${CATEGORY_PLURAL[category as Category]}`}
       </span>
     </button>
   );
 }
 
+/** THE TWO-PAGE INTRO (wish, fund) — the whole screen is one tap forward. */
+function PagedIntro({
+  pages,
+  category,
+  onDone,
+  beat,
+  setBeat,
+}: {
+  pages: { h: string; lines: string[] }[];
+  category: IntroTopic;
+  onDone: () => void;
+  beat: number;
+  setBeat: (n: number) => void;
+}) {
+  const page = pages[beat] ?? pages[0]!;
+  const last = beat >= pages.length - 1;
+  const next = () => {
+    buzz();
+    if (last) onDone();
+    else setBeat(beat + 1);
+  };
+  return (
+    <button
+      type="button"
+      onClick={next}
+      data-world={category}
+      className="g-form uf-screen block h-full w-full text-left"
+      aria-label={last ? "continue" : "next"}
+    >
+      <span className="uf-g" aria-hidden="true">
+        <GMark colour="var(--form-seat)" height={32} />
+      </span>
+      <div key={beat} className="animate-in fade-in duration-200">
+        <h1 className="uf-heading">{page.h}</h1>
+        {page.lines.map((line, i) => (
+          <p key={line} className="uf-intro-line" style={{ marginTop: i === 0 ? 34 : 14 }}>
+            {line}
+          </p>
+        ))}
+      </div>
+      <span className="uf-count">
+        {beat + 1} / {pages.length}
+      </span>
+      <span className="uf-send" aria-hidden="true">
+        <SendArrow />
+      </span>
+    </button>
+  );
+}

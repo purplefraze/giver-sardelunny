@@ -22,6 +22,12 @@ export type GDepthSlot = {
   anchor?: GAnchorKey;
   /** Whose G this is — colour always comes from the world token. */
   world?: string;
+  /**
+   * PLAIN PAPER AT REST (the six forms, wish + fund onboarding): the artwork
+   * still unfurls as the camera moves in, then clears once it has arrived, so
+   * the room is pure white edge to edge — no G border ("blobs") behind a form.
+   */
+  bare?: boolean;
   children: React.ReactNode;
 };
 

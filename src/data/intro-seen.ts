@@ -8,9 +8,10 @@ import type { Category } from "@/data/my-profile";
 
 const KEY = "giver.intro-seen.v1";
 
-export type IntroSeen = Record<Category, boolean>;
+/** One flag per explained world — the four categories plus Fund. */
+export type IntroSeen = Record<Category | "fund", boolean>;
 
-const NONE: IntroSeen = { wish: false, give: false, trade: false, borrow: false };
+const NONE: IntroSeen = { wish: false, give: false, trade: false, borrow: false, fund: false };
 
 let seen: IntroSeen = NONE;
 let hydrated = false;
@@ -59,14 +60,14 @@ export const introSeenStore = {
   getServer(): IntroSeen {
     return NONE;
   },
-  markSeen(category: Category) {
+  markSeen(category: Category | "fund") {
     hydrate();
     if (seen[category]) return;
     save({ ...seen, [category]: true });
   },
   markAllSeen() {
     hydrate();
-    save({ wish: true, give: true, trade: true, borrow: true });
+    save({ wish: true, give: true, trade: true, borrow: true, fund: true });
   },
   reset() {
     hydrated = true;

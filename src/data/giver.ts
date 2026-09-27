@@ -241,7 +241,6 @@ const BASE_MEMBERS: Member[] = [
     answers: {
       excited: "the moment a room goes dark before a set",
       animal: "a fox",
-      million: "buy a van and light small festivals for free",
       hours: "stage lighting and bonfires",
     },
     bottom: [

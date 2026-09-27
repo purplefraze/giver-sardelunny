@@ -264,6 +264,8 @@ function Index() {
     | { kind: "category"; category: Category; side?: BorrowSide }
     /* FUND'S SHEET — same middle-loop chamber, its own content. */
     | { kind: "fund" }
+    /* FUND'S FORM — "ask for funding", the unified form over a Wish. */
+    | { kind: "ask-fund" }
     | null
   >(null);
 
@@ -428,8 +430,13 @@ function Index() {
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
     if (seat === "giver") return;
-    /* Fund has no world explanation (yet); it must never replay Wish's. */
-    if (seat === "fund") return;
+    /* Fund has its OWN two-page explanation; it never replays Wish's. */
+    if (seat === "fund") {
+      if (introSeenStore.get().fund) return;
+      introSeenStore.markSeen("fund");
+      setIntro({ topic: "fund", help: false });
+      return;
+    }
     const topic = seatMode(seat);
     if (introSeenStore.get()[topic]) return;
     showIntro(topic);
@@ -565,9 +572,10 @@ function Index() {
       openMyG();
       return;
     }
-    /* FUND opens its own pledge sheet, in the same middle-loop chamber. */
+    /* FUND opens its own form — "ask for funding" — in the same chamber.
+       (The pledge sheet stays one loop down: Fund's communi-g.) */
     if (activity === "fund") {
-      setEditor({ kind: "fund" });
+      setEditor({ kind: "ask-fund" });
       return;
     }
     /* TAP TO ENTER (testing phase): the seat's own action screen — the
@@ -848,7 +856,8 @@ function Index() {
               } else if (id === "browse") setBrowse(null);
               else if (id === "threads") setThreads(false);
               else if (id === "history") setHistory(null);
-              else if (id === "about" || id === "category" || id === "fund") setEditor(null);
+              else if (id === "about" || id === "category" || id === "fund" || id === "ask-fund")
+                setEditor(null);
               else if (id === "help") setHelp(false);
               else if (id === "choose") setChoose(false);
               else if (id === "intro") setIntro(null);
@@ -883,6 +892,8 @@ function Index() {
               {
                 id: "intro",
                 open: intro !== null,
+                /* The new wish + fund pages are plain white, like their stills. */
+                bare: intro?.topic === "wish" || intro?.topic === "fund",
                 anchor: "middle",
                 world: activity ?? "profile",
                 children: intro ? (
@@ -893,6 +904,11 @@ function Index() {
                       const { topic, help: voluntary } = intro;
                       setIntro(null);
                       if (voluntary || topic === "sparks") return;
+                      /* FUND'S explanation leads into "ask for funding". */
+                      if (topic === "fund") {
+                        setEditor({ kind: "ask-fund" });
+                        return;
+                      }
                       /* Already marked seen on entry — this just opens the form. */
                       setEditor({
                         kind: "category",
@@ -938,7 +954,13 @@ function Index() {
                 id: "category",
                 open: editor?.kind === "category",
                 anchor: "middle",
-                world: editor?.kind === "category" ? editor.category : (activity ?? "profile"),
+                bare: true,
+                world:
+                  editor?.kind === "category"
+                    ? editor.category === "borrow" && editor.side === "lend"
+                      ? "lend"
+                      : editor.category
+                    : (activity ?? "profile"),
                 children:
                   editor?.kind === "category" ? (
                     <CategoryForm
@@ -953,6 +975,19 @@ function Index() {
                     />
 
 
+                  ) : null,
+              },
+
+              /* FUND'S FORM — "ask for funding": the unified form over a Wish. */
+              {
+                id: "ask-fund",
+                open: editor?.kind === "ask-fund",
+                anchor: "middle",
+                bare: true,
+                world: "fund",
+                children:
+                  editor?.kind === "ask-fund" ? (
+                    <CategoryForm category="wish" asksFunding onDone={() => setEditor(null)} />
                   ) : null,
               },
 

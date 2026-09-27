@@ -83,13 +83,6 @@ export const PROMPTS: Prompt[] = [
     theirs: (n, a) => `one day ${n} wants to ${a}.`,
   },
   {
-    id: "million",
-    question: "if you could have a million dollars tomorrow, what would you do?",
-    whole: /^i\b/,
-    mine: (a) => `with a million dollars tomorrow, i’d ${a}.`,
-    theirs: (n, a) => `with a million dollars tomorrow, ${n} would ${a}.`,
-  },
-  {
     id: "one-food",
     question: "if you could eat one thing for the rest of your life, what would it be?",
     whole: /^i\b/,

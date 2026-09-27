@@ -28,6 +28,7 @@ export function GDepthLevel({
   anchor = "middle",
   world = "others",
   retreat = 0,
+  bare = false,
   children,
 }: {
   open: boolean;
@@ -40,6 +41,8 @@ export function GDepthLevel({
   world?: string;
   /** Live pinch progress (0..1) while the person is zooming back outward. */
   retreat?: number;
+  /** Plain white room at rest: the unfurled artwork clears once arrived. */
+  bare?: boolean;
   children: React.ReactNode;
 }) {
   const [phase, setPhase] = useState<Phase>("shut");
@@ -82,7 +85,15 @@ export function GDepthLevel({
   const moving = phase === "opening" || phase === "closing";
   const origin = anchorOrigin(anchor);
   const lens = anchorLens(anchor);
-  const inset = levelInset(depth);
+  /* A BARE ROOM fills the screen (safe areas only), like the form stills. */
+  const inset = bare
+    ? {
+        top: "env(safe-area-inset-top)",
+        bottom: "env(safe-area-inset-bottom)",
+        left: "env(safe-area-inset-left)",
+        right: "env(safe-area-inset-right)",
+      }
+    : levelInset(depth);
 
 
   /* THE CAMERA HAS MOVED PAST THIS DEPTH: further away, and slightly veiled. */
@@ -122,7 +133,10 @@ export function GDepthLevel({
           // plain scale of this much artwork repaints every frame.
           transform: `translateZ(0) scale(${unfurled ? CAMERA.unfurl : 1})`,
           transformOrigin: `${origin.x}% ${origin.y}%`,
-          transition: `transform ${ms}ms ${ease}`,
+          /* BARE: the artwork is the camera's travel, not the room — it clears
+             once the level has arrived and returns for the fold back. */
+          opacity: bare && phase === "in" ? 0 : 1,
+          transition: `transform ${ms}ms ${ease}, opacity 220ms ease-out`,
           willChange: moving ? "transform" : "auto",
           backfaceVisibility: "hidden",
         }}
@@ -159,7 +173,7 @@ export function GDepthLevel({
         className="absolute overflow-hidden motion-reduce:transition-none"
         style={{
           ...inset,
-          borderRadius: "2.25rem",
+          borderRadius: bare ? 0 : "2.25rem",
           clipPath: `circle(${unfurled ? lens.end : lens.start}% at ${lens.x}% ${lens.y}%)`,
           opacity: unfurled ? 1 : 0,
           transform: `scale(${unfurled ? 1 : 0.965})`,

@@ -123,7 +123,7 @@ import { DevSeal } from "@/components/DevSeal";
 import { lifecycleStore } from "@/data/lifecycle";
 import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
-import { hasLoopCopy, hintsRetired, loopCopyFor } from "@/data/loop-copy";
+import { hasLoopCopy, loopCopyFor, seatHintRetired } from "@/data/loop-copy";
 import { LOOP_HINT_MS, loopHint } from "@/components/living-g/loop-hint";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
@@ -276,9 +276,10 @@ function Index() {
   /**
    * ANY USE OF THE TOGGLE. Unlocks the bead word on the very first use
    * (persisted) and fades the seat's middle/bottom pair through the loops
-   * (~1.8s, see LOOP_HINT_MS) on every use — UNTIL the hints are retired
-   * (I have posted a Give AND a Wish; see `retired` / loop-copy.ts). After
-   * that the loops stay silent. My G never has copy.
+   * (~1.8s, see LOOP_HINT_MS) on every use — PER SEAT, until I have done
+   * that seat's action (see `retiredAt` / seatHintRetired in loop-copy.ts).
+   * Then only that seat goes silent; other seats keep hinting. My G never
+   * has copy.
    */
   const noteToggleUse = (at: Seat) => {
     if (!toggleWordsUnlocked) {
@@ -287,7 +288,9 @@ function Index() {
       tutorialSeenStore.markSeen();
     }
     hintNonce.current += 1;
-    setHint(!retired && hasLoopCopy(at) ? { seat: at, nonce: hintNonce.current } : null);
+    setHint(
+      !retiredAt(at) && hasLoopCopy(at) ? { seat: at, nonce: hintNonce.current } : null,
+    );
   };
 
   /**
@@ -408,13 +411,15 @@ function Index() {
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
   const items = useItems();
-  /** Hints retire once I have posted a Give AND a Wish — derived, reactive. */
-  const retired = hintsRetired(items);
   /* ADMIN PEOPLE EDITS re-render every screen below, so a corrected person is
      immediately true in the feed, on their profile and on every item. */
   useMemberEdits();
 
   const links = useConnections();
+  /** Per-seat hint retirement — derived, reactive, from items + connections. */
+  const retiredAt = (at: Seat) => seatHintRetired(at, items, links);
+  /** The CURRENT seat's hint has been retired (always true on My G). */
+  const retired = retiredAt(seat);
 
   /* SEVEN DAYS AND THE SPARKS COME HOME: expire stale wishes on every entry. */
   useEffect(() => {
@@ -535,7 +540,7 @@ function Index() {
    * that hint is still on screen is the confirmation and enters the seat
    * (Give → the existing "give something" CategoryForm). So: tap = "what is
    * this?", tap-tap = "do it". Wherever there is NO hint to show — My G, or
-   * any seat once hints are retired (Give + Wish posted) — a single tap goes
+   * any seat whose own hint is retired (its action is done) — a single tap goes
    * straight into the seat's action. The middle loop always enters on one tap.
    */
   const tapToggle = () => {

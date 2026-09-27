@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
+import { GThinMask } from "./g-weight";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX } from "./g-path";
 import { CAMERA, LENS, anchorLens, anchorOrigin, levelInset, type GAnchorKey } from "./g-depth";
 import { haptics } from "@/lib/haptics";
@@ -154,8 +155,12 @@ export function GDepthLevel({
         >
           <GStage>
             <svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible">
+              {/* The same middle weight as the G it unfurls from (g-weight.tsx). */}
+              <defs>
+                <GThinMask id={`g-depth-thin-${depth}`} weight="middle" />
+              </defs>
               <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                <path d={LIVING_G_PATH} />
+                <path d={LIVING_G_PATH} mask={`url(#g-depth-thin-${depth})`} />
               </g>
             </svg>
           </GStage>

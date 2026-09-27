@@ -23,6 +23,7 @@ import {
   LOOP_TEXT_FILL,
 } from "./type-scale";
 import { loopOrigin, wrapLines, wrapWidth } from "./loop-layout";
+import { G_STROKE, GThinMask } from "./g-weight";
 
 
 /**
@@ -63,8 +64,9 @@ type Props = {
   /**
    * LOGO WEIGHT ONLY. Adds an outer stroke of the same colour so the Living G
    * reads as one heavy glyph beside bold type, without redrawing the path.
+   * MIDDLE: the same outline eroded to a 28.5-unit stroke (g-weight.tsx).
    */
-  weight?: "normal" | "heavy";
+  weight?: "normal" | "heavy" | "middle";
 };
 
 
@@ -138,13 +140,15 @@ export const RHYTHM = {
  * redrawn as one perfect arc across that span, so the 2 o'clock section of the
  * G is a single continuous curve — no bump, kink or flat spot, in any mode.
  */
-function rimPatch() {
+function rimPatch(thin = false) {
+  /* The patch's centre line (rMid) is the stroke's centre line at every
+     weight; only its width follows the weight (53.5 → 28.5). */
   return (
     <path
       d={arcPath(LOOP_CENTRE.middle, RIM_PATCH.a0, RIM_PATCH.a1, RIM_PATCH.rMid)}
       fill="none"
       stroke="var(--world-g)"
-      strokeWidth={RIM_PATCH.width}
+      strokeWidth={thin ? G_STROKE.middle : RIM_PATCH.width}
       strokeLinecap="butt"
     />
   );
@@ -184,6 +188,7 @@ export function LivingG({
    * canonical silhouette gains visual heft without redrawing its geometry.
    */
   const heavy = weight === "heavy" ? ({ stroke: "var(--world-g)", strokeWidth: 220, paintOrder: "stroke fill", strokeLinejoin: "round" } as const) : undefined;
+  const thin = weight === "middle";
 
   /**
    * ONE ACTIVE STATE AT A TIME. The instant the loops start holding a new state,
@@ -300,16 +305,17 @@ export function LivingG({
             />
           </mask>
         ) : null}
+        {thin ? <GThinMask id={`${uid}-thin`} weight="middle" /> : null}
       </defs>
 
       <g>
         {/* The cut applies to the ARTWORK only; the rim patch is drawn on top. */}
         <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
           <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-            <path d={LIVING_G_PATH} {...heavy} />
+            <path d={LIVING_G_PATH} {...heavy} {...(thin ? { mask: `url(#${uid}-thin)` } : {})} />
           </g>
         </g>
-        {earCut ? rimPatch() : null}
+        {earCut ? rimPatch(thin) : null}
 
         {ORDER.map((key) => {
           const isPressed = pressed === key;
@@ -325,10 +331,10 @@ export function LivingG({
               >
                 <g {...(earCut ? { mask: `url(#${uid}-earcut)` } : {})}>
                   <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                    <path d={LIVING_G_PATH} {...heavy} />
+                    <path d={LIVING_G_PATH} {...heavy} {...(thin ? { mask: `url(#${uid}-thin)` } : {})} />
                   </g>
                 </g>
-                {earCut ? rimPatch() : null}
+                {earCut ? rimPatch(thin) : null}
               </g>
             </g>
           );

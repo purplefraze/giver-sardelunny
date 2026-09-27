@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
 import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
+import { GThinMask, rimRadius, trackRadius, type GWeight } from "./g-weight";
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.
@@ -205,7 +206,7 @@ export function EarSelector({
   badge,
   sparks,
   hideWord = false,
-
+  weight = "normal",
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;
@@ -239,10 +240,21 @@ export function EarSelector({
    * toggle once. Visibility only — physics and seats are untouched.
    */
   hideWord?: boolean;
+  /**
+   * THE G'S STROKE WEIGHT under this toggle (g-weight.tsx). At "middle" the
+   * rim sits 12.5 units further in, so the orbit comes in by the same 12.5
+   * (300 → 287.5): ring size and the 24.5 white gap are unchanged.
+   */
+  weight?: GWeight;
 
 
 
 }) {
+  /* The track at this weight — shadows the module's canonical (normal) values. */
+  const RIM_R = rimRadius(weight);
+  const TRACK_R = trackRadius(weight);
+  const STEM_FROM = RIM_R - 8;
+  const STEM_TO = TRACK_R - EAR_GEOMETRY.innerR - 6;
 
 
   const [drag, setDrag] = useState<number | null>(null);
@@ -447,6 +459,8 @@ export function EarSelector({
         <clipPath id={`${knockId}-g`} clipPathUnits="userSpaceOnUse">
           <path d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} />
         </clipPath>
+        {/* At the middle weight the gap is clipped to the THINNED strokes. */}
+        {weight !== "normal" ? <GThinMask id={`${knockId}-thin`} weight={weight} transformed /> : null}
       </defs>
       <circle
         cx={ear.x}
@@ -455,7 +469,7 @@ export function EarSelector({
         fill="none"
         stroke="var(--world-bg)"
         strokeWidth={RING_W + KNOCK_GAP * 2}
-        clipPath={`url(#${knockId}-g)`}
+        {...(weight !== "normal" ? { mask: `url(#${knockId}-thin)` } : { clipPath: `url(#${knockId}-g)` })}
         pointerEvents="none"
       />
       <g

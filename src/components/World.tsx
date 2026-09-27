@@ -129,6 +129,8 @@ export function World({
       <GStage>
         <LivingG
           className={G_PRESENCE}
+          /* THE MAIN G'S WEIGHT: the middle stroke, 28.5 units (g-weight.tsx). */
+          weight="middle"
           showLabels={teach}
           {...(contentKey === undefined ? {} : { contentKey })}
           overlay={overlay}

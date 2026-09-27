@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
+import { GThinMask } from "@/components/living-g/g-weight";
 import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
@@ -594,8 +595,11 @@ function Index() {
         <div className="absolute inset-0 opacity-[0.07]">
           <GStage>
             <svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible">
+              <defs>
+                <GThinMask id="g-wake-thin" weight="middle" />
+              </defs>
               <g transform={LIVING_G_TRANSFORM} fill="var(--giver-ink)">
-                <path d={LIVING_G_PATH} />
+                <path d={LIVING_G_PATH} mask="url(#g-wake-thin)" />
               </g>
             </svg>
           </GStage>
@@ -658,6 +662,7 @@ function Index() {
               <LoopLabels seat={seat} />
               <EarSelector
                 mode={seat}
+                weight="middle"
                 onChange={moveToggle}
                 seats={myGSeats}
                 hideWord={!toggleWordsUnlocked}

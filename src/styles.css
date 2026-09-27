@@ -562,6 +562,9 @@
 }
 
 .giver-loop-hint {
+  /* LOWERCASE LOCK + the house face, whatever the surrounding SVG inherits. */
+  text-transform: lowercase;
+  font-family: var(--giver-font);
   opacity: 0;
   animation-name: giver-loop-hint;
   animation-timing-function: cubic-bezier(0.32, 0, 0.24, 1);

@@ -278,8 +278,8 @@ function Index() {
    * (persisted) and fades the seat's middle/bottom pair through the loops
    * (~1.8s, see LOOP_HINT_MS) on every use — PER SEAT, until I have done
    * that seat's action (see `retiredAt` / seatHintRetired in loop-copy.ts).
-   * Then only that seat goes silent; other seats keep hinting. My G never
-   * has copy.
+   * Then only that seat goes silent; other seats keep hinting. My G (and
+   * its communi-g side) hints until my profile is filled out.
    */
   const noteToggleUse = (at: Seat) => {
     if (!toggleWordsUnlocked) {
@@ -417,7 +417,7 @@ function Index() {
 
   const links = useConnections();
   /** Per-seat hint retirement — derived, reactive, from items + connections. */
-  const retiredAt = (at: Seat) => seatHintRetired(at, items, links);
+  const retiredAt = (at: Seat) => seatHintRetired(at, items, links, me);
   /** The CURRENT seat's hint has been retired (always true on My G). */
   const retired = retiredAt(seat);
 
@@ -539,12 +539,12 @@ function Index() {
    * onTap). Tapping is a toggle use, so it shows the hint; tapping AGAIN while
    * that hint is still on screen is the confirmation and enters the seat
    * (Give → the existing "give something" CategoryForm). So: tap = "what is
-   * this?", tap-tap = "do it". Wherever there is NO hint to show — My G, or
-   * any seat whose own hint is retired (its action is done) — a single tap goes
-   * straight into the seat's action. The middle loop always enters on one tap.
+   * this?", tap-tap = "do it" (My G included, while its hint is active).
+   * Once the CURRENT seat's hint is retired there is nothing to show, so a
+   * single tap goes straight in. The middle loop always enters on one tap.
    */
   const tapToggle = () => {
-    if (seat === "giver" || retired || hintNow !== null) {
+    if (retired || hintNow !== null) {
       enterSelectedWorld();
       return;
     }

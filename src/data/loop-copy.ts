@@ -1,6 +1,7 @@
 import type { Seat } from "@/components/living-g/EarSelector";
 import { ME_ID, type BorrowSide, type Item, type ItemsState } from "@/data/items";
 import type { Connection } from "@/data/connections";
+import { normaliseHandle } from "@/data/account";
 
 /**
  * TOGGLE HINT COPY, keyed by toggle seat.
@@ -9,6 +10,9 @@ import type { Connection } from "@/data/connections";
  * "bottom"). The small ear ring is where the toggle lives and never carries
  * hint copy. Shown faintly for ~1.8s on every toggle use, then gone — never
  * permanent copy — per seat, until that seat is retired (seatHintRetired below).
+ *
+ * LOWERCASE LOCK: every string here is lowercase, loopCopyFor lowercases again
+ * as a guard, and `.giver-loop-hint` sets text-transform: lowercase.
  */
 export type LoopCopy = { middle: string; bottom: string };
 
@@ -18,15 +22,20 @@ const LOOP_COPY: Record<Seat, LoopCopy> = {
   borrow: { middle: "borrow something", bottom: "lend something" },
   lend: { middle: "lend something", bottom: "borrow something" },
   trade: { middle: "trade for something", bottom: "trade for something" },
-  /** My G: no loop copy. */
-  giver: { middle: "", bottom: "" },
+  /**
+   * My G: the app's own quiet names — "my g" (the My G panel title / bead
+   * word) over "communi-g" (the prefix of every community loop title). Hinted
+   * until my profile is filled out, then both go silent together.
+   */
+  giver: { middle: "my g", bottom: "communi-g" },
 };
 
 export function loopCopyFor(seat: Seat): LoopCopy {
-  return LOOP_COPY[seat] ?? { middle: "", bottom: "" };
+  const copy = LOOP_COPY[seat] ?? { middle: "", bottom: "" };
+  return { middle: copy.middle.toLowerCase(), bottom: copy.bottom.toLowerCase() };
 }
 
-/** True when a seat has any hint copy at all (My G has none). */
+/** True when a seat has any hint copy at all. */
 export function hasLoopCopy(seat: Seat): boolean {
   const { middle, bottom } = loopCopyFor(seat);
   return Boolean(middle || bottom);
@@ -45,7 +54,7 @@ export function hasLoopCopy(seat: Seat): boolean {
  *
  * A seat goes silent once I have done THAT seat's action; other seats keep
  * hinting. Items count in ANY status (expiry/completion keep the record);
- * connections count unless cancelled. My G is always silent.
+ * connections count unless cancelled.
  *
  *   give    I own a "give" item
  *   wish    I own a "wish" item
@@ -54,9 +63,26 @@ export function hasLoopCopy(seat: Seat): boolean {
  *           stepped forward on someone's LEND offer (asked to borrow it)
  *   lend    I own a "borrow" item with side "lend" (offered to lend), or I
  *           stepped forward on someone's BORROW request (offered to lend)
+ *   giver   (My G + its Communi-g side) my profile is FILLED OUT — see
+ *           profileFilledOut below. Both go silent together.
  */
 type HelperLink = Pick<Connection, "itemId" | "type" | "helperId" | "state">;
 type LinksState = { connections: HelperLink[] };
+type ProfileFacts = { username: string; photo: string | null };
+
+/**
+ * MY G IS FILLED OUT = a real display name AND at least one visible thing.
+ * Read from the existing my-profile fields (useMyProfile): `username` (same
+ * handle test as publishEligibility: normalised, not empty, not "you") and
+ * `photo`. The profile has no linked-social field, so the photo is the only
+ * "visible thing". lifecycle.profileSetupCompletedAt is NOT used: it is set
+ * whenever the About editor closes (even straight back out), so it does not
+ * mean "filled out".
+ */
+export function profileFilledOut(p: ProfileFacts): boolean {
+  const handle = normaliseHandle(p.username);
+  return Boolean(handle) && handle !== "you" && Boolean(p.photo);
+}
 
 const sideOf = (i: Item): BorrowSide => i.side ?? "borrow";
 
@@ -82,7 +108,12 @@ function helped(
 }
 
 /** True when this seat's hint is retired (or the seat never hints). */
-export function seatHintRetired(seat: Seat, items: ItemsState, links: LinksState): boolean {
+export function seatHintRetired(
+  seat: Seat,
+  items: ItemsState,
+  links: LinksState,
+  profile: ProfileFacts,
+): boolean {
   switch (seat) {
     case "give":
       return ownsItem(items, (i) => i.type === "give");
@@ -111,8 +142,9 @@ export function seatHintRetired(seat: Seat, items: ItemsState, links: LinksState
           (c, item) => c.type === "borrow" && item !== undefined && sideOf(item) === "borrow",
         )
       );
+    case "giver":
+      return profileFilledOut(profile);
     default:
-      /* My G: always silent. */
       return true;
   }
 }

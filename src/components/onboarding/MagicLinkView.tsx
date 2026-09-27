@@ -1,21 +1,22 @@
-import { useState } from "react";
-
 /**
  * THE MAGIC-LINK SCREEN — PRESENTATION ONLY. Shared by the onboarding
  * AuthGate and the /auth route so both read identically. Behaviour (one email
- * field, signInWithOtp) lives in the callers; this file only sets the voice:
+ * field, signInWithOtp) lives in the callers; this file only sets the voice.
  *
- *   Helvetica Neue (--giver-font), all lowercase, generous tracking, one idea,
- *   lots of white. Neutral ink only — no green, no mint, no filled button.
+ * Three pieces and nothing else: the "giver" wordmark, the email field, and
+ * "send link". No instruction line. A quiet line appears under the control
+ * ONLY as feedback — an error, or "check your email" once sent.
  *
- * Sizes (px): mark 15 · line 17 · field 22 · submit 17 · helper 13.
+ * Helvetica Neue (--giver-font), all lowercase, white (--seat-bg), dark ink.
+ * The one Living G cue is "send link" in My G blue (--mode-giver). No
+ * illustration, no pink, no filled button.
  */
 export const MAGIC_LINK_TYPE = {
-  mark: { fontSize: "15px", fontWeight: 500, letterSpacing: "0.28em" },
-  line: { fontSize: "17px", fontWeight: 300, letterSpacing: "0.18em" },
-  field: { fontSize: "22px", fontWeight: 400, letterSpacing: "0.08em" },
-  submit: { fontSize: "17px", fontWeight: 500, letterSpacing: "0.18em" },
-  helper: { fontSize: "13px", fontWeight: 300, letterSpacing: "0.14em" },
+  /** The launch wordmark's weight and tracking, set larger: the page's centre. */
+  mark: { fontSize: "34px", fontWeight: 500, letterSpacing: "0.28em" },
+  field: { fontSize: "21px", fontWeight: 400, letterSpacing: "0.06em" },
+  submit: { fontSize: "16px", fontWeight: 700, letterSpacing: "0.2em" },
+  helper: { fontSize: "13px", fontWeight: 400, letterSpacing: "0.14em" },
 } as const;
 
 export function MagicLinkView({
@@ -33,15 +34,8 @@ export function MagicLinkView({
   error: string | null;
   onSubmit: (e: React.FormEvent) => void;
 }) {
-  /** The helper line appears only after focus, an error, or once sent. */
-  const [touched, setTouched] = useState(false);
-  const helper = error
-    ? error.toLowerCase()
-    : sent
-      ? "check your email for the link"
-      : touched
-        ? "we’ll email you a link"
-        : null;
+  /** Feedback only — never an instruction. */
+  const helper = error ? error.toLowerCase() : sent ? "check your email for the link" : null;
 
   return (
     <div
@@ -52,64 +46,60 @@ export function MagicLinkView({
         fontFamily: "var(--giver-font)",
       }}
     >
-      <div className="flex w-full max-w-[18rem] flex-col items-center text-center">
-        {/* Small mark — the LaunchScreen wordmark's weight and tracking. */}
-        <p style={{ ...MAGIC_LINK_TYPE.mark, marginRight: "-0.28em" }}>giver</p>
+      <div
+        className="flex w-full max-w-[17rem] flex-col items-center text-center"
+        style={{ transform: "translateY(-4%)" }}
+      >
+        {/* THE WORDMARK — plain type, the launch treatment at a larger size. */}
+        <h1 style={{ ...MAGIC_LINK_TYPE.mark, lineHeight: 1, marginRight: "-0.28em" }}>giver</h1>
 
-        <p
-          className="mt-14"
-          style={{ ...MAGIC_LINK_TYPE.line, opacity: 0.55, marginRight: "-0.18em" }}
-        >
-          one email
-        </p>
-
-        <form onSubmit={onSubmit} className="mt-8 flex w-full flex-col items-center">
+        {/* ONE QUIET CONTROL: the field and its action, close together. */}
+        <form onSubmit={onSubmit} className="mt-16 flex w-full flex-col items-center">
           <input
             type="email"
             required
             value={email}
             onChange={(e) => onEmail(e.target.value)}
-            onFocus={() => setTouched(true)}
             readOnly={sent}
             placeholder="email"
             aria-label="email"
             autoCapitalize="none"
             autoComplete="email"
-            className="w-full border-0 border-b bg-transparent pb-2 text-center lowercase outline-none placeholder:text-[color:var(--giver-ink)] placeholder:opacity-30"
+            className="w-full border-0 border-b bg-transparent pb-2.5 text-center lowercase outline-none placeholder:text-[color:var(--giver-ink)] placeholder:opacity-45"
             style={{
               ...MAGIC_LINK_TYPE.field,
-              borderBottom: "1px solid color-mix(in oklab, var(--giver-ink) 18%, transparent)",
+              borderBottom: "1px solid color-mix(in oklab, var(--giver-ink) 32%, transparent)",
               borderRadius: 0,
               color: "var(--giver-ink)",
             }}
           />
+
+          {sent ? null : (
+            <button
+              type="submit"
+              disabled={busy}
+              className="mt-5 bg-transparent px-3 py-2 lowercase transition-opacity active:opacity-50 disabled:opacity-40"
+              style={{
+                ...MAGIC_LINK_TYPE.submit,
+                color: "var(--mode-giver)",
+                marginRight: "-0.2em",
+              }}
+            >
+              {busy ? "one moment" : "send link"}
+            </button>
+          )}
 
           <p
             className="mt-3 min-h-[1.2em]"
             aria-live="polite"
             style={{
               ...MAGIC_LINK_TYPE.helper,
-              opacity: helper ? 0.55 : 0,
+              opacity: helper ? 0.7 : 0,
               transition: "opacity 300ms cubic-bezier(0.32,0,0.24,1)",
             }}
           >
             {helper ?? "\u00a0"}
           </p>
-
-          {sent ? null : (
-            <button
-              type="submit"
-              disabled={busy}
-              className="mt-8 bg-transparent p-2 lowercase transition-opacity active:opacity-50 disabled:opacity-30"
-              style={{
-                ...MAGIC_LINK_TYPE.submit,
-                color: "var(--giver-ink)",
-                marginRight: "-0.18em",
-              }}
-            >
-              {busy ? "one moment" : "send link"}
-            </button>
-          )}
         </form>
       </div>
     </div>

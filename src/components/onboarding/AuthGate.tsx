@@ -1,55 +1,28 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
+import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { joinGiver } from "@/lib/invites.functions";
 import { sessionStore } from "@/data/cloud/session";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
-import { initializeFirstUse } from "@/data/first-use";
 import { haptics } from "@/lib/haptics";
 
 /**
- * TESTING-PHASE AUTH. Email magic link only — no phone, password, or @name.
- * Invite token is kept if present; handle is derived silently from the email.
- *
- * ⚠ TESTING ONLY — NOT THE SHIPPED PRODUCT: signing in here skips the spark
- * interaction and the welcome spark grant (initializeFirstUse(false)) and any
- * profile gate. Restore the earned path and a real account step before launch.
+ * THIN MAGIC-LINK GATE for the testing-phase onboarding. Email only — no
+ * password, phone, or @name form. On session, silently ensure a profile then
+ * hand control back to Onboarding.
  */
-export const Route = createFileRoute("/auth")({
-  validateSearch: z.object({ invite: z.string().optional() }).parse,
-  head: () => ({
-    meta: [
-      { title: "sign in · giver" },
-      { name: "description", content: "sign in to giver with a magic link." },
-      { property: "og:title", content: "sign in · giver" },
-      { property: "og:description", content: "one email. a magic link." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
-  component: AuthScreen,
-});
-
-function AuthScreen() {
-  const { invite } = Route.useSearch();
-  const navigate = useNavigate();
+export function AuthGate({ onDone }: { onDone: () => void }) {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const finishing = useRef(false);
-
-  useEffect(() => {
-    if (invite) window.localStorage.setItem("giver.invite.token", invite);
-  }, [invite]);
 
   async function finish(emailAddr: string | null) {
-    if (finishing.current) return;
-    finishing.current = true;
-    const token = invite ?? window.localStorage.getItem("giver.invite.token") ?? undefined;
+    const token =
+      typeof window !== "undefined"
+        ? (window.localStorage.getItem("giver.invite.token") ?? undefined)
+        : undefined;
     const local = emailAddr?.split("@")[0] ?? "giver";
     const chosen = normaliseHandle(myProfileStore.get().username || local || "giver");
     try {
@@ -61,15 +34,13 @@ function AuthScreen() {
       /* Prefer landing on the G over blocking on profile setup. */
     }
     await sessionStore.refresh();
-    /* TESTING SKIP (not shipped product): no spark grant on this path. */
-    initializeFirstUse(false);
     try {
       window.localStorage.removeItem("giver.invite.token");
     } catch {
       /* private mode */
     }
     haptics.light();
-    void navigate({ to: "/" });
+    onDone();
   }
 
   useEffect(() => {
@@ -81,11 +52,8 @@ function AuthScreen() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) void finish(session.user.email ?? null);
     });
-    void supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) void finish(data.session.user.email ?? null);
-    });
     return () => sub.subscription.unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once gate
   }, []);
 
   async function submit(e: React.FormEvent) {
@@ -108,7 +76,14 @@ function AuthScreen() {
   }
 
   return (
-    <main className="g-page min-h-screen bg-giver-paper text-giver-ink">
+    <div
+      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-9"
+      style={{
+        background: "var(--giver-paper)",
+        color: "var(--giver-ink)",
+        fontFamily: "var(--giver-font)",
+      }}
+    >
       <p className="g-meta">giver</p>
       <h1 className="g-display mt-6 lowercase">
         {sent ? "check your email" : "sign in"}
@@ -133,9 +108,7 @@ function AuthScreen() {
               className="g-name border-b border-giver-ink/20 bg-transparent pb-2 outline-none lowercase"
             />
           </label>
-
           {error ? <p className="g-meta text-giver-ink/60">{error}</p> : null}
-
           <button
             type="submit"
             disabled={busy}
@@ -146,6 +119,6 @@ function AuthScreen() {
           </button>
         </form>
       )}
-    </main>
+    </div>
   );
 }

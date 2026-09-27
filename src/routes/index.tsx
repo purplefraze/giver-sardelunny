@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
 import {
@@ -11,6 +11,7 @@ import { useAppHeight } from "@/hooks/use-app-height";
 
 
 import { Onboarding } from "@/components/Onboarding";
+import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
@@ -65,6 +66,23 @@ type ActivitySeat = (typeof ACTIVITY_SEATS)[number];
 const seatMode = (s: ActivitySeat): Mode => (s === "lend" ? "borrow" : s);
 
 const FIRST_USE_SEAT_KEY = "giver.first-use.seat";
+const TOGGLE_WORDS_KEY = "giver.toggleWordsUnlocked";
+
+function readToggleWordsUnlocked(): boolean {
+  try {
+    return window.localStorage.getItem(TOGGLE_WORDS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberToggleWordsUnlocked() {
+  try {
+    window.localStorage.setItem(TOGGLE_WORDS_KEY, "1");
+  } catch {
+    /* private mode */
+  }
+}
 
 function rememberFirstUseSeat(seat: ActivitySeat) {
   try {
@@ -105,6 +123,8 @@ import { DevSeal } from "@/components/DevSeal";
 import { lifecycleStore } from "@/data/lifecycle";
 import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
+import { hasLoopCopy, hintsRetired, loopCopyFor } from "@/data/loop-copy";
+import { LOOP_HINT_MS, loopHint } from "@/components/living-g/loop-hint";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
 /**
@@ -198,6 +218,8 @@ function Index() {
 
 
   const [sessionEntered, setSessionEntered] = useState(false);
+  /** True for one crossfade right after the launch screen hands over. */
+  const [launchVeil, setLaunchVeil] = useState(false);
   const entered = Boolean(lifecycle.onboardingCompletedAt) || sessionEntered;
   /**
    * THE ONE EDITOR DESTINATION. Tapping a loop opens the editor for that part of
@@ -219,6 +241,29 @@ function Index() {
     /* THE SIX FIXED SEATS: my g (12) · give · wish · borrow · lend (9) ·
      trade (3). */
   const [seat, setSeatState] = useState<ActivitySeat | "giver">("give");
+  /**
+   * TOGGLE WORDS STAY SILENT until the first successful seat change away from
+   * the initial landing. Persisted so a refresh does not re-mute the bead.
+   */
+  const [toggleWordsUnlocked, setToggleWordsUnlocked] = useState(false);
+  useEffect(() => {
+    setToggleWordsUnlocked(readToggleWordsUnlocked());
+  }, []);
+  /**
+   * TOGGLE HINT. Set on EVERY toggle use (seat change or tap on the toggle):
+   * the seat whose pair is fading through the loops right now, plus a nonce
+   * so a repeat use replays the fade from the start. Loops carry NO words
+   * otherwise — before the first toggle use and after each fade.
+   */
+  const [hint, setHint] = useState<{ seat: Seat; nonce: number } | null>(null);
+  const hintNonce = useRef(0);
+  useEffect(() => {
+    if (hint === null) return;
+    /* The hint dissolves on its own (CSS); this only unmounts it afterwards.
+       Scoped to the hint — toggle responses never wait on this timer. */
+    const t = window.setTimeout(() => setHint(null), LOOP_HINT_MS);
+    return () => window.clearTimeout(t);
+  }, [hint]);
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
@@ -226,6 +271,33 @@ function Index() {
     /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
        remembered as the first-use mode. */
     if (next !== "giver") rememberFirstUseSeat(next);
+  };
+
+  /**
+   * ANY USE OF THE TOGGLE. Unlocks the bead word on the very first use
+   * (persisted) and fades the seat's middle/bottom pair through the loops
+   * (~1.8s, see LOOP_HINT_MS) on every use — UNTIL the hints are retired
+   * (I have posted a Give AND a Wish; see `retired` / loop-copy.ts). After
+   * that the loops stay silent. My G never has copy.
+   */
+  const noteToggleUse = (at: Seat) => {
+    if (!toggleWordsUnlocked) {
+      rememberToggleWordsUnlocked();
+      setToggleWordsUnlocked(true);
+      tutorialSeenStore.markSeen();
+    }
+    hintNonce.current += 1;
+    setHint(!retired && hasLoopCopy(at) ? { seat: at, nonce: hintNonce.current } : null);
+  };
+
+  /**
+   * A REAL SEAT CHANGE (drag or seat-tap on the track). EarSelector's commit
+   * already fires haptics.light on every snap — that is the seat-change haptic.
+   */
+  const moveToggle = (next: Seat) => {
+    if (next === seat) return;
+    setSeat(next);
+    noteToggleUse(next);
   };
 
   /**
@@ -323,37 +395,21 @@ function Index() {
     showIntro(topic);
   }, [entered, seat]);
 
-  /**
-   * TEACH THE G ONCE. On first entry the action labels show themselves, then
-   * the G goes quiet for good — a press-and-hold brings a label back.
-   */
-  const [teach, setTeach] = useState(true);
   /** A PERSISTED fact about this person: the G has already taught itself. */
   const tutorialSeen = useTutorialSeen();
 
   /**
    * INSTRUCTIONAL COPY IS A CUE, NEVER FURNITURE — AND NEVER MODE CONTENT.
-   * The action words teach the G ONCE, on first entry, then leave it clean for
-   * good; a press-and-hold brings one back. Switching mode NEVER re-fires them,
-   * so a mode prompt can never arrive on top of the loops' own words.
+   * Testing phase: the old "teach the G on entry" labels (and press-and-hold
+   * label recall) are retired. Loop words only ever appear as the faint toggle
+   * hint, on every toggle use (see noteToggleUse / loop-copy.ts).
    */
-  useEffect(() => {
-    if (!entered) return;
-    if (tutorialSeenStore.get()) {
-      setTeach(false);
-      return;
-    }
-    setTeach(true);
-    const t = setTimeout(() => {
-      setTeach(false);
-      tutorialSeenStore.markSeen();
-    }, 4200);
-    return () => clearTimeout(t);
-  }, [entered]);
 
   /** ONE source of truth for who I am and what I have going on. */
   const me = useMyProfile();
   const items = useItems();
+  /** Hints retire once I have posted a Give AND a Wish — derived, reactive. */
+  const retired = hintsRetired(items);
   /* ADMIN PEOPLE EDITS re-render every screen below, so a corrected person is
      immediately true in the feed, on their profile and on every item. */
   useMemberEdits();
@@ -418,6 +474,9 @@ function Index() {
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = seatMode(activity ?? "give");
   const content = MODE_CONTENT[mode];
+  /** The toggle hint for THIS seat, only while it is fading through. */
+  const hintNow = !retired && hint !== null && hint.seat === seat ? hint : null;
+  const hintCopy = hintNow ? loopCopyFor(seat) : null;
 
   /**
    * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
@@ -459,15 +518,33 @@ function Index() {
       openMyG();
       return;
     }
-    if (firstArrival) {
-      setup();
-      return;
-    }
+    /* TAP TO ENTER (testing phase): the seat's own action screen — the
+       existing CategoryForm ("what can you give today?" for Give) — opens
+       even before the profile exists. It used to route first-arrival taps to
+       profile setup; that detour is removed for testing. */
     setEditor({
       kind: "category",
       category: mode,
       ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
     });
+  };
+
+  /**
+   * TAP ON THE TOGGLE CIRCLE (a tap without drag — EarSelector's existing
+   * onTap). Tapping is a toggle use, so it shows the hint; tapping AGAIN while
+   * that hint is still on screen is the confirmation and enters the seat
+   * (Give → the existing "give something" CategoryForm). So: tap = "what is
+   * this?", tap-tap = "do it". Wherever there is NO hint to show — My G, or
+   * any seat once hints are retired (Give + Wish posted) — a single tap goes
+   * straight into the seat's action. The middle loop always enters on one tap.
+   */
+  const tapToggle = () => {
+    if (seat === "giver" || retired || hintNow !== null) {
+      enterSelectedWorld();
+      return;
+    }
+    haptics.light();
+    noteToggleUse(seat);
   };
 
   /**
@@ -514,12 +591,18 @@ function Index() {
   return (
     <main className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden">
 
-      <DevControls />
-      <DevSeal />
+      {/* COLD OPEN IS ONLY THE WORDMARK: no dev corner or @name/sign-in seal
+         over the launch/auth screens. Both return once the G is showing.
+         (DevControls is also DEV-build-only; its "replay onboarding" now
+         replays LaunchScreen → AuthGate, never PlayIntro.) */}
+      {entered ? <DevControls /> : null}
+      {entered ? <DevSeal /> : null}
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
-          onDone={({ earned, mode: gifted }) => {
+          onDone={({ earned, mode: gifted, fromLaunch }) => {
+            /* CROSSFADE: the still wordmark is laid over the G and fades out. */
+            if (fromLaunch) setLaunchVeil(true);
             /* CONTINUITY: my first G opens in the exact mode I just gave in. */
             if (gifted) setSeat(gifted);
             /* A NEW PERSON GETS A CLEAN, IDEMPOTENT HANDOVER. Sample people and
@@ -555,19 +638,21 @@ function Index() {
             overlay={
               <EarSelector
                 mode={seat}
-                onChange={(next) => setSeat(next)}
+                onChange={moveToggle}
                 seats={myGSeats}
+                hideWord={!toggleWordsUnlocked}
                 {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
                 {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
                 /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
                 {...(!firstArrival ? { sparks: me.sparks } : {})}
 
-                /* THE TOGGLE ENTERS THE WORLD IT IS CURRENTLY NAMING. */
-                onTap={enterSelectedWorld}
+                /* TAP ON THE TOGGLE: first tap shows the seat's hint; a second
+                   tap while the hint is still showing enters the seat's action
+                   screen (see tapToggle). */
+                onTap={tapToggle}
               />
             }
 
-            teach={firstArrival ? false : teach}
             regions={{
               /* TOP LOOP = MY G. Sacred, permanent, mine — or its setup. */
               top: {
@@ -588,8 +673,12 @@ function Index() {
                 panelBody: null,
                 onPress: enterSelectedWorld,
 
+                /* TOGGLE HINT ("give something"…) takes the upper bowl while
+                   it fades through; content and hint never share the loop. */
                 render: (anchor) =>
-                  profileLoop({
+                  hintCopy?.middle && hintNow
+                    ? loopHint("middle", hintCopy.middle, hintNow.nonce)
+                    : profileLoop({
                     anchor,
                     region: "middle",
                     /*
@@ -631,7 +720,9 @@ function Index() {
                         },
 
                 render: (anchor) =>
-                  profileLoop({
+                  hintCopy?.bottom && hintNow
+                    ? loopHint("bottom", hintCopy.bottom, hintNow.nonce)
+                    : profileLoop({
                     anchor,
                     region: "bottom",
                     /*
@@ -1003,6 +1094,8 @@ function Index() {
 
         </>
       )}
+      {/* LAUNCH → G CROSSFADE: the settled wordmark over the fresh G, fading. */}
+      {entered && launchVeil ? <LaunchScreen veil onDone={() => setLaunchVeil(false)} /> : null}
     </main>
   );
 }

@@ -193,6 +193,7 @@ export function EarSelector({
   word,
   badge,
   sparks,
+  hideWord = false,
 
 }: {
   mode: Seat;
@@ -222,6 +223,11 @@ export function EarSelector({
    * travel — so it reads as part of my identity, not as a dashboard widget.
    */
   sparks?: number;
+  /**
+   * FIRST LANDING: hide the mode word in the bead until the person moves the
+   * toggle once. Visibility only — physics and seats are untouched.
+   */
+  hideWord?: boolean;
 
 
 
@@ -540,7 +546,7 @@ export function EarSelector({
         style={{
           fontSize: WORD_SIZE,
           letterSpacing: LOOP_ROLE_STYLE.action.tracking,
-          opacity: photo ? 0 : dragging ? 0 : reveal ? 0.95 : 0.4,
+          opacity: hideWord || photo ? 0 : dragging ? 0 : reveal ? 0.95 : 0.4,
           transform: `scale(${dragging ? 0.3 : 1})`,
           transformOrigin: `${ear.x}px ${ear.y}px`,
           transition:

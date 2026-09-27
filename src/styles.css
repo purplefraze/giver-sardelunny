@@ -227,6 +227,16 @@
   --mode-borrow: oklch(0.7 0.16 300); /* purple tint of wish */
   --mode-trade: oklch(0.73 0.2 52); /* bright orange */
 
+  /* THE LETTER IS ALWAYS BLUE. The Living G silhouette (letter fill, rim
+     patch, toggle ring/stem — everything painted with --world-g) reads this
+     one token in every toggle world, so the G never changes colour when the
+     toggle moves. A world's own colour lives in its AIR (--world-bg), its ink
+     and its in-loop text — never in the letter. Same blue as My G. */
+  --g-letter: var(--mode-giver);
+  /* GIVE AIR — the green field behind the blue G in the Give world. A pale
+     tint of --mode-give (same hue 146) so green is the air, not the letter. */
+  --give-air: oklch(0.93 0.07 146);
+
   --mode-giver-complement: var(--giver-blue-complement);
   --mode-give-complement: var(--giver-green-complement);
   --mode-lend-complement: var(--giver-green-complement);
@@ -326,7 +336,7 @@
 /* Home / Giver — my own world: green. */
 [data-world="home"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-giver);
+  --world-g: var(--g-letter);
   --world-ink: oklch(0.38 0.16 260);
   --world-text: var(--mode-giver-complement);
   --world-accent: var(--person-self);
@@ -337,7 +347,7 @@
 /* Wish — asking for something: purple. */
 [data-world="wish"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-wish);
+  --world-g: var(--g-letter);
   --world-ink: oklch(0.4 0.2 300);
   --world-text: var(--mode-wish-complement);
   --world-accent: var(--person-self);
@@ -346,16 +356,16 @@
 /* Borrow — asking to borrow: hot pink. */
 [data-world="borrow"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-borrow);
+  --world-g: var(--g-letter);
   --world-ink: oklch(0.42 0.18 300);
   --world-text: var(--mode-borrow-complement);
   --world-accent: var(--person-self);
 }
 
-/* Give — offering: green G on white. */
+/* Give — offering: blue G in green air. */
 [data-world="give"] {
-  --world-bg: oklch(1 0 0);
-  --world-g: var(--mode-give);
+  --world-bg: var(--give-air); /* green AIR; the letter stays blue */
+  --world-g: var(--g-letter);
   --world-ink: oklch(0.46 0.16 145);
   --world-text: var(--mode-give-complement);
   --world-accent: var(--person-self);
@@ -364,7 +374,7 @@
 /* Lend — the seafoam side of generosity. */
 [data-world="lend"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-lend);
+  --world-g: var(--g-letter);
   --world-ink: oklch(0.44 0.14 146);
   --world-text: var(--mode-lend-complement);
   --world-accent: var(--person-self);
@@ -374,7 +384,7 @@
 /* Trade — apart from the wish/give mixing: orange. */
 [data-world="trade"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-trade);
+  --world-g: var(--g-letter);
   --world-ink: oklch(0.44 0.16 48);
   --world-text: var(--mode-trade-complement);
   --world-accent: var(--person-other-trade);
@@ -449,7 +459,7 @@
 [data-world="me"],
 [data-world="profile"] {
   --world-bg: var(--giver-paper);
-  --world-g: var(--mode-giver);
+  --world-g: var(--g-letter);
   --world-ink: oklch(0.38 0.16 260);
   --world-text: var(--mode-giver-complement);
   --world-accent: var(--person-self);
@@ -531,6 +541,31 @@
   to {
     opacity: 1;
   }
+}
+
+/* FIRST-VISIT LOOP HINT — a faint cue that arrives, holds, and dissolves on
+   its own (~1.8s total, see LOOP_HINT_MS in loop-hint.tsx). Scoped to the
+   hint group only: toggle responses never wait on it. */
+@keyframes giver-loop-hint {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.72;
+  }
+  62% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.giver-loop-hint {
+  opacity: 0;
+  animation-name: giver-loop-hint;
+  animation-timing-function: cubic-bezier(0.32, 0, 0.24, 1);
+  animation-fill-mode: forwards;
 }
 
 

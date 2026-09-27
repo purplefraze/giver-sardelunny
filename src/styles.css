@@ -227,15 +227,9 @@
   --mode-borrow: oklch(0.7 0.16 300); /* purple tint of wish */
   --mode-trade: oklch(0.73 0.2 52); /* bright orange */
 
-  /* THE LETTER IS ALWAYS BLUE. The Living G silhouette (letter fill, rim
-     patch, toggle ring/stem — everything painted with --world-g) reads this
-     one token in every toggle world, so the G never changes colour when the
-     toggle moves. A world's own colour lives in its AIR (--world-bg), its ink
-     and its in-loop text — never in the letter. Same blue as My G. */
-  --g-letter: var(--mode-giver);
-  /* GIVE AIR — the green field behind the blue G in the Give world. A pale
-     tint of --mode-give (same hue 146) so green is the air, not the letter. */
-  --give-air: oklch(0.93 0.07 146);
+  /* SEAT AIR — every toggle seat sits on plain white for now (no field or
+     complementary background colour). The G itself carries the seat colour. */
+  --seat-bg: oklch(1 0 0);
 
   --mode-giver-complement: var(--giver-blue-complement);
   --mode-give-complement: var(--giver-green-complement);
@@ -335,8 +329,8 @@
 
 /* Home / Giver — my own world: green. */
 [data-world="home"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--g-letter);
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-giver);
   --world-ink: oklch(0.38 0.16 260);
   --world-text: var(--mode-giver-complement);
   --world-accent: var(--person-self);
@@ -346,8 +340,8 @@
 
 /* Wish — asking for something: purple. */
 [data-world="wish"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--g-letter);
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-wish);
   --world-ink: oklch(0.4 0.2 300);
   --world-text: var(--mode-wish-complement);
   --world-accent: var(--person-self);
@@ -355,17 +349,17 @@
 
 /* Borrow — asking to borrow: hot pink. */
 [data-world="borrow"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--g-letter);
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-borrow);
   --world-ink: oklch(0.42 0.18 300);
   --world-text: var(--mode-borrow-complement);
   --world-accent: var(--person-self);
 }
 
-/* Give — offering: blue G in green air. */
+/* Give — offering: green G on white. */
 [data-world="give"] {
-  --world-bg: var(--give-air); /* green AIR; the letter stays blue */
-  --world-g: var(--g-letter);
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-give);
   --world-ink: oklch(0.46 0.16 145);
   --world-text: var(--mode-give-complement);
   --world-accent: var(--person-self);
@@ -373,8 +367,8 @@
 
 /* Lend — the seafoam side of generosity. */
 [data-world="lend"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--g-letter);
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-lend);
   --world-ink: oklch(0.44 0.14 146);
   --world-text: var(--mode-lend-complement);
   --world-accent: var(--person-self);
@@ -383,8 +377,8 @@
 
 /* Trade — apart from the wish/give mixing: orange. */
 [data-world="trade"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--g-letter);
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-trade);
   --world-ink: oklch(0.44 0.16 48);
   --world-text: var(--mode-trade-complement);
   --world-accent: var(--person-other-trade);
@@ -458,8 +452,8 @@
 /* ---- ME — my own profile and my own information: GREEN. ---- */
 [data-world="me"],
 [data-world="profile"] {
-  --world-bg: var(--giver-paper);
-  --world-g: var(--g-letter);
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-giver);
   --world-ink: oklch(0.38 0.16 260);
   --world-text: var(--mode-giver-complement);
   --world-accent: var(--person-self);

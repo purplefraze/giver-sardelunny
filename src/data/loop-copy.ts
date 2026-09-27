@@ -23,11 +23,10 @@ const LOOP_COPY: Record<Seat, LoopCopy> = {
   lend: { middle: "lend something", bottom: "borrow something" },
   trade: { middle: "trade for something", bottom: "trade for something" },
   /**
-   * My G: the app's own quiet names — "my g" (the My G panel title / bead
-   * word) over "communi-g" (the prefix of every community loop title). Hinted
-   * until my profile is filled out, then both go silent together.
+   * My G: "my g" (the My G panel title / bead word) over "community".
+   * Hinted until my profile is filled out, then both go silent together.
    */
-  giver: { middle: "my g", bottom: "communi-g" },
+  giver: { middle: "my g", bottom: "community" },
 };
 
 export function loopCopyFor(seat: Seat): LoopCopy {
@@ -63,7 +62,7 @@ export function hasLoopCopy(seat: Seat): boolean {
  *           stepped forward on someone's LEND offer (asked to borrow it)
  *   lend    I own a "borrow" item with side "lend" (offered to lend), or I
  *           stepped forward on someone's BORROW request (offered to lend)
- *   giver   (My G + its Communi-g side) my profile is FILLED OUT — see
+ *   giver   (My G + its community side) my profile is FILLED OUT — see
  *           profileFilledOut below. Both go silent together.
  */
 type HelperLink = Pick<Connection, "itemId" | "type" | "helperId" | "state">;

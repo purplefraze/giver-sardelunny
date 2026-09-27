@@ -90,7 +90,7 @@ const FALLOFF: Record<RegionKey, number> = {
  * How far a region's action copy is lifted inside its own loop, so a finger
  * never covers it. The CENTRE always comes from the loop itself (loopOrigin).
  */
-export const LABEL_LIFT: Record<RegionKey, number> = {
+const LABEL_LIFT: Record<RegionKey, number> = {
   top: 0,
   middle: 32,
   bottom: 46,

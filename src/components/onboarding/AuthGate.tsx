@@ -6,6 +6,7 @@ import { sessionStore } from "@/data/cloud/session";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
 import { haptics } from "@/lib/haptics";
+import { MagicLinkView } from "@/components/onboarding/MagicLinkView";
 
 /**
  * THIN MAGIC-LINK GATE for the testing-phase onboarding. Email only — no
@@ -76,49 +77,13 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div
-      className="relative flex h-full w-full flex-col justify-center overflow-hidden px-9"
-      style={{
-        background: "var(--giver-paper)",
-        color: "var(--giver-ink)",
-        fontFamily: "var(--giver-font)",
-      }}
-    >
-      <p className="g-meta">giver</p>
-      <h1 className="g-display mt-6 lowercase">
-        {sent ? "check your email" : "sign in"}
-      </h1>
-      <p className="g-body mt-4 max-w-[28ch] lowercase">
-        {sent
-          ? "open the link we sent. you'll land on your g."
-          : "one email. a magic link. no password."}
-      </p>
-
-      {sent ? null : (
-        <form onSubmit={submit} className="mt-10 flex flex-col gap-6">
-          <label className="flex flex-col gap-2">
-            <span className="g-meta">email</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoCapitalize="none"
-              autoComplete="email"
-              className="g-name border-b border-giver-ink/20 bg-transparent pb-2 outline-none lowercase"
-            />
-          </label>
-          {error ? <p className="g-meta text-giver-ink/60">{error}</p> : null}
-          <button
-            type="submit"
-            disabled={busy}
-            className="g-heading mt-2 self-start disabled:opacity-40 lowercase"
-            style={{ color: "var(--giver-me)" }}
-          >
-            {busy ? "one moment" : "send link"}
-          </button>
-        </form>
-      )}
-    </div>
+    <MagicLinkView
+      email={email}
+      onEmail={setEmail}
+      busy={busy}
+      sent={sent}
+      error={error}
+      onSubmit={submit}
+    />
   );
 }

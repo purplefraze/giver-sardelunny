@@ -40,10 +40,10 @@ import { useMemberEdits } from "@/hooks/use-member-edits";
 
 import { unreadCount } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
-import { profileLoop, clampField } from "@/components/living-g/profile-loop";
+import { clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { CATEGORY_PLURAL, myAsMember, myProfileStore } from "@/data/my-profile";
+import { myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
@@ -124,7 +124,7 @@ import { lifecycleStore } from "@/data/lifecycle";
 import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
 import { hasLoopCopy, loopCopyFor, seatHintRetired } from "@/data/loop-copy";
-import { LOOP_HINT_MS, loopHint } from "@/components/living-g/loop-hint";
+import { LOOP_HINT_MS, loopHint, loopLine } from "@/components/living-g/loop-hint";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
 /**
@@ -564,9 +564,12 @@ function Index() {
   const firstTheirs = theirs[0];
   const community = firstTheirs ? itemLine(firstTheirs) : null;
 
-  /** NEVER A LIST INSIDE THE G: one item, then how much more there is. */
-  const more = (count: number) =>
-    count > 1 ? [{ text: `+${count - 1} more`, role: "tertiary" as const }] : [];
+  /**
+   * NEVER A LIST INSIDE THE G: one item, then how much more there is — as
+   * ONE tidy line ("science tutoring +15 more"), lowercased by loopLine.
+   */
+  const tickerText = (item: string, count: number) =>
+    `${clampField(item)}${count > 1 ? ` +${count - 1}\u00a0more` : ""}`;
 
   /* Persisted lifecycle/profile state is browser-owned. Render neither the
      onboarding nor My G until it is hydrated, preventing a stale server frame
@@ -678,33 +681,20 @@ function Index() {
                 panelBody: null,
                 onPress: enterSelectedWorld,
 
-                /* TOGGLE HINT ("give something"…) takes the upper bowl while
-                   it fades through; content and hint never share the loop. */
-                render: (anchor) =>
+                /* ONE LOOP LINE AT A TIME. While this seat's hint is active
+                   ("give something"…) the hint owns the loop; once the seat's
+                   hint is retired, the ticker (my latest, same type rules)
+                   shows. EMPTY MEANS VISUALLY EMPTY — nothing invented. */
+                render: () =>
                   hintCopy?.middle && hintNow
                     ? loopHint("middle", hintCopy.middle, hintNow.nonce)
-                    : profileLoop({
-                    anchor,
-                    region: "middle",
-                    /*
-                      EMPTY MEANS VISUALLY EMPTY. With nothing of mine in this
-                      world, the loop holds NOTHING: no label, no "add a …", no
-                      prompt, no invented content. The words only ever describe
-                      something that actually exists.
-                    */
-                    blocks:
-                      activity === null || !myMode
-                        ? []
-                        : [
-                            { text: `my ${CATEGORY_PLURAL[mode]}`, role: "secondary" as const },
-                            {
-                              text: clampField(myMode),
-                              role: "primary" as const,
-                              fill: ACTIVITY_FILL[mode as ItemType],
-                            },
-                            ...more(me.items[mode].length),
-                          ],
-                  }),
+                    : retired && activity !== null && myMode
+                      ? loopLine(
+                          "middle",
+                          tickerText(myMode, me.items[mode].length),
+                          ACTIVITY_FILL[mode as ItemType],
+                        )
+                      : null,
               },
               /*
                 BOTTOM LOOP = EVERYONE. COMMUNI-G, already filtered to the
@@ -724,35 +714,19 @@ function Index() {
                           setBrowse({ type: mode as ItemType });
                         },
 
-                render: (anchor) =>
+                /* COMMUNI-G TICKER: the latest community line for this
+                   world, same type rules as the hint. The hint wins while it
+                   is active; the ticker only shows once the seat is retired. */
+                render: () =>
                   hintCopy?.bottom && hintNow
                     ? loopHint("bottom", hintCopy.bottom, hintNow.nonce)
-                    : profileLoop({
-                    anchor,
-                    region: "bottom",
-                    /*
-                      COMMUNITY CONTENT OR NOTHING. Communi-g is visible to
-                      everyone — the lock is on engaging, not on looking. Until
-                      there is something in this world to show, the bottom loop
-                      stays empty — never a question, never filler.
-                    */
-                    blocks:
-                      activity === null || !community
-                        ? []
-                        : [
-                            {
-                              text: `communi-g ${CATEGORY_PLURAL[mode]}`,
-                              role: "secondary" as const,
-                              fill: ACTIVITY_FILL[mode as ItemType],
-                            },
-                            {
-                              text: clampField(community),
-                              role: "primary" as const,
-                              fill: ACTIVITY_FILL[mode as ItemType],
-                            },
-                            ...more(theirs.length),
-                          ],
-                  }),
+                    : retired && activity !== null && community
+                      ? loopLine(
+                          "bottom",
+                          tickerText(community, theirs.length),
+                          ACTIVITY_FILL[mode as ItemType],
+                        )
+                      : null,
               },
             }}
           />

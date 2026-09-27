@@ -21,7 +21,8 @@ const LOOP_COPY: Record<Seat, LoopCopy> = {
   wish: { middle: "make a wish", bottom: "grant a wish" },
   borrow: { middle: "borrow something", bottom: "lend something" },
   lend: { middle: "lend something", bottom: "borrow something" },
-  trade: { middle: "trade for something", bottom: "trade for something" },
+  /** TRADE: the toggle, the middle loop and the bottom loop all just say "trade". */
+  trade: { middle: "trade", bottom: "trade" },
   /**
    * FUND (7:30). PROPOSED WORDING — flagged for the owner: middle = your
    * action (pledge money toward someone's wish), bottom = the other side

@@ -32,9 +32,6 @@ import { sparkFlashStore } from "@/data/spark-flash";
 import { haptics } from "@/lib/haptics";
 import { FullProfile } from "@/components/FullProfile";
 import { FundForm } from "@/components/fund/FundForm";
-import { useFund } from "@/hooks/use-fund";
-import { fundableWishes, myContributions } from "@/data/fund";
-import { formatCents } from "@/data/fund-rules";
 import { memberById } from "@/data/giver";
 import { ActivityDetail } from "@/components/community/ActivityDetail";
 import { Conversation } from "@/components/connection/Conversation";
@@ -46,7 +43,6 @@ import { useMemberEdits } from "@/hooks/use-member-edits";
 
 import { unreadCount } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
-import { clampField } from "@/components/living-g/profile-loop";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
 import { myAsMember, myProfileStore } from "@/data/my-profile";
@@ -116,8 +112,6 @@ function readFirstUseSeat(): ActivitySeat | null {
 import { useItems } from "@/hooks/use-items";
 import {
   ME_ID,
-  communityItems,
-  itemLine,
   itemsStore,
   type BorrowSide,
   type ItemType,
@@ -133,10 +127,9 @@ import { DevSeal } from "@/components/DevSeal";
 import { lifecycleStore } from "@/data/lifecycle";
 import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
-import { hasLoopCopy, loopCopyFor, seatHintRetired } from "@/data/loop-copy";
-import { LOOP_HINT_MS, loopHint, loopLine } from "@/components/living-g/loop-hint";
-import { LOOP_TEXT_FILL } from "@/components/living-g/type-scale";
+import { LoopLabels } from "@/components/living-g/LoopLabel";
 import { useLifecycle } from "@/hooks/use-lifecycle";
+
 
 /**
  * ONE LIVING G, FIVE TOGGLE STATES.
@@ -286,21 +279,6 @@ function Index() {
   useEffect(() => {
     setToggleWordsUnlocked(readToggleWordsUnlocked());
   }, []);
-  /**
-   * TOGGLE HINT. Set on EVERY toggle use (seat change or tap on the toggle):
-   * the seat whose pair is fading through the loops right now, plus a nonce
-   * so a repeat use replays the fade from the start. Loops carry NO words
-   * otherwise — before the first toggle use and after each fade.
-   */
-  const [hint, setHint] = useState<{ seat: Seat; nonce: number } | null>(null);
-  const hintNonce = useRef(0);
-  useEffect(() => {
-    if (hint === null) return;
-    /* The hint dissolves on its own (CSS); this only unmounts it afterwards.
-       Scoped to the hint — toggle responses never wait on this timer. */
-    const t = window.setTimeout(() => setHint(null), LOOP_HINT_MS);
-    return () => window.clearTimeout(t);
-  }, [hint]);
   /* THE INHERITED FIRST-USE MODE SURVIVES A REFRESH: it is a real state, not a
      transient default, so the empty G never falls back to red or green. */
   const setSeat = (next: Seat) => {
@@ -312,22 +290,15 @@ function Index() {
 
   /**
    * ANY USE OF THE TOGGLE. Unlocks the bead word on the very first use
-   * (persisted) and fades the seat's middle/bottom pair through the loops
-   * (~1.8s, see LOOP_HINT_MS) on every use — PER SEAT, until I have done
-   * that seat's action (see `retiredAt` / seatHintRetired in loop-copy.ts).
-   * Then only that seat goes silent; other seats keep hinting. My G (and
-   * its communi-g side) hints until my profile is filled out.
+   * (persisted). The loops no longer carry a fading hint: their labels are
+   * always shown (<LoopLabels>, loop-copy.ts).
    */
-  const noteToggleUse = (at: Seat) => {
+  const noteToggleUse = () => {
     if (!toggleWordsUnlocked) {
       rememberToggleWordsUnlocked();
       setToggleWordsUnlocked(true);
       tutorialSeenStore.markSeen();
     }
-    hintNonce.current += 1;
-    setHint(
-      !retiredAt(at) && hasLoopCopy(at) ? { seat: at, nonce: hintNonce.current } : null,
-    );
   };
 
   /**
@@ -337,7 +308,7 @@ function Index() {
   const moveToggle = (next: Seat) => {
     if (next === seat) return;
     setSeat(next);
-    noteToggleUse(next);
+    noteToggleUse();
   };
 
   /**
@@ -448,8 +419,8 @@ function Index() {
   /**
    * INSTRUCTIONAL COPY IS A CUE, NEVER FURNITURE — AND NEVER MODE CONTENT.
    * Testing phase: the old "teach the G on entry" labels (and press-and-hold
-   * label recall) are retired. Loop words only ever appear as the faint toggle
-   * hint, on every toggle use (see noteToggleUse / loop-copy.ts).
+   * label recall) are retired. The loops carry one always-on label each
+   * (<LoopLabels>, copy in loop-copy.ts).
    */
 
   /** ONE source of truth for who I am and what I have going on. */
@@ -460,13 +431,6 @@ function Index() {
   useMemberEdits();
 
   const links = useConnections();
-  /** Fund pledges — their own store; they never touch items or sparks. */
-  const funds = useFund();
-  /** Per-seat hint retirement — derived, reactive, from items + connections
-      (+ pledges, read by the fund seat only). */
-  const retiredAt = (at: Seat) => seatHintRetired(at, items, links, me, funds);
-  /** The CURRENT seat's hint has been retired (always true on My G). */
-  const retired = retiredAt(seat);
 
   /* SEVEN DAYS AND THE SPARKS COME HOME: expire stale wishes on every entry. */
   useEffect(() => {
@@ -528,9 +492,6 @@ function Index() {
   const content = MODE_CONTENT[mode];
   /** FUND IS ITS OWN SEAT: it borrows the wish world's items, never its forms. */
   const funding = activity === "fund";
-  /** The toggle hint for THIS seat, only while it is fading through. */
-  const hintNow = !retired && hint !== null && hint.seat === seat ? hint : null;
-  const hintCopy = hintNow ? loopCopyFor(seat) : null;
 
   /**
    * FIRST ARRIVAL — THE EMPTY LIVING G, JUST HANDED OVER.
@@ -591,60 +552,15 @@ function Index() {
 
   /**
    * TAP ON THE TOGGLE CIRCLE (a tap without drag — EarSelector's existing
-   * onTap). Tapping is a toggle use, so it shows the hint; tapping AGAIN while
-   * that hint is still on screen is the confirmation and enters the seat
-   * (Give → the existing "give something" CategoryForm). So: tap = "what is
-   * this?", tap-tap = "do it" (My G included, while its hint is active).
-   * Once the CURRENT seat's hint is retired there is nothing to show, so a
-   * single tap goes straight in. The middle loop always enters on one tap.
+   * onTap). One tap enters the seat, exactly like the middle loop.
    */
   const tapToggle = () => {
-    if (retired || hintNow !== null) {
-      enterSelectedWorld();
-      return;
-    }
-    haptics.light();
-    noteToggleUse(seat);
+    /* The loops always say what each seat does, so there is no "what is
+       this?" first tap any more: one tap on the toggle enters the seat. */
+    noteToggleUse();
+    enterSelectedWorld();
   };
 
-  /**
-   * MY MOST RECENT <type> — the middle loop is MINE in the toggle's world, and
-   * "mine" means the one I touched last, not a ranked list.
-   */
-  const myRecent = [...me.records[mode]].sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
-
-  /* FUND'S TICKERS: middle = my latest pledge ("$25 to …"), bottom = wishes I
-     could fund. Same one-line ticker rules as every other seat. */
-  const myPledges = funding ? myContributions(funds, ME_ID) : [];
-  const latestPledge = myPledges[0];
-  const latestPledgeWish = latestPledge
-    ? items.items.find((i) => i.id === latestPledge.wishId)
-    : undefined;
-  const myMode = funding
-    ? latestPledge
-      ? `${formatCents(latestPledge.amountCents)} to ${latestPledgeWish ? itemLine(latestPledgeWish) : "a wish"}`
-      : null
-    : myRecent
-      ? itemLine(myRecent)
-      : null;
-  const myCount = funding ? myPledges.length : me.items[mode].length;
-
-  /** COMMUNI-G <type> — the same item collection, queried by everyone else. */
-  const theirs = funding
-    ? fundableWishes(items, ME_ID)
-    : communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
-  const firstTheirs = theirs[0];
-  const community = firstTheirs ? itemLine(firstTheirs) : null;
-  /** The ticker's ink: the seat's own colour — the G's (--world-g via
-      LOOP_TEXT_FILL), so Lend reads lend, Fund reads hot pink, My G reads blue. */
-  const tickerFill = LOOP_TEXT_FILL;
-
-  /**
-   * NEVER A LIST INSIDE THE G: one item, then how much more there is — as
-   * ONE tidy line ("science tutoring +15 more"), lowercased by loopLine.
-   */
-  const tickerText = (item: string, count: number) =>
-    `${clampField(item)}${count > 1 ? ` +${count - 1}\u00a0more` : ""}`;
 
   /* Persisted lifecycle/profile state is browser-owned. Render neither the
      onboarding nor My G until it is hydrated, preventing a stale server frame
@@ -720,6 +636,9 @@ function Index() {
             }
             earCut
             overlay={
+              <>
+              {/* THE LOOP LABELS — always shown, one component for every seat. */}
+              <LoopLabels seat={seat} />
               <EarSelector
                 mode={seat}
                 onChange={moveToggle}
@@ -730,11 +649,10 @@ function Index() {
                 /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
                 {...(!firstArrival ? { sparks: me.sparks } : {})}
 
-                /* TAP ON THE TOGGLE: first tap shows the seat's hint; a second
-                   tap while the hint is still showing enters the seat's action
-                   screen (see tapToggle). */
+                /* TAP ON THE TOGGLE: enters the seat's action screen. */
                 onTap={tapToggle}
               />
+              </>
             }
 
             regions={{
@@ -756,17 +674,7 @@ function Index() {
                 panelTitle: content.mine.title,
                 panelBody: null,
                 onPress: enterSelectedWorld,
-
-                /* ONE LOOP LINE AT A TIME. While this seat's hint is active
-                   ("give something"…) the hint owns the loop; once the seat's
-                   hint is retired, the ticker (my latest, same type rules)
-                   shows. EMPTY MEANS VISUALLY EMPTY — nothing invented. */
-                render: () =>
-                  hintCopy?.middle && hintNow
-                    ? loopHint("middle", hintCopy.middle, hintNow.nonce)
-                    : retired && activity !== null && myMode
-                      ? loopLine("middle", tickerText(myMode, myCount), tickerFill)
-                      : null,
+                /* The label is drawn by <LoopLabels> in the overlay. */
               },
               /*
                 BOTTOM LOOP = EVERYONE. COMMUNI-G, already filtered to the
@@ -788,16 +696,7 @@ function Index() {
                           /* VISIBLE TO EVERYONE. Interaction locks live inside the detail. */
                           setBrowse({ type: mode as ItemType });
                         },
-
-                /* COMMUNI-G TICKER: the latest community line for this
-                   world, same type rules as the hint. The hint wins while it
-                   is active; the ticker only shows once the seat is retired. */
-                render: () =>
-                  hintCopy?.bottom && hintNow
-                    ? loopHint("bottom", hintCopy.bottom, hintNow.nonce)
-                    : retired && activity !== null && community
-                      ? loopLine("bottom", tickerText(community, theirs.length), tickerFill)
-                      : null,
+                /* The label is drawn by <LoopLabels> in the overlay. */
               },
             }}
           />

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
-import { EAR_GEOMETRY, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
+import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.
@@ -171,8 +171,14 @@ function nearestOf(angle: number, seats: readonly Seat[]): Seat {
 
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 
-/** The white knock-out beyond the ring's outer edge, in path units (~1px). */
-const PAPER = 26;
+/**
+ * THE WHITE GAP, in path units — drawn ONLY where the ring actually crosses
+ * a stroke of the G (see the clipped knock-out below). Kept under the ring's
+ * clearance to the S-curve at My G (~9–10 units at 4:25, measured), so it
+ * can never eat into a stroke the ring does not touch (14 did: it shaved the
+ * S-curve's edge and left a ghost hairline).
+ */
+const KNOCK_GAP = 7;
 
 /** The locked seat colours, for seats that state a person's history. */
 const MODE_COLOUR: Record<Seat, string> = {
@@ -324,6 +330,7 @@ export function EarSelector({
   const deg = (angle * 180) / Math.PI;
   /** Where the ring actually is right now — text and hit area follow it. */
   const ear = at(angle, TRACK_R);
+  const knockId = useId().replace(/:/g, "");
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {
     const svg = e.currentTarget.ownerSVGElement;
@@ -431,19 +438,30 @@ export function EarSelector({
         the rim, ring beyond it, distance between them fixed by construction.
         The solid disc makes the piece PHYSICAL: whatever it sits on is hidden.
       */}
+      {/* THE WHITE GAP, ONLY WHERE IT IS NEEDED: a paper-coloured stroke
+          along the ring's own outline, a little wider than the ring, CLIPPED
+          TO THE G'S ARTWORK — so it paints only where the ring actually
+          crosses a stroke of the G, and nowhere else. No full disc: a stroke
+          the ring does not touch (the S-curve at My G) stays unbroken. */}
+      <defs>
+        <clipPath id={`${knockId}-g`} clipPathUnits="userSpaceOnUse">
+          <path d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} />
+        </clipPath>
+      </defs>
+      <circle
+        cx={ear.x}
+        cy={ear.y}
+        r={RING_MID}
+        fill="none"
+        stroke="var(--world-bg)"
+        strokeWidth={RING_W + KNOCK_GAP * 2}
+        clipPath={`url(#${knockId}-g)`}
+        pointerEvents="none"
+      />
       <g
         transform={`rotate(${deg} ${TRACK_C.x} ${TRACK_C.y})`}
         pointerEvents="none"
       >
-        {/* THE WHITE GAP: the disc reaches a little past the ring (PAPER),
-            so wherever the ring meets the G's stroke a clean negative-space
-            gap parts them. Visual only — track, seats and physics unchanged. */}
-        <circle
-          cx={TRACK_C.x + TRACK_R}
-          cy={TRACK_C.y}
-          r={EAR_GEOMETRY.outerR + PAPER}
-          fill="var(--world-bg)"
-        />
         <rect
           x={TRACK_C.x + STEM_FROM}
           y={TRACK_C.y - STEM_HALF}
@@ -452,11 +470,12 @@ export function EarSelector({
           rx={STEM_HALF * 0.5}
           fill="var(--world-g)"
         />
+        {/* The ring's own hole is paper (inside its outline only). */}
         <circle
           cx={TRACK_C.x + TRACK_R}
           cy={TRACK_C.y}
           r={RING_MID}
-          fill="none"
+          fill="var(--world-bg)"
           stroke="var(--world-g)"
           strokeWidth={RING_W}
         />

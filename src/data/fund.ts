@@ -16,9 +16,8 @@
  *   - SPARKS: this module never imports my-profile / ledger. A pledge grants,
  *     moves, reserves or spends NO sparks. Money is not sparks.
  *   - GIVE: contributions live in their own store, never in itemsStore, so
- *     they cannot satisfy hasActiveGive (community-access.ts), cannot retire
- *     the Give hint (seatHintRetired "give" reads items only) and never reach
- *     give counts (done.gifts / completed gives).
+ *     they cannot satisfy hasActiveGive (community-access.ts) and never
+ *     reach give counts (done.gifts / completed gives).
  *   - WISH RULES: every pledge goes through checkContribution (fund-rules.ts).
  *   - COMPLETION: nothing here ever calls itemsStore.complete/setStatus. A
  *     Wish can only show "fully funded"; completion stays with the Wish flow.

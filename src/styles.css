@@ -832,32 +832,15 @@
   }
 }
 
-/* FIRST-VISIT LOOP HINT — a faint cue that arrives, holds, and dissolves on
-   its own (~1.8s total, see LOOP_HINT_MS in loop-hint.tsx). Scoped to the
-   hint group only: toggle responses never wait on it. */
-@keyframes giver-loop-hint {
-  0% {
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.72;
-  }
-  62% {
-    opacity: 0.72;
-  }
-  100% {
-    opacity: 0;
-  }
+/* THE LOOP LABEL CROSSFADE (LoopLabel.tsx) — opacity only, ~180ms. The
+   global reduced-motion rule collapses it to an instant swap. */
+@keyframes loop-label-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-
-.giver-loop-hint {
-  /* LOWERCASE LOCK + the house face, whatever the surrounding SVG inherits. */
-  text-transform: lowercase;
-  font-family: var(--giver-font);
-  opacity: 0;
-  animation-name: giver-loop-hint;
-  animation-timing-function: cubic-bezier(0.32, 0, 0.24, 1);
-  animation-fill-mode: forwards;
+@keyframes loop-label-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 

@@ -47,7 +47,15 @@ const FRAME_OVER_H = LIVING_G_FRAME.width / NEEDED.height;
  * whole selector assembly stay visible at every point of the travel, the G
  * never moves as it travels, and only the frame's clearance may bleed.
  */
-const CANONICAL_WIDTH = `min(calc(100% * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
+/**
+ * EDGE AIR. The selector's extremes (lend at 3:00, borrow at 9:00) would
+ * otherwise land exactly on the screen edges; this keeps a few px of paper
+ * between the ring and each edge at every width. Layout only — g-path and
+ * the seat angles are untouched.
+ */
+export const EDGE_AIR = "8px";
+
+const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
 
 
 

@@ -176,7 +176,7 @@ function Clear({ label, onPress }: { label: string; onPress: () => void }) {
 function Line({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="g-meta opacity-40">{label}</span>
+      <span className="g-form-label">{label}</span>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5">{children}</div>
     </div>
   );
@@ -202,7 +202,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="g-rule py-3.5">
+    <div className="g-rule py-5">
       <button
         type="button"
         onClick={() => {
@@ -211,7 +211,7 @@ function Field({
         }}
         className="flex w-full items-baseline justify-between gap-4 text-left"
       >
-        <span className="g-meta opacity-40">{label}</span>
+        <span className="g-form-label">{label}</span>
         <span
           className="min-w-0 flex-1 truncate pb-[0.12em] text-right text-[13px] font-black lowercase leading-[1.25] tracking-[0.02em]"
           style={{ color: summary ? colour : "var(--world-ink)" }}
@@ -628,32 +628,34 @@ export function CategoryForm({
   return (
     <div
       data-world={category}
-      className="relative h-full w-full overflow-y-auto"
+      className="g-form relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={leave} label="back to my g" sticky />
 
-      <div className="g-page pb-[8.5rem] pt-16">
+      <div className="g-page pb-[8.5rem] pt-24">
         {/*
           ONE TYPOGRAPHY SYSTEM, EVERYWHERE. The old oversized "add a give"
           display type is gone: a creation screen states itself in the shared
           heading register, in its own semantic colour, and lets the content
           below be the loudest thing on the page.
         */}
-        <h1 className="g-heading" style={{ color: colour }}>
+        {/* FORMS ONLY: the heading wears the seat's complement (--form-heading),
+            light and lowercase, so it never reads as typed text. */}
+        <h1 className="g-form-heading">
           my {CATEGORY_PLURAL[category]}
         </h1>
-        <p className="g-body mt-2 max-w-[24ch]" style={{ color: colour }}>
+        <p className="g-form-lede mt-4 max-w-[24ch]">
           {CATEGORY_CALL[category]}
         </p>
         {/* THE ECONOMY, IN AS FEW WORDS AS IT TAKES. Nothing is explained twice. */}
-        <p className="mt-2 g-meta">
+        <p className="mt-3 g-form-label">
           {cost
             ? `${cost} sparks stay with each wish for 7 days · 3 at a time · you have ${me.sparks}`
             : "no sparks needed"}
         </p>
         {CATEGORY_TAGLINE[category] ? (
-          <p className="mt-1 g-meta opacity-45">{CATEGORY_TAGLINE[category]}</p>
+          <p className="mt-1 g-form-label">{CATEGORY_TAGLINE[category]}</p>
         ) : null}
 
 
@@ -666,7 +668,7 @@ export function CategoryForm({
           </p>
         ) : null}
 
-        <ul className="mt-7 space-y-4">
+        <ul className="mt-12 space-y-6">
           {records.map((item, i) => {
             /* EACH RECORD WEARS ITS OWN COLOUR — a lend is never mistaken
                for a borrow in a list. */
@@ -677,7 +679,7 @@ export function CategoryForm({
                   : "var(--activity-borrow)"
                 : colour;
             return (
-            <li key={item.id} className="g-rule pt-4 first:border-0 first:pt-0">
+            <li key={item.id} className="g-rule pt-6 first:border-0 first:pt-0">
               {category === "borrow" ? (
                 <p
                   className="mb-1 text-[11px] font-black lowercase tracking-[0.2em]"
@@ -711,9 +713,9 @@ export function CategoryForm({
                         )
                       }
                       aria-label="offering"
-                      className="w-full border-b border-current/20 bg-transparent pb-1 g-lede outline-none"
+                      className="g-form-input w-full"
                     />
-                    <p className="g-meta">for</p>
+                    <p className="g-form-label pt-1">for</p>
                     <input
                       value={item.want ?? splitTrade(item.text).want}
                       onChange={(e) =>
@@ -724,7 +726,7 @@ export function CategoryForm({
                         )
                       }
                       aria-label="in return"
-                      className="w-full border-b border-current/20 bg-transparent pb-1 g-lede outline-none"
+                      className="g-form-input w-full"
                     />
                   </div>
                 ) : (
@@ -733,7 +735,7 @@ export function CategoryForm({
                     onChange={(e) =>
                       myProfileStore.editItem(category, i, e.target.value.slice(0, titleMax))
                     }
-                    className="min-w-0 flex-1 border-b border-current/20 bg-transparent pb-1 g-lede outline-none"
+                    className="g-form-input min-w-0 flex-1"
                   />
                 )}
 
@@ -811,12 +813,12 @@ export function CategoryForm({
 
               {/* WHAT SOMEBODY ELSE WOULD NEED TO KNOW, in one quiet line. */}
               {detailBits(item).length ? (
-                <p className="ml-8 mt-1.5 g-meta opacity-45">
+                <p className="ml-8 mt-2 g-form-label">
                   {detailBits(item).join(" · ")}
                 </p>
               ) : null}
               {item.note ? (
-                <p className="ml-8 mt-1 g-meta opacity-35">{item.note}</p>
+                <p className="ml-8 mt-1 g-form-label">{item.note}</p>
               ) : null}
             </li>
             );
@@ -825,7 +827,7 @@ export function CategoryForm({
 
         {/* PRIORITY IS FOR ASKS. Gives are never ranked against each other. */}
         {records.length && category !== "give" ? (
-          <p className="mt-3 g-meta">#1 is your priority</p>
+          <p className="mt-4 g-form-label">#1 is your priority</p>
         ) : null}
 
         {/* BORROW OR LEND — asked here ONLY when the door did not already ask.
@@ -854,15 +856,15 @@ export function CategoryForm({
         ) : null}
 
         {full ? (
-          <p className="mt-7 g-meta">
+          <p className="mt-10 g-form-label">
             that’s {limit}
             {category === "borrow" ? (side === "lend" ? " lends" : " borrows") : ""} —
             remove one to add another
           </p>
         ) : (
           <div
-            className={`mt-7 space-y-4 ${
-              records.length === 0 ? "" : "g-rule pt-5"
+            className={`mt-12 space-y-8 ${
+              records.length === 0 ? "" : "g-rule pt-8"
             }`}
           >
 
@@ -878,7 +880,7 @@ export function CategoryForm({
                 placeholder={
                   category === "borrow" ? SIDE_ASK[side] : CATEGORY_ASK[category]
                 }
-                className="min-w-0 flex-1 border-b border-current/25 bg-transparent pb-1 g-lede outline-none placeholder:opacity-35"
+                className="g-form-input min-w-0 flex-1"
               />
               {canPhoto && photos.length === 0 ? (
                 <button
@@ -900,13 +902,13 @@ export function CategoryForm({
                   if (e.key === "Enter") add();
                 }}
                 placeholder="what would you like in return?"
-                className="w-full border-b border-current/25 bg-transparent pb-1 g-lede outline-none placeholder:opacity-35"
+                className="g-form-input w-full"
               />
             ) : null}
 
             {/* A COUNTDOWN ONLY WHEN THE END IS IN SIGHT. */}
             {titleLeft <= TITLE_COUNTDOWN_AT ? (
-              <p className="g-meta opacity-45">{titleLeft} characters left</p>
+              <p className="g-form-label">{titleLeft} characters left</p>
             ) : null}
 
             {/*
@@ -967,7 +969,7 @@ export function CategoryForm({
                       onChange={(e) => setDetail({ where: e.target.value.slice(0, 24) })}
                       placeholder="neighbourhood / area"
                       aria-label="neighbourhood or general area"
-                      className="w-40 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
+                      className="w-40 border-b border-current/15 bg-transparent pb-1 text-sm font-normal lowercase outline-none placeholder:opacity-30"
                     />
                   ) : null}
                 </Field>
@@ -996,7 +998,7 @@ export function CategoryForm({
                           })
                         }
                         aria-label={isWindow ? "first day" : "date"}
-                        className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                        className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
                       />
                       {details.date ? (
                         <Clear
@@ -1023,7 +1025,7 @@ export function CategoryForm({
                         value={details.until ?? ""}
                         onChange={(e) => setDetail({ until: e.target.value || undefined })}
                         aria-label={isWindow ? "back by" : "available until"}
-                        className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                        className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
                       />
                       {details.until ? (
                         <Clear
@@ -1046,9 +1048,9 @@ export function CategoryForm({
                         })
                       }
                       aria-label="start time"
-                      className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                      className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
                     />
-                    <span className="g-meta opacity-40">to</span>
+                    <span className="g-form-label">to</span>
                     <input
                       type="time"
                       value={details.endTime ?? ""}
@@ -1059,7 +1061,7 @@ export function CategoryForm({
                         })
                       }
                       aria-label="end time"
-                      className="border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none"
+                      className="border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none"
                     />
                     {details.startTime || details.endTime ? (
                       <Clear
@@ -1198,7 +1200,7 @@ export function CategoryForm({
                         }}
                         placeholder="e.g. 1200"
                         aria-label="cost of this wish"
-                        className="w-28 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium outline-none placeholder:opacity-30"
+                        className="w-28 border-b border-current/15 bg-transparent pb-1 text-sm font-normal outline-none placeholder:opacity-30"
                       />
                       {details.fundTarget ? (
                         <Clear
@@ -1210,7 +1212,7 @@ export function CategoryForm({
                         />
                       ) : null}
                     </Line>
-                    <p className="w-full g-meta opacity-45">
+                    <p className="w-full g-form-label">
                       people can pledge toward it in fund · no payment is processed yet
                     </p>
                   </Field>
@@ -1233,7 +1235,7 @@ export function CategoryForm({
                         }
                         placeholder={field.ask}
                         aria-label={field.ask}
-                        className="w-36 border-b border-current/15 bg-transparent pb-0.5 text-sm font-medium lowercase outline-none placeholder:opacity-30"
+                        className="w-36 border-b border-current/15 bg-transparent pb-1 text-sm font-normal lowercase outline-none placeholder:opacity-30"
                       />
                     ))}
                   </div>
@@ -1244,14 +1246,14 @@ export function CategoryForm({
 
 
             {/* SHORT AND SWEET — said under the field, not above it. */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <input
                 value={note}
                 onChange={(e) => setNote(e.target.value.slice(0, noteMax))}
                 placeholder="anything else we should know? (optional)"
-                className="w-full border-b border-current/15 bg-transparent pb-1 text-base font-medium lowercase outline-none placeholder:opacity-30"
+                className="g-form-input w-full"
               />
-              <p className="g-meta opacity-40">
+              <p className="g-form-label pt-1">
                 keep it short and sweet
                 {noteLeft <= NOTE_COUNTDOWN_AT ? ` · ${noteLeft} left` : ""}
               </p>
@@ -1294,7 +1296,7 @@ export function CategoryForm({
 
         {/* THE PUBLISH MOMENT — loud, in the world's own colour and voice, and
             always the same place where giver answers back. */}
-        <div ref={outcome} className="mt-7 space-y-4">
+        <div ref={outcome} className="mt-12 space-y-4">
           <button
             type="button"
             onClick={() => void add()}

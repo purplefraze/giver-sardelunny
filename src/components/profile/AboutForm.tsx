@@ -191,7 +191,7 @@ export function AboutForm({
   return (
     <div
       data-world="profile"
-      className="relative h-full w-full overflow-y-auto"
+      className="g-form relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={() => void save()} label="back to my g" sticky />
@@ -351,8 +351,8 @@ export function AboutForm({
               <button type="button" onClick={() => setReturning(true)} className="g-meta" style={{ color: returning ? "var(--giver-me)" : undefined, opacity: returning ? 1 : 0.45 }}>i already joined</button>
             </div>
             <label className="block">
-              <span className="g-meta" style={{ color: "var(--giver-me)" }}>your email</span>
-              <input type="email" required autoComplete="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="g-name mt-1 w-full border-b border-current/20 bg-transparent pb-2 outline-none" />
+              <span className="g-form-label">your email</span>
+              <input type="email" required autoComplete="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="g-form-input mt-3 w-full" />
             </label>
             <Secret
               label="a password"
@@ -549,9 +549,7 @@ function Secret({
 }) {
   return (
     <label className="block">
-      <span className="g-meta" style={{ color: "var(--giver-me)" }}>
-        {label}
-      </span>
+      <span className="g-form-label">{label}</span>
       <input
         type={show ? "text" : "password"}
         value={value}
@@ -562,7 +560,7 @@ function Secret({
         onChange={(e) => onChange(e.target.value.slice(0, 64))}
         onBlur={onBlur}
         placeholder={placeholder}
-        className="g-name mt-1 w-full bg-transparent outline-none placeholder:font-medium placeholder:opacity-30"
+        className="g-form-input mt-3 w-full"
         style={{ textTransform: "none" }}
       />
     </label>

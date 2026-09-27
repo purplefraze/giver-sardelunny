@@ -545,6 +545,55 @@
 
 
 
+/* ---------------------------------------------------------------
+   FORMS — THE ONE PLACE COMPLEMENTARY COLOURS LIVE.
+   Complements tell a form's HEADINGS apart from the words a person types;
+   they never appear inside the Living G's loops (loops use --world-g).
+   Type spec from the form mockups (/workspace/giver-form-mockups):
+     heading      light (300) lowercase, the seat's complement
+     label        11px, 0.1em tracking, warm grey #9A958D
+     input text   warm charcoal #3A3733
+     placeholder  warm grey #B8B3AB
+     field        1px warm hairline #ECE9E4
+   Opt in with .g-form on the form's root (CategoryForm, FundForm, AboutForm).
+   --------------------------------------------------------------- */
+:root {
+  --form-ink: #3a3733;
+  --form-placeholder: #b8b3ab;
+  --form-hairline: #ece9e4;
+  --form-label: #9a958d;
+}
+
+[data-world="give"] { --form-heading: var(--mode-give-complement); }
+[data-world="lend"] { --form-heading: var(--mode-lend-complement); }
+[data-world="wish"] { --form-heading: var(--mode-wish-complement); }
+[data-world="borrow"] { --form-heading: var(--mode-borrow-complement); }
+[data-world="trade"] { --form-heading: var(--mode-trade-complement); }
+[data-world="fund"] { --form-heading: var(--mode-fund-complement); }
+[data-world="me"],
+[data-world="profile"],
+[data-world="home"] { --form-heading: var(--mode-giver-complement); }
+
+/* Inside a form every hairline (g-rule, the bottom bar) is the warm hairline. */
+.g-form {
+  --edit-rule: var(--form-hairline);
+}
+
+/* Typed words are warm charcoal on a 1px warm hairline; placeholders warm grey.
+   Colour only — sizes, behaviour and fields are untouched. */
+.g-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+.g-form textarea {
+  color: var(--form-ink);
+  border-color: var(--form-hairline);
+  caret-color: var(--world-g);
+}
+
+.g-form input::placeholder,
+.g-form textarea::placeholder {
+  color: var(--form-placeholder);
+  opacity: 1;
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -882,4 +931,58 @@
   letter-spacing: 0.2em;
   font-variant-numeric: tabular-nums;
   opacity: 0.4;
+}
+
+
+/* ---- FORM REGISTERS (see FORMS above). ---- */
+
+/* A FORM HEADING — light, lowercase, in the seat's complement. */
+@utility g-form-heading {
+  font-family: var(--giver-font);
+  font-weight: 300;
+  font-size: 2.25rem;
+  line-height: 1.08;
+  letter-spacing: -0.024em;
+  text-transform: lowercase;
+  padding-bottom: 0.06em;
+  color: var(--form-heading, var(--world-g));
+}
+
+/* A FIELD LABEL — small, airy, warm grey. */
+@utility g-form-label {
+  font-family: var(--giver-font);
+  font-weight: 400;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+  color: var(--form-label);
+}
+
+/* A FORM LINE OF PROSE (the question under a heading) — light charcoal. */
+@utility g-form-lede {
+  font-family: var(--giver-font);
+  font-weight: 300;
+  font-size: 1.1875rem;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  text-transform: lowercase;
+  color: var(--form-ink);
+}
+
+/* A FIELD — 17px charcoal on a 1px warm hairline, placeholder warm grey. */
+@utility g-form-input {
+  font-family: var(--giver-font);
+  font-weight: 400;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  letter-spacing: -0.003em;
+  text-transform: lowercase;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--form-hairline);
+  border-radius: 0;
+  padding-bottom: 0.75rem;
+  outline: none;
+  color: var(--form-ink);
 }

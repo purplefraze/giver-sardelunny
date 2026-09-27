@@ -85,7 +85,7 @@ export function FundForm({
   return (
     <div
       data-world="fund"
-      className="relative h-full w-full overflow-y-auto"
+      className="g-form relative h-full w-full overflow-y-auto"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow
@@ -94,15 +94,12 @@ export function FundForm({
         sticky
       />
 
-      <div className="g-page pb-[8.5rem] pt-16">
-        <h1 className="g-heading" style={{ color: FUND }}>
-          fund a wish
-        </h1>
-        <p className="g-body mt-2 max-w-[26ch]" style={{ color: FUND }}>
-          chip in toward someone’s wish.
-        </p>
+      <div className="g-page pb-[8.5rem] pt-24">
+        {/* FORMS ONLY: the heading wears Fund's complement (--form-heading). */}
+        <h1 className="g-form-heading">fund a wish</h1>
+        <p className="g-form-lede mt-4 max-w-[26ch]">chip in toward someone’s wish.</p>
         {/* SAID PLAINLY, EVERY TIME: nothing is charged, nothing is sparks. */}
-        <p className="mt-2 g-meta">
+        <p className="mt-3 g-form-label">
           pledge record only · payment isn’t processed yet · no sparks involved
         </p>
 
@@ -114,7 +111,7 @@ export function FundForm({
             const done = fullyFunded(target, total);
             const open = wish.status === "active" && wish.published && wish.ownerId !== ME_ID;
             return (
-              <div className="mt-8">
+              <div className="mt-12">
                 <p className="g-post text-[1.9rem]" style={{ color: WISH }}>
                   {itemLine(wish)}
                 </p>
@@ -160,9 +157,9 @@ export function FundForm({
                 </div>
 
                 {open && !done ? (
-                  <div className="mt-7 space-y-4">
+                  <div className="mt-10 space-y-6">
                     <label className="flex items-end gap-2">
-                      <span className="g-lede pb-1" style={{ color: FUND }}>
+                      <span className="g-form-lede pb-3" style={{ color: FUND }}>
                         $
                       </span>
                       <input
@@ -179,7 +176,7 @@ export function FundForm({
                         }}
                         placeholder="how much?"
                         aria-label="pledge amount"
-                        className="min-w-0 flex-1 border-b border-current/25 bg-transparent pb-1 g-lede outline-none placeholder:opacity-35"
+                        className="g-form-input min-w-0 flex-1"
                       />
                     </label>
                     <button
@@ -213,15 +210,15 @@ export function FundForm({
             );
           })()
         ) : (
-          <ul className="mt-8 space-y-4">
+          <ul className="mt-12 space-y-5">
             {wishes.length === 0 ? (
-              <li className="g-meta">no wishes to fund right now</li>
+              <li className="g-form-label">no wishes to fund right now</li>
             ) : null}
             {wishes.map((w) => {
               const target = wishTarget(w);
               const total = fundedTotal(funds, w.id);
               return (
-                <li key={w.id} className="g-rule pt-4 first:border-0 first:pt-0">
+                <li key={w.id} className="g-rule pt-5 first:border-0 first:pt-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -256,10 +253,8 @@ export function FundForm({
 
         {/* MY PLEDGES — a record, never a receipt: nothing was charged. */}
         {mine.length ? (
-          <div className="g-rule mt-10 pt-5">
-            <h2 className="g-heading" style={{ color: FUND }}>
-              my pledges
-            </h2>
+          <div className="g-rule mt-12 pt-8">
+            <h2 className="g-form-heading text-[1.5rem]">my pledges</h2>
             <ul className="mt-3 space-y-2">
               {mine.map((c) => {
                 const w = items.items.find((i) => i.id === c.wishId);

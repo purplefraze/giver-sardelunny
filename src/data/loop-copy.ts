@@ -29,7 +29,7 @@ const LOOP_COPY: Record<Seat, LoopCopy> = {
   fund: { middle: "ask for funding", bottom: "fund a wish" },
   borrow: { middle: "borrow something", bottom: "what’s to borrow" },
   wish: { middle: "make a wish", bottom: "grant a wish" },
-  giver: { middle: "my g", bottom: "my community" },
+  giver: { middle: "my g", bottom: "my communi-g" },
 };
 
 export function loopCopyFor(seat: Seat): LoopCopy {

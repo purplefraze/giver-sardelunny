@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { connectionsStore, type Connection } from "@/data/connections";
 import { itemsStore, ME_ID, type ItemType } from "@/data/items";
+import { giveCapState } from "@/data/give-cap";
 import { sessionStore } from "@/data/cloud/session";
 import { localIdForProfile, profileIdForLocal } from "@/data/cloud/directory";
 import { changeConnectionState } from "@/lib/connections.functions";
@@ -53,6 +54,14 @@ export async function startConnection(itemId: string): Promise<string> {
   if (!me) throw new Error("finish joining giver first");
   const item = itemsStore.get().items.find((candidate) => candidate.id === itemId);
   if (!item || item.ownerId === ME_ID) throw new Error("this connection cannot start");
+  /* THE THREE-GIVES CAP (client-side; the server rule is in the unapplied SQL). */
+  const state = connectionsStore.get();
+  if (
+    item.type === "give" &&
+    !state.connections.some((c) => c.itemId === item.id && c.helperId === ME_ID && c.state !== "cancelled") &&
+    giveCapState(state.connections, itemsStore.get().items, ME_ID).capped
+  )
+    throw new Error("you’ve received three gives. time to pass something on?");
   const ownerId = profileIdForLocal(item.ownerId);
   const cloudId = item.cloudId ?? (item.id.startsWith("cloud:") ? item.id.slice(6) : null);
   if (!ownerId || !cloudId) throw new Error("this give is not available yet");

@@ -18,6 +18,7 @@
 
 import { ME_ID, itemsStore, type ItemType } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
+import { giveCapState } from "@/data/give-cap";
 
 export type ConnectionState =
   /** Intent expressed. Messaging is open. The activity is STILL ACTIVE. */
@@ -244,6 +245,14 @@ export const connectionsStore = {
     if (!item) return { ok: false, reason: "gone" };
     if (item.ownerId === byId) return { ok: false, reason: "self" };
     if (item.status !== "active") return { ok: false, reason: "closed" };
+    /* THE THREE-GIVES CAP (client-side; server version unapplied). */
+    if (
+      item.type === "give" &&
+      byId === ME_ID &&
+      !s.connections.some((c) => c.itemId === itemId && c.helperId === byId && isOpen(c)) &&
+      giveCapState(s.connections, itemsStore.get().items, ME_ID).capped
+    )
+      return { ok: false, reason: "cap" };
 
     const existing = s.connections.find(
       (c) => c.itemId === itemId && c.helperId === byId && isOpen(c),

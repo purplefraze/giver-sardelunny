@@ -80,6 +80,8 @@ export function Conversation({
   /* THE STATE THIS THREAD LIVES IN — purple asking, green offering, orange trade. */
   const state = exchangeState(item ? item.type : "wish");
   const stateColour = STATE_COLOUR[state];
+  /** THE RECIPIENT OF A GIVE says "got it" (the existing claim/confirm). */
+  const gotIt = c.type === "give" && c.helperId === ME_ID;
   const themColour = OTHER_PERSON_COLOUR[state];
   /* WHO IS SPEAKING: me blue, them red / yellow / orange. Never by who posted. */
   const toneOf = (fromId: string) => (fromId === ME_ID ? SELF_COLOUR : themColour);
@@ -162,8 +164,13 @@ export function Conversation({
         One person says it happened; the other is asked. Sparks move only when
         both have said yes, and "no" never decides who is right.
       */}
+      {/*
+        "GOT IT" — the recipient of a give confirms receipt with the existing
+        claim/confirm step (it records them in confirmedBy / helper_confirmed).
+        That confirmation is what lifts the giver's three-gives cap.
+      */}
       {c.state !== "cancelled" && c.state !== "verified" ? (
-        <div className="g-rule mt-6 pt-5">
+        <div className="g-rule mt-6 pt-5" data-testid="did-it-happen">
           {/* A BORROW IS NOT FINISHED AT PICKUP. Both halves of the cycle first. */}
           {c.type === "borrow" && c.state !== "awaiting" ? (
             <div className="mb-4 flex flex-wrap items-baseline gap-5">
@@ -196,7 +203,7 @@ export function Conversation({
             ) : (
               <div>
                 <p className="g-name" style={{ color: stateColour }}>
-                  did this happen?
+                  {gotIt ? "did you get it?" : "did this happen?"}
                 </p>
                 <div className="mt-3 flex items-baseline gap-6">
                   <button
@@ -208,7 +215,7 @@ export function Conversation({
                     className="g-display-sm"
                     style={{ color: stateColour }}
                   >
-                    yes
+                    {gotIt ? "got it" : "yes"}
                   </button>
                   <button
                     type="button"
@@ -247,7 +254,7 @@ export function Conversation({
               className="g-name text-left"
               style={{ color: stateColour }}
             >
-              this happened
+              {gotIt ? "got it" : "this happened"}
             </button>
           ) : (
             <p className="g-meta opacity-45">

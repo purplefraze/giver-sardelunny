@@ -23,6 +23,8 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 import { startConnection } from "@/data/cloud/connections-sync";
 import { sessionStore } from "@/data/cloud/session";
 import { canEngageCommunity } from "@/data/community-access";
+import { giveCapState } from "@/data/give-cap";
+import { CapScreen } from "@/components/give/CapScreen";
 
 
 /**
@@ -57,6 +59,7 @@ export function ActivityDetail({
   onOpenConnection,
   onOpenProfile,
   onNeedGive,
+  onStartGive,
   onClose,
 }: {
   itemId: string;
@@ -65,6 +68,8 @@ export function ActivityDetail({
   onOpenProfile?: (ownerId: string) => void;
   /** Communi-g is visible; engaging still needs one active give. */
   onNeedGive?: () => void;
+  /** The three-gives prompt's green circle: start a give. */
+  onStartGive?: () => void;
   onClose: () => void;
 }) {
   const items = useItems();
@@ -75,6 +80,9 @@ export function ActivityDetail({
   useMemberEdits();
   const [editing, setEditing] = useState(false);
   const [problem, setProblem] = useState("");
+  /* THE THREE-GIVES CAP (give-cap.ts, client-side): an overlay, so closing it
+     returns exactly here. */
+  const [capOpen, setCapOpen] = useState(false);
   const item = items.items.find((i) => i.id === itemId);
 
 
@@ -99,6 +107,10 @@ export function ActivityDetail({
     (c) => isOpen(c) && c.helperId !== ME_ID,
   ).length;
   const fill = ACTIVITY_FILL[item.type];
+  /* ACTING on someone else's give is blocked at the cap; looking never is.
+     A conversation that already exists (one of the three) stays open. */
+  const cap = giveCapState(links.connections, items.items, ME_ID);
+  const capBlocks = item.type === "give" && !isMine && !mine && cap.capped;
 
   /**
    * ONE DOOR, TWO WAYS THROUGH IT. Messaging and responding both open the
@@ -109,6 +121,10 @@ export function ActivityDetail({
     buzz();
     if (mine) {
       onOpenConnection(mine.id);
+      return;
+    }
+    if (capBlocks) {
+      setCapOpen(true);
       return;
     }
     /* LOOKING IS FREE. Responding needs one active give of your own. */
@@ -247,7 +263,7 @@ export function ActivityDetail({
             <button
               type="button"
               onClick={open}
-              className="text-left g-display-sm"
+              className={`text-left g-display-sm ${capBlocks ? "gf-faded" : ""}`}
               style={{ color: fill }}
             >
               {mine ? "open the conversation" : actionWord(item)}
@@ -257,7 +273,7 @@ export function ActivityDetail({
             <button
               type="button"
               onClick={open}
-              className="text-left text-[13px] font-black lowercase tracking-[0.26em]"
+              className={`text-left text-[13px] font-black lowercase tracking-[0.26em] ${capBlocks ? "gf-faded" : ""}`}
               style={{ color: "var(--giver-messages)" }}
             >
               {`message ${who}`}
@@ -304,6 +320,16 @@ export function ActivityDetail({
         ) : null}
       </div>
 
+      {capOpen ? (
+        <CapScreen
+          kind={cap.waiting ? "waiting" : "prompt"}
+          onBack={() => setCapOpen(false)}
+          onGive={() => {
+            setCapOpen(false);
+            onStartGive?.();
+          }}
+        />
+      ) : null}
       {admin && editing ? (
         <AdminItemEditor itemId={item.id} onClose={() => setEditing(false)} />
       ) : null}

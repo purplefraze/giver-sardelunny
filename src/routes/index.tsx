@@ -115,7 +115,6 @@ function readFirstUseSeat(): ActivitySeat | null {
 }
 import { useItems } from "@/hooks/use-items";
 import {
-  ACTIVITY_FILL,
   ME_ID,
   communityItems,
   itemLine,
@@ -136,6 +135,7 @@ import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
 import { hasLoopCopy, loopCopyFor, seatHintRetired } from "@/data/loop-copy";
 import { LOOP_HINT_MS, loopHint, loopLine } from "@/components/living-g/loop-hint";
+import { LOOP_TEXT_FILL } from "@/components/living-g/type-scale";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 
 /**
@@ -627,8 +627,9 @@ function Index() {
     : communityItems(items, { type: mode as ItemType, excludeOwnerId: ME_ID });
   const firstTheirs = theirs[0];
   const community = firstTheirs ? itemLine(firstTheirs) : null;
-  /** The ticker's ink: the seat's own activity colour. */
-  const tickerFill = funding ? "var(--activity-fund)" : ACTIVITY_FILL[mode as ItemType];
+  /** The ticker's ink: the seat's own colour — the G's (--world-g via
+      LOOP_TEXT_FILL), so Lend reads lend, Fund reads hot pink, My G reads blue. */
+  const tickerFill = LOOP_TEXT_FILL;
 
   /**
    * NEVER A LIST INSIDE THE G: one item, then how much more there is — as

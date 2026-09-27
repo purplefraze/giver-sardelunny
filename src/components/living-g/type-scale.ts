@@ -175,7 +175,11 @@ export const LOOP_ROLE_STYLE: Record<
 };
 
 
-/** The one in-loop text colour: the loop colour's complement, from tokens. */
+/**
+ * The one in-loop text colour: the active seat's OWN colour (--world-text now
+ * resolves to --world-g, the same token as the G and the toggle). Complements
+ * are reserved for form headings and never appear inside a loop.
+ */
 export const LOOP_TEXT_FILL = "var(--world-text)";
 
 /** Minimum readable size before we wrap instead of shrinking further. */

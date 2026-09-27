@@ -205,7 +205,9 @@
   --giver-participation: var(--giver-orange);
   --giver-generosity: var(--state-give);
 
-  /* One approved bright complementary in-loop type colour per semantic. */
+  /* One approved bright complementary colour per semantic. RESERVED FOR FORMS
+     ONLY (form headings, to tell them apart from input text) — never used for
+     type inside the Living G's loops, which is always the seat's own colour. */
   --giver-green-complement: oklch(0.58 0.28 348); /* green -> hot pink */
   --giver-seafoam-complement: oklch(0.6 0.26 4); /* seafoam -> hot pink */
   --giver-purple-complement: oklch(0.72 0.18 96); /* purple -> bright yellow */
@@ -344,9 +346,13 @@
      --world-bg    the paper
      --world-g     the Living G colour
      --world-ink   page furniture (identity, back arrow) — a deep tint of the G
-     --world-text  IN-LOOP TYPOGRAPHY = the G colour's complement, pulled to a
-                   readable lightness. This is the only colour text inside a
-                   loop may ever use.
+     --world-text  IN-LOOP TYPOGRAPHY = the world's OWN G colour (--world-g,
+                   i.e. the seat's --mode-* token) — the same colour as the G
+                   and the toggle, on every seat including Fund and My G. This
+                   is the only colour text inside a loop may ever use. The
+                   complement tokens (--mode-*-complement) are NOT used inside
+                   loops any more: they are reserved for FORMS (headings), see
+                   --form-heading below.
    --------------------------------------------------------------- */
 
 /* Home / Giver — my own world: green. */
@@ -354,7 +360,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-giver);
   --world-ink: oklch(0.38 0.16 260);
-  --world-text: var(--mode-giver-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -365,7 +371,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-wish);
   --world-ink: oklch(0.4 0.2 300);
-  --world-text: var(--mode-wish-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -374,7 +380,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-borrow);
   --world-ink: oklch(0.42 0.18 300);
-  --world-text: var(--mode-borrow-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -387,7 +393,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-fund);
   --world-ink: oklch(0.45 0.2 358.9);
-  --world-text: var(--mode-fund-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -396,7 +402,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-give);
   --world-ink: oklch(0.46 0.16 145);
-  --world-text: var(--mode-give-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -405,7 +411,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-lend);
   --world-ink: oklch(0.44 0.14 146);
-  --world-text: var(--mode-lend-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -415,7 +421,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-trade);
   --world-ink: oklch(0.44 0.16 48);
-  --world-text: var(--mode-trade-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-other-trade);
 }
 
@@ -424,7 +430,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-green);
   --world-ink: oklch(0.42 0.14 145);
-  --world-text: var(--giver-green-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -433,7 +439,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-green);
   --world-ink: oklch(0.42 0.14 145);
-  --world-text: var(--giver-green-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -442,7 +448,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--giver-orange);
   --world-ink: oklch(0.46 0.16 48);
-  --world-text: var(--giver-orange-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self-community);
 }
 
@@ -454,7 +460,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--person-other-give);
   --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-yellow-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -463,7 +469,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--person-other-wish);
   --world-ink: oklch(0.42 0.18 300);
-  --world-text: var(--giver-pink-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -472,7 +478,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--person-other-give);
   --world-ink: oklch(0.52 0.15 85);
-  --world-text: var(--giver-yellow-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -480,7 +486,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--person-other-trade);
   --world-ink: oklch(0.46 0.16 52);
-  --world-text: var(--giver-orange-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -490,7 +496,7 @@
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-giver);
   --world-ink: oklch(0.38 0.16 260);
-  --world-text: var(--mode-giver-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
 }
 
@@ -499,7 +505,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--state-community);
   --world-ink: oklch(0.46 0.16 48);
-  --world-text: var(--giver-orange-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self-community);
 }
 
@@ -511,7 +517,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--state-wish);
   --world-ink: oklch(0.4 0.2 300);
-  --world-text: var(--giver-purple-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
   --convo-other: var(--person-other-wish);
 }
@@ -520,7 +526,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--state-give);
   --world-ink: oklch(0.42 0.15 145);
-  --world-text: var(--giver-green-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-self);
   --convo-other: var(--person-other-give);
 }
@@ -529,7 +535,7 @@
   --world-bg: var(--giver-paper);
   --world-g: var(--person-self); /* trade reads blue + orange */
   --world-ink: oklch(0.4 0.17 258);
-  --world-text: var(--giver-blue-complement);
+  --world-text: var(--world-g);
   --world-accent: var(--person-other-trade);
   --convo-other: var(--person-other-trade);
 }

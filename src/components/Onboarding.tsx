@@ -9,8 +9,10 @@ import type { Mode } from "@/components/living-g/EarSelector";
 /**
  * TESTING-PHASE ONBOARDING — AUTH FIRST, THEN THE OPENING.
  *
- *   signed out      AuthGate (MagicLinkView: plain "giver", email, send link)
- *                   -> magic-link session -> the opening -> the wheel at Give
+ *   signed out      AuthGate (SignInView: "giver", email, send circle; then a
+ *                   6-digit code in the same circle — the email link still
+ *                   works as a fallback) -> session -> the opening -> the
+ *                   wheel at Give
  *   signed in       straight to the opening -> the wheel at Give
  *   (loading)       plain white until the session answers — not a splash
  *
@@ -73,7 +75,7 @@ export function Onboarding({
     return <div className="h-full w-full" style={{ background: "var(--seat-bg)" }} />;
   }
   if (stage === "auth") {
-    /* The existing magic-link success path hands over to the opening. */
+    /* Code (or link) success hands over to the opening. */
     return <AuthGate onDone={() => setStage("opening")} />;
   }
   return <LaunchScreen onDone={complete} />;

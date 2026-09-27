@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +10,12 @@ import { normaliseHandle } from "@/data/account";
 import { initializeFirstUse } from "@/data/first-use";
 import { requestOpening } from "@/data/opening";
 import { haptics } from "@/lib/haptics";
-import { MagicLinkView } from "@/components/onboarding/MagicLinkView";
+import { SignInView } from "@/components/onboarding/SignInView";
+import { useOtpSignIn } from "@/components/onboarding/use-otp-sign-in";
 
 /**
- * TESTING-PHASE AUTH. Email magic link only — no phone, password, or @name.
+ * TESTING-PHASE AUTH. Email only — a 6-digit code entered in the same circle
+ * (the email's link still works as a fallback) — no phone, password, or @name.
  * Invite token is kept if present; handle is derived silently from the email.
  *
  * ⚠ TESTING ONLY — NOT THE SHIPPED PRODUCT: signing in here skips the spark
@@ -25,9 +27,9 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "sign in · giver" },
-      { name: "description", content: "sign in to giver with a magic link." },
+      { name: "description", content: "sign in to giver with your email." },
       { property: "og:title", content: "sign in · giver" },
-      { property: "og:description", content: "one email. a magic link." },
+      { property: "og:description", content: "one email. one code." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -38,10 +40,6 @@ export const Route = createFileRoute("/auth")({
 function AuthScreen() {
   const { invite } = Route.useSearch();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const finishing = useRef(false);
 
   useEffect(() => {
@@ -92,39 +90,17 @@ function AuthScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once
   }, []);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/` },
-      });
-      if (otpError) throw otpError;
-      /* The link may be opened in a new tab: the opening is owed there too
-         (index.tsx only plays it once that session is ready). */
-      requestOpening();
-      setSent(true);
-      haptics.light();
-    } catch (err) {
-      setError(err instanceof Error ? err.message.toLowerCase() : "that didn't work");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const otp = useOtpSignIn({
+    /* The link may be opened in a new tab: the opening is owed there too
+       (index.tsx only plays it once that session is ready). */
+    onSent: () => requestOpening(),
+    onVerified: (email) => void finish(email),
+  });
 
   return (
     <main className="min-h-screen" style={{ background: "var(--seat-bg)" }}>
       <div className="h-screen">
-        <MagicLinkView
-          email={email}
-          onEmail={setEmail}
-          busy={busy}
-          sent={sent}
-          error={error}
-          onSubmit={submit}
-        />
+        <SignInView otp={otp} />
       </div>
     </main>
   );

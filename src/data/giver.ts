@@ -404,6 +404,13 @@ const applyMemberEdits = rebuildMembers;
 memberEditsStore.subscribe(applyMemberEdits);
 applyMemberEdits();
 
+/**
+ * THE WRITTEN SAMPLE RECORD ONLY — never REMOTE (real testers from the
+ * database) and never admin/member edits. Safe to show before sign-in; the
+ * sign-in feed (src/data/signin-feed.ts) reads this and nothing else.
+ */
+export const sampleMembers = (): readonly Member[] => BASE_MEMBERS;
+
 /** The untouched written record, so an admin edit can always be reverted. */
 export const baseMemberById = (id: string) => BASE_MEMBERS.find((m) => m.id === id);
 

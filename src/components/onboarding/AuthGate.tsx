@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { joinGiver } from "@/lib/invites.functions";
@@ -6,20 +6,25 @@ import { sessionStore } from "@/data/cloud/session";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
 import { haptics } from "@/lib/haptics";
-import { MagicLinkView } from "@/components/onboarding/MagicLinkView";
+import { SignInView } from "@/components/onboarding/SignInView";
+import { useOtpSignIn } from "@/components/onboarding/use-otp-sign-in";
 
 /**
- * THIN MAGIC-LINK GATE for the testing-phase onboarding. Email only — no
- * password, phone, or @name form. On session, silently ensure a profile then
- * hand control back to Onboarding.
+ * THIN SIGN-IN GATE for the testing-phase onboarding. Email only — no
+ * password, phone, or @name form. The email gets a 6-digit code (entered in
+ * the same circle, no redirect) AND a link (the fallback, any tab). On
+ * session, silently ensure a profile then hand control back to Onboarding
+ * (-> the Living G opening -> the wheel at Give).
  */
 export function AuthGate({ onDone }: { onDone: () => void }) {
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /* RE-ENTRY GUARD: the session can announce itself more than once (the
+     SIGNED_IN event, the ready check, the code verify, a link in another tab);
+     joinGiver must only ever run once. */
+  const finishing = useRef(false);
 
   async function finish(emailAddr: string | null) {
+    if (finishing.current) return;
+    finishing.current = true;
     const token =
       typeof window !== "undefined"
         ? (window.localStorage.getItem("giver.invite.token") ?? undefined)
@@ -44,6 +49,8 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
     onDone();
   }
 
+  const otp = useOtpSignIn({ onVerified: (email) => void finish(email) });
+
   useEffect(() => {
     const current = sessionStore.get();
     if (current.status === "ready") {
@@ -57,33 +64,5 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once gate
   }, []);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/` },
-      });
-      if (otpError) throw otpError;
-      setSent(true);
-      haptics.light();
-    } catch (err) {
-      setError(err instanceof Error ? err.message.toLowerCase() : "that didn't work");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <MagicLinkView
-      email={email}
-      onEmail={setEmail}
-      busy={busy}
-      sent={sent}
-      error={error}
-      onSubmit={submit}
-    />
-  );
+  return <SignInView otp={otp} />;
 }

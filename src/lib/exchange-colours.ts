@@ -7,7 +7,7 @@ import type { ItemType } from "@/data/items";
  * PURPLE   = wish + borrow: the world an asking interaction lives in.
  * GREEN    = give + lend: the world a generous interaction lives in.
  * ORCHID   = the other person on the asking (wish / borrow) side (#C154C1).
- * HOT PINK = FUND only (--mode-fund, #FF1F8E) — never a person colour.
+ * CLAY BROWN = FUND only (--mode-fund, #9E4B2C) — never a person colour.
  * SEAFOAM  = lend.
  * YELLOW   = the person receiving a give / lend.
  * ORANGE   = community, and the other person in a trade.

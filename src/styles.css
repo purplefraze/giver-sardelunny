@@ -153,7 +153,7 @@
      saturated, clean, editorial, playful — never pastel, muted or corporate.
 
      BLUE     = me / the current user, always.
-     HOT PINK = FUND, and only Fund (#FF1F8E, --mode-fund below).
+     CLAY     = FUND, and only Fund (#9E4B2C, --mode-fund below).
      ORCHID   = the other person on the asking (wish / borrow) side (#C154C1).
      PURPLE   = WISH — and the world a wish / borrow interaction lives in.
      SEAFOAM  = LEND.
@@ -168,9 +168,9 @@
   /* ORCHID — the Wish world's "other" colour (#C154C1). Recast from hot pink
      (--giver-pink, #E85088) so FUND alone owns hot pink. */
   --giver-orchid: oklch(0.624 0.191 327.6); /* #C154C1 */
-  /* HOT PINK — FUND (#FF1F8E). Chosen to read clearly hot pink on white and to
-     sit apart from wish purple (300°), orchid (328°) and trade orange. */
-  --giver-hot-pink: var(--mode-fund); /* #FF1F8E — read from the seat map */
+  /* FUND — deep clay brown (#9E4B2C), read from the seat map. The token keeps
+     its legacy name (--giver-hot-pink) so nothing that references it moves. */
+  --giver-hot-pink: var(--mode-fund); /* #9E4B2C — read from the seat map */
   --giver-blue: oklch(0.58 0.2 250); /* BLUE — me, the current user */
   --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the receiving person */
   --giver-orange: oklch(0.7 0.2 46); /* ORANGE — community, trade partner */
@@ -237,7 +237,7 @@
          my g    4:30   #3F9DBF  quiet turquoise (the ONLY blue-family seat;
                                  replaces the old patriot blue app-wide)
          trade   6:00   #FF6A13  saharan orange
-         fund    7:30   #FF1F8E  hot pink
+         fund    7:30   #9E4B2C  deep clay brown
          borrow  9:00   #A58AD6  lavender
          wish    10:30  #9D00FF  prince purple
        TEXT TINTS for the two pale seats (form headings, tags and selected
@@ -249,7 +249,7 @@
   --mode-lend: #6dc2a8;
   --mode-giver: #3f9dbf;
   --mode-trade: #ff6a13;
-  --mode-fund: #ff1f8e;
+  --mode-fund: #9e4b2c;
   --mode-borrow: #a58ad6;
   --mode-wish: #9d00ff;
   --mode-lend-text: #3f977c;
@@ -262,7 +262,7 @@
   --seat-bg: oklch(1 0 0);
   /* FUND AIR — a pale tint derived from --mode-fund, defined but NOT applied:
      the Fund seat stays on --seat-bg like every other seat. One-line switch in
-     [data-world="fund"] below if the owner wants pink air. */
+     [data-world="fund"] below if the owner wants tinted air. */
   --fund-air: color-mix(in oklab, var(--mode-fund) 12%, white);
 
   /* COMPLEMENTS (forms only). Hand-picked fallbacks first; derived from the
@@ -274,7 +274,7 @@
   --mode-wish-complement: var(--giver-purple-complement);
   --mode-trade-complement: var(--giver-orange-complement);
   --mode-borrow-complement: var(--giver-purple-complement);
-  --mode-fund-complement: var(--giver-pink-complement); /* hot pink -> seafoam */
+  --mode-fund-complement: var(--giver-pink-complement); /* fallback; derived from --mode-fund below */
 
 
   /* ---- ACTIVITY TEXT COLOUR = ITS WORLD'S G COLOUR ---- */
@@ -404,7 +404,7 @@
   --world-accent: var(--person-self);
 }
 
-/* Borrow — asking to borrow: a purple tint of wish (never hot pink — that is Fund). */
+/* Borrow — asking to borrow: a purple tint of wish (never clay — that is Fund). */
 [data-world="borrow"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-borrow);
@@ -413,11 +413,11 @@
   --world-accent: var(--person-self);
 }
 
-/* Fund — money toward someone else's Wish: HOT PINK G on white.
+/* Fund — money toward someone else's Wish: CLAY BROWN G on white.
    LETTER: follows the current per-seat rule (G = the seat's own colour). The
    owner also said "the G stays blue in every world including Fund" — to do
    that, swap the --world-g line for: --world-g: var(--mode-giver);
-   AIR: stays white (--seat-bg). Pink air would be: --world-bg: var(--fund-air); */
+   AIR: stays white (--seat-bg). Tinted air would be: --world-bg: var(--fund-air); */
 [data-world="fund"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-fund);

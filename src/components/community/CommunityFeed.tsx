@@ -45,13 +45,14 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-GY (renamed from communi-g). The screen is a rectangle on the G's
- * lower loop, zoomed in so far that only the loop's red edge near it shows
- * (PerimeterToggle.tsx). The rectangle's clock position on the loop is the
- * mode, at the wheel's seat angles: give 1:30 · lend 3:00 · trade 4:30 ·
- * everything 6:00 (entry) · fund 7:30 · borrow 9:00 · wish 10:30, and 12:00
- * is the way back to the full G. The loop and the toggle stay red in every
- * mode; only the text inside the rectangle takes the mode colour (--cg-ink).
+ * COMMUNI-GY (renamed from communi-g). The view is zoomed into the G's lower
+ * loop, a red circle wider than the screen; the toggle knob slides along its
+ * arc and the screen frame travels with it (PerimeterToggle.tsx). The knob's
+ * clock position on the arc is the mode, at the wheel's seat angles:
+ * give 1:30 · lend 3:00 · trade 4:30 · everything 6:00 (entry) · fund 7:30 ·
+ * borrow 9:00 · wish 10:30, and 12:00 is the way back to the full G. The loop
+ * and the toggle stay red in every mode; only the text inside the frame takes
+ * the mode colour (--cg-ink).
  * Two views of the same filtered listings: the LIST, and the MAP (the 6:00
  * map seat's door), where every listing drops a pin in its mode colour and a
  * red circle marks what is near me.
@@ -207,7 +208,7 @@ export function CommunityFeed({
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      {/* THE RECTANGLE ON THE LOWER LOOP: its position is the mode. */}
+      {/* THE CURVED TRACK ON THE LOWER LOOP: the knob's position is the mode. */}
       <PerimeterToggle
         value={mode}
         onChange={(next) => {

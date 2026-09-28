@@ -5,9 +5,9 @@ import { signInFeedLines, type SignInFeedKind } from "@/data/signin-feed";
 
 /**
  * COMMUNI-GY — everyone's bottom loop, opened. Pure data helpers for the
- * communi-gy view (CommunityFeed), its perimeter toggle and its map.
+ * communi-gy view (CommunityFeed), its curved-track toggle and its map.
  *
- * THE MODES the rectangle visits on the lower loop, at the wheel's seat
+ * THE MODES the knob visits on the lower loop's arc, at the wheel's seat
  * angles (EarSelector SEAT_ANGLE; PerimeterToggle maps each mode to its
  * seat), clockwise from 12:00 (the exit back to the full G):
  *   give 1:30 · lend 3:00 · trade 4:30 · everything 6:00 (entry) ·

@@ -565,7 +565,7 @@
 }
 
 /* COMMUNI-GY — the zoomed-in lower loop. The loop and its toggle LOCK TO RED
-   whatever seat you came from; only the text inside the rectangle follows the
+   whatever seat you came from; only the text inside the frame follows the
    browsed mode (--cg-ink, set by CommunityFeed). White paper. */
 [data-world="communigy"] {
   --world-bg: var(--seat-bg);

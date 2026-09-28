@@ -9,7 +9,30 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 
 ---
 
-## 1. Rectangle mechanic
+## 1. Wheel (middle loop) and seat colours
+
+- The toggle rides the middle loop and docks at seats around the wheel.
+- Counter-clockwise from 6:00 is the primary direction. Moving right from 6:00 you pass Fund, Lend, Give, My G, Wish, Borrow and Trade, then return to Communi-gy.
+- Seats by clock position, in that order:
+
+  | Position | Seat | Colour |
+  | --- | --- | --- |
+  | 6:00 | Communi-gy (Map / Search) | bright red, #E8322B |
+  | ~4:30 | Fund | brown: clay, #9E4B2C |
+  | 3:00 | Lend | a rich, playful forest green: energising, not too dark. Hex to be chosen. |
+  | ~1:30 | Give | bright green |
+  | 12:00 | My G | turquoise / seafoam blue, energising |
+  | ~10:30 | Wish | bright, fun purple: Prince purple, #9D00FF |
+  | 9:00 | Borrow | pinkish purple. Hex to be chosen. |
+  | ~7:30 | Trade | orange |
+
+- Opposite pairs:
+  - Communi-gy (6:00) opposite My G (12:00).
+  - Give (~1:30) opposite Trade (~7:30).
+  - Lend (3:00) opposite Borrow (9:00).
+  - Wish (~10:30) opposite Fund (~4:30).
+
+## 2. Rectangle mechanic
 
 - The rectangle is the outline (perimeter) of the phone screen.
 - It is a rectangle because Communi-gy pages are working surfaces, such as forms to fill in and chats back and forth, and these cannot live inside a circle. The rectangle is the closest a page can get to the loop.
@@ -19,7 +42,7 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 - This is how all screens propagate.
 - The system is taught through use, never explained.
 
-## 2. Lower loop (Communi-gy)
+## 3. Lower loop (Communi-gy)
 
 - The toggle orbits the middle loop.
 - At 6:00 you enter Communi-gy, and the screen becomes a rectangle on the lower loop.
@@ -29,11 +52,11 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
   | --- | --- |
   | 12:00 | Exit to the full living G: the toggle is at 6:00 on the middle loop, and the G is solid red |
   | ~1:30 | Give |
-  | ~3:00 | Lend |
-  | ~4:25 | Trade |
+  | 3:00 | Lend |
+  | ~4:30 | Fund |
   | 6:00 | Communi-gy everything map (home) |
-  | ~7:30 | Fund |
-  | 9:00 | Borrow (Communi-G Borrows): borrow colour, the lighter purple of the Borrow seat |
+  | ~7:30 | Trade |
+  | 9:00 | Borrow (Communi-G Borrows): borrow colour, the pinkish purple of the Borrow seat (hex to be chosen) |
   | ~10:30 | Wish (Communi-G Wishes): purple |
 
 - Tapping an action on a page (for example Wishes or Give) quickly moves the rectangle around the lower loop to that mode's clock position.
@@ -42,14 +65,14 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 - The 12:00 position on the lower loop takes you back to the view of the full living G. The toggle is at 6:00 on the middle loop, and the G is red: solid red, because the toggle is on the 6:00 seat.
 - The profile is locked until the toggle is at 12:00 on the middle loop.
 
-## 3. Direction
+## 4. Direction
 
 - Counter-clockwise is primary.
 - Clockwise is allowed inside Communi-gy.
 - The lower loop is open (gapped) on the full-G view. Keep that negative space.
 - The loop closes while inside Communi-gy, so the rectangle can travel freely both ways.
 
-## 4. Colour (critical)
+## 5. Colour (critical)
 
 - The G is always one solid colour: never two-tone, tie-dye, gradient, blended or multi-colour.
 - No loop differs from the rest.

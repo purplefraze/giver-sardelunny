@@ -30,7 +30,7 @@ const LOOP_COPY: Record<Seat, LoopCopy> = {
   fund: { middle: "ask for funding", bottom: "fund a wish" },
   borrow: { middle: "borrow something", bottom: "what’s to borrow" },
   wish: { middle: "make a wish", bottom: "grant a wish" },
-  giver: { middle: "my g", bottom: "my communi-g" },
+  giver: { middle: "my g", bottom: "communi-g" },
   map: { middle: "open the map", bottom: "what’s near me" },
 };
 

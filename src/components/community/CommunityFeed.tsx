@@ -45,15 +45,14 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-GY (renamed from communi-g). The page is an opaque rectangle riding
- * the circle of the G's lower loop (PerimeterToggle.tsx). The loop is never
- * drawn: the toggle knob is the page's contact with it, and the page pans and
- * turns round the loop as the knob travels, settling upright and full screen
- * at each station. The knob's clock position on the loop is the mode, at the
- * wheel's seat angles: give 1:30 · lend 3:00 · trade 4:30 · everything 6:00
- * (entry) · fund 7:30 · borrow 9:00 · wish 10:30, and 12:00 is the way back
- * to the full G. The knob stays red in every mode; only the page's text takes
- * the mode colour (--cg-ink).
+ * COMMUNI-GY (renamed from communi-g). The page never moves: it is upright
+ * and full screen, with a thin red stroke round its perimeter as the track
+ * (PerimeterToggle.tsx). The toggle, the main G's hollow ring in the current
+ * seat's colour with the seat's word inside, travels along the stroke; its
+ * position is the mode, at the wheel's seat angles: give 1:30 · lend 3:00 ·
+ * trade 4:30 · everything 6:00 (entry) · fund 7:30 · borrow 9:00 · wish
+ * 10:30, and 12:00 is the way back to the full G. The stroke stays red in
+ * every mode; the page's text takes the mode colour (--cg-ink).
  * Two views of the same filtered listings: the LIST, and the MAP (the 6:00
  * map seat's door), where every listing drops a pin in its mode colour and a
  * red circle marks what is near me.
@@ -215,11 +214,34 @@ export function CommunityFeed({
         }}
         onExit={onExit ?? onClose}
       >
-        <div className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col">
-          <BackArrow onClick={onClose} label="back to my g" />
+        {/* The content sits inside the red stroke (PerimeterToggle's content
+            box). --cg-clear is how far a toggle parked on a corner reaches in:
+            the back arrow and the heading start below it, and the bottom keeps
+            it clear, so a parked toggle never covers them. */}
+        <div
+          className="relative flex h-full w-full flex-col"
+          style={{
+            paddingTop: "calc(var(--cg-clear, 48px) + 36px)",
+            paddingBottom: "var(--cg-clear, 48px)",
+            paddingLeft: 2,
+            paddingRight: 2,
+            containerType: "inline-size",
+          }}
+        >
+          <div
+            className="absolute"
+            style={{ left: -20, top: "calc(var(--cg-clear, 48px) - 24px)", width: 60, height: 60 }}
+          >
+            <BackArrow onClick={onClose} label="back to my g" />
+          </div>
 
           {/* COMMUNI-GY IN THE MODE'S COLOUR (red for everything). */}
-          <h1 className="g-display" style={{ color: ink }}>
+          {/* One line inside the stroke: never wider than the content box
+              ("communi-gy" is 5.26 em wide in g-display's face and tracking). */}
+          <h1
+            className="g-display"
+            style={{ color: ink, fontSize: "min(clamp(2.6rem, 13.5vw, 4.6rem), 18.5cqw)" }}
+          >
             communi-gy
           </h1>
           <p className="cg-mode-word" style={{ color: ink }}>
@@ -332,7 +354,7 @@ export function CommunityFeed({
           ) : null}
 
           <ul
-            className={view === "map" && !searching ? "hidden" : "mt-4 flex-1 overflow-y-auto pb-8"}
+            className={view === "map" && !searching ? "hidden" : "mt-4 flex-1 overflow-y-auto pb-2"}
           >
             {list.length === 0 && !searching ? (
               <li className="g-lede opacity-55">nothing here yet — yours could be the first</li>

@@ -1,6 +1,6 @@
 # G navigation + colour spec
 
-**Status:** Approved by Frazer, 27 Sep 2026. Communi-gy rules (sections 2 to 5) updated 28 Sep 2026: the page rides the lower loop.
+**Status:** Approved by Frazer, 27 Sep 2026. Communi-gy rules (sections 2 to 5) updated 28 Sep 2026: the red perimeter stroke is the track, the page never tilts, and the toggle is a hollow circle in the seat colour with the seat word inside.
 
 This document is the design source of truth for G navigation and G colour.
 The build does not yet match this spec.
@@ -33,26 +33,26 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
   - Lend (3:00) opposite Borrow (9:00).
   - Wish (~10:30) opposite Trade (~4:30).
 
-## 2. The page rides the lower loop
+## 2. The red perimeter stroke is the track
 
-Frazer's Communi-gy rules, 28 Sep 2026. These replace the curved-track version, in which a visible red ring crossed the page.
+Frazer's Communi-gy rules, 28 Sep 2026 (7:08 AM call). These replace the "page rides the lower loop" version: the dots and the leaning, shrinking page are gone.
 
-- **The page is an opaque rectangle.** Each Communi-gy page is a full-size rectangle on a solid white background. It stays a rectangle because Communi-gy pages are working surfaces, such as forms to fill in and chats back and forth, and these cannot live inside a circle.
-- **The track is invisible.** The page rides the circle of the lower loop. The loop is the path the page travels, not an element on screen: no part of it is ever drawn on or through the page, and behind the page there is only white.
-- **Contact.** The toggle knob is the point where the page touches the loop. It sits on the page's edge, and the page's edge is always tangent to the loop at the knob.
-- **Motion.** As the knob travels round the loop, the page pans and rotates with it, so the knob stays on the loop and the page stays tangent to it. While moving, the page leans a few degrees in the direction of travel and shrinks very slightly, and a soft shadow shows its edge against the white. A faint red arc of the loop may appear in the white outside the page. It always lies underneath the page, so it can never cross the content.
-- **Settled.** At every stop the page is upright, at full size and fills the screen, with nothing visible around it. The knob rests where the upright page meets the loop at that stop: bottom centre at 6:00, the middle of the left side at 9:00, the middle of the right side at 3:00, top centre at 12:00, and the matching corner at 1:30, 4:30, 7:30 and 10:30.
-- **Toggle.** The toggle is a hollow red ring. Holding and dragging it carries the page round the loop, clockwise or counter-clockwise, as far as you like. The stop dots act as waypoints: with the finger on a dot, the page is at that stop, and halfway between two dots it is halfway round the loop between them. On release it settles at the nearest stop. Arrow keys step from stop to stop.
-- **Dots.** Each stop has a seat-indicator dot, in that seat's colour, on the page's perimeter. At rest the dots sit at the four edge midpoints and the four corners, in clock order, one per 45° of the loop. As the page rotates, the dots slide round its perimeter so they keep marking where each stop lies. The knob covers the dot of the stop it is on. Tapping a dot carries the page to that stop.
+- **The page never moves.** Each Communi-gy page is a full-size rectangle on a solid white background, always upright, full size and filling the screen. It never rotates, scales or shifts and has no shadow, not even mid-drag. It stays a rectangle because Communi-gy pages are working surfaces, such as forms to fill in and chats back and forth, and these cannot live inside a circle.
+- **The track is a thin red stroke.** A thin red (#E8322B) stroke runs round the page's perimeter, just inside the screen edge: a rectangle with rounded corners that follow the loop's feel. It is the visible path the toggle travels. Its weight is a third of the toggle ring's stroke (3px on a 390px-wide screen), so it reads as a track without being heavy and belongs to the ring's stroke family.
+- **The stroke never crosses the content.** The page's content sits in its own box inside the stroke, clipped to it. The stroke sits the toggle ring's outer radius plus a few pixels (plus the safe area) in from each screen edge, so the whole toggle, which centres on the stroke, always stays on screen.
+- **No seat markers.** Seats have no dots or ticks, 12:00 included. Each seat is where the stroke faces that clock position: the middle of the bottom, left, right and top edges for 6:00, 9:00, 3:00 and 12:00, and the middle of each rounded corner for the diagonals.
+- **Toggle.** The toggle is the main G's toggle ring, at exactly the same size, stroke width and title type: a hollow circle in the colour of the current seat, with an opaque white interior (nothing shows through) and the seat's word inside in the seat colour, lowercase Helvetica Neue with +0.08em tracking, centred and upright. The words are communi-g (6:00), fund, borrow, wish, give, lend and trade. The toggle sits on the red stroke and centres on it.
+- **Moving the toggle.** Hold and drag the toggle round the stroke, clockwise or counter-clockwise, as far as you like. While it is held, its colour and word change to the nearest seat, as on the main G; at 12:00 it reads "my g" in my g's blue (#1E7BFF), because letting go there goes back to the full G. On release it snaps to the nearest seat along the stroke and the page content switches to that mode. Arrow keys step from seat to seat.
+- **Tapping the stroke.** Tapping the stroke near a seat (within about 22px of it along the stroke, anywhere between the screen edge and the content) goes to that seat.
 - The system is taught through use, never explained.
 
 ## 3. Lower loop (Communi-gy)
 
 - The toggle orbits the middle loop.
-- **Entry at 6:00.** At the 6:00 seat you enter Communi-gy. The page opens upright and full screen, riding the lower loop at 6:00, with the knob at the bottom centre.
-- The knob's clock position on the lower loop sets the page. The lower loop uses the wheel's seat positions: each clock position from ~1:30 to ~10:30 means the same mode on both loops. The stops, listed by clock position:
+- **Entry at 6:00.** At the 6:00 seat you enter Communi-gy. The page opens upright and full screen, with the toggle on the red stroke at the bottom centre, reading communi-g in red.
+- The toggle's clock position on the stroke sets the page. Communi-gy uses the wheel's seat positions: each clock position from ~1:30 to ~10:30 means the same mode on the wheel and on the stroke. The seats, listed by clock position:
 
-  | Position | Stop |
+  | Position | Seat |
   | --- | --- |
   | 12:00 | Exit to the full living G: the toggle is at 6:00 on the middle loop, and the G is solid red |
   | ~1:30 | Give (community gives) |
@@ -63,10 +63,10 @@ Frazer's Communi-gy rules, 28 Sep 2026. These replace the curved-track version, 
   | 9:00 | Borrow (Communi-G Borrows) |
   | ~10:30 | Wish (Communi-G Wishes) |
 
-- **12:00 is the exit.** My G's 12:00 seat is not a page inside Communi-gy. Releasing the knob at 12:00, or tapping the 12:00 dot, returns to the full living G with the toggle at 6:00 on the middle loop and the G solid red. Dragging past 12:00 without letting go does not exit, and the arrow keys skip 12:00. The back arrow remains available.
-- Tapping an action on a page (for example Wishes or Give) carries the page round the lower loop to that mode's clock position.
+- **12:00 is the exit.** My G's 12:00 seat is not a page inside Communi-gy. Releasing the toggle at 12:00, or tapping the stroke at top centre, returns to the full living G with the toggle at 6:00 on the middle loop and the G solid red. Dragging past 12:00 without letting go does not exit, and the arrow keys skip 12:00. The back arrow remains available.
+- Tapping an action on a page (for example Wishes or Give) carries the toggle round the stroke to that mode's clock position.
 - The page swaps strictly per mode.
-- **Always red.** Inside Communi-gy the lower loop, the toggle and the Communi-gy chrome are red (#E8322B) in every mode. The only thing that changes with the mode is the colour of the page's text, which is that seat's colour.
+- **Colours.** Inside Communi-gy the perimeter stroke and the Communi-gy chrome are red (#E8322B) in every mode. The toggle takes the colour of the seat it is on, and the page's text takes that seat's colour.
 - The profile is locked until the toggle is at 12:00 on the middle loop.
 
 ## 4. Direction, open and closed loops
@@ -74,7 +74,7 @@ Frazer's Communi-gy rules, 28 Sep 2026. These replace the curved-track version, 
 - Counter-clockwise is primary.
 - Clockwise is allowed inside Communi-gy.
 - **Full G.** The middle loop is always drawn closed. The bottom loop is always drawn open (gapped): keep that negative space.
-- **Inside Communi-gy.** The lower loop is treated as closed (a full circle), so the page can travel all the way round it in either direction. It is a path only and is not drawn.
+- **Inside Communi-gy.** The track is the closed red stroke round the page, so the toggle can travel all the way round it in either direction.
 - The traced G path data is never edited to open or close a loop; the closed middle loop is achieved at render time.
 
 ## 5. Colour (critical)
@@ -88,8 +88,8 @@ Frazer's Communi-gy rules, 28 Sep 2026. These replace the curved-track version, 
 - Other members' content stays red.
 - Mode chrome takes the mode colour.
 - Granting mixes blue with their colour into the seat's hue.
-- Communi-gy: the lower loop and its toggle stay red in every mode; only the page's text takes the mode colour (section 3).
+- Communi-gy: the perimeter stroke stays red in every mode; the toggle and the page's text take the seat colour (section 3).
 
 ---
 
-*Approved by Frazer, 27 Sep 2026; Communi-gy rules updated 28 Sep 2026 (the page rides the lower loop). Mirrors the Navigation System and Colours pages in The Giver Bible (Notion).*
+*Approved by Frazer, 27 Sep 2026; Communi-gy rules updated 28 Sep 2026 (the red perimeter stroke is the track; the toggle is a hollow circle in the seat colour with the seat word inside). Mirrors the Navigation System and Colours pages in The Giver Bible (Notion).*

@@ -31,6 +31,8 @@ export const BOX_W = LIVING_G_FRAME.width / LIVING_G_BOX.width;
  * the stage box is absolutely positioned — and is gone.
  */
 export const CTA_BAND = "1.25rem";
+/** CTA_BAND in px (1.25rem at the 16px root). */
+const CTA_BAND_PX = 20;
 
 /**
  * WHAT MUST ACTUALLY FIT — the artwork PLUS the selector's true travel, without
@@ -67,7 +69,17 @@ const FRAME_OVER_H = LIVING_G_FRAME.width / NEEDED.height;
  * between the ring and each edge at every width. Layout only — g-path and
  * the seat angles are untouched.
  */
-export const EDGE_AIR = "8px";
+export const EDGE_AIR_PX = 8;
+export const EDGE_AIR = `${EDGE_AIR_PX}px`;
+
+/**
+ * THE G'S SCALE IN PX PER VIEWBOX UNIT for a w × h screen: CANONICAL_WIDTH
+ * over the frame's width, in numbers (0.52279 at 390 × 844). Anything drawn
+ * outside the G that must match the G's toggle exactly (communi-gy's
+ * PerimeterToggle) sizes itself with this.
+ */
+export const gPxPerUnit = (w: number, h: number) =>
+  Math.max(0, Math.min((w - 2 * EDGE_AIR_PX) / NEEDED.width, (h - CTA_BAND_PX) / NEEDED.height));
 
 const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
 

@@ -3,7 +3,7 @@
 **Status:** Approved by Frazer, 27 Sep 2026.
 
 This document is the design source of truth for G navigation and G colour.
-**The code does not match it yet.** Nothing in the app has been changed to follow this spec; it is recorded here as the target.
+The build does not yet match this spec.
 
 Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Communi-G Borrows** are the stop names.
 
@@ -30,7 +30,7 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 
 - The lower-loop stops mirror the wheel seats: 9:00 Borrow, ~10:30 Wish.
 - The page swaps strictly per mode.
-- The frame stays red, and the page takes the mode colour.
+- The Communi-gy rectangle's frame stays red, and the page takes the mode colour. This is the screen frame inside Communi-gy, not the G's loop.
 - From the map, dragging up to 12:00 on the middle loop gives the full G at My G.
 - The profile is locked until the toggle is at 12:00 on the middle loop.
 
@@ -40,20 +40,21 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 
 - Counter-clockwise is primary.
 - Clockwise is allowed inside Communi-gy.
-- The lower loop is OPEN (gapped) on the full-G view. Keep that negative space.
-- The loop CLOSES while inside Communi-gy, so the rectangle can travel freely both ways.
+- The lower loop is open (gapped) on the full-G view. Keep that negative space.
+- The loop closes while inside Communi-gy, so the rectangle can travel freely both ways.
 
 ## 4. Colour (critical)
 
-- The G is ALWAYS one solid colour: never two-tone, tie-dye, gradient, blended or multi-colour.
+- The G is always one solid colour: never two-tone, tie-dye, gradient, blended or multi-colour.
 - No loop differs from the rest.
 - This holds at sign-in.
 - The G's colour is the colour of the seat the toggle is on.
+- The bottom loop, sign-in included, is red only when the toggle is at 6:00 (Map / Search). In every other seat it is the seat colour, the same as the rest of the G: purple in Wish, green in Give, and so on. The G is never two-tone.
 - You are blue.
 - Other members' content stays red.
 - Mode chrome takes the mode colour.
 - Granting mixes blue with their colour into the seat's hue.
-- Communi-gy: the frame stays red; the page takes the mode colour.
+- Communi-gy: the Communi-gy rectangle's frame stays red; the page takes the mode colour. This is the screen frame inside Communi-gy, not the G's loop.
 
 ---
 

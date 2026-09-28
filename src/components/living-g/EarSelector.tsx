@@ -236,6 +236,75 @@ export function toggleGeometry(weight: GWeight = "normal") {
   };
 }
 
+/**
+ * THE SEAT'S TITLE — the word set INSIDE the hollow ring, naming the mode or
+ * world the toggle is in (Frazer, 28 Sep 2026). Clockwise from 12:00:
+ * my g · give · lend · trade · communi-g (the 6:00 map seat) · fund ·
+ * borrow · wish. The one table every toggle reads its title from.
+ */
+export const SEAT_TITLE: Record<Seat, string> = {
+  giver: "my g",
+  give: "give",
+  lend: "lend",
+  trade: "trade",
+  map: "communi-g",
+  fund: "fund",
+  borrow: "borrow",
+  wish: "wish",
+};
+
+/**
+ * THE TITLE'S TYPE — lowercase Helvetica Neue (the loop labels' face and
+ * weight) with generous tracking, ONE size for every seat, set as a share of
+ * the ring's hole so it scales with the G exactly like the ring does.
+ *
+ *   size      0.30 × innerR. At "middle" (innerR 57.4, a 114.8-unit hole)
+ *             that is 17.22 units = 9.0px at 390 (0.52279 px/unit), the
+ *             largest size at which the longest title, "communi-g", still
+ *             clears the stroke by ≥4px each side in iOS Helvetica Neue
+ *             (~51.8px of the hole's 60px; ~50.3px in Helvetica metrics).
+ *   tracking  0.08em: four times the loop labels' 0.02em, so it reads open.
+ *   xHeight   Helvetica's 0.52em: the baseline sits half an x-height below
+ *             the ring's centre, so the lowercase body is centred optically.
+ *
+ * Letter-spacing is added after EVERY glyph, the last one included, which
+ * would pull a middle-anchored word left by half a space; `titleText`
+ * nudges it back so the ink, not the advance box, is centred.
+ */
+export const TOGGLE_TITLE = {
+  sizeOfInner: 0.3,
+  tracking: 0.08,
+  weight: 400,
+  xHeight: 0.52,
+} as const;
+
+/**
+ * Where and how to set a title inside a ring of hole radius `innerR`, centred
+ * on (x, y). Always upright: callers place it OUTSIDE the piece's rotation.
+ */
+export function titleText(innerR: number) {
+  const size = innerR * TOGGLE_TITLE.sizeOfInner;
+  return {
+    size,
+    /** Add to the ring centre's x: undoes the trailing letter-space. */
+    dx: (TOGGLE_TITLE.tracking * size) / 2,
+    /** Add to the ring centre's y: the alphabetic baseline. */
+    dy: (TOGGLE_TITLE.xHeight * size) / 2,
+    style: {
+      fontFamily: "var(--giver-font)",
+      fontWeight: TOGGLE_TITLE.weight,
+      fontSize: size,
+      letterSpacing: `${TOGGLE_TITLE.tracking}em`,
+      textTransform: "lowercase",
+      whiteSpace: "pre",
+      userSelect: "none",
+      WebkitUserSelect: "none",
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+    } as React.CSSProperties,
+  };
+}
+
 /** The locked seat colours, for seats that state a person's history. */
 const MODE_COLOUR: Record<Seat, string> = {
   giver: "var(--mode-giver)",
@@ -262,6 +331,7 @@ export function EarSelector({
   sparks,
   hideWord = false,
   weight = "normal",
+  title = false,
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;
@@ -301,13 +371,19 @@ export function EarSelector({
    * (300 → 287.5): ring size and the 24.5 white gap are unchanged.
    */
   weight?: GWeight;
-
-
-
+  /**
+   * THE SEAT'S TITLE INSIDE THE RING (SEAT_TITLE), in the ring's own colour,
+   * upright, pointer-transparent. It names the seat the G's colour names:
+   * the committed mode, which a drag moves as the bead reaches each seat.
+   * When shown it is the ONLY thing inside the ring (no photo).
+   */
+  title?: boolean;
 }) {
   /* The track at this weight — shadows the module's canonical (normal) values. */
   /* The piece at this weight (variant A at "middle": thinner ring and stem). */
   const { RIM_R, TRACK_R, EAR, RING_MID, RING_W, STEM_FROM, STEM_TO, STEM_HALF } = toggleGeometry(weight);
+  /** The seat title's size and optical offsets for this ring's hole. */
+  const titleSet = titleText(EAR.innerR);
 
 
   const [drag, setDrag] = useState<number | null>(null);
@@ -544,7 +620,25 @@ export function EarSelector({
         />
       </g>
 
-      {photo ? (
+      {/* THE SEAT'S TITLE — upright (outside the piece's rotation), centred
+          on the ring, in the ring's colour, and transparent to the pointer so
+          a tap on a parked toggle still reaches the grip beneath. */}
+      {title ? (
+        <text
+          x={ear.x + titleSet.dx}
+          y={ear.y + titleSet.dy}
+          textAnchor="middle"
+          fill="var(--world-g)"
+          pointerEvents="none"
+          aria-hidden="true"
+          data-toggle-title=""
+          style={titleSet.style}
+        >
+          {SEAT_TITLE[mode]}
+        </text>
+      ) : null}
+
+      {photo && !title ? (
         <>
           <defs>
             <clipPath id={`ear-photo-${mode}`} clipPathUnits="userSpaceOnUse">
@@ -615,8 +709,8 @@ export function EarSelector({
 
 
 
-      {/* NO WORDS ON THE TOGGLE. The ring's clock position and its colour
-          are the only indicators — no action name inside or beside it. */}
+      {/* NO OTHER WORDS ON THE TOGGLE: beside the seat's title inside the
+          ring (when `title` is on), nothing names the action. */}
 
       {/*
         SEAT TAP TARGETS. A seat can be REACHED, not only dragged to: one

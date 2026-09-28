@@ -675,6 +675,8 @@ function Index() {
               <EarSelector
                 mode={seat}
                 weight="middle"
+                /* THE SEAT'S TITLE sits inside the hollow ring. */
+                title
                 onChange={moveToggle}
                 seats={myGSeats}
                 hideWord={!toggleWordsUnlocked}

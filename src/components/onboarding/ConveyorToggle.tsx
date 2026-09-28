@@ -1,6 +1,11 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from "react";
 
-import { toggleGeometry, type Seat } from "@/components/living-g/EarSelector";
+import {
+  SEAT_TITLE,
+  titleText,
+  toggleGeometry,
+  type Seat,
+} from "@/components/living-g/EarSelector";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "@/components/living-g/g-path";
 import { togglePath } from "@/components/living-g/toggle-path";
 import { haptics } from "@/lib/haptics";
@@ -47,8 +52,12 @@ import {
  * with no white gap, and a paper knock-out clipped to the G clears it inside
  * the ring, so the inside always reads as background.
  *
+ * THE SEAT'S TITLE sits inside the ring (SEAT_TITLE, the main G's table and
+ * type): the NEAREST seat — the same seat --seat colours the G and ring
+ * with — upright, in the ring's colour, pointer-transparent.
+ *
  * EVERY FRAME (requestAnimationFrame, no React state): the piece's pose, the
- * knock-out's position, and — only when they change — CSS custom
+ * knock-out's and the title's position, and — only when they change — CSS custom
  * properties on the sign-in root: --seat (the nearest seat's colour, solid,
  * switched in one step), --emph-<action> (feed alpha per action) and
  * --give-mark (the give wordmark's presence). Nothing re-renders or reflows.
@@ -94,6 +103,8 @@ export function ConveyorToggle({
   const piece = useRef<SVGGElement | null>(null);
   const knock = useRef<SVGCircleElement | null>(null);
   const grip = useRef<SVGCircleElement | null>(null);
+  const title = useRef<SVGTextElement | null>(null);
+  const T = titleText(g.EAR.innerR);
   const start0 = seatAngle(start);
   const angle = useRef(start0);
   const drag = useRef<{ id: number; offset: number } | null>(null);
@@ -136,6 +147,8 @@ export function ConveyorToggle({
       );
       knock.current?.setAttribute("cx", ring.x.toFixed(2));
       knock.current?.setAttribute("cy", ring.y.toFixed(2));
+      title.current?.setAttribute("x", (ring.x + T.dx).toFixed(2));
+      title.current?.setAttribute("y", (ring.y + T.dy).toFixed(2));
       const blend = seatBlend(deg);
       put("--seat", seatColour(blend));
       const emph = feedEmphasis(blend);
@@ -145,6 +158,7 @@ export function ConveyorToggle({
         seat = blend.nearest;
         el.setAttribute("data-signin-seat", seat);
         grip.current?.setAttribute("aria-valuetext", SEAT_NAME[blend.nearest]);
+        if (title.current) title.current.textContent = SEAT_TITLE[blend.nearest];
         if (drag.current) haptics.selection();
       }
     };
@@ -307,6 +321,21 @@ export function ConveyorToggle({
           }}
         />
       </g>
+      {/* THE SEAT'S TITLE — outside the piece's rotation so it stays upright;
+          the grip above it still takes every tap (it ignores the pointer). */}
+      <text
+        ref={title}
+        x={ring0.x + T.dx}
+        y={ring0.y + T.dy}
+        textAnchor="middle"
+        fill="var(--world-g)"
+        pointerEvents="none"
+        aria-hidden="true"
+        data-toggle-title=""
+        style={T.style}
+      >
+        {SEAT_TITLE[start]}
+      </text>
     </g>
   );
 }

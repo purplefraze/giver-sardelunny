@@ -39,7 +39,8 @@ import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
  *           ONE continuous conveyor through all eight seats in clock order
  *           (ConveyorToggle.tsx): idle drift, drag either way the short way
  *           round, always on the middle loop (6:00 is the bottom of that
- *           ring), docking at 12:00 (my g); always hollow, never filled
+ *           ring), docking at 12:00 (my g); always hollow, never filled;
+ *           the nearest seat's title sits upright inside the ring
  *   COLOUR  the whole G (every loop, the upper ring and the toggle) is ONE
  *           solid seat colour; the bottom loop is red only at 6:00 (map)
  *   GIVE    at give (1:30) the big G is the g of the wordmark: "ıver" is set
@@ -52,7 +53,8 @@ import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
  * properties on this root (signin-emphasis.ts): --seat is the nearest seat's
  * --mode-* colour, switched in one step (never mixed or blended),
  * --emph-<action> the feed alpha per action, --give-mark the give wordmark's
- * presence. No labels, hints or seat names. Starts on Give.
+ * presence. The only seat name is the title inside the toggle's ring (the
+ * nearest seat, ConveyorToggle.tsx); no other labels or hints. Starts on Give.
  */
 
 /**

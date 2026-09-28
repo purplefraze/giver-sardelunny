@@ -24,6 +24,7 @@ import {
 } from "./type-scale";
 import { loopOrigin, wrapLines, wrapWidth } from "./loop-layout";
 import { G_STROKE, GThinMask } from "./g-weight";
+import { MiddleLoopClose } from "./loop-close";
 
 
 /**
@@ -316,6 +317,8 @@ export function LivingG({
           </g>
         </g>
         {earCut ? rimPatch(thin) : null}
+        {/* THE MIDDLE LOOP, CLOSED at render time (loop-close.tsx). */}
+        <MiddleLoopClose weight={weight} />
 
         {ORDER.map((key) => {
           const isPressed = pressed === key;
@@ -335,6 +338,7 @@ export function LivingG({
                   </g>
                 </g>
                 {earCut ? rimPatch(thin) : null}
+                <MiddleLoopClose weight={weight} />
               </g>
             </g>
           );

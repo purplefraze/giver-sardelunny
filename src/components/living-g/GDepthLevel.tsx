@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
 import { GThinMask } from "./g-weight";
+import { MiddleLoopClose } from "./loop-close";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX } from "./g-path";
 import { CAMERA, LENS, anchorLens, anchorOrigin, levelInset, type GAnchorKey } from "./g-depth";
 import { haptics } from "@/lib/haptics";
@@ -162,6 +163,8 @@ export function GDepthLevel({
               <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
                 <path d={LIVING_G_PATH} mask={`url(#g-depth-thin-${depth})`} />
               </g>
+              {/* The middle loop stays closed as the G unfurls (loop-close.tsx). */}
+              <MiddleLoopClose weight="middle" />
             </svg>
           </GStage>
         </div>

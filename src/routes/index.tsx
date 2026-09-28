@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
 import { GThinMask } from "@/components/living-g/g-weight";
+import { MiddleLoopClose } from "@/components/living-g/loop-close";
 import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
@@ -613,6 +614,7 @@ function Index() {
               <g transform={LIVING_G_TRANSFORM} fill="var(--giver-ink)">
                 <path d={LIVING_G_PATH} mask="url(#g-wake-thin)" />
               </g>
+              <MiddleLoopClose weight="middle" fill="var(--giver-ink)" />
             </svg>
           </GStage>
         </div>

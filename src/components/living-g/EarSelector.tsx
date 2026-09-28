@@ -90,6 +90,8 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * 4:30, 3, 1:30, 12, 10:30, 9 and 7:30 to the 6 o'clock lip (-270°). Its angle
  * lives on ONE CONTINUOUS LINE with no wrap-around, so the bead can never
  * teleport across the gap or take a shortcut through empty space.
+ * (The loop itself now RENDERS closed — loop-close.tsx bridges the traced
+ * opening at draw time — but the bead's travel keeps these two ends.)
  *
  * THE SEATS — THE SOURCE OF TRUTH (clock positions), fixed on every Living G
  * everywhere in the app:

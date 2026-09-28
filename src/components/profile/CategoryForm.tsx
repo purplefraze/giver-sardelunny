@@ -34,10 +34,16 @@ import {
   FormAmount,
   FormG,
   FormLine,
+  FormPickLine,
   FormQuestion,
   FormSend,
   type FormTag,
 } from "@/components/forms/UnifiedForm";
+import { LocationAsk } from "@/components/forms/LocationAsk";
+import { WhenPicker } from "@/components/give/WhenPicker";
+import { whenLabel, type WhenPick } from "@/data/give-when";
+import { savePin } from "@/data/give-pins";
+import { myLocationStore } from "@/data/my-location";
 
 import { pickImages } from "@/lib/pick-image";
 import { storeChosenImage } from "@/lib/media";
@@ -73,14 +79,34 @@ const SEAT_COPY: Record<FormSeat, { heading: string; l1: string; l2: string }> =
   wish: { heading: "make a wish", l1: "wish", l2: "by" },
 };
 
-/** Grey placeholders — line 1, line 2. */
+/** Grey placeholders — line 1, line 2. Give / lend / borrow's "when" is a
+    calendar now (never a silent "anytime"): its placeholder asks for a day. */
 const SEAT_PLACEHOLDER: Record<FormSeat, [string, string]> = {
-  give: ["something", "anytime"],
-  lend: ["something", "anytime"],
+  give: ["something", "pick a day"],
+  lend: ["something", "pick a day"],
   trade: ["something", "something"],
   fund: ["something", "whenever"],
-  borrow: ["something", "anytime"],
+  borrow: ["something", "pick a day"],
   wish: ["something", "whenever"],
+};
+
+/** Seats whose "when" opens the calendar (WhenPicker). */
+const CALENDAR_WHEN: Record<FormSeat, boolean> = {
+  give: true,
+  lend: true,
+  borrow: true,
+  trade: false,
+  fund: false,
+  wish: false,
+};
+
+/**
+ * AFTER PUBLISHING A BORROW (or a lend) the confirmation is a DOOR, not a
+ * receipt: one tap goes straight into communi-gy, opened on my own posts.
+ */
+const PUBLISHED_TAP: Record<BorrowSide, string> = {
+  borrow: "tap to see your borrow request live in communi-gy",
+  lend: "tap to see your lend live in communi-gy",
 };
 
 /** WHAT A PROBLEM LINE ASKS FOR when line 1 is still empty. */
@@ -93,11 +119,11 @@ const CATEGORY_ASK: Record<Category, string> = {
 
 /** WHAT CAME BACK. One line, then it steps out of the way. */
 const PUBLISHED_SAY: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
-  give: "it’s live in communi-g",
-  wish: "your wish is live in communi-g",
-  trade: "your trade is live in communi-g",
-  borrow: "your borrow is live in communi-g",
-  lend: "your lend is live in communi-g",
+  give: "it’s live in communi-gy",
+  wish: "your wish is live in communi-gy",
+  trade: "your trade is live in communi-gy",
+  borrow: "your borrow is live in communi-gy",
+  lend: "your lend is live in communi-gy",
 };
 
 /** BORROWING HAS TWO SIDES; the seat (or the door) already said which. */
@@ -160,6 +186,7 @@ export function CategoryForm({
   side: decidedSide,
   asksFunding = false,
   onDone,
+  onSeeInCommunity,
 }: {
   category: Category;
   /**
@@ -170,7 +197,7 @@ export function CategoryForm({
   /** THE FUND SEAT: "ask for funding" — a Wish that states what it needs. */
   asksFunding?: boolean;
   onDone: () => void;
-  /** Kept for callers; the unified form has no links. */
+  /** After publishing a borrow / lend: the tappable way into communi-gy. */
   onSeeInCommunity?: () => void;
 }) {
   const me = useMyProfile();
@@ -194,7 +221,12 @@ export function CategoryForm({
   const [details, setDetails] = useState<ItemDetails>(stored.details);
   const [problem, setProblem] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
+  /** The published borrow / lend's confirmation is tappable (PUBLISHED_TAP). */
+  const [liveTap, setLiveTap] = useState(false);
   const [liveId, setLiveId] = useState<string | null>(stored.liveId);
+  const lastSaved = useRef<string | null>(null);
+  /** THE CALENDAR for line 2 (give / lend / borrow). */
+  const [picking, setPicking] = useState(false);
   /** ONE QUESTION AT A TIME, full screen. Closed is the resting state. */
   const [asking, setAsking] = useState(false);
   /** FUND ONLY: the amount, typed as text, stored as integer cents. */
@@ -349,6 +381,7 @@ export function CategoryForm({
     }
     setProblem(null);
     setLiveId(result.id ?? null);
+    lastSaved.current = result.id ?? null;
     return true;
   };
 
@@ -360,7 +393,10 @@ export function CategoryForm({
   }, [complete, draft, want, note, side, photos, details, liveId]);
 
   useEffect(() => {
-    if (draft) setLive(null);
+    if (draft) {
+      setLive(null);
+      setLiveTap(false);
+    }
   }, [draft]);
 
   useEffect(() => {
@@ -424,12 +460,17 @@ export function CategoryForm({
       await pushItems();
       await pullItems();
     } catch {
-      setProblem("your words are safe, but communi-g couldn’t be reached. tap send again.");
+      setProblem("your words are safe, but communi-gy couldn’t be reached. tap send again.");
       haptics.warning();
       return;
     }
     setProblem(null);
+    /* NEARBY, ON THIS DEVICE ONLY: if the person allowed location, their
+       borrow / lend sits at that (already offset) spot on communi-gy's map. */
+    const here = myLocationStore.get();
+    if (category === "borrow" && here && lastSaved.current) savePin(lastSaved.current, here.pin);
     setLive(PUBLISHED_SAY[category === "borrow" ? side : category]);
+    setLiveTap(category === "borrow" && !asksFunding);
     setLiveId(null);
     setDraft("");
     setWant("");
@@ -512,6 +553,40 @@ export function CategoryForm({
       ]
     : [];
 
+  /* THE CALENDAR — "when" for give / lend / borrow. */
+  if (picking) {
+    const initial: WhenPick | null = details.date
+      ? {
+          date: details.date,
+          ...(details.startTime ? { start: details.startTime } : {}),
+          ...(details.endTime ? { end: details.endTime } : {}),
+        }
+      : null;
+    return (
+      <div data-world={seat} className="g-form relative h-full w-full overflow-y-auto">
+        <WhenPicker
+          heading="when?"
+          initial={initial}
+          onBack={() => setPicking(false)}
+          onDone={(p) => {
+            setDetails((prev) => {
+              const extras: Record<string, string> = { ...(prev.extras ?? {}), when: whenLabel(p) };
+              return {
+                ...prev,
+                date: p.date,
+                startTime: p.start,
+                endTime: p.end,
+                time: p.start ? timeWindow(p.start, p.end) : undefined,
+                extras,
+              };
+            });
+            setPicking(false);
+          }}
+        />
+      </div>
+    );
+  }
+
   if (asking && seat === "fund") {
     return (
       <div data-world="fund" className="g-form relative h-full w-full overflow-y-auto">
@@ -575,6 +650,13 @@ export function CategoryForm({
               maxLength={titleMax}
               onEnter={() => void add()}
             />
+          ) : CALENDAR_WHEN[seat] ? (
+            <FormPickLine
+              label={copy.l2}
+              value={when}
+              placeholder={SEAT_PLACEHOLDER[seat][1]}
+              onPick={() => setPicking(true)}
+            />
           ) : (
             <FormLine
               label={copy.l2}
@@ -585,7 +667,21 @@ export function CategoryForm({
               onEnter={() => void add()}
             />
           )}
-          {say ? (
+          {seat === "borrow" || seat === "lend" ? <LocationAsk /> : null}
+          {liveTap && !problem && onSeeInCommunity ? (
+            <button
+              type="button"
+              className="uf-say uf-say-tap"
+              aria-live="polite"
+              data-testid="borrow-live"
+              onClick={() => {
+                haptics.light();
+                onSeeInCommunity();
+              }}
+            >
+              {PUBLISHED_TAP[side]}
+            </button>
+          ) : say ? (
             <p className="uf-say" aria-live="polite">
               {say}
             </p>

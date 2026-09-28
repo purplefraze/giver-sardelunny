@@ -9,7 +9,7 @@ import {
   LIVING_G_TRANSFORM,
   LOOP_CENTRE,
 } from "@/components/living-g/g-path";
-import { G_STROKE, rimRadius, strokeInset } from "@/components/living-g/g-weight";
+import { G_STROKE, GThinMask, rimRadius, strokeInset } from "@/components/living-g/g-weight";
 import { signInFeedLines, type SignInFeedLine } from "@/data/signin-feed";
 import { OTP_LENGTH, type OtpSignIn } from "@/components/onboarding/use-otp-sign-in";
 import { useKeyboardFit } from "@/components/onboarding/use-keyboard-fit";
@@ -30,15 +30,18 @@ import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
  *   UPPER   the G's middle loop, redrawn as ONE closed ring at the G's own
  *           stroke (28.5 units, outer edge on the rim) with a white fill that
  *           clears the feed: "giver" over "kindness as currency"
- *   LOWER   the G's bottom (communi-g) loop, left OPEN, its white feathered
+ *   LOWER   the G's bottom (communi-gy) loop, left OPEN, its white feathered
  *           clear of the feed: quiet for ~3s, then a soft cross-fade to
  *           "are you a giver?", the email field and the send circle; after
  *           sending, the code field and its quiet lines take the same place
  *   toggle  the main G's variant A piece (toggleGeometry("middle")) on the
  *           ring: rim + the 24.5 white gap + ring radius 74.6 = orbit 283.1 —
- *           ONE continuous conveyor through all seven seats in clock order
+ *           ONE continuous conveyor through all eight seats in clock order
  *           (ConveyorToggle.tsx): idle drift, drag either way the short way
- *           round, lifted over the waist, never parked at 12:00
+ *           round, round the OUTSIDE of the lower loop to the 6:00 (map)
+ *           dock, docking at 12:00 (my g); hollow in transit, filled on a seat
+ *   RED     the bottom loop is COMMUNI-GY RED here by default (RedBottomLoop):
+ *           the upper ring and the toggle keep the seat colour
  *   GIVE    at give (1:30) the big G is the g of the wordmark: "ıver" is set
  *           beside it with the toggle as the i's dot, and the in-loop "giver"
  *           gives way to it (both follow the toggle's angle — no jump)
@@ -194,6 +197,54 @@ function GiveWordmark() {
   );
 }
 
+/**
+ * THE BOTTOM LOOP IN COMMUNI-GY RED. The bottom loop is communi-gy, and on the
+ * email step it DEFAULTS to red while the upper ring and the toggle keep the
+ * seat colour. The same thinned G is painted again in --mode-communigy over
+ * the seat-coloured artwork, masked to the lower loop: fully red below
+ * RED_FROM.full, handing over along the S-curve's lower bend (RED_FROM.start →
+ * full, viewBox y) so the S changes colour smoothly, never at a hard cut. The
+ * lifted toggle's footprint is drawn after it, so a filled toggle still
+ * covers it.
+ */
+const RED_FROM = { start: 568, full: 590 };
+function RedBottomLoop() {
+  const id = useId().replace(/:/g, "");
+  return (
+    <g pointerEvents="none" data-signin-red-loop="">
+      <defs>
+        <linearGradient
+          id={`${id}-fade`}
+          gradientUnits="userSpaceOnUse"
+          x1={0}
+          y1={RED_FROM.start}
+          x2={0}
+          y2={RED_FROM.full}
+        >
+          <stop offset="0" stopColor="#000" />
+          <stop offset="1" stopColor="#fff" />
+        </linearGradient>
+        <mask
+          id={`${id}-low`}
+          maskUnits="userSpaceOnUse"
+          x={-400}
+          y={-400}
+          width={1600}
+          height={2000}
+        >
+          <rect x={-400} y={-400} width={1600} height={2000} fill={`url(#${id}-fade)`} />
+        </mask>
+        <GThinMask id={`${id}-thin`} weight="middle" />
+      </defs>
+      <g mask={`url(#${id}-low)`}>
+        <g transform={LIVING_G_TRANSFORM} fill="var(--mode-communigy)">
+          <path d={LIVING_G_PATH} mask={`url(#${id}-thin)`} />
+        </g>
+      </g>
+    </g>
+  );
+}
+
 /** How long the upper copy holds alone before the lower loop's sign-up fades in. */
 const FLIP_MS = 3000;
 
@@ -320,6 +371,7 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
             showLabels={false}
             overlay={
               <>
+                <RedBottomLoop />
                 <GiveWordmark />
                 <ConveyorToggle root={root} start="give" under={<SignInRing />} />
               </>
@@ -359,7 +411,10 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
                 </div>
               </form>
             ) : (
-              <form onSubmit={(e) => void otp.submitCode(e)} className="signin-inner">
+              <form
+                onSubmit={(e) => void otp.submitCode(e)}
+                className="signin-inner signin-inner--code"
+              >
                 <p className="signin-ask signin-line" aria-live="polite">
                   {line ?? "\u00a0"}
                 </p>

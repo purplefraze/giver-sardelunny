@@ -9,13 +9,14 @@ import type { Seat } from "@/components/living-g/EarSelector";
  * one shared token set — the seat changes only these words and the colour.
  *
  * Each label names what that loop's EXISTING tap target does:
- *   give    top: the give form            bottom: communi-g gives
- *   lend    top: the lend form            bottom: communi-g lend/borrow feed
- *   trade   top: the trade form           bottom: communi-g trades
+ *   give    top: the give form            bottom: communi-gy gives
+ *   lend    top: the lend form            bottom: communi-gy lend/borrow feed
+ *   trade   top: the trade form           bottom: communi-gy trades
  *   fund    top: ask for funding          bottom: the pledge sheet (fund a wish)
- *   borrow  top: the borrow form          bottom: communi-g lend/borrow feed
- *   wish    top: the wish form            bottom: communi-g wishes
- *   my g    top: my g (profile)           bottom: my g (profile) — see report
+ *   borrow  top: the borrow form          bottom: communi-gy lend/borrow feed
+ *   wish    top: the wish form            bottom: communi-gy wishes
+ *   my g    top: my g (profile)           bottom: my g (profile)
+ *   map     top: the communi-gy map       bottom: communi-gy (the map, near me)
  *
  * LOWERCASE LOCK: every string here is lowercase, and loopCopyFor lowercases
  * again as a guard.
@@ -29,7 +30,8 @@ const LOOP_COPY: Record<Seat, LoopCopy> = {
   fund: { middle: "ask for funding", bottom: "fund a wish" },
   borrow: { middle: "borrow something", bottom: "what’s to borrow" },
   wish: { middle: "make a wish", bottom: "grant a wish" },
-  giver: { middle: "my g", bottom: "my communi-g" },
+  giver: { middle: "my g", bottom: "my communi-gy" },
+  map: { middle: "open the map", bottom: "what’s near me" },
 };
 
 export function loopCopyFor(seat: Seat): LoopCopy {

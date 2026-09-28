@@ -5,10 +5,12 @@ import type { SignInFeedKind } from "@/data/signin-feed";
  * THE EMAIL STEP'S CONVEYOR — pure maths, no React.
  *
  * ONE CONTINUOUS ANGLE (degrees, SVG sense: 0 = 3:00, clockwise positive,
- * unbounded) carries the toggle round the circle through all seven seats in
- * clock order, at the seat angles the main G uses (EarSelector SEAT_ANGLE):
- *   give 1:30 · lend 3:00 · my g 4:25 · trade 6:00 · fund 7:30 · borrow 9:00 ·
- *   wish 10:30 — and back to give across an EMPTY 12:00.
+ * unbounded) carries the toggle round the circle through all eight seats in
+ * clock (spectrum) order, at the seat angles the main G uses (EarSelector
+ * SEAT_ANGLE):
+ *   my g 12:00 · give 1:30 · lend 3:00 · trade 4:25 · map 6:00 · fund 7:30 ·
+ *   borrow 9:00 · wish 10:30 — and back to my g. 12:00 is a seat now (the
+ *   conveyor DOCKS there); the old "nothing rests at 12:00" arc is gone.
  *
  * WEIGHTS. Between two neighbouring seats a (behind) and b (ahead), with t the
  * share of the arc travelled (0 at a, 1 at b), a RAISED COSINE hands the
@@ -18,7 +20,7 @@ import type { SignInFeedKind } from "@/data/signin-feed";
  */
 const deg = (rad: number) => (rad * 180) / Math.PI;
 
-/** Seats in clock order starting after 12:00, angles in [-90, 270). */
+/** Seats in clock order starting AT 12:00 (my g), angles in [-90, 270). */
 const norm = (d: number) => ((((d + 90) % 360) + 360) % 360) - 90;
 export const CONVEYOR: { seat: Seat; at: number }[] = (Object.keys(SEAT_ANGLE) as Seat[])
   .map((seat) => ({ seat, at: norm(deg(SEAT_ANGLE[seat])) }))
@@ -26,8 +28,8 @@ export const CONVEYOR: { seat: Seat; at: number }[] = (Object.keys(SEAT_ANGLE) a
 
 export const seatAngle = (seat: Seat) => CONVEYOR.find((c) => c.seat === seat)!.at;
 
-/** The empty arc round 12:00 (between wish and give): nothing rests here. */
-export const NOON = { from: seatAngle("wish"), to: seatAngle("give") + 360 };
+/** 12:00 — my g's seat, where the conveyor docks on release. */
+export const NOON = seatAngle("giver");
 
 /**
  * Where the toggle's ring sits at give (1:30), in viewBox units: its centre
@@ -46,7 +48,7 @@ export type SeatBlend = { a: Seat; b: Seat; wa: number; wb: number; nearest: Sea
 export function seatBlend(angle: number): SeatBlend {
   let phi = norm(angle);
   const n = CONVEYOR.length;
-  /* Before the first seat (between 12:00 and give): still on the wish → give arc. */
+  /* norm() puts 12:00 (my g, -90) first, so phi is never before the first seat. */
   if (phi < CONVEYOR[0]!.at) phi += 360;
   for (let i = 0; i < n; i += 1) {
     const a = CONVEYOR[i]!;
@@ -74,7 +76,7 @@ export function giveMark(blend: SeatBlend): number {
   return x * x * (3 - 2 * x);
 }
 
-/** Which feed words belong to a seat (My G has none of its own). */
+/** Which feed words belong to a seat (my g and map have none of their own). */
 const FEED_KIND: Partial<Record<Seat, SignInFeedKind>> = {
   give: "give",
   lend: "lend",
@@ -131,6 +133,7 @@ const MODE_VAR: Record<Seat, string> = {
   fund: "--mode-fund",
   borrow: "--mode-borrow",
   wish: "--mode-wish",
+  map: "--mode-map",
 };
 
 /**

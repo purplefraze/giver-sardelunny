@@ -5,8 +5,8 @@ import { loopCopyFor } from "@/data/loop-copy";
 import { loopInk } from "@/lib/loop-ink";
 
 /**
- * THE LOOP LABEL — ONE component, ONE token set, for all seven states
- * (give, lend, trade, fund, borrow, wish, my g). There are no per-seat
+ * THE LOOP LABEL — ONE component, ONE token set, for all eight states
+ * (give, lend, trade, fund, borrow, wish, my g, map). There are no per-seat
  * overrides anywhere: the seat changes only the WORDS (loop-copy.ts) and the
  * COLOUR, and the colour comes from one formula (loopInk: the seat's
  * --mode-* colour, darkened by OKLCH lightness only to 3:1 on white).

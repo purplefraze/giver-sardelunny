@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 
-import { LIVING_G_BOX, LIVING_G_FRAME, LOOP_CENTRE } from "@/components/living-g/g-path";
+import { LIVING_G_FRAME, LOOP_CENTRE } from "@/components/living-g/g-path";
+import { dockBottom } from "@/components/living-g/toggle-path";
 import { EDGE_AIR } from "@/components/living-g/GStage";
 import { toggleReach } from "@/components/living-g/g-weight";
 
@@ -14,9 +15,10 @@ import { toggleReach } from "@/components/living-g/g-weight";
  * edge and the top of the keyboard, with EDGE_AIR (8px) above and below.
  *
  * WHAT MUST FIT is the same box GStage sizes the main G from (live toggle
- * geometry, g-weight.tsx): the toggle's reach through 12:00 (noon top,
- * y = 298 − 357.7) down to the artwork's bottom (y = 1133) — 1192.7 units —
- * so the toggle keeps its edge air even mid-drag.
+ * geometry, g-weight.tsx / toggle-path.ts): my g's ring at 12:00 (noon top,
+ * y = 298 − 357.7) down to the map dock's ring below the lower loop
+ * (y = 1293.7) — 1353.4 units — so the toggle keeps its edge air at every
+ * seat, including 6:00.
  *
  * THE BASE POSE is read from an UNSCALED probe GStage (identical layout, never
  * transformed), so the numbers are exact and never read a half-finished
@@ -38,7 +40,7 @@ const STREAM_MS = 80;
 
 /** The needed box, in viewBox units (same derivation as GStage). */
 const NEEDED_TOP = LOOP_CENTRE.middle.y - toggleReach("middle");
-const NEEDED_BOTTOM = LIVING_G_BOX.height;
+const NEEDED_BOTTOM = dockBottom("middle");
 const AIR = parseFloat(EDGE_AIR);
 
 export type KeyboardFit = { s: number; tx: number; ty: number; ease: string };

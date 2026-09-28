@@ -3,7 +3,7 @@ import { BackArrow } from "@/components/BackArrow";
 /**
  * THE DOOR THAT ASKS ONE QUESTION.
  *
- * Communi-g is already visible — this is not a hiding place. It asks for one
+ * communi-gy is already visible — this is not a hiding place. It asks for one
  * active give before a person may respond, message, sparkle or start a
  * connection. One give and the lock lifts — forever, re-checked every time.
  *
@@ -34,7 +34,7 @@ export function CommunityLocked({
         <br />a giver?
       </h1>
       <p className="g-body mt-6 max-w-[22ch] opacity-60">
-        you can look around communi-g. to take part — respond, message, sparkle — give one thing.
+        you can look around communi-gy. to take part — respond, message, sparkle — give one thing.
         anything. then the lock lifts.
       </p>
 

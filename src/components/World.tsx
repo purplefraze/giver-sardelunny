@@ -23,7 +23,9 @@ type Props = {
     | "trade"
     | "borrow"
     | "lend"
-    | "fund";
+    | "fund"
+    | "map"
+    | "communigy";
   /** Optional corner word. Omit for worlds where the G colour is the only cue. */
   word?: string;
   /** Quiet page identity: which world am I in. */

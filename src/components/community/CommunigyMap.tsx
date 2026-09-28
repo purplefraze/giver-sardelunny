@@ -1,0 +1,163 @@
+import { useEffect, useRef, useState } from "react";
+import type * as Leaflet from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+import { CG_COLOUR, CG_INK, type MapPin } from "@/data/communigy";
+import type { Pin } from "@/data/give-pins";
+import { haptics } from "@/lib/haptics";
+
+/**
+ * COMMUNI-GY'S MAP — THE PIN IS THE PRODUCT.
+ *
+ * Reuses the give flow's Leaflet setup (LocationPicker): Leaflet 1.9 loaded on
+ * demand, OpenStreetMap tiles with visible attribution, no API key. The tiles
+ * are kept PALE (grayscale, brighter, lower contrast — .cg-map in
+ * styles.css) so the only colour on screen is the pins (each listing in its
+ * own mode colour) and the red frame. A red circle marks the nearby radius
+ * round the person (their approximate, device-only location, or the city
+ * centre until they allow it).
+ *
+ * Tapping a pin shows its line in a quiet card; a real listing opens its
+ * detail from there. Sample pins (written sample activity) say so.
+ */
+const pinSvg = (colour: string) =>
+  `<svg viewBox="0 0 30 40" width="26" height="35" aria-hidden="true"><path d="M15 39C15 39 28 23.5 28 14.5A13 13 0 0 0 2 14.5C2 23.5 15 39 15 39Z" style="fill:${colour}" stroke="#fff" stroke-width="1.6"/><circle cx="15" cy="14" r="4.4" fill="#fff"/></svg>`;
+
+export function CommunigyMap({
+  pins,
+  centre,
+  radiusKm,
+  onOpen,
+}: {
+  pins: MapPin[];
+  centre: Pin;
+  radiusKm: number;
+  onOpen: (itemId: string) => void;
+}) {
+  const box = useRef<HTMLDivElement | null>(null);
+  const map = useRef<Leaflet.Map | null>(null);
+  const L = useRef<typeof Leaflet | null>(null);
+  const layer = useRef<Leaflet.LayerGroup | null>(null);
+  const ring = useRef<Leaflet.Circle | null>(null);
+  const me = useRef<Leaflet.CircleMarker | null>(null);
+  const [ready, setReady] = useState(false);
+  const [picked, setPicked] = useState<MapPin | null>(null);
+
+  /* The map, once. */
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      const lib = (await import("leaflet")).default;
+      if (dead || !box.current) return;
+      L.current = lib;
+      const m = lib
+        .map(box.current, { zoomControl: false, attributionControl: false })
+        .setView([centre.lat, centre.lng], 13);
+      lib.control.attribution({ position: "bottomright", prefix: false }).addTo(m);
+      lib
+        .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "© openstreetmap contributors",
+        })
+        .addTo(m);
+      layer.current = lib.layerGroup().addTo(m);
+      map.current = m;
+      m.on("click", () => setPicked(null));
+      setReady(true);
+    })();
+    return () => {
+      dead = true;
+      map.current?.remove();
+      map.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once
+  }, []);
+
+  /* The nearby circle and "you", wherever the centre is. */
+  useEffect(() => {
+    const lib = L.current;
+    const m = map.current;
+    if (!ready || !lib || !m) return;
+    ring.current?.remove();
+    me.current?.remove();
+    /* Leaflet writes SVG presentation attributes, which cannot read var():
+       resolve the red token to its value first. */
+    const red =
+      getComputedStyle(document.documentElement).getPropertyValue("--mode-communigy").trim() ||
+      "#e8322b";
+    ring.current = lib
+      .circle([centre.lat, centre.lng], {
+        radius: radiusKm * 1000,
+        color: red,
+        weight: 1.5,
+        opacity: 0.8,
+        fillColor: red,
+        fillOpacity: 0.05,
+        interactive: false,
+      })
+      .addTo(m);
+    me.current = lib
+      .circleMarker([centre.lat, centre.lng], {
+        radius: 6,
+        color: "#fff",
+        weight: 2,
+        fillColor: red,
+        fillOpacity: 1,
+        interactive: false,
+      })
+      .addTo(m);
+    m.fitBounds(ring.current.getBounds(), { padding: [18, 18] });
+  }, [ready, centre.lat, centre.lng, radiusKm]);
+
+  /* One pin per listing, in its mode colour. */
+  useEffect(() => {
+    const lib = L.current;
+    const group = layer.current;
+    if (!ready || !lib || !group) return;
+    group.clearLayers();
+    for (const p of pins) {
+      const icon = lib.divIcon({
+        className: "cg-pin",
+        html: pinSvg(CG_COLOUR[p.mode]),
+        iconSize: [26, 35],
+        iconAnchor: [13, 34],
+      });
+      lib
+        .marker([p.pin.lat, p.pin.lng], { icon, keyboard: true, title: p.text })
+        .on("click", () => {
+          haptics.selection();
+          setPicked(p);
+        })
+        .addTo(group);
+    }
+  }, [ready, pins]);
+
+  return (
+    <div className="cg-map-wrap relative min-h-0 flex-1" data-testid="communigy-map">
+      <div ref={box} className="cg-map absolute inset-0" aria-label="map of nearby listings" />
+      {picked ? (
+        <div className="cg-map-card">
+          <span className="g-heading block" style={{ color: CG_INK[picked.mode] }}>
+            {picked.mode}
+            {picked.sample ? <span className="cg-map-sample"> · sample</span> : null}
+          </span>
+          <span className="cg-map-line" style={{ color: CG_INK[picked.mode] }}>
+            {picked.text}
+          </span>
+          {picked.itemId ? (
+            <button
+              type="button"
+              className="cg-map-open"
+              onClick={() => {
+                haptics.light();
+                onOpen(picked.itemId!);
+              }}
+            >
+              open
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}

@@ -145,6 +145,37 @@ export function FormLine({
   );
 }
 
+/**
+ * A LINE YOU TAP, NOT TYPE — same label, same underline, same type as
+ * FormLine, but the value is a button that opens a picker (the calendar for
+ * "when"). Grey placeholder until answered.
+ */
+export function FormPickLine({
+  label,
+  value,
+  placeholder,
+  onPick,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onPick: () => void;
+}) {
+  return (
+    <div className="uf-field block">
+      <span className="uf-label">{label}</span>
+      <button
+        type="button"
+        className={`uf-input uf-pick ${value ? "" : "uf-pick--empty"}`}
+        onClick={onPick}
+        aria-label={`${label}: ${value || placeholder}`}
+      >
+        {value || placeholder}
+      </button>
+    </div>
+  );
+}
+
 /** One question, full screen: the heading asks, the answers are big words. */
 export function FormQuestion({
   heading,

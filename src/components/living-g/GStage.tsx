@@ -1,5 +1,6 @@
 import { LIVING_G_BOX, LIVING_G_FRAME, LOOP_CENTRE } from "./g-path";
-import { gBottom, noonTop, restingTop, toggleReach } from "./g-weight";
+import { noonTop, restingTop, toggleReach } from "./g-weight";
+import { dockBottom } from "./toggle-path";
 
 /**
  * THE ONE canonical stage for every full-screen Living G.
@@ -41,13 +42,15 @@ export const CTA_BAND = "1.25rem";
  * outer radius from the middle loop's centre (x 272, which is also the frame's
  * centre), so EDGE_AIR below is the exact paper between ring and screen edge.
  *   middle weight: reach 283.1 + 74.6 = 357.7 → x -85.7..629.7 (715.4 wide),
- *   y 298 − 357.7 = −59.7 .. 1133 (1192.7 tall)
- * (Was 758 × 1218, from the old 300-unit orbit and 79-unit ring.)
+ *   y 298 − 357.7 = −59.7 (my g's ring, now a seat at 12:00) .. 1293.7 (the
+ *   map dock's ring at 6:00, OUTSIDE the lower loop — toggle-path.ts)
+ *   = 1353.4 tall.
+ * (Was 715.4 × 1192.7 while 6:00 docked in the waist; 758 × 1218 before that.)
  */
 const REACH = toggleReach("middle");
 const NEEDED = {
   width: 2 * REACH,
-  height: LIVING_G_BOX.height - (LOOP_CENTRE.middle.y - REACH),
+  height: dockBottom("middle") - (LOOP_CENTRE.middle.y - REACH),
 } as const;
 const FRAME_OVER_W = LIVING_G_FRAME.width / NEEDED.width;
 const FRAME_OVER_H = LIVING_G_FRAME.width / NEEDED.height;
@@ -81,19 +84,23 @@ const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFi
  * can be read in px here (cqw/cqh). The width itself is untouched.
  */
 export const G_TOP_MIN = "35.5px";
-const EXTENT_OVER_W = ((gBottom("middle") - restingTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
+/* THE EXTENT is now my g's ring at 12:00 (a seat) down to the map dock's ring
+   at 6:00: noonTop .. dockBottom. */
+const EXTENT_OVER_W = ((dockBottom("middle") - noonTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
 /** CANONICAL_WIDTH, spelled in container units (identical value: the stage fills its container). */
 const STAGE_W = `min(calc((100cqw - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
 /*
- * …and on SHORT screens, low enough that the toggle ring dragged through 12:00
- * (not a seat; its top is ~83 units above the resting top) keeps EDGE_AIR of
- * paper under the screen's top edge.
+ * G_TOP places the NOON line (my g's ring top at 12:00): the extent centred,
+ * never less than EDGE_AIR under the screen's top, and the give / wish ring
+ * tops (restingTop, ~83 units lower) never above G_TOP_MIN (the seal line).
+ * The height term of CANONICAL_WIDTH keeps the whole extent inside the
+ * screen minus CTA_BAND, so the map dock keeps ≥ EDGE_AIR below it too.
  */
 const NOON_OVER_W = ((restingTop("middle") - noonTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
-const G_TOP = `max(${G_TOP_MIN}, calc((100cqh - ${EXTENT_OVER_W} * ${STAGE_W}) / 2), calc(${EDGE_AIR} + ${NOON_OVER_W} * ${STAGE_W}))`;
+const G_TOP = `max(${EDGE_AIR}, calc(${G_TOP_MIN} - ${NOON_OVER_W} * ${STAGE_W}), calc((100cqh - ${EXTENT_OVER_W} * ${STAGE_W}) / 2))`;
 /* As a share of the stage box's OWN height, so a translate can apply it
    (a `top` percentage would read the screen's height, not the stage's). */
-const TOP_OVER_H = (((restingTop("middle") - LIVING_G_FRAME.y) / LIVING_G_FRAME.height) * 100).toFixed(4);
+const TOP_OVER_H = (((noonTop("middle") - LIVING_G_FRAME.y) / LIVING_G_FRAME.height) * 100).toFixed(4);
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FormG, FormQuestion, FormSend } from "@/components/forms/UnifiedForm";
-import { GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
+import { GIVE_LEXICON, GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
+import { giveFirstRunStore } from "@/data/give-firstrun";
 import {
   EXPIRY_PRESETS,
   USES_CALENDAR,
@@ -32,12 +33,22 @@ import { FirstGiveCheck } from "./FirstGiveCheck";
  * Nothing matched → "what are you giving?" with the six choices. Then only
  * that type's lines rise in, each once the one above is answered or skipped:
  *
- *   a thing / clothes   add a photo · where is it? · size?/condition? · up for 7 days
+ *   a thing / clothes   add a photo · when can they collect it? · where is it? ·
+ *                       size?/condition? · up for 7 days
  *   food                add a photo · when is it ready? · where is it? · up for 1 day
  *   time                add a photo · when are you free? · where? · up for 1 day / up until …
  *   a skill / a hand    add a photo · when? · where? · up for 1 day / up until …
  *
  * The send circle appears once what + type + where are filled.
+ *
+ * "WHEN" IS A CALENDAR (WhenPicker), never a silent "anytime": things and
+ * clothes now ask "when can they collect it?" on the same month grid time /
+ * a skill / a hand use (optional — skip leaves it open). Food keeps its
+ * ready-by answers. Only time / skill / hand let the date end the give.
+ *
+ * FIRST RUN ONLY (give-firstrun.ts): under the heading, "stuck on what you
+ * can give? tap for suggestions" — a tap shows a few words drawn from the
+ * give lexicon (GIVE_LEXICON), one tap fills "what" with it.
  *
  * SAVED AS (no schema change — the existing items columns + details jsonb):
  *   text            the "what" line
@@ -63,16 +74,16 @@ const TOPIC_OF: Record<GiveType, Topic> = {
 };
 
 const WHEN_PROMPT: Record<GiveType, string> = {
-  "a thing": "",
-  clothes: "",
+  "a thing": "when can they collect it?",
+  clothes: "when can they collect it?",
   food: "when is it ready?",
   time: "when are you free?",
   "a skill": "when?",
   "a hand": "when?",
 };
 const WHEN_HINT: Record<GiveType, string> = {
-  "a thing": "",
-  clothes: "",
+  "a thing": "pick a day",
+  clothes: "pick a day",
   food: "tonight after 6",
   time: "evenings, weekends…",
   "a skill": "pick a day",
@@ -94,6 +105,25 @@ const CAN_BE_ONLINE: Record<GiveType, boolean> = {
   "a skill": true,
   "a hand": false,
 };
+
+/**
+ * FIRST-RUN SUGGESTIONS — words straight out of the give lexicon (stems shown
+ * without their "*"), a couple per type, so a tap always lands on a type the
+ * guess already knows. Only entries that really are in GIVE_LEXICON survive.
+ */
+const SUGGEST_FROM: Record<GiveType, string[]> = {
+  "a thing": ["ladder*", "stroller*", "book*"],
+  clothes: ["coat*", "hoodie*"],
+  food: ["sourdough", "soup*"],
+  time: ["dog walk*", "company"],
+  "a skill": ["guitar", "french"],
+  "a hand": ["help moving", "paint*"],
+};
+const SUGGESTIONS: { type: GiveType; word: string }[] = GIVE_TYPES.flatMap((type) =>
+  SUGGEST_FROM[type]
+    .filter((k) => GIVE_LEXICON[type].includes(k))
+    .map((k) => ({ type, word: k.replace(/\*$/, "") })),
+);
 
 /** Tag options — kept minimal. */
 const SIZES = ["xs", "s", "m", "l", "xl"] as const;
@@ -137,6 +167,12 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   const [pending, setPending] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement | null>(null);
+  /* FIRST RUN: shown on this visit only; the flag is written on open. */
+  const [firstRun] = useState(() => !prefill && !giveFirstRunStore.seen());
+  const [suggesting, setSuggesting] = useState(false);
+  useEffect(() => {
+    if (firstRun) giveFirstRunStore.markSeen();
+  }, [firstRun]);
 
   const type: GiveType | null = picked ?? guess;
   const described = what.trim().length >= 3;
@@ -153,7 +189,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   }, [what, described, picked]);
 
   const usesCalendar = type ? USES_CALENDAR[type] : false;
-  const asksWhen = type !== null && type !== "a thing" && type !== "clothes";
+  const asksWhen = type !== null;
   const whenAnswered = type === "food" ? ready !== null : when !== null;
   const whereDone = where !== null;
   const minimum = described && type !== null && whereDone;
@@ -228,7 +264,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
       extras,
       where: where.online ? "online" : where.label,
       expiresAt: expiresAt(effectiveExpiry, when).toISOString(),
-      ...(usesCalendar && when
+      ...(type !== "food" && when
         ? {
             date: when.date,
             ...(when.start ? { startTime: when.start } : {}),
@@ -270,7 +306,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
       setScreen("verify");
       return;
     }
-    finish("it’s live in communi-g");
+    finish("it’s live in communi-gy");
   };
 
   const leave = () => onDone();
@@ -289,7 +325,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
           markFirstGiveVerified(account());
           itemsStore.patch(pending, { published: true });
           void push();
-          finish("it’s live in communi-g");
+          finish("it’s live in communi-gy");
         }}
       />
     );
@@ -377,6 +413,44 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
       <FormG onBack={leave} />
       <h1 className="uf-heading">give something</h1>
       {live ? <p className="uf-say gf-live">{live}</p> : null}
+      {firstRun && !what ? (
+        <div className="gf-firstrun gf-rise" data-testid="give-firstrun">
+          {suggesting ? (
+            <>
+              <span className="uf-label">try one of these</span>
+              <div className="gf-suggest-row">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s.word}
+                    type="button"
+                    className="gf-suggest"
+                    onClick={() => {
+                      haptics.selection();
+                      setWhat(s.word);
+                      setPicked(s.type);
+                      setSuggesting(false);
+                      input.current?.focus();
+                    }}
+                  >
+                    {s.word}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="gf-firstrun-ask"
+              onClick={() => {
+                haptics.selection();
+                setSuggesting(true);
+              }}
+            >
+              stuck on what you can give? tap for suggestions
+            </button>
+          )}
+        </div>
+      ) : null}
       <div className="uf-fields gf-fields">
         <div className="gf-what">
           <label className="uf-field gf-field block">

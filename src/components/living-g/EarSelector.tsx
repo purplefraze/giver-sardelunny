@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
 import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
 import { GThinMask, TOGGLE, rimRadius, trackRadius, type GWeight } from "./g-weight";
+import { togglePath, type TrackPose } from "./toggle-path";
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.
@@ -18,10 +19,8 @@ import { GThinMask, TOGGLE, rimRadius, trackRadius, type GWeight } from "./g-wei
  * cut in <LivingG> (see EAR_GEOMETRY), so the rim underneath stays a perfectly
  * smooth curve in every mode.
  *
- * TWO MIRRORED PAIRS:
- *   wish 10:30 <-> borrow 1:30
- *   lend  9:00 <-> trade  4:30, with MY G at 6:00 over the lower loop and
- *   give at 7:30 between my g and lend
+ * (Historic pairing notes: wish 10:30 <-> borrow 1:30, lend 9:00 <-> trade
+ * 4:30. The live, spectrum-ordered layout is SEAT_ANGLE below.)
  *
  * The S-curve is never a mode destination.
  */
@@ -35,11 +34,24 @@ export type Mode = (typeof MODES)[number];
  * LOCKED until the person has discovered their profile, so onboarding only ever
  * offers the activity seats.
  */
-export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend", "fund"] as const;
+export const SEATS = ["giver", "wish", "give", "trade", "borrow", "lend", "fund", "map"] as const;
 export type Seat = (typeof SEATS)[number];
 
-/** Every seat on the wire, in travel order (one end of the break -> the other). */
-export const FULL_SEATS = ["trade", "fund", "borrow", "wish", "give", "lend", "giver"] as const;
+/**
+ * Every seat on the wire, in travel order (one end of the break -> the other).
+ * MAP (6:00) is a door INTO communi-gy (the map / search view), never a
+ * second community seat; communi-gy itself is always the bottom loop.
+ */
+export const FULL_SEATS = [
+  "map",
+  "fund",
+  "borrow",
+  "wish",
+  "giver",
+  "give",
+  "lend",
+  "trade",
+] as const;
 
 
 
@@ -89,18 +101,23 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  *   borrow  -45°   1:30
  *   trade   +45°   4:30, just inside the clockwise end
  *
- * (The table above is the original layout. The LIVE map is SEAT_ANGLE:
- *   trade 6:00 · fund 7:30 · borrow 9:00 · wish 10:30 · give 1:30 ·
- *   lend 3:00 · my g 4:25 — and 12:00 stays EMPTY, no seat there.)
+ * (The table above is the original layout. The LIVE map is SEAT_ANGLE —
+ * eight seats in SPECTRUM order, clockwise from 12:00:
+ *   my g 12:00 (blue) · give 1:30 (green) · lend 3:00 (yellow-green) ·
+ *   trade 4:25 (orange) · map 6:00 (red) · fund 7:30 (clay) ·
+ *   borrow 9:00 (light purple) · wish 10:30 (prince purple).
+ * 12:00 is no longer empty: My G sits there. The old 4:25 nudge (clearing
+ * the S-curve) now belongs to trade.)
  */
 export const SEAT_ANGLE: Record<Seat, number> = {
-  trade: rad(-270), // 6:00
-  fund: rad(-225), // 7:30 — FUND, between trade and borrow
+  map: rad(-270), // 6:00 — MAP / SEARCH, the door into communi-gy
+  fund: rad(-225), // 7:30 — FUND, between map and borrow
   borrow: rad(-180), // 9:00
   wish: rad(-135), // 10:30
+  giver: rad(-90), // 12:00 — MY G
   give: rad(-45), // 1:30
   lend: rad(0), // 3:00
-  giver: rad(42.5), // 4:25 — My G, nudged toward Lend to clear the S-curve
+  trade: rad(42.5), // 4:25 — nudged toward lend to clear the S-curve
 };
 
 /** The wire's two physical ends — the two lips of the break. Nothing passes. */
@@ -145,12 +162,40 @@ const at = (angle: number, r: number): P => ({
 });
 
 /**
+ * WHERE THE RING IS at a track angle (toggle-path.ts): the middle loop's
+ * orbit over the top, straight sides, and the LOWER loop's orbit round the
+ * bottom, so the 6:00 dock (map) sits outside the lower loop and never in the
+ * waist. The angle stays the one parameter; only the point moves.
+ */
+const poseAt = (angle: number, weight: GWeight = "normal"): TrackPose =>
+  togglePath(weight).pose(angle);
+
+/** `inset` units in from the ring's centre, towards the G (hints, stems). */
+const inward = (pose: TrackPose, inset: number): P => ({
+  x: pose.x - pose.nx * inset,
+  y: pose.y - pose.ny * inset,
+});
+
+/**
+ * THE TOGGLE'S INSIDE IS NEGATIVE SPACE — transparent, the G's stroke and the
+ * paper (or feed) showing through — in every state EXCEPT sitting on the one
+ * active seat, where it fills with the seat colour and covers what is under
+ * it. "Sitting" = settled within FILL_TOL of the seat's dock (and not being
+ * dragged). The fill cross-fades in FILL_MS so a pass never flickers.
+ */
+export const FILL_TOL_DEG = 3;
+export const FILL_MS = 150;
+
+/**
  * THE LIVE CENTRE OF THE TOP LOOP — the small circular selector itself, wherever
  * the toggle is CURRENTLY sitting. Anything that must travel "into the top loop"
  * asks for this and never for a hard-coded coordinate, so the motion follows the
  * Living G's present state instead of one seat's position.
  */
-export const seatCentre = (seat: Seat): P => at(SEAT_ANGLE[seat], TRACK_R);
+export const seatCentre = (seat: Seat): P => {
+  const p = poseAt(SEAT_ANGLE[seat]);
+  return { x: p.x, y: p.y };
+};
 
 
 
@@ -214,7 +259,7 @@ const MODE_COLOUR: Record<Seat, string> = {
   borrow: "var(--mode-borrow)",
   lend: "var(--mode-lend)",
   fund: "var(--mode-fund)",
-
+  map: "var(--mode-map)",
 };
 
 
@@ -361,9 +406,12 @@ export function EarSelector({
     };
   }, [dragging, mode, target]);
 
-  const deg = (angle * 180) / Math.PI;
   /** Where the ring actually is right now — text and hit area follow it. */
-  const ear = at(angle, TRACK_R);
+  const pose = poseAt(angle, weight);
+  const ear: P = { x: pose.x, y: pose.y };
+  /** FILLED only when settled on the active seat (see FILL_TOL_DEG). */
+  const filled =
+    !dragging && Math.abs(angle - SEAT_ANGLE[mode]) < (FILL_TOL_DEG * Math.PI) / 180;
   const knockId = useId().replace(/:/g, "");
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {
@@ -435,12 +483,11 @@ export function EarSelector({
   return (
     <g>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
-          MY G IS ONE OF THEM: at 6 o'clock it is the same small, soft, close-in
-          dot as every other inactive destination — its hue is red, nothing else
-          about it is louder. The moment the toggle arrives it disappears under
-          the piece itself, which then reads "my g". */}
+          MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
+          dot as every other inactive destination — nothing about it is louder.
+          The moment the toggle arrives it disappears under the piece itself. */}
       {seats.map((m) => {
-        const hint = at(SEAT_ANGLE[m], RIM_R + 16);
+        const hint = inward(poseAt(SEAT_ANGLE[m], weight), TRACK_R - RIM_R - 16);
         const active = mode === m && !dragging;
         // On a person's screen the seats TELL THEIR STORY: a seat they have
         // taken part in reads in that mode's own colour, a little stronger.
@@ -484,39 +531,47 @@ export function EarSelector({
         {/* At the middle weight the gap is clipped to the THINNED strokes. */}
         {weight !== "normal" ? <GThinMask id={`${knockId}-thin`} weight={weight} transformed /> : null}
       </defs>
-      <circle
-        cx={ear.x}
-        cy={ear.y}
-        r={RING_MID}
-        fill="none"
-        stroke="var(--world-bg)"
-        strokeWidth={RING_W + KNOCK_GAP * 2}
-        {...(weight !== "normal" ? { mask: `url(#${knockId}-thin)` } : { clipPath: `url(#${knockId}-g)` })}
-        pointerEvents="none"
-      />
+      {/* The white gap + the filled disc cover a stroke ONLY when filled
+          (settled on the active seat); hollow, the stroke runs straight
+          through the ring and joins it on the circumference. */}
       <g
-        transform={`rotate(${deg} ${TRACK_C.x} ${TRACK_C.y})`}
         pointerEvents="none"
+        style={{ opacity: filled ? 1 : 0, transition: `opacity ${FILL_MS}ms ease-out` }}
+      >
+        <circle
+          cx={ear.x}
+          cy={ear.y}
+          r={RING_MID}
+          fill="none"
+          stroke="var(--world-bg)"
+          strokeWidth={RING_W + KNOCK_GAP * 2}
+          {...(weight !== "normal" ? { mask: `url(#${knockId}-thin)` } : { clipPath: `url(#${knockId}-g)` })}
+        />
+        <circle cx={ear.x} cy={ear.y} r={RING_MID} fill="var(--world-g)" data-toggle-fill="" />
+      </g>
+      <g
+        transform={`translate(${ear.x} ${ear.y}) rotate(${pose.deg})`}
+        pointerEvents="none"
+        data-toggle-filled={filled || undefined}
       >
         <rect
-          x={TRACK_C.x + STEM_FROM}
-          y={TRACK_C.y - STEM_HALF}
+          x={STEM_FROM - TRACK_R}
+          y={-STEM_HALF}
           width={STEM_TO - STEM_FROM}
           height={STEM_HALF * 2}
           rx={STEM_HALF * 0.5}
           fill="var(--world-g)"
         />
-        {/* The ring's own hole is paper (inside its outline only). */}
+        {/* The ring's inside is NEGATIVE SPACE: no fill of its own. */}
         <circle
-          cx={TRACK_C.x + TRACK_R}
-          cy={TRACK_C.y}
+          cx={0}
+          cy={0}
           r={RING_MID}
-          fill="var(--world-bg)"
+          fill="none"
           stroke="var(--world-g)"
           strokeWidth={RING_W}
         />
       </g>
-
 
       {photo ? (
         <>
@@ -568,8 +623,8 @@ export function EarSelector({
       */}
       {sparks !== undefined ? (
         <text
-          x={ear.x - Math.sin(angle) * (EAR.outerR + 46)}
-          y={ear.y + Math.cos(angle) * (EAR.outerR + 46)}
+          x={ear.x - pose.ny * (EAR.outerR + 46)}
+          y={ear.y + pose.nx * (EAR.outerR + 46)}
           textAnchor="middle"
           dominantBaseline="middle"
           fill="var(--giver-green)"
@@ -601,7 +656,7 @@ export function EarSelector({
       {!locked
         ? seats.map((m) => {
             if (m === mode) return null;
-            const spot = at(SEAT_ANGLE[m], TRACK_R);
+            const spot = poseAt(SEAT_ANGLE[m], weight);
             return (
               <circle
                 key={`seat-${m}`}
@@ -610,7 +665,7 @@ export function EarSelector({
                 r={78}
                 fill="transparent"
                 role="button"
-                aria-label={m === "giver" ? "my g" : m}
+                aria-label={m === "giver" ? "my g" : m === "map" ? "map" : m}
                 className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
                 style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
                 onPointerDown={(e) => {

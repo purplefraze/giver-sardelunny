@@ -54,14 +54,16 @@ import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/
 
 /**
  * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
- * MY G and COMMUNI-G are not content types: they are the top and bottom loops.
+ * MY G and COMMUNI-GY are not content types: they are the top and bottom loops.
  */
 const MODES_ONLY = MODES;
 
 /**
- * THE SIX POSITIONS, FIXED: my g (12) · give · wish · borrow · lend (9) ·
- * trade (3). LEND is its own seat; underneath it is the lending side of the
- * borrow world, so it keeps one content model and its own colour.
+ * THE EIGHT POSITIONS, FIXED (EarSelector SEAT_ANGLE, spectrum order): my g
+ * (12) · give · lend (3) · trade · map (6) · fund · borrow (9) · wish. LEND is
+ * its own seat; underneath it is the lending side of the borrow world, so it
+ * keeps one content model and its own colour. MAP is not an activity: it is
+ * the door into communi-gy's map / search view.
  */
 const ACTIVITY_SEATS = [...MODES, "lend", "fund"] as const;
 type ActivitySeat = (typeof ACTIVITY_SEATS)[number];
@@ -158,28 +160,28 @@ const MODE_CONTENT: Record<
       title: "my wishes",
       body: <p className="opacity-70">make a wish. keep it small and human.</p>,
     },
-    community: { title: "communi-g wishes" },
+    community: { title: "communi-gy wishes" },
   },
   give: {
     mine: {
       title: "my gives",
       body: <p className="opacity-70">share something you have, know, or can do.</p>,
     },
-    community: { title: "communi-g gives" },
+    community: { title: "communi-gy gives" },
   },
   trade: {
     mine: {
       title: "my trades",
       body: <p className="opacity-70">offer something, ask for something back.</p>,
     },
-    community: { title: "communi-g trades" },
+    community: { title: "communi-gy trades" },
   },
   borrow: {
     mine: {
       title: "my borrows",
       body: <p className="opacity-70">ask to borrow something for a while.</p>,
     },
-    community: { title: "communi-g borrows" },
+    community: { title: "communi-gy borrows" },
   },
 };
 
@@ -286,9 +288,8 @@ function Index() {
    * THE TOGGLE ANSWERS "WHAT?" — the loops answer "WHOSE?" (top = me,
    * middle = mine, bottom = everyone).
    */
-    /* THE SIX FIXED SEATS: my g (12) · give · wish · borrow · lend (9) ·
-     trade (3). */
-  const [seat, setSeatState] = useState<ActivitySeat | "giver">("give");
+    /* THE EIGHT FIXED SEATS (spectrum order, clockwise from my g at 12). */
+  const [seat, setSeatState] = useState<ActivitySeat | "giver" | "map">("give");
   /**
    * TOGGLE WORDS STAY SILENT until the first successful seat change away from
    * the initial landing. Persisted so a refresh does not re-mute the bead.
@@ -303,7 +304,7 @@ function Index() {
     setSeatState(next);
     /* MY G IS A DESTINATION, NOT AN INHERITED MODE: only activity seats are
        remembered as the first-use mode. */
-    if (next !== "giver") rememberFirstUseSeat(next);
+    if (next !== "giver" && next !== "map") rememberFirstUseSeat(next);
   };
 
   /**
@@ -355,6 +356,10 @@ function Index() {
     type: ItemType | null;
     /** MINE FIRST when arriving straight from publishing my own. */
     mine?: boolean;
+    /** Which communi-gy view opens: the list, or the map (the 6:00 door). */
+    view?: "list" | "map";
+    /** The lending side of borrow (lend is a borrow record with side lend). */
+    side?: BorrowSide;
   } | null>(null);
 
   /**
@@ -418,7 +423,7 @@ function Index() {
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
-    if (seat === "giver") return;
+    if (seat === "giver" || seat === "map") return;
     /* Fund has its OWN two-page explanation; it never replays Wish's. */
     if (seat === "fund") {
       if (introSeenStore.get().fund) return;
@@ -466,7 +471,7 @@ function Index() {
   }, [lifecycle.profileSetupCompletedAt, me.built]);
 
   /**
-   * THE CARDINAL GIVER RULE: Communi-g is visible to everyone; engaging
+   * THE CARDINAL GIVER RULE: communi-gy is visible to everyone; engaging
    * (respond / message / sparkle) needs one active give of my own. Permanent,
    * re-checked here on every render — never a flag set once during onboarding.
    */
@@ -504,7 +509,10 @@ function Index() {
    * destination seat at 12 o'clock. `mode` is the activity world, and it is
    * null while the toggle is sitting on My G.
    */
-  const activity: ActivitySeat | null = seat === "giver" ? null : seat;
+  const activity: ActivitySeat | null = seat === "giver" || seat === "map" ? null : seat;
+  /** THE 6:00 DOOR: map / search opens communi-gy's map, never a form. */
+  const atMap = seat === "map";
+  const openMap = () => setBrowse({ type: null, view: "map" });
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = seatMode(activity ?? "give");
   const content = MODE_CONTENT[mode];
@@ -532,7 +540,7 @@ function Index() {
    * nothing there; afterwards the seat exists permanently, whether or not a
    * single field was ever filled in. LEND sits at 9 o'clock, TRADE at 3.
    */
-  const myGSeats: readonly Seat[] = ["giver", ...ACTIVITY_SEATS] as const;
+  const myGSeats: readonly Seat[] = ["giver", ...ACTIVITY_SEATS, "map"] as const;
 
   /**
    * TOP = ME. MY G is not a content type and never a toggle seat: it is the
@@ -547,12 +555,16 @@ function Index() {
    * they enter that selected world; at My G they enter the person's profile.
    */
   const enterSelectedWorld = () => {
+    if (atMap) {
+      openMap();
+      return;
+    }
     if (activity === null) {
       openMyG();
       return;
     }
     /* FUND opens its own form — "ask for funding" — in the same chamber.
-       (The pledge sheet stays one loop down: Fund's communi-g.) */
+       (The pledge sheet stays one loop down: Fund's communi-gy.) */
     if (activity === "fund") {
       setEditor({ kind: "ask-fund" });
       return;
@@ -636,12 +648,12 @@ function Index() {
         <>
           {/*
             THE WORKSPACE — one Living G, always yours.
-            TOP = ME (my g) · MIDDLE = MINE · BOTTOM = EVERYONE (communi-g).
+            TOP = ME (my g) · MIDDLE = MINE · BOTTOM = EVERYONE (communi-gy).
             The toggle answers WHAT; the loops answer WHOSE.
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={activity ?? "profile"}
+            world={atMap ? "map" : (activity ?? "profile")}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -699,20 +711,22 @@ function Index() {
                 /* The label is drawn by <LoopLabels> in the overlay. */
               },
               /*
-                BOTTOM LOOP = EVERYONE. COMMUNI-G, already filtered to the
+                BOTTOM LOOP = EVERYONE. COMMUNI-GY, already filtered to the
                 toggle's world; the mixed community lives one word away inside.
+                At the map seat it opens communi-gy's map.
               */
               bottom: {
                 label: "",
                 panelTitle: content.community.title,
                 panelBody: null,
-                onPress:
-                  activity === null
+                onPress: atMap
+                  ? openMap
+                  : activity === null
                     ? openMyG
                     : firstArrival
                       ? /* NOTHING EXISTS YET: the one action is building my g. */ setup
                       : funding
-                        ? /* FUND'S COMMUNI-G = wishes to fund, in its own sheet. */
+                        ? /* FUND'S COMMUNI-GY = wishes to fund, in its own sheet. */
                           () => setEditor({ kind: "fund" })
                         : () => {
                           /* VISIBLE TO EVERYONE. Interaction locks live inside the detail. */
@@ -902,8 +916,9 @@ function Index() {
                       onDone={() => setEditor(null)}
                       onSeeInCommunity={() => {
                         const type = editor.category as ItemType;
+                        const side = editor.side;
                         setEditor(null);
-                        setBrowse({ type, mine: true });
+                        setBrowse({ type, mine: true, ...(side ? { side } : {}) });
                       }}
                     />
 
@@ -1007,11 +1022,14 @@ function Index() {
                 id: "browse",
                 open: browse !== null,
                 anchor: "bottom",
-                world: activity ?? "community",
+                /* INSIDE COMMUNI-GY THE FRAME LOCKS TO RED, whatever the seat. */
+                world: "communigy",
                 children: browse ? (
                   <CommunityFeed
                     initialType={browse.type}
                     initialScope={browse.mine ? "mine" : "everyone"}
+                    {...(browse.view ? { initialView: browse.view } : {})}
+                    {...(browse.side ? { initialSide: browse.side } : {})}
 
                     onOpen={(itemId) => setDetail(itemId)}
                     onOpenProfile={(ownerId) => {

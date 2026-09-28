@@ -43,6 +43,7 @@ const RESERVED = new Set([
   "sparkles",
   "community",
   "communig",
+  "communigy",
   "me",
   "you",
 ]);

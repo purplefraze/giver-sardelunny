@@ -4,7 +4,7 @@
  * One member contributes an amount toward another member's Wish; many people
  * can chip in. The funder does not need to know the recipient and provides no
  * item. Fund ATTACHES TO a Wish — it is not a Give, Lend/Borrow, Trade or
- * Communi-g, and it never replaces the Wish itself.
+ * communi-gy, and it never replaces the Wish itself.
  *
  * STORAGE mirrors the item layer (src/data/items.ts): one local collection,
  * persisted to localStorage, read through useSyncExternalStore.
@@ -143,7 +143,7 @@ export function myContributions(s: FundState, funderId = ME_ID) {
 
 /**
  * WISHES I COULD FUND: someone else's active, published Wish. The same
- * collection Communi-g reads — Fund never has its own copy of a Wish.
+ * collection communi-gy reads — Fund never has its own copy of a Wish.
  */
 export function fundableWishes(items: ItemsState, funderId = ME_ID): Item[] {
   return items.items

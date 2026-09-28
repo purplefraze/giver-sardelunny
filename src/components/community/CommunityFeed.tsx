@@ -1,5 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
+import { CommunigyMap } from "@/components/community/CommunigyMap";
+import { PerimeterToggle } from "@/components/community/PerimeterToggle";
+import {
+  CG_INK,
+  CG_MODES,
+  CG_WORD,
+  NEAR_KM,
+  inMode,
+  kmBetween,
+  mapPins,
+  modeFor,
+  type CgMode,
+} from "@/data/communigy";
+import { CITY_CENTRE } from "@/data/give-boundary";
+import { askLocation, useMyLocation } from "@/data/my-location";
 import { memberById } from "@/data/giver";
 import {
   ACTIVITY_FILL,
@@ -7,6 +22,7 @@ import {
   communityItems,
   detailBits,
   itemLine,
+  type BorrowSide,
   type ItemType,
 } from "@/data/items";
 import { itemsStore } from "@/data/items";
@@ -29,17 +45,25 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  *
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
+ *
+ * COMMUNI-GY (renamed from communi-g). The frame LOCKS TO RED here — the
+ * view's data-world is "communigy", and a red border runs round it with the
+ * PERIMETER TOGGLE on it (PerimeterToggle.tsx) browsing the modes: everything ·
+ * give · lend · trade · fund · borrow · wish. The border and the ring stay red;
+ * the interior text switches to the mode colour (--cg-ink). Two views of the
+ * same filtered listings: the LIST, and the MAP (the 6:00 map seat's door),
+ * where every listing drops a pin in its mode colour and a red circle marks
+ * what is near me.
  */
 
 type Sort = "nearby" | "latest" | "popular";
 
 const SORTS: Sort[] = ["nearby", "latest", "popular"];
 
-/** WHOSE ACTIVITY IS SHOWING. My own gives belong in communi-g too. */
+/** WHOSE ACTIVITY IS SHOWING. My own gives belong in communi-gy too. */
 type Scope = "everyone" | "mine";
 
-/** GIVE COMES FIRST. Community leads with generosity, then asks. */
-const FILTERS: ItemType[] = ["give", "wish", "trade", "borrow"];
+type View = "list" | "map";
 
 /**
  * ONE LINE, WHEREVER POSSIBLE. The headline scales inside a controlled range
@@ -57,6 +81,8 @@ function headlineSize(text: string): string {
 export function CommunityFeed({
   initialType = null,
   initialScope = "everyone",
+  initialView = "list",
+  initialSide,
   onOpen,
   onOpenProfile,
   onEditMine,
@@ -65,6 +91,10 @@ export function CommunityFeed({
   initialType?: ItemType | null;
   /** OPENED ON MY OWN GIVES when arriving straight from publishing one. */
   initialScope?: Scope;
+  /** The map seat (6:00) opens straight onto the map. */
+  initialView?: View;
+  /** Lend is the lending side of borrow. */
+  initialSide?: BorrowSide;
   onOpen: (itemId: string) => void;
   /** THE PERSON IS THEIR OWN DESTINATION. */
   onOpenProfile?: (ownerId: string) => void;
@@ -74,11 +104,18 @@ export function CommunityFeed({
 }) {
   const items = useItems();
   const links = useConnections();
-  const [type, setType] = useState<ItemType | null>(initialType);
+  const [mode, setMode] = useState<CgMode>(modeFor(initialType, initialSide));
+  const [view, setView] = useState<View>(initialView);
   const [sort, setSort] = useState<Sort>("nearby");
   const [scope, setScope] = useState<Scope>(initialScope);
+  /** NEAR ME: asks for location only on this tap; then keeps the circle's pins. */
+  const [nearMe, setNearMe] = useState(false);
+  const [nearSay, setNearSay] = useState<string | null>(null);
+  const myLocation = useMyLocation();
+  const centre = myLocation?.pin ?? CITY_CENTRE;
+  const ink = CG_INK[mode];
 
-  /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside Communi-G. */
+  /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside communi-gy. */
   const [query, setQuery] = useState("");
 
   const needle = query.trim().toLowerCase();
@@ -109,9 +146,9 @@ export function CommunityFeed({
 
   /* MY PUBLISHED GIVES ARE PART OF THE COMMUNITY, not hidden from their author. */
   const list = communityItems(items, {
-    ...(type && !searching ? { type } : {}),
     ...(scope === "mine" && !searching ? { ownerId: ME_ID } : {}),
   })
+    .filter((item) => (searching ? true : inMode(item, mode)))
     .filter((item) =>
       searching
         ? needle.split(/\s+/).every((word) => haystack(item).includes(word))
@@ -123,19 +160,66 @@ export function CommunityFeed({
       return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
     });
 
+  /* THE MAP'S PINS — see communigy.ts for exactly what backs them. */
+  const allPins = useMemo(
+    () => (view === "map" ? mapPins(list, searching ? "everything" : mode, itemLine) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- list is derived from these
+    [view, items, mode, scope, needle, sort],
+  );
+  const pins = nearMe ? allPins.filter((p) => kmBetween(p.pin, centre) <= NEAR_KM) : allPins;
+
+  const toggleNearMe = async () => {
+    buzz();
+    if (nearMe) {
+      setNearMe(false);
+      setNearSay(null);
+      return;
+    }
+    setNearMe(true);
+    if (myLocation) return;
+    setNearSay("finding you…");
+    const got = await askLocation();
+    setNearSay(
+      got.ok
+        ? null
+        : got.reason === "denied"
+          ? "location is off — showing the city centre"
+          : "location isn’t available here — showing the city centre",
+    );
+  };
+
 
   return (
     <div
-      data-world="community"
+      data-world="communigy"
+      data-cg-mode={mode}
+      data-cg-view={view}
       className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-hidden"
-      style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
+      style={{
+        background: "var(--world-bg)",
+        color: "var(--world-ink)",
+        ["--cg-ink" as string]: ink,
+      }}
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      {/* COMMUNI-G SPEAKS IN BLACK. Blue stays its identity accent. */}
-      <h1 className="g-display" style={{ color: "var(--giver-ink)" }}>
-        communi-g
+      {/* THE RED FRAME + THE PERIMETER TOGGLE (the modes, round the border). */}
+      <PerimeterToggle
+        modes={CG_MODES}
+        value={mode}
+        onChange={(next) => {
+          setMode(next);
+          setScope("everyone");
+        }}
+      />
+
+      {/* COMMUNI-GY IN THE MODE'S COLOUR (red for everything). */}
+      <h1 className="g-display" style={{ color: ink }}>
+        communi-gy
       </h1>
+      <p className="cg-mode-word" style={{ color: ink }}>
+        {scope === "mine" ? `my ${CG_WORD[mode]}` : CG_WORD[mode]}
+      </p>
 
       {/* SEARCH — one big line. Type a word, see it. Tap the × to see it all again. */}
       <div className="g-rule mt-3 flex items-center gap-3 pb-2">
@@ -145,7 +229,7 @@ export function CommunityFeed({
           placeholder="search"
           autoComplete="off"
           className="min-h-11 w-full border-0 bg-transparent text-[19px] font-black lowercase tracking-[0.02em] outline-none placeholder:opacity-30"
-          style={{ color: "var(--giver-ink)" }}
+          style={{ color: ink }}
         />
         {searching ? (
           <button
@@ -156,7 +240,7 @@ export function CommunityFeed({
               setQuery("");
             }}
             className="min-h-11 min-w-11 text-[22px] font-black leading-none opacity-45"
-            style={{ color: "var(--giver-ink)" }}
+            style={{ color: ink }}
           >
             ×
           </button>
@@ -172,65 +256,78 @@ export function CommunityFeed({
         </p>
       ) : (
         <>
-          {/* ONE ROW OF WORDS: EVERYTHING · GIVE · WISH · TRADE · BORROW · MINE */}
-          <div className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-[15px] font-black lowercase tracking-[0.1em]">
-            <button
-              type="button"
-              onClick={() => {
-                buzz();
-                setType(null);
-                setScope("everyone");
-              }}
-              className={type === null && scope === "everyone" ? "opacity-100" : "opacity-30"}
-              style={{ color: "var(--giver-ink)" }}
-            >
-              everything
-            </button>
-            {FILTERS.map((t) => (
+          {/* ONE ROW OF WORDS: LIST · MAP · MINE (the modes live on the border). */}
+          <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-[15px] font-black lowercase tracking-[0.1em]">
+            {(["list", "map"] as const).map((v) => (
               <button
-                key={t}
+                key={v}
                 type="button"
                 onClick={() => {
                   buzz();
-                  setType(t);
-                  setScope("everyone");
+                  setView(v);
                 }}
-                className={type === t && scope === "everyone" ? "opacity-100" : "opacity-30"}
-                style={{ color: ACTIVITY_FILL[t] }}
+                className={view === v ? "opacity-100" : "opacity-30"}
+                style={{ color: ink }}
+                aria-pressed={view === v}
               >
-                {t}
+                {v}
               </button>
             ))}
             <button
               type="button"
               onClick={() => {
                 buzz();
-                setType(null);
-                setScope("mine");
+                setScope(scope === "mine" ? "everyone" : "mine");
               }}
               className={scope === "mine" ? "opacity-100" : "opacity-30"}
-              style={{ color: "var(--person-self-community)" }}
+              style={{ color: ink }}
+              aria-pressed={scope === "mine"}
             >
               mine
             </button>
+            {view === "map" ? (
+              <button
+                type="button"
+                onClick={() => void toggleNearMe()}
+                className={nearMe ? "opacity-100" : "opacity-30"}
+                style={{ color: ink }}
+                aria-pressed={nearMe}
+              >
+                near me
+              </button>
+            ) : null}
           </div>
 
-          {/* ONE TAP CHANGES THE ORDER. No menus, no icons. */}
-          <button
-            type="button"
-            onClick={() => {
-              buzz();
-              setSort(SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length]!);
-            }}
-            className="g-meta mt-3 min-h-11 self-start text-left opacity-55"
-          >
-            {sort} first — tap to change
-          </button>
+          {view === "map" ? (
+            <p className="g-meta mt-3 min-h-6 opacity-60" style={{ color: ink }}>
+              {nearSay ??
+                (nearMe
+                  ? `${pins.length} nearby · within ${NEAR_KM} km of you`
+                  : `${pins.length} ${pins.length === 1 ? "pin" : "pins"} · the circle is ${NEAR_KM} km round ${myLocation ? "you" : "the city centre"}`)}
+            </p>
+          ) : (
+            /* ONE TAP CHANGES THE ORDER. No menus, no icons. */
+            <button
+              type="button"
+              onClick={() => {
+                buzz();
+                setSort(SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length]!);
+              }}
+              className="g-meta mt-3 min-h-11 self-start text-left opacity-55"
+              style={{ color: ink }}
+            >
+              {sort} first — tap to change
+            </button>
+          )}
         </>
       )}
 
 
-      <ul className="mt-4 flex-1 overflow-y-auto pb-8">
+      {view === "map" && !searching ? (
+        <CommunigyMap pins={pins} centre={centre} radiusKm={NEAR_KM} onOpen={onOpen} />
+      ) : null}
+
+      <ul className={view === "map" && !searching ? "hidden" : "mt-4 flex-1 overflow-y-auto pb-8"}>
         {list.length === 0 && !searching ? (
           <li className="g-lede opacity-55">nothing here yet — yours could be the first</li>
         ) : null}

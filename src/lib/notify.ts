@@ -2,7 +2,7 @@
  * DEVICE NOTICES — ASKED FOR ONCE, AT A MOMENT THAT EARNS IT.
  *
  * Giver never opens with a permission box. The question is only ever asked
- * straight after a person has done something real (published to communi-g, or
+ * straight after a person has done something real (published to communi-gy, or
  * agreed something happened), so the ask has an obvious reason. If the answer
  * is no, or the device has no notifications at all, everything else carries on
  * exactly as before — nothing here may ever break an interaction.

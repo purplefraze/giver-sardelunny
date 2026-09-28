@@ -1,4 +1,4 @@
-import { SEAT_ANGLE, type Seat } from "@/components/living-g/EarSelector";
+import { SEAT_ANGLE, toggleGeometry, type Seat } from "@/components/living-g/EarSelector";
 import type { SignInFeedKind } from "@/data/signin-feed";
 
 /**
@@ -26,6 +26,21 @@ export const CONVEYOR: { seat: Seat; at: number }[] = (Object.keys(SEAT_ANGLE) a
 
 export const seatAngle = (seat: Seat) => CONVEYOR.find((c) => c.seat === seat)!.at;
 
+/** The empty arc round 12:00 (between wish and give): nothing rests here. */
+export const NOON = { from: seatAngle("wish"), to: seatAngle("give") + 360 };
+
+/**
+ * Where the toggle's ring sits at give (1:30), in viewBox units: its centre
+ * and outer radius. The give wordmark hangs its dotless i under it.
+ */
+const GEO = toggleGeometry("middle");
+const GIVE_RAD = (seatAngle("give") * Math.PI) / 180;
+export const GIVE_DOT = {
+  x: GEO.centre.x + GEO.TRACK_R * Math.cos(GIVE_RAD),
+  y: GEO.centre.y + GEO.TRACK_R * Math.sin(GIVE_RAD),
+  r: GEO.EAR.outerR,
+};
+
 export type SeatBlend = { a: Seat; b: Seat; wa: number; wb: number; nearest: Seat };
 
 export function seatBlend(angle: number): SeatBlend {
@@ -46,6 +61,17 @@ export function seatBlend(angle: number): SeatBlend {
   }
   const first = CONVEYOR[0]!.seat;
   return { a: first, b: first, wa: 1, wb: 0, nearest: first };
+}
+
+/**
+ * THE GIVE WORDMARK'S PRESENCE (0..1): full on give, gone by the midpoint to
+ * either neighbour, smoothstepped so it never jumps. The in-loop "giver"
+ * takes the complement.
+ */
+export function giveMark(blend: SeatBlend): number {
+  const w = blend.a === "give" ? blend.wa : blend.b === "give" ? blend.wb : 0;
+  const x = Math.min(1, Math.max(0, (w - 0.6) / 0.4));
+  return x * x * (3 - 2 * x);
 }
 
 /** Which feed words belong to a seat (My G has none of its own). */
@@ -109,12 +135,12 @@ const MODE_VAR: Record<Seat, string> = {
 
 /**
  * THE SEAT COLOUR AT THIS BLEND: the two neighbouring seats' own tokens mixed
- * by the same weights, in OKLab (OKLCH's cartesian form: perceptually even,
- * and no hue-direction flip between far-apart hues such as blue → orange).
+ * by the same weights in OKLCH, the shorter way round the hue wheel, so the
+ * in-between colours stay as saturated as the seats themselves.
  */
 export function seatColour(blend: SeatBlend, quantum = 0.5): string {
   const pa = Math.round((blend.wa * 100) / quantum) * quantum;
   if (pa >= 100 || blend.a === blend.b) return `var(${MODE_VAR[blend.a]})`;
   if (pa <= 0) return `var(${MODE_VAR[blend.b]})`;
-  return `color-mix(in oklab, var(${MODE_VAR[blend.a]}) ${pa}%, var(${MODE_VAR[blend.b]}))`;
+  return `color-mix(in oklch shorter hue, var(${MODE_VAR[blend.a]}) ${pa}%, var(${MODE_VAR[blend.b]}))`;
 }

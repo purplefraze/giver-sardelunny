@@ -1283,14 +1283,34 @@
   .signin-stage { transition: none !important; }
 }
 
-/* THE CIRCLE'S INTERIOR — a box over the white inside the G's middle loop
-   (drawn in the SVG: stroke 17.2 units in the seat colour, white fill). The
-   form's sizes read its width (cqw), so it fits the circle at every width. */
-.signin-circle {
+/* THE TWO LOOPS' COPY BOXES — UPPER over the white inside the ring (drawn in
+   the SVG: 28.5 units in the seat colour, white fill), LOWER over the bottom
+   loop's white opening. Sizes read the box width (cqw), so the copy fits its
+   loop at every width and under the keyboard's scale. */
+.signin-upper,
+.signin-lower {
   position: absolute;
   container-type: size;
-  border-radius: 50%;
   z-index: 2;
+}
+/* The bottom loop's white: the feed feathers out inside it, under the G's
+   strokes (z -1 inside the stage's own stacking context), the way the ring's
+   white fill clears it above. The loop itself stays open. */
+.signin-lower-fade {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #fff 80%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+/* THE FLIP — quiet first, then a gentle cross-fade to the sign-up. */
+.signin-lower .signin-inner {
+  opacity: 1;
+  transition: opacity 900ms cubic-bezier(0.32, 0, 0.24, 1);
+}
+.signin-lower[data-shown="false"] .signin-inner { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .signin-lower .signin-inner { transition-duration: 250ms; }
 }
 .signin-inner {
   position: absolute;
@@ -1300,9 +1320,12 @@
   align-items: center;
 }
 
+/* UPPER COPY: the wordmark over its line. At give the big G is the g of the
+   wordmark (SignInView GiveWordmark), so this one gives way (--give-mark). */
 .signin-mark {
   position: absolute;
-  top: 17%;
+  top: calc(50% - 22px);
+  opacity: calc(1 - var(--give-mark, 0));
   left: 0;
   right: 0;
   text-align: center;
@@ -1315,14 +1338,56 @@
   color: var(--seat);
 }
 
-/* THE FIELD — its underline stays well inside the circle's white (72% of the
-   interior), so it never meets the circle's stroke. */
+.signin-tag {
+  position: absolute;
+  /* Centred alone while the wordmark is out at give (--give-mark 1). */
+  top: calc(50% + 4px - var(--give-mark, 0) * 12px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-weight: 300;
+  font-size: clamp(9.5px, 7cqw, 11px); /* keeps clear of the ring at 320 */
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
+  text-transform: lowercase;
+  color: var(--seat);
+}
+.signin-give-mark text {
+  font-family: var(--giver-font);
+  font-weight: 500;
+  /* A paper halo so the letters read over the feed (units of the G). */
+  paint-order: stroke;
+  stroke: var(--world-bg);
+  stroke-width: 16px;
+  stroke-linejoin: round;
+}
+
+/* LOWER COPY: the question, the field, the send circle, the quiet lines —
+   stacked on the loop's centre line, all well inside its white. */
+.signin-ask {
+  position: absolute;
+  top: var(--ask);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-weight: 400;
+  font-size: min(14px, 7cqw); /* a touch smaller in the 320 loop */
+  line-height: 18px;
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
+  color: var(--seat);
+}
+.signin-ask.signin-line { font-size: min(12px, 6.4cqw); font-weight: 300; letter-spacing: 0.12em; }
+
+/* THE FIELD — its underline stays well inside the loop's white (60% of the
+   box's width), so it never meets a stroke. */
 .signin-field {
   position: absolute;
   left: 50%;
-  bottom: 50%;
+  top: var(--field);
   transform: translateX(-50%);
-  width: 72cqw;
+  width: 60cqw;
   font-family: var(--giver-font);
   font-weight: 400;
   font-size: 17px;
@@ -1355,11 +1420,18 @@
 }
 
 /* THE SEND CIRCLE — solid seat colour, heavier white arrow, no text. */
+.signin-inner {
+  /* One stack, top down, from the ask: px gaps so the lines never touch at
+     any width; the send circle shrinks with the loop. */
+  --send: min(54px, 21cqw);
+  --ask: calc(50% - 40cqw);
+  --field: calc(var(--ask) + 26px);
+  --send-top: calc(var(--field) + 33px);
+}
 .signin-send {
-  --send: min(54px, 31cqw);
   position: absolute;
   left: 50%;
-  top: calc(50% + 8cqw);
+  top: var(--send-top);
   margin-left: calc(var(--send) / -2);
   width: var(--send);
   height: var(--send);
@@ -1375,23 +1447,18 @@
 .signin-send:disabled { opacity: 0.45; }
 .signin-send:focus-visible { outline: 1px solid var(--seat); outline-offset: 4px; }
 
-/* Quiet lowercase lines in the G's bottom loop (its white, clear of every
-   stroke): the error / notice, and on the code step resend / use a different
-   email. Placed from the bottom loop's centre (SignInView UNDER_AT). A white
-   halo keeps them legible over the feed. */
+/* Quiet lowercase lines under the send circle, in the lower loop's white:
+   the error, and on the code step resend / use a different email. */
 .signin-under {
   position: absolute;
-  transform: translate(-50%, -50%);
+  left: 50%;
+  top: calc(var(--send-top) + var(--send) + 6px);
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   white-space: nowrap;
-}
-.signin-under > * {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 0 6px 6px #fff;
 }
 .signin-under:empty { display: none; }
 .signin-under-links {
@@ -1402,7 +1469,7 @@
 }
 .signin-line {
   font-weight: 300;
-  font-size: 12px;
+  font-size: min(12px, 6.2cqw);
   line-height: 1.35;
   letter-spacing: 0.12em;
   text-transform: lowercase;
@@ -1411,8 +1478,8 @@
 }
 .signin-link {
   font-weight: 300;
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: min(12px, 6.2cqw);
+  letter-spacing: 0.06em;
   text-transform: lowercase;
   color: var(--seat);
   background: none;

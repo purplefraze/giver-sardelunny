@@ -1,13 +1,20 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { GStage } from "@/components/living-g/GStage";
 import { LivingG } from "@/components/living-g/LivingG";
-import { LIVING_G_FRAME, LOOP_CENTRE } from "@/components/living-g/g-path";
-import { TOGGLE, rimRadius } from "@/components/living-g/g-weight";
+import {
+  BOTTOM_LOOP_INTERIOR,
+  LIVING_G_FRAME,
+  LIVING_G_PATH,
+  LIVING_G_TRANSFORM,
+  LOOP_CENTRE,
+} from "@/components/living-g/g-path";
+import { G_STROKE, rimRadius, strokeInset } from "@/components/living-g/g-weight";
 import { signInFeedLines, type SignInFeedLine } from "@/data/signin-feed";
 import { OTP_LENGTH, type OtpSignIn } from "@/components/onboarding/use-otp-sign-in";
 import { useKeyboardFit } from "@/components/onboarding/use-keyboard-fit";
 import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
+import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
 
 /**
  * THE SIGN-IN / ONBOARDING SCREEN — PRESENTATION ONLY (behaviour lives in
@@ -20,62 +27,175 @@ import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
  *           geometry, 715.4 × 1192.7 units, 8px edge air), the same LivingG at
  *           the middle weight (28.5-unit stroke via the g-weight mask), ear cut,
  *           in the seat colour
- *   circle  the G's middle loop IS the circle: centred on the loop's centre,
- *           its outer edge on the loop's (thinned) rim, stroked at the toggle
- *           ring's weight (17.2 units, ~9px at 390) in the seat colour, filled
- *           white so the feed is cleared. It holds "giver", the field (email,
- *           then the 6-digit code in the same place) and the send circle
- *   toggle  the main G's variant A piece (toggleGeometry("middle")), riding
- *           that circle exactly as it rides the main G: rim + the 24.5 white
- *           gap + ring radius 74.6 = orbit 283.1 — on ONE continuous conveyor
- *           through all seven seats in clock order (ConveyorToggle.tsx):
- *           idle drift, drag anywhere, no snapping. 12:00 stays empty.
+ *   UPPER   the G's middle loop, redrawn as ONE closed ring at the G's own
+ *           stroke (28.5 units, outer edge on the rim) with a white fill that
+ *           clears the feed: "giver" over "kindness as currency"
+ *   LOWER   the G's bottom (communi-g) loop, left OPEN, its white feathered
+ *           clear of the feed: quiet for ~3s, then a soft cross-fade to
+ *           "are you a giver?", the email field and the send circle; after
+ *           sending, the code field and its quiet lines take the same place
+ *   toggle  the main G's variant A piece (toggleGeometry("middle")) on the
+ *           ring: rim + the 24.5 white gap + ring radius 74.6 = orbit 283.1 —
+ *           ONE continuous conveyor through all seven seats in clock order
+ *           (ConveyorToggle.tsx): idle drift, drag either way the short way
+ *           round, lifted over the waist, never parked at 12:00
+ *   GIVE    at give (1:30) the big G is the g of the wordmark: "ıver" is set
+ *           beside it with the toggle as the i's dot, and the in-loop "giver"
+ *           gives way to it (both follow the toggle's angle — no jump)
  *
  * KEYBOARD: the whole stage scales as ONE (use-keyboard-fit.ts).
  *
  * COLOUR + EMPHASIS follow the toggle's angle every frame, as CSS custom
  * properties on this root (signin-emphasis.ts): --seat is the two nearest
- * seats' --mode-* colours mixed by position (OKLab), --emph-<action> the feed
- * alpha per action. No labels, hints or seat names. Starts on Give.
+ * seats' --mode-* colours mixed by position (OKLCH, shorter hue),
+ * --emph-<action> the feed alpha per action, --give-mark the give wordmark's
+ * presence. No labels, hints or seat names. Starts on Give.
  */
 
 /**
- * THE CIRCLE, in viewBox units — derived, never typed: the middle loop's
- * centre, its rim at the middle weight (184), the toggle ring's stroke (17.2).
+ * THE UPPER RING, in viewBox units — derived, never typed: the middle loop's
+ * centre and rim at the middle weight (184), stroked at the G's own middle
+ * weight (G_STROKE.middle = 28.5) so the ring and the S-curve read as ONE
+ * weight. It is the middle loop itself, drawn as a single uniform stroke on
+ * top of the artwork: closed, the same thickness all the way round.
  */
-const CIRCLE_C = LOOP_CENTRE.middle;
-const CIRCLE_STROKE = TOGGLE.middle.outerR - TOGGLE.middle.innerR;
-const CIRCLE_OUTER = rimRadius("middle");
-const CIRCLE_INNER = CIRCLE_OUTER - CIRCLE_STROKE;
+const RING_C = LOOP_CENTRE.middle;
+const RING_STROKE = G_STROKE.middle;
+const RING_OUTER = rimRadius("middle");
+const RING_INNER = RING_OUTER - RING_STROKE;
 const pct = (n: number) => `${(n * 100).toFixed(4)}%`;
-/** The circle's white interior, as a box inside the stage (the form lives here). */
-const CIRCLE_BOX: React.CSSProperties = {
-  left: pct((CIRCLE_C.x - CIRCLE_INNER - LIVING_G_FRAME.x) / LIVING_G_FRAME.width),
-  top: pct((CIRCLE_C.y - CIRCLE_INNER - LIVING_G_FRAME.y) / LIVING_G_FRAME.height),
-  width: pct((2 * CIRCLE_INNER) / LIVING_G_FRAME.width),
-  height: pct((2 * CIRCLE_INNER) / LIVING_G_FRAME.height),
-};
-/** The quiet lines sit in the bottom loop's white (relative to the circle box). */
-const UNDER_AT: React.CSSProperties = {
-  left: pct((LOOP_CENTRE.bottom.x - (CIRCLE_C.x - CIRCLE_INNER)) / (2 * CIRCLE_INNER)),
-  top: pct((LOOP_CENTRE.bottom.y - (CIRCLE_C.y - CIRCLE_INNER)) / (2 * CIRCLE_INNER)),
-};
+/** A box in viewBox units, as percentages of the stage (the frame). */
+const box = (cx: number, cy: number, rx: number, ry: number): React.CSSProperties => ({
+  left: pct((cx - rx - LIVING_G_FRAME.x) / LIVING_G_FRAME.width),
+  top: pct((cy - ry - LIVING_G_FRAME.y) / LIVING_G_FRAME.height),
+  width: pct((2 * rx) / LIVING_G_FRAME.width),
+  height: pct((2 * ry) / LIVING_G_FRAME.height),
+});
+/** The upper ring's white interior (the upper copy lives here). */
+const UPPER_BOX = box(RING_C.x, RING_C.y, RING_INNER, RING_INNER);
+/**
+ * The lower loop's white opening (BOTTOM_LOOP_INTERIOR, measured off the
+ * canonical path). The feed fades out across it; the sign-up / code state
+ * sits in its largest inscribed square-ish box.
+ */
+const LOWER = BOTTOM_LOOP_INTERIOR;
+/* The fade reaches out past the conservative glyph interior to the stroke. */
+const LOWER_FADE = box(LOWER.cx, LOWER.cy + 10, LOWER.rx * 1.2, LOWER.ry * 1.2);
+const LOWER_BOX = box(LOWER.cx, LOWER.cy, LOWER.rx, LOWER.rx);
 
-/** The circle itself, drawn over the G's middle loop, under the toggle. */
-function SignInCircle() {
+/**
+ * THE JOIN TRIM. The traced bowl is not quite round: along its bottom, where
+ * it runs into the S, its outer edge sits up to ~9 units outside the ring
+ * (193 at 6 o'clock, easing back to 184 by ~8 o'clock) — a bulge that would
+ * make the ring read heavier there. Paper, masked to the G's own strokes,
+ * trims that sliver back to the ring's outer edge, easing in from the S's
+ * underside (74°) to the rim (104°), so the S still leaves the ring in one
+ * smooth line and the ring stays one weight all the way round.
+ */
+const TRIM = { from: 74, full: 104, to: 200, startR: 199, outerR: 222 };
+const TRIM_PATH = (() => {
+  const pt = (deg: number, r: number) => {
+    const a = (deg * Math.PI) / 180;
+    return `${(RING_C.x + r * Math.cos(a)).toFixed(2)} ${(RING_C.y + r * Math.sin(a)).toFixed(2)}`;
+  };
+  const inner: string[] = [];
+  for (let d = TRIM.from; d <= TRIM.to; d += 2) {
+    const t = Math.min(1, Math.max(0, (d - TRIM.from) / (TRIM.full - TRIM.from)));
+    const e = t * t * (3 - 2 * t);
+    inner.push(pt(d, TRIM.startR + (RING_OUTER - TRIM.startR) * e));
+  }
+  const outer: string[] = [];
+  for (let d = TRIM.to; d >= TRIM.from; d -= 4) outer.push(pt(d, TRIM.outerR));
+  return `M${inner.join(" L")} L${outer.join(" L")} Z`;
+})();
+
+/** The upper ring, drawn over the G's middle loop, under the toggle. */
+function SignInRing() {
+  const id = useId().replace(/:/g, "");
+  return (
+    <>
+      <defs>
+        {/* The painted (eroded) G, grown back by 1.5 units so the trim also
+            takes the anti-aliased fringe along the cut. */}
+        <mask
+          id={`${id}-trim`}
+          maskUnits="userSpaceOnUse"
+          x={-400}
+          y={-400}
+          width={1600}
+          height={2000}
+        >
+          <g transform={LIVING_G_TRANSFORM}>
+            <path
+              d={LIVING_G_PATH}
+              fill="#fff"
+              stroke="#000"
+              strokeWidth={(strokeInset("middle") - 1.5) * 2 * 10}
+              strokeLinejoin="round"
+            />
+          </g>
+        </mask>
+      </defs>
+      <path d={TRIM_PATH} fill="var(--world-bg)" mask={`url(#${id}-trim)`} pointerEvents="none" />
+      <SignInRingStroke />
+    </>
+  );
+}
+function SignInRingStroke() {
   return (
     <circle
-      cx={CIRCLE_C.x}
-      cy={CIRCLE_C.y}
-      r={CIRCLE_OUTER - CIRCLE_STROKE / 2}
+      cx={RING_C.x}
+      cy={RING_C.y}
+      r={RING_OUTER - RING_STROKE / 2}
       fill="var(--world-bg)"
       stroke="var(--world-g)"
-      strokeWidth={CIRCLE_STROKE}
+      strokeWidth={RING_STROKE}
       pointerEvents="none"
       data-signin-ring=""
     />
   );
 }
+
+/**
+ * THE GIVE WORDMARK. At give the big G is the g: "ıver" (dotless i) is set
+ * just right of the middle loop, the i's stem centred under the toggle's
+ * give position so the toggle ring is its dot. Its presence is --give-mark
+ * (0 away from give), written every frame by the conveyor.
+ */
+const GIVE_MARK = {
+  size: 96,
+  /** Paper between the ring's lowest point and the i's top (units). */
+  dotGap: 22,
+  xHeight: 0.52,
+  tracking: 0.02,
+};
+function GiveWordmark() {
+  const top = GIVE_DOT.y + GIVE_DOT.r + GIVE_MARK.dotGap;
+  const baseline = top + GIVE_MARK.size * GIVE_MARK.xHeight;
+  return (
+    <g
+      className="signin-give-mark"
+      style={{ opacity: "var(--give-mark, 0)" }}
+      fill="var(--world-g)"
+      pointerEvents="none"
+      aria-hidden="true"
+    >
+      <text x={GIVE_DOT.x} y={baseline} textAnchor="middle" style={{ fontSize: GIVE_MARK.size }}>
+        {"\u0131"}
+      </text>
+      <text
+        x={GIVE_DOT.x + GIVE_MARK.size * 0.16}
+        y={baseline}
+        style={{ fontSize: GIVE_MARK.size, letterSpacing: `${GIVE_MARK.tracking}em` }}
+      >
+        ver
+      </text>
+    </g>
+  );
+}
+
+/** How long the upper copy holds alone before the lower loop's sign-up fades in. */
+const FLIP_MS = 3000;
 
 /** A tiny deterministic PRNG, so the feed reads the same on every visit. */
 function prng(seed: number) {
@@ -154,6 +274,12 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
   const root = useRef<HTMLDivElement | null>(null);
   const probe = useRef<HTMLDivElement | null>(null);
   const fit = useKeyboardFit(root, probe);
+  /* THE FLIP: the lower loop stays quiet, then the sign-up fades in. */
+  const [flipped, setFlipped] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setFlipped(true), FLIP_MS);
+    return () => window.clearTimeout(t);
+  }, []);
 
   /* The code field takes the email field's place — and the focus with it. */
   useEffect(() => {
@@ -161,6 +287,7 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
   }, [otp.step]);
 
   const line = otp.error ?? otp.notice;
+  const lower = flipped || otp.step === "code";
 
   return (
     <div ref={root} className="signin relative h-full min-h-full w-full overflow-hidden lowercase">
@@ -174,8 +301,8 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
         </GStage>
       </div>
 
-      {/* THE STAGE — ONE wrapper, ONE uniform scale: the G, the circle, the
-          toggle and the form move and scale together with the keyboard. */}
+      {/* THE STAGE — ONE wrapper, ONE uniform scale: the G, the ring, the
+          toggle and both loops' copy move and scale together with the keyboard. */}
       <div
         className="signin-stage"
         data-signin-scale={fit.s.toFixed(4)}
@@ -185,21 +312,35 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
         }}
       >
         <GStage>
+          {/* The lower loop's white: the feed feathers out under the G. */}
+          <div className="signin-lower-fade" style={LOWER_FADE} aria-hidden="true" />
           <LivingG
             weight="middle"
             earCut
             showLabels={false}
             overlay={
               <>
-                <SignInCircle />
-                <ConveyorToggle root={root} start="give" />
+                <GiveWordmark />
+                <ConveyorToggle root={root} start="give" under={<SignInRing />} />
               </>
             }
           />
-          <div className="signin-circle" style={CIRCLE_BOX}>
+
+          {/* UPPER: the wordmark and its line, always. */}
+          <div className="signin-upper" style={UPPER_BOX}>
+            <h1 className="signin-mark">giver</h1>
+            <p className="signin-tag">kindness as currency</p>
+          </div>
+
+          {/* LOWER: quiet, then the sign-up; after sending, the code. */}
+          <div className="signin-lower" style={LOWER_BOX} data-shown={lower}>
             {otp.step === "email" ? (
-              <form onSubmit={(e) => void otp.submitEmail(e)} className="signin-inner">
-                <h1 className="signin-mark">giver</h1>
+              <form
+                onSubmit={(e) => void otp.submitEmail(e)}
+                className="signin-inner"
+                inert={!lower}
+              >
+                <p className="signin-ask">are you a giver?</p>
                 <input
                   type="email"
                   required
@@ -213,13 +354,15 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
                   className="signin-field"
                 />
                 <SendCircle label={otp.busy ? "sending" : "send code"} busy={otp.busy} />
-                <div className="signin-under" style={UNDER_AT} aria-live="polite">
+                <div className="signin-under" aria-live="polite">
                   {line ? <p className="signin-line">{line}</p> : null}
                 </div>
               </form>
             ) : (
               <form onSubmit={(e) => void otp.submitCode(e)} className="signin-inner">
-                <h1 className="signin-mark">giver</h1>
+                <p className="signin-ask signin-line" aria-live="polite">
+                  {line ?? "\u00a0"}
+                </p>
                 <input
                   ref={codeRef}
                   type="text"
@@ -235,24 +378,18 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
                   className="signin-field signin-field--code"
                 />
                 <SendCircle label={otp.busy ? "checking" : "sign in"} busy={otp.busy} />
-                <div className="signin-under" style={UNDER_AT}>
-                  <p className="signin-line" aria-live="polite">
-                    {line ?? "\u00a0"}
-                  </p>
-                  {/* Stacked, so both fit the bottom loop's white at 320. */}
-                  <div className="signin-under-links">
-                    <button
-                      type="button"
-                      className="signin-link"
-                      onClick={() => void otp.resend()}
-                      disabled={otp.busy}
-                    >
-                      resend
-                    </button>
-                    <button type="button" className="signin-link" onClick={otp.changeEmail}>
-                      use a different email
-                    </button>
-                  </div>
+                <div className="signin-under signin-under-links">
+                  <button
+                    type="button"
+                    className="signin-link"
+                    onClick={() => void otp.resend()}
+                    disabled={otp.busy}
+                  >
+                    resend
+                  </button>
+                  <button type="button" className="signin-link" onClick={otp.changeEmail}>
+                    use a different email
+                  </button>
                 </div>
               </form>
             )}

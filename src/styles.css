@@ -1237,12 +1237,24 @@
   text-transform: lowercase;
 }
 .signin-feed-row > span { margin-right: 34px; }
-.signin-feed-row > .k-give { color: color-mix(in srgb, var(--mode-give) 38%, transparent); }
-.signin-feed-row > .k-lend { color: color-mix(in srgb, var(--mode-lend) 44%, transparent); }
-.signin-feed-row > .k-trade { color: color-mix(in srgb, var(--mode-trade) 34%, transparent); }
-.signin-feed-row > .k-fund { color: color-mix(in srgb, var(--mode-fund) 25%, transparent); }
-.signin-feed-row > .k-borrow { color: color-mix(in srgb, var(--mode-borrow) 46%, transparent); }
-.signin-feed-row > .k-wish { color: color-mix(in srgb, var(--mode-wish) 23%, transparent); }
+/* EMPHASIS — OPACITY ONLY. One fixed tint per action; its alpha is
+   --emph-<action>, written every frame from the toggle's angle
+   (ConveyorToggle / signin-emphasis.ts). The defaults are the floor: the
+   feed's balanced resting strengths. Size and weight never change. */
+.signin {
+  --emph-give: 0.38;
+  --emph-lend: 0.44;
+  --emph-trade: 0.34;
+  --emph-fund: 0.25;
+  --emph-borrow: 0.46;
+  --emph-wish: 0.23;
+}
+.signin-feed-row > .k-give { color: color-mix(in srgb, var(--mode-give) calc(var(--emph-give) * 100%), transparent); }
+.signin-feed-row > .k-lend { color: color-mix(in srgb, var(--mode-lend) calc(var(--emph-lend) * 100%), transparent); }
+.signin-feed-row > .k-trade { color: color-mix(in srgb, var(--mode-trade) calc(var(--emph-trade) * 100%), transparent); }
+.signin-feed-row > .k-fund { color: color-mix(in srgb, var(--mode-fund) calc(var(--emph-fund) * 100%), transparent); }
+.signin-feed-row > .k-borrow { color: color-mix(in srgb, var(--mode-borrow) calc(var(--emph-borrow) * 100%), transparent); }
+.signin-feed-row > .k-wish { color: color-mix(in srgb, var(--mode-wish) calc(var(--emph-wish) * 100%), transparent); }
 /* CALM BY REQUEST: a still feed, no roll. */
 @media (prefers-reduced-motion: reduce) {
   .signin-feed-track {

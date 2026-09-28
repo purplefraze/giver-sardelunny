@@ -93,7 +93,7 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  *   trade 6:00 · fund 7:30 · borrow 9:00 · wish 10:30 · give 1:30 ·
  *   lend 3:00 · my g 4:25 — and 12:00 stays EMPTY, no seat there.)
  */
-const SEAT_ANGLE: Record<Seat, number> = {
+export const SEAT_ANGLE: Record<Seat, number> = {
   trade: rad(-270), // 6:00
   fund: rad(-225), // 7:30 — FUND, between trade and borrow
   borrow: rad(-180), // 9:00
@@ -181,6 +181,30 @@ const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
  */
 const KNOCK_GAP = 7;
 
+/**
+ * THE PIECE'S GEOMETRY at a weight — the one construction every toggle draws
+ * from (this selector, and the sign-in's conveyor toggle): track centre, rim,
+ * orbit, ring mid-radius and stroke, stem span and half-width, knock-out gap.
+ * Pure: the same numbers this file has always used.
+ */
+export function toggleGeometry(weight: GWeight = "normal") {
+  const RIM_R = rimRadius(weight);
+  const TRACK_R = trackRadius(weight);
+  const EAR = { ...EAR_GEOMETRY, ...TOGGLE[weight] };
+  return {
+    centre: TRACK_C,
+    EAR,
+    RIM_R,
+    TRACK_R,
+    RING_MID: (EAR.innerR + EAR.outerR) / 2,
+    RING_W: EAR.outerR - EAR.innerR,
+    STEM_FROM: RIM_R - 8,
+    STEM_TO: TRACK_R - EAR.innerR - 6,
+    STEM_HALF: EAR.stemWidth / 2,
+    KNOCK_GAP,
+  };
+}
+
 /** The locked seat colours, for seats that state a person's history. */
 const MODE_COLOUR: Record<Seat, string> = {
   giver: "var(--mode-giver)",
@@ -251,15 +275,8 @@ export function EarSelector({
 
 }) {
   /* The track at this weight — shadows the module's canonical (normal) values. */
-  const RIM_R = rimRadius(weight);
-  const TRACK_R = trackRadius(weight);
   /* The piece at this weight (variant A at "middle": thinner ring and stem). */
-  const EAR = { ...EAR_GEOMETRY, ...TOGGLE[weight] };
-  const RING_MID = (EAR.innerR + EAR.outerR) / 2;
-  const RING_W = EAR.outerR - EAR.innerR;
-  const STEM_FROM = RIM_R - 8;
-  const STEM_TO = TRACK_R - EAR.innerR - 6;
-  const STEM_HALF = EAR.stemWidth / 2;
+  const { RIM_R, TRACK_R, EAR, RING_MID, RING_W, STEM_FROM, STEM_TO, STEM_HALF } = toggleGeometry(weight);
 
 
   const [drag, setDrag] = useState<number | null>(null);

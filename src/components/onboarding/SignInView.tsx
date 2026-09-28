@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
-import { FULL_SEATS, EarSelector, type Seat } from "@/components/living-g/EarSelector";
 import { GStage } from "@/components/living-g/GStage";
 import { LivingG } from "@/components/living-g/LivingG";
 import { LIVING_G_FRAME, LOOP_CENTRE } from "@/components/living-g/g-path";
@@ -8,7 +7,7 @@ import { TOGGLE, rimRadius } from "@/components/living-g/g-weight";
 import { signInFeedLines, type SignInFeedLine } from "@/data/signin-feed";
 import { OTP_LENGTH, type OtpSignIn } from "@/components/onboarding/use-otp-sign-in";
 import { useKeyboardFit } from "@/components/onboarding/use-keyboard-fit";
-import { haptics } from "@/lib/haptics";
+import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
 
 /**
  * THE SIGN-IN / ONBOARDING SCREEN — PRESENTATION ONLY (behaviour lives in
@@ -26,15 +25,18 @@ import { haptics } from "@/lib/haptics";
  *           ring's weight (17.2 units, ~9px at 390) in the seat colour, filled
  *           white so the feed is cleared. It holds "giver", the field (email,
  *           then the 6-digit code in the same place) and the send circle
- *   toggle  the main G's own EarSelector at the middle weight, riding that
- *           circle exactly as it rides the main G: rim + the 24.5 white gap +
- *           ring radius 74.6 = orbit 283.1. Tap = next seat clockwise; drag =
- *           snap to the nearest seat; arrow keys step. 12:00 stays empty.
+ *   toggle  the main G's variant A piece (toggleGeometry("middle")), riding
+ *           that circle exactly as it rides the main G: rim + the 24.5 white
+ *           gap + ring radius 74.6 = orbit 283.1 — on ONE continuous conveyor
+ *           through all seven seats in clock order (ConveyorToggle.tsx):
+ *           idle drift, drag anywhere, no snapping. 12:00 stays empty.
  *
  * KEYBOARD: the whole stage scales as ONE (use-keyboard-fit.ts).
  *
- * Seat colours come from the one app-wide map (--mode-*) through ONE
- * attribute (data-signin-seat). Starts on Give.
+ * COLOUR + EMPHASIS follow the toggle's angle every frame, as CSS custom
+ * properties on this root (signin-emphasis.ts): --seat is the two nearest
+ * seats' --mode-* colours mixed by position (OKLab), --emph-<action> the feed
+ * alpha per action. No labels, hints or seat names. Starts on Give.
  */
 
 /**
@@ -148,7 +150,6 @@ function SendCircle({ label, busy }: { label: string; busy: boolean }) {
 }
 
 export function SignInView({ otp }: { otp: OtpSignIn }) {
-  const [seat, setSeat] = useState<Seat>("give");
   const codeRef = useRef<HTMLInputElement | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
   const probe = useRef<HTMLDivElement | null>(null);
@@ -159,21 +160,10 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
     if (otp.step === "code") codeRef.current?.focus();
   }, [otp.step]);
 
-  /* TAP ON THE TOGGLE = the next seat clockwise (travel order, wrapping). */
-  const nextSeat = () => {
-    const i = FULL_SEATS.indexOf(seat as (typeof FULL_SEATS)[number]);
-    haptics.light();
-    setSeat(FULL_SEATS[(i + 1) % FULL_SEATS.length]!);
-  };
-
   const line = otp.error ?? otp.notice;
 
   return (
-    <div
-      ref={root}
-      className="signin relative h-full min-h-full w-full overflow-hidden lowercase"
-      data-signin-seat={seat}
-    >
+    <div ref={root} className="signin relative h-full min-h-full w-full overflow-hidden lowercase">
       <Feed />
 
       {/* THE PROBE — an unscaled, invisible copy of the stage, read by the
@@ -202,13 +192,7 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
             overlay={
               <>
                 <SignInCircle />
-                <EarSelector
-                  mode={seat}
-                  weight="middle"
-                  seats={FULL_SEATS}
-                  onChange={setSeat}
-                  onTap={nextSeat}
-                />
+                <ConveyorToggle root={root} start="give" />
               </>
             }
           />

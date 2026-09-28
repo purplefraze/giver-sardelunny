@@ -231,40 +231,41 @@
        wheel, the activity/ticker tokens (--activity-*), the sign-in screen
        and its feed (.signin in this file), and form accents. Clock positions
        are SEAT_ANGLE in EarSelector.tsx — eight seats in SPECTRUM order,
-       clockwise from 12:00 (12:00 is my g's seat; it is no longer empty):
+       clockwise from 6:00 (12:00 is my g's seat):
          seat    clock  colour
-         my g    12:00  #3F9DBF  quiet turquoise (the ONLY blue-family seat)
-         give    1:30   #4BE01E  electric lime
-         lend    3:00   #A8D83A  soft yellow-green (pistachio): softer than
-                                 give (chroma .19 vs .25), 15° warmer, and
-                                 33° short of the reserved other-member
-                                 yellow (--giver-yellow) — never pure yellow
-         trade   4:25   #FF6A13  saharan orange
          map     6:00   #E8322B  communi-gy red (the door into communi-gy)
          fund    7:30   #9E4B2C  deep clay brown
-         borrow  9:00   #A58AD6  lavender
-         wish    10:30  #9D00FF  prince purple
+         borrow  9:00   #C77DD6  pinkish purple (orchid): pinker and softer
+                                 than wish, never lavender-grey
+         wish    10:30  #9D00FF  bright purple (prince purple)
+         my g    12:00  #1E7BFF  bright blue (the ONLY blue-family seat)
+         give    1:30   #4BE01E  bright green (electric lime)
+         lend    3:00   #B5D334  yellow-green: yellower than give, never
+                                 pure yellow (--giver-yellow is reserved)
+         trade   4:30   #FF6A13  orange
+       Clockwise from 6:00 the toggle visits fund, borrow, wish, my g, give,
+       lend, trade (Frazer's direct call, 28 Sep 2026).
        THE G IS ONE SOLID COLOUR: the seat colour, every loop included. The
        bottom loop (sign-in included) is never a separate colour, so it is
        red (--mode-map / --mode-communigy) only when the toggle is at 6:00.
        TEXT TINTS for the two pale seats (form headings, tags and selected
        answers ONLY — the G, caret and send circle keep the true seat colour):
-         lend #6E9200 · borrow #8B68CA  (--mode-lend-text / --mode-borrow-text)
+         lend #6E9200 · borrow #A64DB8  (--mode-lend-text / --mode-borrow-text)
        Complements, inks and airs below are DERIVED from these where the
        browser supports relative colour; change a seat here, nowhere else. */
   --mode-give: #4be01e;
-  --mode-lend: #a8d83a;
-  --mode-giver: #3f9dbf;
+  --mode-lend: #b5d334;
+  --mode-giver: #1e7bff;
   --mode-trade: #ff6a13;
   --mode-fund: #9e4b2c;
-  --mode-borrow: #a58ad6;
+  --mode-borrow: #c77dd6;
   --mode-wish: #9d00ff;
   --mode-communigy: #e8322b;
   /* The 6:00 seat IS communi-gy's door, so it wears the same red (a literal,
      not var(), because LoopLabel reads --mode-<seat> as a hex). */
   --mode-map: #e8322b;
   --mode-lend-text: #6e9200;
-  --mode-borrow-text: #8b68ca;
+  --mode-borrow-text: #a64db8;
   /* Legacy name kept so nothing dangles: My G's colour IS the map's. */
   --giver-patriot: var(--mode-giver);
 

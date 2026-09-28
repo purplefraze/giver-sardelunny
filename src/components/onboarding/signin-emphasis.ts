@@ -8,7 +8,7 @@ import type { SignInFeedKind } from "@/data/signin-feed";
  * unbounded) carries the toggle round the circle through all eight seats in
  * clock (spectrum) order, at the seat angles the main G uses (EarSelector
  * SEAT_ANGLE):
- *   my g 12:00 · give 1:30 · lend 3:00 · trade 4:25 · map 6:00 · fund 7:30 ·
+ *   my g 12:00 · give 1:30 · lend 3:00 · trade 4:30 · map 6:00 · fund 7:30 ·
  *   borrow 9:00 · wish 10:30 — and back to my g. 12:00 is a seat now (the
  *   conveyor DOCKS there); the old "nothing rests at 12:00" arc is gone.
  *

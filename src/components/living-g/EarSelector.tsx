@@ -102,12 +102,13 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  *   trade   +45°   4:30, just inside the clockwise end
  *
  * (The table above is the original layout. The LIVE map is SEAT_ANGLE —
- * eight seats in SPECTRUM order, clockwise from 12:00:
- *   my g 12:00 (blue) · give 1:30 (green) · lend 3:00 (yellow-green) ·
- *   trade 4:25 (orange) · map 6:00 (red) · fund 7:30 (clay) ·
- *   borrow 9:00 (light purple) · wish 10:30 (prince purple).
- * 12:00 is no longer empty: My G sits there. The old 4:25 nudge (clearing
- * the S-curve) now belongs to trade.)
+ * eight seats, clockwise from 6:00 (Frazer, 28 Sep 2026):
+ *   map 6:00 (red) · fund 7:30 (brown) · borrow 9:00 (pinkish purple) ·
+ *   wish 10:30 (bright purple) · my g 12:00 (bright blue) ·
+ *   give 1:30 (bright green) · lend 3:00 (yellow-green) · trade 4:30 (orange).
+ * Every ordering (drag, snapping, keyboard arrows, seat hints, the sign-in
+ * conveyor) is sorted from these angles, so this table is the only place a
+ * position lives.)
  */
 export const SEAT_ANGLE: Record<Seat, number> = {
   map: rad(-270), // 6:00 — MAP / SEARCH, the door into communi-gy
@@ -117,7 +118,7 @@ export const SEAT_ANGLE: Record<Seat, number> = {
   giver: rad(-90), // 12:00 — MY G
   give: rad(-45), // 1:30
   lend: rad(0), // 3:00
-  trade: rad(42.5), // 4:25 — nudged toward lend to clear the S-curve
+  trade: rad(45), // 4:30
 };
 
 /** The wire's two physical ends — the two lips of the break. Nothing passes. */

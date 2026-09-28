@@ -1,52 +1,79 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { FULL_SEATS, type Seat } from "@/components/living-g/EarSelector";
+import { FULL_SEATS, EarSelector, type Seat } from "@/components/living-g/EarSelector";
+import { GStage } from "@/components/living-g/GStage";
 import { LivingG } from "@/components/living-g/LivingG";
+import { LIVING_G_FRAME, LOOP_CENTRE } from "@/components/living-g/g-path";
+import { TOGGLE, rimRadius } from "@/components/living-g/g-weight";
 import { signInFeedLines, type SignInFeedLine } from "@/data/signin-feed";
 import { OTP_LENGTH, type OtpSignIn } from "@/components/onboarding/use-otp-sign-in";
+import { useKeyboardFit } from "@/components/onboarding/use-keyboard-fit";
 import { haptics } from "@/lib/haptics";
 
 /**
  * THE SIGN-IN / ONBOARDING SCREEN — PRESENTATION ONLY (behaviour lives in
  * useOtpSignIn). Shared by the onboarding AuthGate and the /auth route.
- * After the v6 stills (/workspace/giver-signin-mockups/signin-v6-*.png):
  *
  *   paper   pure white
  *   feed    dense rows of SAMPLE activity wrapping the whole screen, each
  *           entry in its own action's colour, muted (signin-feed.ts)
- *   G       the plain G top left in the seat colour — no toggle, no dial
- *   circle  one solid white circle holding "giver", the field (email, then
- *           the 6-digit code in the same place) and the send circle
- *   toggle  a small ring locked to a track just outside the circle, at the seat's
- *           clock position. Tap it: it slides clockwise to the next seat. Drag
- *           it round the edge: it snaps to the nearest seat on release. Arrow
- *           keys step it. No text labels anywhere.
+ *   G       THE MAIN G, variant A: the same GStage (sized from the live toggle
+ *           geometry, 715.4 × 1192.7 units, 8px edge air), the same LivingG at
+ *           the middle weight (28.5-unit stroke via the g-weight mask), ear cut,
+ *           in the seat colour
+ *   circle  the G's middle loop IS the circle: centred on the loop's centre,
+ *           its outer edge on the loop's (thinned) rim, stroked at the toggle
+ *           ring's weight (17.2 units, ~9px at 390) in the seat colour, filled
+ *           white so the feed is cleared. It holds "giver", the field (email,
+ *           then the 6-digit code in the same place) and the send circle
+ *   toggle  the main G's own EarSelector at the middle weight, riding that
+ *           circle exactly as it rides the main G: rim + the 24.5 white gap +
+ *           ring radius 74.6 = orbit 283.1. Tap = next seat clockwise; drag =
+ *           snap to the nearest seat; arrow keys step. 12:00 stays empty.
+ *
+ * KEYBOARD: the whole stage scales as ONE (use-keyboard-fit.ts).
  *
  * Seat colours come from the one app-wide map (--mode-*) through ONE
  * attribute (data-signin-seat). Starts on Give.
  */
 
-/** Clock positions in degrees (0 = 3 o'clock, clockwise), 12:00 left empty. */
-const SEAT_DEG: Record<Seat, number> = {
-  give: -45, // 1:30
-  lend: 0, // 3:00
-  giver: 45, // 4:30 — my g
-  trade: 90, // 6:00
-  fund: 135, // 7:30
-  borrow: 180, // 9:00
-  wish: 225, // 10:30
+/**
+ * THE CIRCLE, in viewBox units — derived, never typed: the middle loop's
+ * centre, its rim at the middle weight (184), the toggle ring's stroke (17.2).
+ */
+const CIRCLE_C = LOOP_CENTRE.middle;
+const CIRCLE_STROKE = TOGGLE.middle.outerR - TOGGLE.middle.innerR;
+const CIRCLE_OUTER = rimRadius("middle");
+const CIRCLE_INNER = CIRCLE_OUTER - CIRCLE_STROKE;
+const pct = (n: number) => `${(n * 100).toFixed(4)}%`;
+/** The circle's white interior, as a box inside the stage (the form lives here). */
+const CIRCLE_BOX: React.CSSProperties = {
+  left: pct((CIRCLE_C.x - CIRCLE_INNER - LIVING_G_FRAME.x) / LIVING_G_FRAME.width),
+  top: pct((CIRCLE_C.y - CIRCLE_INNER - LIVING_G_FRAME.y) / LIVING_G_FRAME.height),
+  width: pct((2 * CIRCLE_INNER) / LIVING_G_FRAME.width),
+  height: pct((2 * CIRCLE_INNER) / LIVING_G_FRAME.height),
+};
+/** The quiet lines sit in the bottom loop's white (relative to the circle box). */
+const UNDER_AT: React.CSSProperties = {
+  left: pct((LOOP_CENTRE.bottom.x - (CIRCLE_C.x - CIRCLE_INNER)) / (2 * CIRCLE_INNER)),
+  top: pct((LOOP_CENTRE.bottom.y - (CIRCLE_C.y - CIRCLE_INNER)) / (2 * CIRCLE_INNER)),
 };
 
-/** For assistive tech only — nothing is printed on screen. */
-const SEAT_NAME: Record<Seat, string> = {
-  give: "give",
-  wish: "wish",
-  trade: "trade",
-  fund: "fund",
-  borrow: "borrow",
-  lend: "lend",
-  giver: "my g",
-};
+/** The circle itself, drawn over the G's middle loop, under the toggle. */
+function SignInCircle() {
+  return (
+    <circle
+      cx={CIRCLE_C.x}
+      cy={CIRCLE_C.y}
+      r={CIRCLE_OUTER - CIRCLE_STROKE / 2}
+      fill="var(--world-bg)"
+      stroke="var(--world-g)"
+      strokeWidth={CIRCLE_STROKE}
+      pointerEvents="none"
+      data-signin-ring=""
+    />
+  );
+}
 
 /** A tiny deterministic PRNG, so the feed reads the same on every visit. */
 function prng(seed: number) {
@@ -103,128 +130,6 @@ function Feed() {
   );
 }
 
-/**
- * THE EDGE TOGGLE. Reuses the seat-switch logic of the retired seat dots:
- * FULL_SEATS in travel (clockwise) order, step ±1 with wrap-around, commit
- * one seat. Tap = the next seat clockwise; a drag follows the finger round
- * the edge and snaps to the nearest seat on release.
- */
-function EdgeToggle({ seat, onSeat }: { seat: Seat; onSeat: (s: Seat) => void }) {
-  const [rot, setRot] = useState(SEAT_DEG[seat]);
-  const [dragging, setDragging] = useState(false);
-  const orbit = useRef<HTMLDivElement | null>(null);
-  const gesture = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
-  const rotRef = useRef(rot);
-  rotRef.current = rot;
-
-  /* POLAR, SHORTEST ARC. The rotation is one continuous angle; a seat's
-     angle is expressed nearest the current one (delta within ±180°), so the
-     toggle always slides the short way round the track. CSS interpolates the
-     rotate() angle itself — never x/y — so every frame sits on the orbit. */
-  const nearest = (deg: number) => deg + 360 * Math.round((rotRef.current - deg) / 360);
-  const go = (next: Seat) => {
-    setRot(nearest(SEAT_DEG[next]));
-    if (next !== seat) {
-      haptics.light();
-      onSeat(next);
-    }
-  };
-  const step = (by: 1 | -1) => {
-    const i = FULL_SEATS.indexOf(seat as (typeof FULL_SEATS)[number]);
-    const next = FULL_SEATS[(i + by + FULL_SEATS.length) % FULL_SEATS.length]!;
-    go(next);
-  };
-
-  const angleAt = (e: React.PointerEvent) => {
-    const r = orbit.current?.getBoundingClientRect();
-    if (!r) return null;
-    const deg = (Math.atan2(e.clientY - r.top, e.clientX - r.left) * 180) / Math.PI;
-    return nearest(deg);
-  };
-
-  return (
-    <div
-      ref={orbit}
-      className="signin-orbit"
-      data-dragging={dragging}
-      style={{ transform: `rotate(${rot}deg)` }}
-    >
-      <button
-        type="button"
-        className="signin-toggle"
-        role="slider"
-        aria-label="seat"
-        aria-valuemin={1}
-        aria-valuemax={FULL_SEATS.length}
-        aria-valuenow={FULL_SEATS.indexOf(seat as (typeof FULL_SEATS)[number]) + 1}
-        aria-valuetext={SEAT_NAME[seat]}
-        onPointerDown={(e) => {
-          if (gesture.current) return;
-          gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
-          e.currentTarget.setPointerCapture?.(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          const g = gesture.current;
-          if (!g || g.id !== e.pointerId) return;
-          if (!g.moved && Math.hypot(e.clientX - g.x, e.clientY - g.y) > 8) {
-            g.moved = true;
-            setDragging(true);
-          }
-          if (!g.moved) return;
-          const a = angleAt(e);
-          if (a !== null) setRot(a);
-        }}
-        onPointerUp={(e) => {
-          const g = gesture.current;
-          if (!g || g.id !== e.pointerId) return;
-          gesture.current = null;
-          setDragging(false);
-          if (!g.moved) {
-            step(1);
-            return;
-          }
-          /* SNAP to the nearest seat by angle. */
-          const here = rotRef.current;
-          let best: Seat = seat;
-          let bestD = Infinity;
-          for (const s of FULL_SEATS) {
-            const d = Math.abs(nearest(SEAT_DEG[s]) - here);
-            if (d < bestD) {
-              bestD = d;
-              best = s;
-            }
-          }
-          go(best);
-        }}
-        onPointerCancel={() => {
-          gesture.current = null;
-          setDragging(false);
-          go(seat);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-            e.preventDefault();
-            step(1);
-          } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-            e.preventDefault();
-            step(-1);
-          }
-        }}
-      >
-        {/* +x points outward along the radius. The ring's centre is the
-            orbit point (R_orbit from the circle's centre); its outer edge is
-            16.75px out, the white knock-out 21px, and the stem runs back in
-            to meet the circle's edge (gap 5 + ring 17 = 22px). */}
-        <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
-          <circle cx="24" cy="24" r="21" fill="#fff" />
-          <rect x="1" y="21" width="23" height="6" rx="3" fill="var(--seat)" />
-          <circle cx="24" cy="24" r="14" fill="#fff" stroke="var(--seat)" strokeWidth="5.5" />
-        </svg>
-      </button>
-    </div>
-  );
-}
-
 function SendCircle({ label, busy }: { label: string; busy: boolean }) {
   return (
     <button type="submit" className="signin-send" aria-label={label} disabled={busy}>
@@ -245,98 +150,130 @@ function SendCircle({ label, busy }: { label: string; busy: boolean }) {
 export function SignInView({ otp }: { otp: OtpSignIn }) {
   const [seat, setSeat] = useState<Seat>("give");
   const codeRef = useRef<HTMLInputElement | null>(null);
+  const root = useRef<HTMLDivElement | null>(null);
+  const probe = useRef<HTMLDivElement | null>(null);
+  const fit = useKeyboardFit(root, probe);
 
   /* The code field takes the email field's place — and the focus with it. */
   useEffect(() => {
     if (otp.step === "code") codeRef.current?.focus();
   }, [otp.step]);
 
+  /* TAP ON THE TOGGLE = the next seat clockwise (travel order, wrapping). */
+  const nextSeat = () => {
+    const i = FULL_SEATS.indexOf(seat as (typeof FULL_SEATS)[number]);
+    haptics.light();
+    setSeat(FULL_SEATS[(i + 1) % FULL_SEATS.length]!);
+  };
+
   const line = otp.error ?? otp.notice;
 
   return (
     <div
+      ref={root}
       className="signin relative h-full min-h-full w-full overflow-hidden lowercase"
       data-signin-seat={seat}
     >
       <Feed />
 
-      {/* THE LIVING G — the app's own animated G with its idle breath, in the
-          seat colour, earless (no ring, no dial: the toggle lives on the
-          circle). Decorative and non-interactive: no regions, so no hit
-          bands, and the wrapper takes no pointer events. */}
-      <div className="signin-g" aria-hidden="true">
-        <div className="signin-g-box">
-          <div className="signin-g-breath">
-            <div className="signin-g-art" style={{ ["--world-g" as string]: "var(--seat)" }}>
-              <LivingG showLabels={false} earCut />
-            </div>
-          </div>
-        </div>
+      {/* THE PROBE — an unscaled, invisible copy of the stage, read by the
+          keyboard rule for the G's resting pose (never transformed). */}
+      <div className="signin-probe" aria-hidden="true">
+        <GStage>
+          <div ref={probe} className="h-full w-full" />
+        </GStage>
       </div>
 
-      <div className="signin-circle">
-        <EdgeToggle seat={seat} onSeat={setSeat} />
-        {otp.step === "email" ? (
-          <form onSubmit={(e) => void otp.submitEmail(e)} className="signin-inner">
-            <h1 className="signin-mark">giver</h1>
-            <input
-              type="email"
-              required
-              value={otp.email}
-              onChange={(e) => otp.setEmail(e.target.value)}
-              placeholder="email"
-              aria-label="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              inputMode="email"
-              className="signin-field"
-            />
-            <SendCircle label={otp.busy ? "sending" : "send code"} busy={otp.busy} />
-            <div className="signin-under" aria-live="polite">
-              {line ? <p className="signin-line">{line}</p> : null}
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={(e) => void otp.submitCode(e)} className="signin-inner">
-            <h1 className="signin-mark">giver</h1>
-            <input
-              ref={codeRef}
-              type="text"
-              required
-              value={otp.code}
-              onChange={(e) => otp.setCode(e.target.value)}
-              placeholder={`${OTP_LENGTH}-digit code`}
-              aria-label={`${OTP_LENGTH}-digit code sent to ${otp.email.trim()}`}
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              pattern={`\\d{${OTP_LENGTH}}`}
-              maxLength={OTP_LENGTH}
-              className="signin-field signin-field--code"
-            />
-            <SendCircle label={otp.busy ? "checking" : "sign in"} busy={otp.busy} />
-            <div className="signin-under">
-              <p className="signin-line" aria-live="polite">
-                {line ?? "\u00a0"}
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="signin-link"
-                  onClick={() => void otp.resend()}
-                  disabled={otp.busy}
-                >
-                  resend
-                </button>
-                <span className="signin-line" aria-hidden="true">
-                  ·
-                </span>
-                <button type="button" className="signin-link" onClick={otp.changeEmail}>
-                  use a different email
-                </button>
-              </div>
-            </div>
-          </form>
-        )}
+      {/* THE STAGE — ONE wrapper, ONE uniform scale: the G, the circle, the
+          toggle and the form move and scale together with the keyboard. */}
+      <div
+        className="signin-stage"
+        data-signin-scale={fit.s.toFixed(4)}
+        style={{
+          transform: `translate3d(${fit.tx}px, ${fit.ty}px, 0) scale(${fit.s})`,
+          transition: `transform ${fit.ease}`,
+        }}
+      >
+        <GStage>
+          <LivingG
+            weight="middle"
+            earCut
+            showLabels={false}
+            overlay={
+              <>
+                <SignInCircle />
+                <EarSelector
+                  mode={seat}
+                  weight="middle"
+                  seats={FULL_SEATS}
+                  onChange={setSeat}
+                  onTap={nextSeat}
+                />
+              </>
+            }
+          />
+          <div className="signin-circle" style={CIRCLE_BOX}>
+            {otp.step === "email" ? (
+              <form onSubmit={(e) => void otp.submitEmail(e)} className="signin-inner">
+                <h1 className="signin-mark">giver</h1>
+                <input
+                  type="email"
+                  required
+                  value={otp.email}
+                  onChange={(e) => otp.setEmail(e.target.value)}
+                  placeholder="email"
+                  aria-label="email"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  inputMode="email"
+                  className="signin-field"
+                />
+                <SendCircle label={otp.busy ? "sending" : "send code"} busy={otp.busy} />
+                <div className="signin-under" style={UNDER_AT} aria-live="polite">
+                  {line ? <p className="signin-line">{line}</p> : null}
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={(e) => void otp.submitCode(e)} className="signin-inner">
+                <h1 className="signin-mark">giver</h1>
+                <input
+                  ref={codeRef}
+                  type="text"
+                  required
+                  value={otp.code}
+                  onChange={(e) => otp.setCode(e.target.value)}
+                  placeholder={`${OTP_LENGTH}-digit code`}
+                  aria-label={`${OTP_LENGTH}-digit code sent to ${otp.email.trim()}`}
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  pattern={`\\d{${OTP_LENGTH}}`}
+                  maxLength={OTP_LENGTH}
+                  className="signin-field signin-field--code"
+                />
+                <SendCircle label={otp.busy ? "checking" : "sign in"} busy={otp.busy} />
+                <div className="signin-under" style={UNDER_AT}>
+                  <p className="signin-line" aria-live="polite">
+                    {line ?? "\u00a0"}
+                  </p>
+                  {/* Stacked, so both fit the bottom loop's white at 320. */}
+                  <div className="signin-under-links">
+                    <button
+                      type="button"
+                      className="signin-link"
+                      onClick={() => void otp.resend()}
+                      disabled={otp.busy}
+                    >
+                      resend
+                    </button>
+                    <button type="button" className="signin-link" onClick={otp.changeEmail}>
+                      use a different email
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        </GStage>
       </div>
     </div>
   );

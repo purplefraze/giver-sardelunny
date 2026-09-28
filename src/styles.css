@@ -1177,35 +1177,25 @@
 
 
 /* ---------------------------------------------------------------
-   THE SIGN-IN SCREEN (src/components/onboarding/SignInView.tsx), after the
-   v6 stills (/workspace/giver-signin-mockups/signin-v6-*.png).
+   THE SIGN-IN SCREEN (src/components/onboarding/SignInView.tsx).
    Layers: white paper · a dense feed of sample activity wrapping the whole
-   screen, each entry in its own action's colour, muted · the plain G top left
-   (no toggle, no dial) in a tight white clearing · one solid white circle
-   (~300px at 390 wide) holding "giver", the field and the send circle · the
-   seat toggle locked to a track just OUTSIDE that circle, at the seat's clock.
+   screen, each entry in its own action's colour, muted · THE MAIN G (variant
+   A: same GStage, same LivingG at the middle weight, ear cut) whose middle
+   loop is the white circle holding "giver", the field and the send circle,
+   stroked at the toggle ring's weight · the main G's own toggle riding that
+   circle (orbit 283.1 units). All of it lives in ONE scaled stage.
 
    COLOURS: read from the ONE app-wide map (--mode-*). One attribute
-   (data-signin-seat) sets --seat, which recolours the G, the wordmark, the
-   caret, the send circle and the toggle in the same frame.
+   (data-signin-seat) sets --seat, which recolours the G, the circle, the
+   toggle, the wordmark, the caret and the send circle in the same frame —
+   in EVERY seat (the circle's stroke is var(--seat), never a per-seat
+   switch; it used to be a fund-only hairline).
    --------------------------------------------------------------- */
 .signin {
   --seat: var(--mode-give);
-  /* THE CIRCLE AND ITS TRACK. The toggle rides OUTSIDE the circle on a fixed
-     orbit about the circle's true centre:
-       R_orbit = R_circle + gap + toggle radius  (ring outer edge ≈ 17px)
-     and its white knock-out reaches 21px past that, so the whole assembly
-     spans R_circle + 43px from the centre. The circle is sized so that span
-     fits the frame with a margin: 100cqw − 96px (294px at 390, 224px at 320,
-     300px cap from 396 up), and never taller than the height allows. */
-  --signin-circle: min(300px, calc(100cqw - 96px), 40cqh);
-  --signin-orbit-gap: 5px;
-  --signin-toggle-r: 17px;
-  --signin-orbit: calc(var(--signin-circle) / 2 + var(--signin-orbit-gap) + var(--signin-toggle-r));
-  /* FUND BORDER — one variable. Transparent everywhere except fund; swap the
-     colour here (e.g. to green) and nothing else changes. */
-  --signin-edge-width: 1.75px;
-  --signin-edge: transparent;
+  /* The Living G / EarSelector read the world pair: here it is the seat. */
+  --world-g: var(--seat);
+  --world-bg: var(--seat-bg);
   container-type: size;
   background: #fff;
   font-family: var(--giver-font);
@@ -1218,7 +1208,6 @@
 .signin[data-signin-seat="borrow"] { --seat: var(--mode-borrow); }
 .signin[data-signin-seat="lend"] { --seat: var(--mode-lend); }
 .signin[data-signin-seat="giver"] { --seat: var(--mode-giver); }
-.signin[data-signin-seat="fund"] { --signin-edge: var(--mode-fund); }
 
 /* THE FEED — dense rows over the whole screen, a soft fade at top and bottom.
    Each entry wears its own action's colour at a balanced strength. */
@@ -1262,73 +1251,34 @@
   }
 }
 
-/* THE G, TOP LEFT — 46px, on the 32px margin, a tight white clearing so no
-   feed text runs behind it. */
-.signin-g {
-  position: absolute;
-  top: calc(env(safe-area-inset-top) + 76px);
-  left: 32px;
-  z-index: 12;
-  line-height: 0;
-  pointer-events: none;
-}
-/* THE LIVING G, drawn at the small G's exact box (46px for the artwork's
-   -12..1145 height). Its SVG frame is larger than the artwork (the frame
-   leaves room for the selector), so it is placed by the same ratio: the
-   artwork lands exactly where the static mark sat. */
-.signin-g-box {
-  position: relative;
-  width: calc(46px * 600 / 1157);
-  height: 46px;
-}
-.signin-g-breath {
+/* THE STAGE — one wrapper over the whole screen, scaled as ONE about its
+   top-left corner (use-keyboard-fit.ts supplies translate + scale), eased
+   with the keyboard. The probe is the same GStage, unscaled and invisible. */
+.signin-stage {
   position: absolute;
   inset: 0;
-  /* The app's own idle motion for an entered G (styles: g-alive). */
-  animation: g-alive 7200ms ease-in-out infinite;
-  transform-origin: 50% 50%;
+  z-index: 10;
+  transform-origin: 0 0;
+  will-change: transform;
 }
-.signin-g-art {
+.signin-probe {
   position: absolute;
-  left: calc(46px * -105 / 1157);
-  top: calc(46px * -83 / 1157);
-  width: calc(46px * 778 / 1157);
-  height: calc(46px * 1228 / 1157);
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .signin-g-breath { animation: none; }
-}
-.signin-g::before {
-  content: "";
-  position: absolute;
-  /* Tight, per v6: ~6px of paper beyond the G's box with a short feather
-     (sd 3px), so the paper is solid (≈98%) everywhere behind the G itself
-     and fades out within a few px — no feed text runs behind the G. */
-  inset: -6px;
-  border-radius: 11px;
-  background: #fff;
-  filter: blur(3px);
-  z-index: -1;
+  .signin-stage { transition: none !important; }
 }
 
-/* THE CIRCLE — one clean, true circle (width = height, 50% radius, a crisp
-   edge, no soft halo) so the toggle visibly has a track to ride. The border
-   is transparent except at fund (--signin-edge); box-sizing keeps the size
-   exact either way. */
+/* THE CIRCLE'S INTERIOR — a box over the white inside the G's middle loop
+   (drawn in the SVG: stroke 17.2 units in the seat colour, white fill). The
+   form's sizes read its width (cqw), so it fits the circle at every width. */
 .signin-circle {
   position: absolute;
-  left: 50%;
-  top: 47.4%;
-  box-sizing: border-box;
-  width: var(--signin-circle);
-  height: var(--signin-circle);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
+  container-type: size;
   border-radius: 50%;
-  border: var(--signin-edge-width) solid var(--signin-edge);
-  background: #fff;
-  background-clip: border-box;
-  z-index: 10;
+  z-index: 2;
 }
 .signin-inner {
   position: absolute;
@@ -1340,7 +1290,7 @@
 
 .signin-mark {
   position: absolute;
-  top: 20%;
+  top: 17%;
   left: 0;
   right: 0;
   text-align: center;
@@ -1353,14 +1303,14 @@
   color: var(--seat);
 }
 
-/* THE FIELD — its underline stays well short of the circle's width, so the
-   edge toggle at 3:00 and 9:00 never touches it (circle − 120px). */
+/* THE FIELD — its underline stays well inside the circle's white (72% of the
+   interior), so it never meets the circle's stroke. */
 .signin-field {
   position: absolute;
   left: 50%;
   bottom: 50%;
   transform: translateX(-50%);
-  width: calc(var(--signin-circle) - 120px);
+  width: 72cqw;
   font-family: var(--giver-font);
   font-weight: 400;
   font-size: 17px;
@@ -1394,12 +1344,13 @@
 
 /* THE SEND CIRCLE — solid seat colour, heavier white arrow, no text. */
 .signin-send {
+  --send: min(54px, 31cqw);
   position: absolute;
   left: 50%;
-  top: calc(50% + 36px);
-  margin-left: -27px;
-  width: 54px;
-  height: 54px;
+  top: calc(50% + 8cqw);
+  margin-left: calc(var(--send) / -2);
+  width: var(--send);
+  height: var(--send);
   border-radius: 9999px;
   background: var(--seat);
   display: flex;
@@ -1412,15 +1363,13 @@
 .signin-send:disabled { opacity: 0.45; }
 .signin-send:focus-visible { outline: 1px solid var(--seat); outline-offset: 4px; }
 
-/* Quiet lowercase lines just below the circle (clear of the toggle at every
-   seat): the error / notice, and on the code step resend · use a different
-   email. A white halo keeps them legible over the feed. */
+/* Quiet lowercase lines in the G's bottom loop (its white, clear of every
+   stroke): the error / notice, and on the code step resend / use a different
+   email. Placed from the bottom loop's centre (SignInView UNDER_AT). A white
+   halo keeps them legible over the feed. */
 .signin-under {
   position: absolute;
-  left: 50%;
-  /* Below the toggle's lowest reach (6:00): gap + ring + knock-out, + air. */
-  top: calc(100% + var(--signin-orbit-gap) + var(--signin-toggle-r) + 21px + 10px);
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1433,6 +1382,12 @@
   box-shadow: 0 0 6px 6px #fff;
 }
 .signin-under:empty { display: none; }
+.signin-under-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
 .signin-line {
   font-weight: 300;
   font-size: 12px;
@@ -1452,41 +1407,6 @@
   padding: 2px 2px;
 }
 .signin-link:disabled { opacity: 0.45; }
-
-/* THE SEAT TOGGLE — a small ring on a stem, locked to a track OUTSIDE the
-   circle: a zero-size wrapper at the circle's true centre is ROTATED to the
-   seat's angle, and the toggle sits translated out along its +x axis by
-   exactly R_orbit, stem pointing back in to the edge. Moving between seats
-   interpolates the ANGLE only (rotate), so it always travels along the
-   circumference, never across the interior. */
-.signin-orbit {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0;
-  height: 0;
-  z-index: 2;
-  transition: transform 520ms var(--giver-ease);
-}
-.signin-orbit[data-dragging="true"] { transition: none; }
-.signin-toggle {
-  position: absolute;
-  left: calc(var(--signin-orbit) - 24px);
-  top: -24px;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  background: none;
-  border-radius: 9999px;
-  touch-action: none;
-  cursor: grab;
-  -webkit-tap-highlight-color: transparent;
-}
-.signin-toggle svg { display: block; overflow: visible; }
-.signin-toggle:focus-visible { outline: 1px solid var(--seat); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) {
-  .signin-orbit { transition: none; }
-}
 
 /* ---------------------------------------------------------------
    GIVE, ONE LINE AT A TIME (GiveFlow.tsx) — measured off

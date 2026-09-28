@@ -34,7 +34,18 @@ export function SendArrow() {
 }
 
 /** The small G, top left — the seat's own colour; a tap goes back. */
-export function FormG({ onBack, label = "back" }: { onBack: () => void; label?: string }) {
+export function FormG({
+  onBack,
+  label = "back",
+  colour = "var(--form-seat)",
+  height = 32,
+}: {
+  onBack: () => void;
+  label?: string;
+  /** The give surface keeps its G My G blue (#1E7BFF), whatever the seat. */
+  colour?: string;
+  height?: number;
+}) {
   return (
     <button
       type="button"
@@ -45,7 +56,7 @@ export function FormG({ onBack, label = "back" }: { onBack: () => void; label?: 
         onBack();
       }}
     >
-      <GMark colour="var(--form-seat)" height={32} />
+      <GMark colour={colour} height={height} />
     </button>
   );
 }

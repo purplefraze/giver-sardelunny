@@ -1616,64 +1616,121 @@
 .signin-link:disabled { opacity: 0.45; }
 
 /* ---------------------------------------------------------------
-   GIVE, ONE LINE AT A TIME (GiveFlow.tsx) — measured off
-   /workspace/giver-give-infer/give-infer-*.png at 390x844. Same white room
-   and type as the unified form; the inferred type word is one size up from
-   the stills (15 → 17px).
+   GIVE, ONE QUESTION AT A TIME, ON ONE SURFACE (GiveFlow.tsx).
+   One soft mint card (#EEF9EA) on a mint surround (#DDF3D6 → #D6F1CF),
+   the zoomed middle-loop arcs in give green (#4BE01E) between them.
+   Every word is My G blue #1E7BFF; the only other colour is the pale green
+   hairline #7FC96A at low opacity. Exactly two text styles:
+     question  34px · 500 · tight leading
+     answer    22px · 400 (the chosen one 500; the rest at 45%)
    --------------------------------------------------------------- */
-.gf-screen { --gf-word: color-mix(in oklab, var(--form-seat) 74%, #000); }
-.gf-fields { margin-top: 62px; }
-.gf-what { margin-bottom: 44px; }
-.gf-what .uf-field { margin-bottom: 0; }
-.gf-kind { display: flex; align-items: baseline; gap: 14px; margin-top: 14px; min-height: 22px; }
-.gf-kind b { font-weight: 400; font-size: 17px; letter-spacing: 0.01em; color: var(--gf-word); }
-.gf-kind button, .gf-skip, .gf-quiet, .gf-cap-quiet {
-  font-family: var(--giver-font); font-size: 12px; letter-spacing: 0.06em; color: var(--form-label);
-  background: none; border: 0; padding: 0; text-transform: lowercase;
-}
-.gf-types { margin-top: 16px; }
-.gf-types-ask { margin-bottom: 14px; }
-.gf-type-row { display: flex; flex-wrap: wrap; gap: 12px 20px; }
-.gf-type-row button {
-  font-family: var(--giver-font); font-size: 17px; letter-spacing: 0.01em; color: var(--gf-word);
-  background: none; border: 0; padding: 0 0 2px; text-transform: lowercase;
-}
-.gf-type-row button[aria-checked="true"] { border-bottom: 1px solid currentColor; }
-.gf-line { margin-bottom: 38px; }
-.gf-row { display: flex; align-items: baseline; gap: 24px; }
-.gf-skip { margin-left: auto; line-height: 20px; }
-.gf-value-row { display: flex; align-items: flex-start; border-bottom: 1px solid var(--form-hairline); height: 36px; }
-.gf-value {
-  font-family: var(--giver-font); font-size: 17px; line-height: 20px; letter-spacing: -0.003em;
-  color: var(--form-ink); background: none; border: 0; padding: 0; text-align: left;
-  text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.gf-value-row > .gf-value:first-child { flex: 0 1 auto; }
-.gf-value-row .gf-skip { align-self: flex-start; }
-.gf-ph { color: var(--form-placeholder); }
-.gf-online { margin-left: 6px; }
-.gf-add {
-  font-family: var(--giver-font); font-size: 17px; line-height: 20px; color: var(--form-placeholder);
-  background: none; border: 0; padding: 0; text-transform: lowercase;
-}
-.gf-photo img { display: block; width: 100%; max-height: 280px; object-fit: cover; border-radius: 12px; }
-.gf-photo .gf-quiet { margin-top: 10px; }
-.gf-tags { gap: 24px; }
-.gf-tag {
-  font-family: var(--giver-font); font-size: 14px; line-height: 17px; letter-spacing: 0.01em;
-  color: var(--form-placeholder); background: none; border: 0; border-bottom: 1px solid var(--form-hairline);
-  padding: 0 0 4px; text-transform: lowercase; white-space: nowrap;
-}
-.gf-tag-on { color: var(--gf-word); }
-.gf-expiry {
-  font-family: var(--giver-font); font-size: 15px; letter-spacing: 0.01em; color: var(--form-label);
-  background: none; border: 0; padding: 0 0 3px; border-bottom: 1px dotted var(--form-hairline);
+.gv-root {
+  --gv-blue: #1e7bff;
+  --gv-page: #eef9ea;
+  --gv-hair: rgba(127, 201, 106, 0.55);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ddf3d6 0%, #d6f1cf 100%);
+  color: var(--gv-blue);
+  font-family: var(--giver-font);
   text-transform: lowercase;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
 }
-.gf-live { margin-top: 14px; }
-@keyframes gf-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.gf-rise { animation: gf-rise 260ms var(--giver-ease, ease-out) both; }
-@media (prefers-reduced-motion: reduce) { .gf-rise { animation: none; } }
+/* Every scroll container on the surface keeps pan-y: a horizontal drag is
+   ours (the track), a vertical one is the browser's. */
+.gv-card, .gv-card * { touch-action: pan-y; }
+.gv-arcs { position: absolute; inset: 0; pointer-events: none; }
+.gv-arcs * { pointer-events: none !important; }
+.gv-card {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: max(92px, calc(env(safe-area-inset-top) + 60px));
+  bottom: max(64px, calc(env(safe-area-inset-bottom) + 40px));
+  background: var(--gv-page);
+  border-radius: 32px;
+  overflow: hidden;
+}
+.gv-g { position: absolute; top: 14px; left: 14px; z-index: 3; }
+.gv-g .uf-g { position: static; padding: 8px; }
+.gv-photo { position: absolute; top: 18px; right: 18px; z-index: 3; display: flex; align-items: center; gap: 10px; }
+.gv-plus {
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; padding: 0;
+}
+.gv-plus svg { width: 24px; height: 24px; }
+.gv-thumb {
+  width: 34px; height: 34px; padding: 0; border: 0; border-radius: 9px; overflow: hidden; background: none;
+  box-shadow: 0 0 0 1px var(--gv-hair);
+}
+.gv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gv-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: -10000px; }
+.gv-photo-menu {
+  position: absolute; top: 48px; right: 44px; display: flex; flex-direction: column; align-items: flex-start;
+  gap: 10px; padding: 14px 20px; background: var(--gv-page); border-radius: 18px; box-shadow: 0 0 0 1px var(--gv-hair);
+}
+.gv-photo-menu .gv-a { opacity: 1; }
+.gv-viewport { position: absolute; inset: 0; overflow: hidden; }
+.gv-track {
+  display: flex; height: 100%;
+  transition: transform 420ms cubic-bezier(0.2, 1.1, 0.34, 1);
+  will-change: transform;
+}
+.gv-panel {
+  position: relative; flex: 0 0 100%; height: 100%; overflow-x: hidden; overflow-y: auto;
+  padding: 104px 30px 128px;
+  user-select: none; -webkit-user-select: none;
+}
+.gv-q {
+  margin: 0; max-width: 11em;
+  font-size: 34px; font-weight: 500; line-height: 1.06; letter-spacing: -0.022em;
+  color: var(--gv-blue); text-wrap: balance;
+}
+.gv-answers { margin-top: 38px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.gv-opt { position: relative; }
+.gv-a {
+  display: block; padding: 2px 0; margin: 0; background: none; border: 0; text-align: left;
+  font-family: var(--giver-font); font-size: 22px; font-weight: 400; line-height: 1.25; letter-spacing: -0.006em;
+  color: var(--gv-blue); opacity: 0.45; text-transform: lowercase;
+  transition: opacity 180ms ease-out;
+}
+.gv-a[aria-checked="true"] { opacity: 1; font-weight: 500; }
+.gv-date { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
+.gv-line {
+  display: block; width: 100%; padding: 2px 0 10px; margin: 0;
+  font-family: var(--giver-font); font-size: 22px; font-weight: 400; line-height: 1.25; letter-spacing: -0.006em;
+  color: var(--gv-blue); caret-color: var(--gv-blue); text-transform: lowercase;
+  background: transparent; border: 0; border-bottom: 1px solid var(--gv-hair); border-radius: 0; outline: none;
+  user-select: text; -webkit-user-select: text;
+}
+.gv-line--on { font-weight: 500; }
+.gv-line::placeholder { color: var(--gv-blue); opacity: 0.32; font-weight: 400; }
+.gv-hint {
+  margin: 30px 0 0; font-size: 13px; letter-spacing: 0; color: var(--gv-blue); opacity: 0.5;
+  transition: opacity 700ms ease-out;
+}
+.gv-hint--gone { opacity: 0; }
+.gv-done-photo { display: block; width: 88px; height: 88px; margin-top: 26px; object-fit: cover; border-radius: 16px; }
+.gv-summary { margin-top: 30px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.gv-sum { opacity: 0.72; }
+.gv-sum:disabled { opacity: 0.45; }
+.gv-say { opacity: 1; margin-top: 26px; max-width: 16em; }
+.gv-say--float { position: absolute; left: 30px; right: 30px; bottom: 30px; margin: 0; }
+.gv-send {
+  position: absolute; right: 26px; bottom: 26px; width: 68px; height: 68px; border-radius: 9999px; border: 0;
+  background: #4be01e; display: flex; align-items: center; justify-content: center;
+  transition: transform 150ms var(--giver-ease), opacity 150ms ease-out;
+}
+.gv-send:active { transform: scale(0.94); }
+.gv-send:disabled { opacity: 0.6; }
+.gv-send svg { width: 28px; height: 28px; }
+.gv-root .uf-g svg path { transition: fill 420ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .gv-track { transition: none; }
+  .gv-hint, .gv-a { transition: none; }
+}
 
 /* WHERE IS IT? — the full-screen map (LocationPicker.tsx). */
 .gf-map-screen {
@@ -1743,7 +1800,10 @@
 .gf-cap { position: absolute; inset: 0; z-index: 80; background: #fff; overflow-y: auto; }
 .gf-cap-g { position: absolute; top: min(76px, 9vh); left: 32px; line-height: 0; }
 .gf-cap-line { font-size: 19px; line-height: 1.45; color: var(--form-ink); margin: 26px 0 0; max-width: 28ch; }
-.gf-cap-quiet { display: block; margin-top: 40px; font-size: 13px; min-height: 44px; }
+.gf-cap-quiet {
+  font-family: var(--giver-font); letter-spacing: 0.06em; color: var(--form-label);
+  background: none; border: 0; padding: 0; text-transform: lowercase;
+  display: block; margin-top: 40px; font-size: 13px; min-height: 44px; }
 
 /* GOT IT + faded give actions. */
 .gf-faded { opacity: 0.4; }
@@ -1893,38 +1953,4 @@
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
   text-underline-offset: 4px;
-}
-.gf-firstrun {
-  margin: 4px 0 18px;
-}
-.gf-firstrun-ask {
-  font-family: var(--giver-font);
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  text-transform: lowercase;
-  color: var(--form-heading);
-  background: none;
-  border: 0;
-  padding: 0;
-  text-align: left;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-  text-underline-offset: 4px;
-}
-.gf-suggest-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 18px;
-  margin-top: 10px;
-}
-.gf-suggest {
-  font-family: var(--giver-font);
-  font-size: 17px;
-  font-weight: 500;
-  text-transform: lowercase;
-  color: var(--form-heading);
-  background: none;
-  border: 0;
-  padding: 0;
-  min-height: 32px;
 }

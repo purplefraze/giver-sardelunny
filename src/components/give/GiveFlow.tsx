@@ -1,62 +1,86 @@
-import { useEffect, useRef, useState } from "react";
-import { FormG, FormQuestion, FormSend } from "@/components/forms/UnifiedForm";
-import { GIVE_LEXICON, GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
-import { giveFirstRunStore } from "@/data/give-firstrun";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormG } from "@/components/forms/UnifiedForm";
+import { GStage } from "@/components/living-g/GStage";
+import { GThinMask } from "@/components/living-g/g-weight";
+import { MiddleLoopClose } from "@/components/living-g/loop-close";
+import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX } from "@/components/living-g/g-path";
+import { CAMERA, anchorOrigin } from "@/components/living-g/g-depth";
+import { GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
+import { giveHintStore } from "@/data/give-hint";
 import {
-  EXPIRY_PRESETS,
   USES_CALENDAR,
+  dayLabel,
   defaultExpiry,
+  defaultPickDate,
   expiresAt,
   expiryLabel,
+  localDate,
+  todayIso,
   whenLabel,
   type Expiry,
   type WhenPick,
 } from "@/data/give-when";
-import { savePin, pinFor } from "@/data/give-pins";
-import { itemsStore, timeWindow, type Item, type ItemDetails, type Topic } from "@/data/items";
+import { savePin, pinFor, type Pin } from "@/data/give-pins";
+import {
+  CADENCE_OPTIONS,
+  classifyKind,
+  itemsStore,
+  suggestCadence,
+  timeWindow,
+  type Item,
+  type ItemDetails,
+  type Topic,
+} from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
 import { ensureLiveSession } from "@/data/cloud/session";
 import { pullItems, pushItems } from "@/data/cloud/items-sync";
-import { pickImages } from "@/lib/pick-image";
 import { prepareGivePhoto, uploadGivePhoto, type PreparedPhoto } from "@/lib/give-photo";
 import { haptics } from "@/lib/haptics";
 import { LocationPicker, type WhereAnswer } from "./LocationPicker";
-import { WhenPicker } from "./WhenPicker";
 
 /**
- * GIVE, ONE LINE AT A TIME (/workspace/giver-give-infer/give-infer-*.png).
+ * GIVE, ONE QUESTION AT A TIME, ON ONE SURFACE.
  *
- * Line 1 is "what". As they type, a debounced local lexicon guess
- * (give-lexicon.ts) appears as one quiet green word with a grey "change".
- * Nothing matched → "what are you giving?" with the six choices. Then only
- * that type's lines rise in, each once the one above is answered or skipped:
+ * One soft mint card in the give world, the zoomed middle-loop arcs in give
+ * green behind it on a mint surround. Every question sits side by side on ONE
+ * horizontal track inside the card; the view slides between them and the
+ * route never changes. The last track position is the finished give.
  *
- *   a thing / clothes   add a photo · when can they collect it? · where is it? ·
- *                       size?/condition? · up for 7 days
- *   food                add a photo · when is it ready? · where is it? · up for 1 day
- *   time                add a photo · when are you free? · where? · up for 1 day / up until …
- *   a skill / a hand    add a photo · when? · where? · up for 1 day / up until …
+ *   swipe left = next · swipe right = back (any number of steps, every
+ *   earlier answer stays editable) · tapping an answer advances after 250ms
+ *   · the slide follows the finger and springs; a short swipe snaps back
+ *   · a light haptic on every move to another question
  *
- * The send circle appears once what + type + where are filled.
+ * THE TRACK (per type — the questions the give flow already asked):
+ *   what are you giving? · what kind of give is it? ·
+ *   when …? (food: when is it ready?) · how often? (time / skill / hand) ·
+ *   where …? · size? (clothes) · condition? (thing / clothes) ·
+ *   how long is it up? · the finished give
  *
- * "WHEN" IS A CALENDAR (WhenPicker), never a silent "anytime": things and
- * clothes now ask "when can they collect it?" on the same month grid time /
- * a skill / a hand use (optional — skip leaves it open). Food keeps its
- * ready-by answers. Only time / skill / hand let the date end the give.
+ * BEST GUESS, WITH AN ESCAPE HATCH: every question opens with the app's best
+ * guess already chosen (solid blue, weight 500; the rest the same blue at
+ * 45%). Every question with choices ends with "something else", which turns
+ * into an underlined line with the keyboard up; whatever is typed becomes
+ * the answer.
  *
- * FIRST RUN ONLY (give-firstrun.ts): under the heading, "stuck on what you
- * can give? tap for suggestions" — a tap shows a few words drawn from the
- * give lexicon (GIVE_LEXICON), one tap fills "what" with it.
+ * PHOTO: one blue plus on the card, always; it opens the phone's own picker
+ * (a real <input type=file accept="image/*">). A thumbnail sits beside it;
+ * tapping it offers replace / remove, on the same surface.
+ *
+ * FIRST GIVE ONLY: "swipe to continue" under the first answer, gone after 3s
+ * or the first swipe / tap; seen is kept on the device and the account
+ * (give-hint.ts — auth user metadata, no migration).
  *
  * SAVED AS (no schema change — the existing items columns + details jsonb):
  *   text            the "what" line
  *   details.topic   thing/clothes → items / household · food → food ·
  *                   time → services / help · a skill → skills / teaching ·
  *                   a hand → home / repair
- *   details.extras  { kind, size?, condition?, ready? }
- *   details.where   the COARSE label only ("the annex", "near dundas st w",
- *                   or "online") — the exact pin stays on this device
- *   details.date / startTime / endTime / time   the calendar answer
+ *   details.extras  { kind, size?, condition?, ready?, when?, up? } — a typed
+ *                   "something else" lands here as said
+ *   details.cadence one time · weekly · fortnightly · monthly · or as typed
+ *   details.where   the COARSE label only — the exact pin stays on this device
+ *   details.date / startTime / endTime / time   a picked day
  *   details.expiresAt   UTC ISO
  *   details.photoPath + photos[0]   the uploaded photo (post-media bucket)
  *
@@ -64,6 +88,9 @@ import { WhenPicker } from "./WhenPicker";
  * the give goes straight through; a session that cannot be renewed returns
  * the person to the G sign-in (session.ts ensureLiveSession).
  */
+
+const BLUE = "#1E7BFF";
+const GIVE_GREEN = "#4BE01E";
 
 const TOPIC_OF: Record<GiveType, Topic> = {
   "a thing": "items / household",
@@ -82,14 +109,6 @@ const WHEN_PROMPT: Record<GiveType, string> = {
   "a skill": "when?",
   "a hand": "when?",
 };
-const WHEN_HINT: Record<GiveType, string> = {
-  "a thing": "pick a day",
-  clothes: "pick a day",
-  food: "tonight after 6",
-  time: "evenings, weekends…",
-  "a skill": "pick a day",
-  "a hand": "this week",
-};
 const WHERE_PROMPT: Record<GiveType, string> = {
   "a thing": "where is it?",
   clothes: "where is it?",
@@ -106,137 +125,592 @@ const CAN_BE_ONLINE: Record<GiveType, boolean> = {
   "a skill": true,
   "a hand": false,
 };
-
-/**
- * FIRST-RUN SUGGESTIONS — words straight out of the give lexicon (stems shown
- * without their "*"), a couple per type, so a tap always lands on a type the
- * guess already knows. Only entries that really are in GIVE_LEXICON survive.
- */
-const SUGGEST_FROM: Record<GiveType, string[]> = {
-  "a thing": ["ladder*", "stroller*", "book*"],
-  clothes: ["coat*", "hoodie*"],
-  food: ["sourdough", "soup*"],
-  time: ["dog walk*", "company"],
-  "a skill": ["guitar", "french"],
-  "a hand": ["help moving", "paint*"],
+/** Gives that can repeat — the only ones asked "how often?". */
+const ASKS_OFTEN: Record<GiveType, boolean> = {
+  "a thing": false,
+  clothes: false,
+  food: false,
+  time: true,
+  "a skill": true,
+  "a hand": true,
 };
-const SUGGESTIONS: { type: GiveType; word: string }[] = GIVE_TYPES.flatMap((type) =>
-  SUGGEST_FROM[type]
-    .filter((k) => GIVE_LEXICON[type].includes(k))
-    .map((k) => ({ type, word: k.replace(/\*$/, "") })),
-);
 
-/** Tag options — kept minimal. */
 const SIZES = ["xs", "s", "m", "l", "xl"] as const;
 const CONDITIONS = ["like new", "good", "well loved"] as const;
 const READY = ["now", "in an hour", "this evening", "tomorrow"] as const;
 
-type Where = { label: string; online: boolean; pin: WhereAnswer["pin"] | null; mode: WhereAnswer["mode"] | null };
-type Screen = "form" | "map" | "when" | "ready" | "size" | "condition" | "expiry" | "expiry-date";
+const OTHER = "other";
+const ADVANCE_MS = 250;
+const HINT_MS = 3000;
 
-const INFER_MS = 450;
-const FALLBACK_MS = 1100;
+type ChoiceId = "kind" | "when" | "ready" | "often" | "where" | "size" | "condition" | "expiry";
+type Opt = { key: string; label: string; pick?: "date" | "map" };
+type ChoiceStep = { id: ChoiceId; ask: string; options: Opt[]; placeholder: string };
+type Step = { id: "what"; ask: string } | ChoiceStep | { id: "done" };
+type Where = { label: string; online: boolean; pin: Pin | null; mode: WhereAnswer["mode"] | null };
+
+const opts = (list: readonly string[]): Opt[] => list.map((k) => ({ key: k, label: k }));
+
+/** A stored answer back onto its question: one of the choices, or typed. */
+function split(v: string | undefined, list: readonly string[]): { c?: string; o?: string } {
+  if (!v) return {};
+  return list.includes(v) ? { c: v } : { c: OTHER, o: v };
+}
+
+/** "10 days", "2 weeks", "a month" → days; anything else keeps the default. */
+function daysSaid(text: string): number | null {
+  const t = text.toLowerCase();
+  const n = /(\d+)\s*(day|week|month)/.exec(t);
+  if (n) {
+    const k = Number(n[1]);
+    const days = n[2] === "week" ? k * 7 : n[2] === "month" ? k * 30 : k;
+    return days > 0 && days <= 90 ? days : null;
+  }
+  if (/\bweek\b/.test(t)) return 7;
+  if (/\bmonth\b/.test(t)) return 30;
+  if (/\btomorrow\b/.test(t)) return 1;
+  return null;
+}
+
+/** A light tick on every move to another question. */
+function tick() {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    try {
+      navigator.vibrate(10);
+    } catch {
+      /* not allowed yet: nothing felt, nothing broken */
+    }
+    return;
+  }
+  haptics.selection();
+}
+
+/** Opens a date input's own native picker, where the browser allows it. */
+function openPicker(input: HTMLInputElement | null) {
+  if (!input) return;
+  try {
+    input.showPicker();
+  } catch {
+    input.focus({ preventScroll: true });
+    input.click();
+  }
+}
+
+/** THE ZOOMED MIDDLE LOOP — the same artwork and camera numbers GDepthLevel
+ *  unfurls with, held at rest in give green behind the card. */
+function GiveArcs() {
+  const o = anchorOrigin("middle");
+  return (
+    <div
+      className="gv-arcs"
+      aria-hidden="true"
+      style={{
+        transform: `translateZ(0) scale(${CAMERA.unfurl})`,
+        transformOrigin: `${o.x}% ${o.y}%`,
+      }}
+    >
+      <GStage>
+        <svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible">
+          <defs>
+            <GThinMask id="gv-arcs-thin" weight="middle" />
+          </defs>
+          <g transform={LIVING_G_TRANSFORM} fill={GIVE_GREEN}>
+            <path d={LIVING_G_PATH} mask="url(#gv-arcs-thin)" />
+          </g>
+          <MiddleLoopClose weight="middle" fill={GIVE_GREEN} />
+        </svg>
+      </GStage>
+    </div>
+  );
+}
 
 export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: Item | null }) {
   const pre = prefill?.details;
-  const preKind = pre?.extras?.["kind"] as GiveType | undefined;
+  const preExtras = pre?.extras ?? {};
+
+  /* ---- ANSWERS ---- */
   const [what, setWhat] = useState(prefill?.text ?? "");
-  const [guess, setGuess] = useState<GiveType | null>(() => (prefill ? inferGiveType(prefill.text) : null));
-  const [picked, setPicked] = useState<GiveType | null>(preKind && GIVE_TYPES.includes(preKind) ? preKind : null);
-  const [changing, setChanging] = useState(false);
-  const [fallback, setFallback] = useState(false);
-  const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
-  const [photoSkipped, setPhotoSkipped] = useState(false);
-  const [photoSay, setPhotoSay] = useState<string | null>(null);
-  const [when, setWhen] = useState<WhenPick | null>(
-    pre?.date ? { date: pre.date, ...(pre.startTime ? { start: pre.startTime } : {}), ...(pre.endTime ? { end: pre.endTime } : {}) } : null,
-  );
-  const [ready, setReady] = useState<string | null>(pre?.extras?.["ready"] ?? null);
-  const [whenSkipped, setWhenSkipped] = useState(false);
-  const [where, setWhere] = useState<Where | null>(() => {
-    if (!prefill || !pre?.where) return null;
-    const pin = pinFor(prefill.id);
-    return { label: pre.where, online: pre.where === "online", pin, mode: pin ? "neighbourhood" : null };
+  const [choice, setChoice] = useState<Partial<Record<ChoiceId, string>>>(() => {
+    const c: Partial<Record<ChoiceId, string>> = {};
+    const put = (id: ChoiceId, s: { c?: string }) => {
+      if (s.c) c[id] = s.c;
+    };
+    put("kind", split(preExtras["kind"], GIVE_TYPES));
+    if (pre?.date) c.when = "pick";
+    else put("when", split(preExtras["when"], ["this weekend"]));
+    put("ready", split(preExtras["ready"], READY));
+    put("often", split(pre?.cadence, CADENCE_OPTIONS));
+    if (pre?.where === "online") c.where = "online";
+    put("size", split(preExtras["size"], SIZES));
+    put("condition", split(preExtras["condition"], CONDITIONS));
+    if (preExtras["up"]) c.expiry = OTHER;
+    return c;
   });
-  const [size, setSize] = useState<string | null>(pre?.extras?.["size"] ?? null);
-  const [condition, setCondition] = useState<string | null>(pre?.extras?.["condition"] ?? null);
-  const [tagsSkipped, setTagsSkipped] = useState(false);
-  const [expiry, setExpiry] = useState<Expiry | null>(null);
-  const [screen, setScreen] = useState<Screen>("form");
-  const [problem, setProblem] = useState<string | null>(null);
+  const [other, setOther] = useState<Partial<Record<ChoiceId, string>>>(() => {
+    const o: Partial<Record<ChoiceId, string>> = {};
+    const put = (id: ChoiceId, s: { o?: string }) => {
+      if (s.o) o[id] = s.o;
+    };
+    put("kind", split(preExtras["kind"], GIVE_TYPES));
+    if (!pre?.date) put("when", split(preExtras["when"], ["this weekend"]));
+    put("ready", split(preExtras["ready"], READY));
+    put("often", split(pre?.cadence, CADENCE_OPTIONS));
+    put("size", split(preExtras["size"], SIZES));
+    put("condition", split(preExtras["condition"], CONDITIONS));
+    if (preExtras["up"]) o.expiry = preExtras["up"];
+    return o;
+  });
+  const [editing, setEditing] = useState<ChoiceId | null>(null);
+  /** Back to the best guess. */
+  const unset = (id: ChoiceId) =>
+    setChoice((c) => {
+      const next = { ...c };
+      delete next[id];
+      return next;
+    });
+  const [pickDate, setPickDate] = useState<string | null>(pre?.date ?? null);
+  const [upDate, setUpDate] = useState<string | null>(null);
+  const [mapWhere, setMapWhere] = useState<Where | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
+  const [photoMenu, setPhotoMenu] = useState(false);
+  const [say, setSay] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const input = useRef<HTMLInputElement | null>(null);
-  /* FIRST RUN: shown on this visit only; the flag is written on open. */
-  const [firstRun] = useState(() => !prefill && !giveFirstRunStore.seen());
-  const [suggesting, setSuggesting] = useState(false);
-  useEffect(() => {
-    if (firstRun) giveFirstRunStore.markSeen();
-  }, [firstRun]);
 
-  const type: GiveType | null = picked ?? guess;
+  /* ---- THE TRACK ---- */
+  const [index, setIndex] = useState(0);
+  const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [hint, setHint] = useState<"off" | "on" | "gone">("off");
+
+  const root = useRef<HTMLDivElement | null>(null);
+  const viewport = useRef<HTMLDivElement | null>(null);
+  const panels = useRef<(HTMLElement | null)[]>([]);
+  const whatInput = useRef<HTMLInputElement | null>(null);
+  const otherInput = useRef<HTMLInputElement | null>(null);
+  const fileInput = useRef<HTMLInputElement | null>(null);
+  const whenDate = useRef<HTMLInputElement | null>(null);
+  const upDateInput = useRef<HTMLInputElement | null>(null);
+  const advance = useRef<number | undefined>(undefined);
+  const gesture = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    t: number;
+    w: number;
+    on: boolean;
+  } | null>(null);
+  const suppressClick = useRef(false);
+
+  /* The best guess for "where": this give's own place when posting again,
+     else the place of my most recent give (its pin stays on this device). */
+  const whereGuess = useMemo<Where | null>(() => {
+    if (prefill && pre?.where && pre.where !== "online") {
+      const pin = pinFor(prefill.id);
+      return { label: pre.where, online: false, pin, mode: pin ? "neighbourhood" : null };
+    }
+    const mine = itemsStore
+      .get()
+      .items.filter(
+        (i) =>
+          i.ownerId === "me" &&
+          i.type === "give" &&
+          i.details?.where &&
+          i.details.where !== "online",
+      )
+      .sort((a, b) => b.createdAt - a.createdAt)[0];
+    if (!mine?.details?.where) return null;
+    const pin = pinFor(mine.id);
+    return { label: mine.details.where, online: false, pin, mode: pin ? "neighbourhood" : null };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const described = what.trim().length >= 3;
+  const lexGuess = useMemo(() => inferGiveType(what), [what]);
+  const typed = (id: ChoiceId) => (other[id] ?? "").trim();
 
-  /* THE GUESS, DEBOUNCED: it only moves once typing pauses — never per key. */
-  useEffect(() => {
-    if (picked) return;
-    const t = window.setTimeout(() => setGuess(described ? inferGiveType(what) : null), INFER_MS);
-    const f = window.setTimeout(() => setFallback(described && !inferGiveType(what)), FALLBACK_MS);
-    return () => {
-      window.clearTimeout(t);
-      window.clearTimeout(f);
-    };
-  }, [what, described, picked]);
+  const kindRaw =
+    choice.kind === OTHER && typed("kind") ? OTHER : (choice.kind ?? lexGuess ?? "a thing");
+  const type: GiveType =
+    kindRaw === OTHER
+      ? (inferGiveType(typed("kind")) ?? lexGuess ?? "a thing")
+      : (kindRaw as GiveType);
+  const usesCalendar = USES_CALENDAR[type];
 
-  const usesCalendar = type ? USES_CALENDAR[type] : false;
-  const asksWhen = type !== null;
-  const whenAnswered = type === "food" ? ready !== null : when !== null;
-  const whereDone = where !== null;
-  const minimum = described && type !== null && whereDone;
-  const effectiveExpiry: Expiry | null = type
-    ? (expiry ?? (usesCalendar && when ? { kind: "when" } : defaultExpiry(type)))
-    : null;
-
-  const choose = (t: GiveType) => {
-    haptics.selection();
-    setPicked(t);
-    setChanging(false);
-    setFallback(false);
+  const guessOf = (id: ChoiceId, when: WhenPick | null): string | null => {
+    switch (id) {
+      case "kind":
+        return lexGuess ?? "a thing";
+      case "when":
+        return usesCalendar ? "this weekend" : "today";
+      case "ready":
+        return "now";
+      case "often": {
+        const c = suggestCadence(what, classifyKind(what));
+        return c && (CADENCE_OPTIONS as readonly string[]).includes(c) ? c : "one time";
+      }
+      case "where":
+        return whereGuess ? "guess" : CAN_BE_ONLINE[type] ? "online" : null;
+      case "size":
+        return null;
+      case "condition":
+        return "good";
+      case "expiry": {
+        if (usesCalendar && when) return "when";
+        const d = defaultExpiry(type);
+        return d.kind === "days" && d.days === 7 ? "7 days" : "1 day";
+      }
+    }
   };
 
-  const addPhoto = async () => {
-    const files = await pickImages({ multiple: false });
-    const file = files[0];
+  /* What each question currently answers: the choice, or the best guess
+     (a blank "something else", an unpicked day or an unpicked place fall back). */
+  const rawPick = (id: ChoiceId): string | null => {
+    const c = choice[id];
+    if (c === OTHER) return typed(id) ? OTHER : null;
+    if (c === "pick" && id === "when" && !pickDate) return null;
+    if (c === "pick" && id === "expiry" && !upDate) return null;
+    if (c === "map" && !mapWhere) return null;
+    if (c === "guess" && !whereGuess) return null;
+    if (c === "online" && !CAN_BE_ONLINE[type]) return null;
+    return c ?? null;
+  };
+
+  /* A concrete day, when there is one: "today" or a picked day. */
+  const whenRaw = rawPick("when") ?? guessOf("when", null);
+  const concreteWhen: WhenPick | null =
+    type === "food"
+      ? null
+      : whenRaw === "today"
+        ? { date: todayIso() }
+        : whenRaw === "pick" && pickDate
+          ? {
+              date: pickDate,
+              ...(pre?.date === pickDate && pre?.startTime ? { start: pre.startTime } : {}),
+              ...(pre?.date === pickDate && pre?.startTime && pre?.endTime
+                ? { end: pre.endTime }
+                : {}),
+            }
+          : null;
+
+  const pickOf = (id: ChoiceId): string | null => {
+    const r = rawPick(id);
+    if (r === "when" && !(usesCalendar && concreteWhen)) return guessOf(id, concreteWhen);
+    return r ?? guessOf(id, concreteWhen);
+  };
+
+  const whereAnswer: Where | null = (() => {
+    const p = pickOf("where");
+    if (p === "guess") return whereGuess;
+    if (p === "online") return { label: "online", online: true, pin: null, mode: null };
+    if (p === "map") return mapWhere;
+    if (p === OTHER) return { label: typed("where"), online: false, pin: null, mode: null };
+    return null;
+  })();
+
+  const expiry: Expiry = (() => {
+    const p = pickOf("expiry");
+    const fallback = defaultExpiry(type);
+    if (p === "1 day") return { kind: "days", days: 1 };
+    if (p === "3 days") return { kind: "days", days: 3 };
+    if (p === "7 days") return { kind: "days", days: 7 };
+    if (p === "when") return { kind: "when" };
+    if (p === "pick" && upDate) return { kind: "date", date: upDate };
+    if (p === OTHER) {
+      const d = daysSaid(typed("expiry"));
+      return d ? { kind: "days", days: d } : fallback;
+    }
+    return fallback;
+  })();
+
+  const steps: Step[] = useMemo(() => {
+    const list: Step[] = [
+      { id: "what", ask: "what are you giving?" },
+      {
+        id: "kind",
+        ask: "what kind of give is it?",
+        options: opts(GIVE_TYPES),
+        placeholder: "something handmade",
+      },
+    ];
+    if (type === "food") {
+      list.push({
+        id: "ready",
+        ask: WHEN_PROMPT.food,
+        options: opts(READY),
+        placeholder: "after 6 tonight",
+      });
+    } else {
+      list.push({
+        id: "when",
+        ask: WHEN_PROMPT[type],
+        options: [
+          { key: "today", label: "today" },
+          { key: "this weekend", label: "this weekend" },
+          {
+            key: "pick",
+            label: pickDate ? dayLabel(localDate(pickDate, "12:00")) : "pick a day",
+            pick: "date",
+          },
+        ],
+        placeholder: "weekday evenings",
+      });
+    }
+    if (ASKS_OFTEN[type]) {
+      list.push({
+        id: "often",
+        ask: "how often?",
+        options: opts(CADENCE_OPTIONS),
+        placeholder: "every other sunday",
+      });
+    }
+    list.push({
+      id: "where",
+      ask: WHERE_PROMPT[type],
+      options: [
+        ...(whereGuess ? [{ key: "guess", label: whereGuess.label }] : []),
+        ...(CAN_BE_ONLINE[type] ? [{ key: "online", label: "online" }] : []),
+        { key: "map", label: mapWhere ? mapWhere.label : "on the map", pick: "map" as const },
+      ],
+      placeholder: "near dundas west station",
+    });
+    if (type === "clothes")
+      list.push({ id: "size", ask: "size?", options: opts(SIZES), placeholder: "10 us" });
+    if (type === "a thing" || type === "clothes") {
+      list.push({
+        id: "condition",
+        ask: "condition?",
+        options: opts(CONDITIONS),
+        placeholder: "one small scratch",
+      });
+    }
+    list.push({
+      id: "expiry",
+      ask: "how long is it up?",
+      options: [
+        ...opts(["1 day", "3 days", "7 days"]),
+        ...(usesCalendar && concreteWhen
+          ? [{ key: "when", label: `until ${whenLabel(concreteWhen)}` }]
+          : []),
+        {
+          key: "pick",
+          label: upDate ? `until ${dayLabel(localDate(upDate))}` : "pick a date",
+          pick: "date" as const,
+        },
+      ],
+      placeholder: "until the weekend",
+    });
+    list.push({ id: "done" });
+    return list;
+    // concreteWhen is derived from the deps below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    type,
+    pickDate,
+    upDate,
+    mapWhere,
+    whereGuess,
+    usesCalendar,
+    concreteWhen?.date,
+    concreteWhen?.start,
+    concreteWhen?.end,
+  ]);
+
+  const last = steps.length - 1;
+  const at = Math.min(index, last);
+  const stepIndex = (id: Step["id"]) => steps.findIndex((s) => s.id === id);
+
+  /* ---- MOVING ALONG THE TRACK ---- */
+  const go = useCallback(
+    (to: number) => {
+      window.clearTimeout(advance.current);
+      const next = Math.max(0, Math.min(to, last));
+      if (at === 0 && next > 0 && !described) {
+        haptics.warning();
+        whatInput.current?.focus({ preventScroll: true });
+        return;
+      }
+      setHint((h) => (h === "on" ? "gone" : h));
+      if (next === at) return;
+      tick();
+      setPhotoMenu(false);
+      setIndex(next);
+    },
+    [at, last, described],
+  );
+  const goRef = useRef(go);
+  goRef.current = go;
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
+
+  const advanceFrom = (id: Step["id"]) => {
+    window.clearTimeout(advance.current);
+    advance.current = window.setTimeout(() => {
+      const i = stepsRef.current.findIndex((s) => s.id === id);
+      if (i >= 0) goRef.current(i + 1);
+    }, ADVANCE_MS);
+  };
+
+  useEffect(() => () => window.clearTimeout(advance.current), []);
+
+  /* Leaving a question closes its keyboard; a blank "something else" returns
+     the question to its best guess. */
+  useEffect(() => {
+    const a = document.activeElement;
+    if (a instanceof HTMLElement && !panels.current[at]?.contains(a)) a.blur();
+    if (viewport.current) viewport.current.scrollLeft = 0;
+  }, [at]);
+
+  useEffect(() => {
+    if (editing) otherInput.current?.focus({ preventScroll: true });
+  }, [editing]);
+
+  /* The first question opens with the keyboard up, as before. */
+  useEffect(() => {
+    if (!prefill) whatInput.current?.focus({ preventScroll: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* FIRST GIVE ONLY: the one hint. */
+  useEffect(() => {
+    if (prefill) return;
+    let dead = false;
+    let t: number | undefined;
+    void giveHintStore.seen().then((seen) => {
+      if (dead || seen) return;
+      setHint("on");
+      giveHintStore.markSeen();
+      t = window.setTimeout(() => setHint((h) => (h === "on" ? "gone" : h)), HINT_MS);
+    });
+    return () => {
+      dead = true;
+      window.clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Once faded, the hint leaves the surface for good. */
+  useEffect(() => {
+    if (hint !== "gone") return;
+    const t = window.setTimeout(() => setHint("off"), 900);
+    return () => window.clearTimeout(t);
+  }, [hint]);
+
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || mapOpen) return;
+      if (photoMenu) setPhotoMenu(false);
+      else if (at > 0) goRef.current(at - 1);
+      else onDone();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [at, mapOpen, photoMenu, onDone]);
+
+  const choose = (step: ChoiceStep, opt: Opt | null) => {
+    window.clearTimeout(advance.current);
+    setHint((h) => (h === "on" ? "gone" : h));
+    setSay(null);
+    if (!opt) {
+      setChoice((c) => ({ ...c, [step.id]: OTHER }));
+      setEditing(step.id);
+      return;
+    }
+    setEditing(null);
+    setChoice((c) => ({ ...c, [step.id]: opt.key }));
+    haptics.selection();
+    if (opt.pick === "date") {
+      openPicker(step.id === "expiry" ? upDateInput.current : whenDate.current);
+      return;
+    }
+    if (opt.pick === "map") {
+      setMapOpen(true);
+      return;
+    }
+    advanceFrom(step.id);
+  };
+
+  /* ---- GESTURES: the slide follows the finger, then springs. ---- */
+  const onPointerDown = (e: React.PointerEvent) => {
+    setHint((h) => (h === "on" ? "gone" : h));
+    if (mapOpen) return;
+    if ((e.target as Element).closest("[data-noswipe]")) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    gesture.current = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      t: e.timeStamp,
+      w: viewport.current?.clientWidth ?? 360,
+      on: false,
+    };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const g = gesture.current;
+    if (!g || g.id !== e.pointerId) return;
+    const dx = e.clientX - g.x;
+    const dy = e.clientY - g.y;
+    if (!g.on) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+        gesture.current = null;
+        return;
+      }
+      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      g.on = true;
+      window.clearTimeout(advance.current);
+      setPhotoMenu(false);
+      setDragging(true);
+      try {
+        root.current?.setPointerCapture(e.pointerId);
+      } catch {
+        /* capture is a nicety */
+      }
+    }
+    const resist =
+      (at === 0 && dx > 0) || (at === last && dx < 0) || (at === 0 && dx < 0 && !described);
+    setDrag(resist ? dx * 0.28 : dx);
+  };
+  const endGesture = (e: React.PointerEvent, cancelled: boolean) => {
+    const g = gesture.current;
+    gesture.current = null;
+    if (!g || !g.on) return;
+    suppressClick.current = true;
+    window.setTimeout(() => {
+      suppressClick.current = false;
+    }, 60);
+    setDragging(false);
+    setDrag(0);
+    if (cancelled) return;
+    const dx = e.clientX - g.x;
+    const v = dx / Math.max(e.timeStamp - g.t, 1);
+    const far = Math.abs(dx) > g.w * 0.22 || (Math.abs(v) > 0.5 && Math.abs(dx) > 30);
+    if (far) go(at + (dx < 0 ? 1 : -1));
+  };
+
+  /* ---- PHOTO ---- */
+  const onFile = async (file: File | undefined) => {
+    setPhotoMenu(false);
     if (!file) return;
     const out = await prepareGivePhoto(file);
     if (!out.ok) {
-      setPhotoSay("that photo can’t be read here — try a jpeg or png");
+      haptics.warning();
+      setSay("that photo can’t be read here — try a jpeg or png");
       return;
     }
-    setPhotoSay(null);
+    setSay(null);
     setPhoto(out.photo);
     haptics.light();
   };
-
-  const finish = (say: string) => {
-    setLive(say);
-    setWhat("");
-    setGuess(null);
-    setPicked(null);
-    setPhoto(null);
-    setPhotoSkipped(false);
-    setWhen(null);
-    setReady(null);
-    setWhenSkipped(false);
-    setWhere(null);
-    setSize(null);
-    setCondition(null);
-    setTagsSkipped(false);
-    setExpiry(null);
-    setFallback(false);
-    setScreen("form");
+  const openPhotos = () => {
+    setPhotoMenu(false);
+    const input = fileInput.current;
+    if (!input) return;
+    input.value = "";
+    input.click();
   };
 
+  /* ---- PUBLISH (the existing path) ---- */
   const push = async () => {
     try {
       await pushItems();
@@ -247,21 +721,46 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   };
 
   const send = async () => {
-    if (!minimum || !type || !where || !effectiveExpiry) {
+    if (busy || live) return;
+    const where = whereAnswer;
+    if (!described) {
       haptics.warning();
-      setProblem(!described ? "what are you giving?" : !type ? "what kind of give is it?" : "where is it?");
+      setIndex(0);
       return;
     }
-    const extras: Record<string, string> = { kind: type };
-    if (size) extras["size"] = size;
-    if (condition) extras["condition"] = condition;
-    if (type === "food" && ready) extras["ready"] = ready;
+    if (!where || !where.label) {
+      haptics.warning();
+      setIndex(stepIndex("where"));
+      return;
+    }
+    const kindLabel = kindRaw === OTHER ? typed("kind") : type;
+    const extras: Record<string, string> = { kind: kindLabel };
+    if (type === "clothes") {
+      const s = pickOf("size");
+      if (s) extras["size"] = s === OTHER ? typed("size") : s;
+    }
+    if (type === "a thing" || type === "clothes") {
+      const c = pickOf("condition");
+      if (c) extras["condition"] = c === OTHER ? typed("condition") : c;
+    }
+    if (type === "food") {
+      const r = pickOf("ready");
+      if (r) extras["ready"] = r === OTHER ? typed("ready") : r;
+    } else {
+      const w = pickOf("when");
+      if (w === "this weekend") extras["when"] = "this weekend";
+      if (w === OTHER) extras["when"] = typed("when");
+    }
+    if (pickOf("expiry") === OTHER) extras["up"] = typed("expiry");
+    const often = ASKS_OFTEN[type] ? pickOf("often") : null;
+    const when = concreteWhen;
     const details: ItemDetails = {
       topic: TOPIC_OF[type],
       extras,
       where: where.online ? "online" : where.label,
-      expiresAt: expiresAt(effectiveExpiry, when).toISOString(),
-      ...(type !== "food" && when
+      expiresAt: expiresAt(expiry, when).toISOString(),
+      ...(often ? { cadence: often === OTHER ? typed("often") : often } : {}),
+      ...(when
         ? {
             date: when.date,
             ...(when.start ? { startTime: when.start } : {}),
@@ -280,7 +779,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
     if (!result.ok || !result.id) {
       setBusy(false);
       haptics.warning();
-      setProblem(
+      setSay(
         result.reason === "account"
           ? (result.say ?? "finish your account in my g to publish this.")
           : "you can have three gives at a time — remove one to add another.",
@@ -292,282 +791,342 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
     let photoNote: string | null = null;
     if (photo) {
       const up = await uploadGivePhoto(id, photo);
-      if (up) itemsStore.patch(id, { photos: [up.url], details: { ...details, photoPath: up.path } });
+      if (up)
+        itemsStore.patch(id, { photos: [up.url], details: { ...details, photoPath: up.path } });
       else photoNote = "your give is saved — the photo couldn’t be added this time.";
     }
     void push(); // saved on this device; the sync never holds the screen
     setBusy(false);
-    setProblem(photoNote);
+    setSay(photoNote);
     haptics.light();
-    finish("it’s live in communi-g");
+    setLive("it’s live in communi-g");
   };
 
-  const leave = () => onDone();
+  /* ---- THE FINISHED GIVE'S QUIET LINES ---- */
+  const lineOf = (s: ChoiceStep): string => {
+    const p = pickOf(s.id);
+    if (p === OTHER) return typed(s.id);
+    switch (s.id) {
+      case "kind":
+        return type;
+      case "when":
+        return p === "pick" && pickDate ? whenLabel(concreteWhen ?? { date: pickDate }) : (p ?? "");
+      case "ready":
+        return `ready ${p}`;
+      case "where":
+        return whereAnswer?.label ?? "where?";
+      case "size":
+        return p ? `size ${p}` : "size?";
+      case "expiry":
+        /* Always the real day it comes down, e.g. "up until mon 5 oct". */
+        return expiry.kind === "days"
+          ? `up until ${dayLabel(expiresAt(expiry, concreteWhen))}`
+          : expiryLabel(expiry, concreteWhen);
+      default:
+        return p ?? "";
+    }
+  };
 
-  /* ---- FULL-SCREEN STEPS ---- */
-  if (screen === "map" && type) {
-    return (
-      <LocationPicker
-        prompt={WHERE_PROMPT[type]}
-        initial={where?.pin && where.mode ? { pin: where.pin, label: where.label, mode: where.mode } : null}
-        onBack={() => setScreen("form")}
-        onDone={(a) => {
-          setWhere({ label: a.label, online: false, pin: a.pin, mode: a.mode });
-          setScreen("form");
-        }}
-      />
-    );
-  }
-  if (screen === "when" && type) {
-    return (
-      <WhenPicker
-        heading={WHEN_PROMPT[type]}
-        initial={when}
-        onBack={() => setScreen("form")}
-        onDone={(p) => {
-          setWhen(p);
-          setScreen("form");
-        }}
-      />
-    );
-  }
-  if (screen === "expiry-date") {
-    return (
-      <WhenPicker
-        heading="up until"
-        dateOnly
-        onBack={() => setScreen("form")}
-        onDone={(p) => {
-          setExpiry({ kind: "date", date: p.date });
-          setScreen("form");
-        }}
-      />
-    );
-  }
-  type Q = { heading: string; options: readonly string[]; selected: string | undefined; pick: (o: string) => boolean | void };
-  const question: Q | null =
-    screen === "ready"
-      ? { heading: "when is it ready?", options: READY as readonly string[], selected: ready ?? undefined, pick: (o: string) => setReady(o) }
-      : screen === "size"
-        ? { heading: "size?", options: SIZES as readonly string[], selected: size ?? undefined, pick: (o: string) => setSize(o) }
-        : screen === "condition"
-          ? { heading: "condition?", options: CONDITIONS as readonly string[], selected: condition ?? undefined, pick: (o: string) => setCondition(o) }
-          : screen === "expiry"
-            ? {
-                heading: "how long is it up?",
-                options: EXPIRY_PRESETS as readonly string[],
-                selected: undefined,
-                pick: (o: string) => {
-                  if (o === "pick a date") {
-                    setScreen("expiry-date");
-                    return true;
-                  }
-                  setExpiry({ kind: "days", days: o === "1 day" ? 1 : o === "3 days" ? 3 : 7 });
-                  return false;
-                },
-              }
-            : null;
-  if (question) {
-    return (
-      <FormQuestion
-        heading={question.heading}
-        options={question.options}
-        selected={question.selected}
-        onBack={() => setScreen("form")}
-        onPick={(o) => {
-          const stay = question.pick(o);
-          if (stay !== true) setScreen("form");
-        }}
-      />
-    );
-  }
+  const hintOn = hint === "on";
 
-  /* ---- THE FORM ---- */
   return (
-    <div className="uf-screen gf-screen" data-testid="give-flow">
-      <FormG onBack={leave} />
-      <h1 className="uf-heading">give something</h1>
-      {live ? <p className="uf-say gf-live">{live}</p> : null}
-      {firstRun && !what ? (
-        <div className="gf-firstrun gf-rise" data-testid="give-firstrun">
-          {suggesting ? (
-            <>
-              <span className="uf-label">try one of these</span>
-              <div className="gf-suggest-row">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s.word}
-                    type="button"
-                    className="gf-suggest"
-                    onClick={() => {
-                      haptics.selection();
-                      setWhat(s.word);
-                      setPicked(s.type);
-                      setSuggesting(false);
-                      input.current?.focus();
-                    }}
-                  >
-                    {s.word}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
+    <div
+      ref={root}
+      className="gv-root"
+      data-testid="give-flow"
+      data-step={steps[at]?.id}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={(e) => endGesture(e, false)}
+      onPointerCancel={(e) => endGesture(e, true)}
+      onClickCapture={(e) => {
+        if (suppressClick.current) {
+          e.preventDefault();
+          e.stopPropagation();
+          suppressClick.current = false;
+        }
+      }}
+    >
+      <GiveArcs />
+
+      <div className="gv-card">
+        <div className="gv-g" data-noswipe>
+          <FormG onBack={onDone} colour={live ? GIVE_GREEN : BLUE} height={28} />
+        </div>
+
+        {/* THE PHOTO — a blue plus, and once added a small thumbnail beside it. */}
+        <div className="gv-photo" data-noswipe>
+          {photo ? (
             <button
               type="button"
-              className="gf-firstrun-ask"
-              onClick={() => {
-                haptics.selection();
-                setSuggesting(true);
-              }}
+              className="gv-thumb"
+              aria-label="your photo — replace or remove"
+              aria-expanded={photoMenu}
+              onClick={() => setPhotoMenu((m) => !m)}
             >
-              stuck on what you can give? tap for suggestions
+              <img src={photo.url} alt="" />
             </button>
-          )}
-        </div>
-      ) : null}
-      <div className="uf-fields gf-fields">
-        <div className="gf-what">
-          <label className="uf-field gf-field block">
-            <span className="uf-label">what</span>
-            <input
-              ref={input}
-              className="uf-input"
-              value={what}
-              maxLength={50}
-              autoFocus={!prefill}
-              onChange={(e) => {
-                setWhat(e.target.value.slice(0, 50));
-                setLive(null);
-                setProblem(null);
-              }}
-              onBlur={() => {
-                if (described && !type) setFallback(true);
-              }}
-              placeholder="something"
-              spellCheck={false}
-              aria-label="what"
-            />
-          </label>
-          {type && !changing ? (
-            <div className="gf-kind gf-rise" data-testid="give-kind">
-              <b>{type}</b>
-              <button type="button" onClick={() => setChanging(true)}>
-                change
+          ) : null}
+          <button type="button" className="gv-plus" aria-label="add a photo" onClick={openPhotos}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 4.5v15M4.5 12h15"
+                fill="none"
+                stroke={BLUE}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            className="gv-file"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => void onFile(e.target.files?.[0])}
+          />
+          {photo && photoMenu ? (
+            <div className="gv-photo-menu" role="menu">
+              <button type="button" role="menuitem" className="gv-a" onClick={openPhotos}>
+                replace
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="gv-a"
+                onClick={() => {
+                  setPhoto(null);
+                  setPhotoMenu(false);
+                  haptics.light();
+                }}
+              >
+                remove
               </button>
             </div>
           ) : null}
-          {(changing || (!type && fallback)) ? (
-            <div className="gf-types gf-rise" data-testid="give-types">
-              {!type ? <span className="uf-label gf-types-ask">what are you giving?</span> : null}
-              <div className="gf-type-row" role="radiogroup" aria-label="what are you giving?">
-                {GIVE_TYPES.map((t) => (
-                  <button key={t} type="button" role="radio" aria-checked={type === t} onClick={() => choose(t)}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
         </div>
 
-        {type ? (
-          <>
-            {/* ADD A PHOTO — optional, straight after what. */}
-            {photo ? (
-              <div className="gf-line gf-rise gf-photo">
-                <img src={photo.url} alt="your photo" />
-                <button type="button" className="gf-quiet" onClick={() => setPhoto(null)}>
-                  remove
-                </button>
-              </div>
-            ) : !photoSkipped ? (
-              <div className="gf-line gf-rise gf-row">
-                <button type="button" className="gf-add" onClick={() => void addPhoto()}>
-                  add a photo
-                </button>
-                <button type="button" className="gf-skip" onClick={() => setPhotoSkipped(true)}>
-                  skip
-                </button>
-              </div>
-            ) : null}
-            {photoSay ? <p className="uf-say gf-rise">{photoSay}</p> : null}
-
-            {asksWhen ? (
-              <div className="uf-field gf-line gf-rise">
-                <span className="uf-label">{WHEN_PROMPT[type]}</span>
-                <div className="gf-value-row">
-                  <button
-                    type="button"
-                    className={`gf-value ${whenAnswered ? "" : "gf-ph"}`}
-                    onClick={() => setScreen(type === "food" ? "ready" : "when")}
-                  >
-                    {type === "food" ? (ready ?? WHEN_HINT[type]) : when ? whenLabel(when) : WHEN_HINT[type]}
-                  </button>
-                  {!whenAnswered && !whenSkipped ? (
-                    <button type="button" className="gf-skip" onClick={() => setWhenSkipped(true)}>
-                      skip
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-
-            {/* where shows with the type, as in the stills */}
-            {(
-              <div className="uf-field gf-line gf-rise">
-                <span className="uf-label">{WHERE_PROMPT[type]}</span>
-                <div className="gf-value-row">
-                  <button
-                    type="button"
-                    className={`gf-value ${where ? "" : "gf-ph"}`}
-                    onClick={() => setScreen("map")}
-                  >
-                    {where ? where.label : "add my location"}
-                  </button>
-                  {CAN_BE_ONLINE[type] && !where ? (
-                    <button
-                      type="button"
-                      className="gf-value gf-ph gf-online"
-                      onClick={() => setWhere({ label: "online", online: true, pin: null, mode: null })}
-                    >
-                      · or online
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            )}
-
-            {(type === "a thing" || type === "clothes") && !tagsSkipped ? (
-              <div className="gf-line gf-rise gf-row gf-tags">
-                {type === "clothes" ? (
-                  <button type="button" className={`gf-tag ${size ? "gf-tag-on" : ""}`} onClick={() => setScreen("size")}>
-                    {size ? `size ${size}` : "size?"}
-                  </button>
-                ) : null}
-                <button type="button" className={`gf-tag ${condition ? "gf-tag-on" : ""}`} onClick={() => setScreen("condition")}>
-                  {condition ?? "condition?"}
-                </button>
-                {!size && !condition ? (
-                  <button type="button" className="gf-skip" onClick={() => setTagsSkipped(true)}>
-                    skip
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-
-            {whereDone && effectiveExpiry ? (
-              <div className="gf-line gf-rise">
-                <button type="button" className="gf-expiry" onClick={() => setScreen("expiry")} data-testid="give-expiry">
-                  {expiryLabel(effectiveExpiry, when)}
-                </button>
-              </div>
-            ) : null}
-          </>
+        <div
+          ref={viewport}
+          className="gv-viewport"
+          onScroll={(e) => {
+            (e.currentTarget as HTMLDivElement).scrollLeft = 0;
+          }}
+        >
+          <div
+            className="gv-track"
+            style={{
+              transform: `translate3d(calc(${-at * 100}% + ${drag}px), 0, 0)`,
+              transition: dragging ? "none" : undefined,
+            }}
+          >
+            {steps.map((s, i) => (
+              <section
+                key={s.id}
+                ref={(el) => {
+                  panels.current[i] = el;
+                }}
+                className="gv-panel"
+                data-panel={s.id}
+                aria-hidden={i !== at}
+                inert={i !== at && !dragging ? true : undefined}
+              >
+                {s.id === "what" ? (
+                  <>
+                    <h2 className="gv-q">{s.ask}</h2>
+                    <div className="gv-answers">
+                      <input
+                        ref={whatInput}
+                        className="gv-line"
+                        value={what}
+                        maxLength={50}
+                        onChange={(e) => {
+                          setWhat(e.target.value.slice(0, 50));
+                          setSay(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") goRef.current(1);
+                        }}
+                        placeholder="something"
+                        spellCheck={false}
+                        enterKeyHint="next"
+                        aria-label="what are you giving?"
+                      />
+                    </div>
+                    {hint !== "off" ? (
+                      <p
+                        className={`gv-hint ${hintOn ? "" : "gv-hint--gone"}`}
+                        data-testid="give-hint"
+                        aria-hidden={!hintOn}
+                      >
+                        swipe to continue
+                      </p>
+                    ) : null}
+                  </>
+                ) : s.id === "done" ? (
+                  <>
+                    <h2 className="gv-q">{what.trim() || "what are you giving?"}</h2>
+                    {photo ? <img className="gv-done-photo" src={photo.url} alt="" /> : null}
+                    <div className="gv-summary">
+                      {steps.map((q) =>
+                        q.id === "what" || q.id === "done" ? null : (
+                          <button
+                            key={q.id}
+                            type="button"
+                            className="gv-a gv-sum"
+                            disabled={!!live}
+                            onClick={() => go(stepIndex(q.id))}
+                          >
+                            {lineOf(q)}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                    {say ? <p className="gv-a gv-say">{say}</p> : null}
+                    {live ? (
+                      <p className="gv-a gv-say" role="status">
+                        {live}
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        className="gv-send"
+                        aria-label="give it"
+                        disabled={busy}
+                        onClick={() => void send()}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            d="M5 12h13.5M13 6.5 18.5 12 13 17.5"
+                            fill="none"
+                            stroke="#EEF9EA"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <h2 className="gv-q">{s.ask}</h2>
+                    <div className="gv-answers" role="radiogroup" aria-label={s.ask}>
+                      {s.options.map((o) => {
+                        const on = pickOf(s.id) === o.key && editing !== s.id;
+                        return (
+                          <div key={o.key} className="gv-opt">
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={on}
+                              className="gv-a"
+                              onClick={() => choose(s, o)}
+                            >
+                              {o.label}
+                            </button>
+                            {o.pick === "date" ? (
+                              <input
+                                ref={s.id === "expiry" ? upDateInput : whenDate}
+                                type="date"
+                                className="gv-date"
+                                tabIndex={-1}
+                                aria-hidden="true"
+                                min={todayIso()}
+                                value={
+                                  (s.id === "expiry" ? upDate : pickDate) ??
+                                  (s.id === "expiry" ? defaultPickDate() : todayIso())
+                                }
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (!v) return;
+                                  if (s.id === "expiry") setUpDate(v);
+                                  else setPickDate(v);
+                                  setChoice((c) => ({ ...c, [s.id]: "pick" }));
+                                  advanceFrom(s.id);
+                                }}
+                              />
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                      {editing === s.id || (choice[s.id] === OTHER && typed(s.id)) ? (
+                        <input
+                          ref={editing === s.id ? otherInput : undefined}
+                          className="gv-line gv-line--on"
+                          value={other[s.id] ?? ""}
+                          maxLength={40}
+                          placeholder={s.placeholder}
+                          spellCheck={false}
+                          enterKeyHint="next"
+                          aria-label={`${s.ask} something else`}
+                          onFocus={() => {
+                            setEditing(s.id);
+                            setChoice((c) => ({ ...c, [s.id]: OTHER }));
+                          }}
+                          onChange={(e) => {
+                            const v = e.target.value.slice(0, 40);
+                            setOther((o) => ({ ...o, [s.id]: v }));
+                            setChoice((c) => ({ ...c, [s.id]: OTHER }));
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              (e.target as HTMLInputElement).blur();
+                              if (typed(s.id)) goRef.current(i + 1);
+                            }
+                          }}
+                          onBlur={() => {
+                            setEditing((ed) => (ed === s.id ? null : ed));
+                            if (!typed(s.id)) unset(s.id);
+                          }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={false}
+                          className="gv-a"
+                          onClick={() => choose(s, null)}
+                        >
+                          something else
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </section>
+            ))}
+          </div>
+        </div>
+        {say && steps[at]?.id !== "done" ? (
+          <p className="gv-a gv-say gv-say--float">{say}</p>
         ) : null}
-        {problem ? <p className="uf-say gf-rise">{problem}</p> : null}
       </div>
-      {minimum ? <FormSend label="give it" disabled={busy} onSend={() => void send()} /> : null}
+
+      {mapOpen ? (
+        <div data-noswipe>
+          <LocationPicker
+            prompt={WHERE_PROMPT[type]}
+            initial={
+              mapWhere?.pin && mapWhere.mode
+                ? { pin: mapWhere.pin, label: mapWhere.label, mode: mapWhere.mode }
+                : null
+            }
+            onBack={() => {
+              setMapOpen(false);
+              if (!mapWhere) unset("where");
+            }}
+            onDone={(a) => {
+              setMapWhere({ label: a.label, online: false, pin: a.pin, mode: a.mode });
+              setChoice((c) => ({ ...c, where: "map" }));
+              setMapOpen(false);
+              advanceFrom("where");
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

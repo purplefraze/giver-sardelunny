@@ -911,8 +911,9 @@ function Index() {
                     : (activity ?? "profile"),
                 children:
                   editor?.kind === "category" && editor.category === "give" ? (
-                    /* GIVE, ONE LINE AT A TIME — the other seats keep the unified form. */
-                    <div data-world="give" className="g-form relative h-full w-full overflow-y-auto">
+                    /* GIVE, ONE QUESTION AT A TIME ON ONE SURFACE — its own blue-on-mint
+                       type, so not .g-form (whose charcoal/grey input rules would win). */
+                    <div data-world="give" className="relative h-full w-full overflow-hidden">
                       <GiveFlow
                         onDone={() => setEditor(null)}
                         prefill={

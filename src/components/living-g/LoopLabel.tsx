@@ -15,8 +15,16 @@ export const LOOP_LABEL = {
   fontFamily: "var(--giver-font)",
   /** Regular. 500 was tried and read heavier than the brief; 400 holds up. */
   weight: 400,
-  /** One CSS-pixel size at every screen width (converted to SVG units). */
+  /** One CSS-pixel size per screen (converted to SVG units)… */
   sizePx: 16,
+  /**
+   * …never larger than this many G units, so on narrow phones the one size
+   * shrinks WITH the G (all loops together). 32.5 units is 16px once the G's
+   * scale reaches ~0.492 px/unit (≈389px wide), so 390 and wider stay exactly
+   * 16px; at 320 it is ≈13px and "borrow something" clears the middle loop's
+   * stroke by ≥8px each side.
+   */
+  maxUnits: 32.5,
   lineHeight: 1,
   /** One line, always: SVG text never wraps, and nothing here splits it. */
   maxLines: 1,
@@ -84,7 +92,7 @@ export function LoopLabels({ seat }: { seat: Seat }) {
     return () => window.clearTimeout(t);
   }, [seat]);
 
-  const size = LOOP_LABEL.sizePx * upp;
+  const size = Math.min(LOOP_LABEL.sizePx * upp, LOOP_LABEL.maxUnits);
   const style: React.CSSProperties = {
     fontFamily: LOOP_LABEL.fontFamily,
     fontWeight: LOOP_LABEL.weight,

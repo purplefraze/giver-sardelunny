@@ -422,6 +422,47 @@ export function timeWindow(start?: string, end?: string): string | undefined {
  * THE SCANNABLE FACTS OF ONE ITEM, in one order, everywhere they appear. Only
  * what exists is ever shown — no empty labels, no placeholders.
  */
+/**
+ * WHAT A REPEATING GIVE COSTS THE RECEIVER, EACH TIME — said plainly.
+ *
+ * Today no give ever costs its receiver sparks: nothing in connections.ts or
+ * my-profile.ts charges a receiver, and "nobody pays anybody" is the rule the
+ * intro teaches. Sparks come from giver: +10 (GENEROSITY_REWARD) to the
+ * person who gave, ONCE per verified connection — not per lesson. So the
+ * honest number here is 0, and a repeating give reads "free each lesson ·
+ * every other sunday". If a per-session spark price is ever decided, this is
+ * the one number to change — and real per-session charging must be built
+ * with it; this line only describes, it never charges.
+ */
+export const GIVE_SPARKS_PER_SESSION: number = 0;
+
+/** The unit a repeating give is counted in, from its kind. */
+export function sessionWord(kind: string | undefined): string {
+  if (kind === "a skill") return "lesson";
+  if (kind === "time" || kind === "a hand") return "session";
+  return "time";
+}
+
+/**
+ * "free each lesson · every other sunday" (or, with a price, "10 sparks a
+ * lesson · every other sunday"). Null for one-time gives and anything that
+ * is not a give — those read exactly as before.
+ */
+export function repeatLine(
+  type: ItemType,
+  details: Pick<ItemDetails, "cadence" | "extras"> | undefined,
+): string | null {
+  const cadence = details?.cadence?.trim();
+  if (type !== "give" || !cadence || cadence === "one time" || cadence === "flexible") return null;
+  const unit = sessionWord(details?.extras?.["kind"]);
+  const n = GIVE_SPARKS_PER_SESSION;
+  const cost =
+    n > 0
+      ? `${n} ${n === 1 ? "spark" : "sparks"} ${unit === "time" ? "each time" : `a ${unit}`}`
+      : `free each ${unit}`;
+  return `${cost} · ${cadence}`;
+}
+
 export function detailBits(item: Item): string[] {
   const d = item.details;
   if (!d) return [];
@@ -432,7 +473,9 @@ export function detailBits(item: Item): string[] {
   if (d.time) out.push(d.time);
   else if (d.flexibleTime) out.push("any time");
   if (d.duration) out.push(d.duration);
-  if (d.cadence && d.cadence !== "flexible") out.push(d.cadence);
+  const repeats = repeatLine(item.type, d);
+  if (repeats) out.push(repeats);
+  else if (d.cadence && d.cadence !== "flexible") out.push(d.cadence);
   if (d.where) out.push(d.where);
   for (const value of Object.values(d.extras ?? {}))
     if (value.trim()) out.push(value.trim());

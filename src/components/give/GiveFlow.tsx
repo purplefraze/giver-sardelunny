@@ -25,6 +25,7 @@ import {
   CADENCE_OPTIONS,
   classifyKind,
   itemsStore,
+  repeatLine,
   suggestCadence,
   timeWindow,
   type Item,
@@ -805,6 +806,13 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   /* ---- THE FINISHED GIVE'S QUIET LINES ---- */
   const lineOf = (s: ChoiceStep): string => {
     const p = pickOf(s.id);
+    /* A REPEATING GIVE reads the way the receiver will see it:
+       "free each lesson · every other sunday" (items.ts repeatLine). */
+    if (s.id === "often") {
+      const cadence = p === OTHER ? typed(s.id) : (p ?? "");
+      const kind = kindRaw === OTHER ? typed("kind") : type;
+      return repeatLine("give", { cadence, extras: { kind } }) ?? cadence;
+    }
     if (p === OTHER) return typed(s.id);
     switch (s.id) {
       case "kind":

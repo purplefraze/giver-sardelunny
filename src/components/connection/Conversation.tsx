@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
 import { ACTIVITY_FILL, ME_ID, itemLine } from "@/data/items";
@@ -9,7 +9,19 @@ import {
   connectionsStore,
   messagesOf,
   otherParty,
+  sessionPeriodOf,
+  sessionsOf,
+  type Connection,
 } from "@/data/connections";
+import {
+  SESSION_SPARKS,
+  nextPeriodStart,
+  periodKey,
+  sessionWord,
+  type SessionPeriod,
+} from "@/data/give-sessions";
+import { dayLabel } from "@/data/give-when";
+import { sessionsAvailability, sessionsLive, updateSession } from "@/data/cloud/sessions-sync";
 
 import { demoReply, demoRepliesStore, SAMPLE_CONFIRMS } from "@/data/demo-replies";
 import { notify } from "@/lib/notify";
@@ -52,6 +64,12 @@ export function Conversation({
   const [draft, setDraft] = useState("");
   const [usedStarter, setUsedStarter] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
+  /* Re-render once we know whether the server can count lessons yet. */
+  useSyncExternalStore(
+    sessionsAvailability.subscribe,
+    sessionsAvailability.get,
+    sessionsAvailability.getServer,
+  );
 
   const c = links.connections.find((x) => x.id === connectionId);
   const item = c ? items.items.find((i) => i.id === c.itemId) : undefined;
@@ -89,6 +107,17 @@ export function Conversation({
   const nameColour = toneOf;
 
   const facts = item ? itemFacts(item) : [];
+  /*
+    A REPEATING GIVE COUNTS LESSONS (give-sessions.ts). Each one is confirmed
+    by both people and never completes the give. Until the server can count
+    them (unapplied sql), a cloud connection keeps the one-off flow below.
+  */
+  const lessonPeriod = sessionPeriodOf(c);
+  const perLesson =
+    lessonPeriod !== null &&
+    c.state !== "cancelled" &&
+    c.state !== "verified" &&
+    sessionsLive(c.id);
   const starter = `hey ${theirName}`;
   const showStarter = messages.length === 0 && !usedStarter && !draft.trim();
 
@@ -169,7 +198,16 @@ export function Conversation({
         claim/confirm step (it records them in confirmedBy / helper_confirmed).
         That confirmation is what lifts the giver's three-gives cap.
       */}
-      {c.state !== "cancelled" && c.state !== "verified" ? (
+      {perLesson && lessonPeriod ? (
+        <LessonConfirm
+          c={c}
+          period={lessonPeriod}
+          unit={sessionWord(item?.details?.extras?.["kind"])}
+          theirName={theirName}
+          stateColour={stateColour}
+          sessions={sessionsOf(links, c.id)}
+        />
+      ) : c.state !== "cancelled" && c.state !== "verified" ? (
         <div className="g-rule mt-6 pt-5" data-testid="did-it-happen">
           {/* A BORROW IS NOT FINISHED AT PICKUP. Both halves of the cycle first. */}
           {c.type === "borrow" && c.state !== "awaiting" ? (
@@ -321,6 +359,101 @@ export function Conversation({
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/* Periods start at utc midnight; name that calendar day ("mon 12 oct"). */
+const shortDate = (ms: number) => {
+  const u = new Date(ms);
+  return dayLabel(new Date(u.getUTCFullYear(), u.getUTCMonth(), u.getUTCDate()));
+};
+
+/**
+ * "THIS LESSON HAPPENED" — the same claim / confirm as a connection, once per
+ * cadence period, for a give that repeats. Each lesson both people confirm,
+ * giver adds ten sparks for the giver. The receiver pays nothing.
+ */
+function LessonConfirm({
+  c,
+  period,
+  unit,
+  theirName,
+  stateColour,
+  sessions,
+}: {
+  c: Connection;
+  period: SessionPeriod;
+  unit: string;
+  theirName: string;
+  stateColour: string;
+  sessions: ReturnType<typeof sessionsOf>;
+}) {
+  const now = Date.now();
+  const pending = sessions.find((x) => x.state === "awaiting");
+  const thisOne = sessions.find((x) => x.period === periodKey(period, now));
+  const counted = sessions.filter((x) => x.state === "verified").length;
+  const iGive = c.ownerId === ME_ID;
+  const forWhom = iGive ? "you" : theirName;
+  const act = (action: "claim" | "confirm" | "dispute") => {
+    buzz();
+    void Promise.resolve(updateSession(c.id, action)).catch(() => undefined);
+  };
+  return (
+    <div className="g-rule mt-6 pt-5" data-testid="lesson-confirm">
+      {pending ? (
+        pending.claimedBy === ME_ID ? (
+          <p className="g-body" style={{ color: stateColour }}>
+            waiting for {theirName} to confirm this {unit} happened.
+          </p>
+        ) : (
+          <div>
+            <p className="g-name" style={{ color: stateColour }}>
+              did this {unit} happen?
+            </p>
+            <div className="mt-3 flex items-baseline gap-6">
+              <button
+                type="button"
+                onClick={() => act("confirm")}
+                className="g-display-sm"
+                style={{ color: stateColour }}
+              >
+                yes
+              </button>
+              <button type="button" onClick={() => act("dispute")} className="g-name" style={{ opacity: 0.5 }}>
+                not yet
+              </button>
+            </div>
+          </div>
+        )
+      ) : thisOne?.state === "verified" ? (
+        <div>
+          <p className="g-name" style={{ color: stateColour }}>
+            {thisOne.credited
+              ? `this ${unit} is counted. giver added ${SESSION_SPARKS} sparks for ${forWhom}.`
+              : `this ${unit} is counted. no sparks this time — the cap is reached.`}
+          </p>
+          <p className="g-meta mt-2 opacity-45">
+            the next one can be confirmed from {shortDate(nextPeriodStart(period, now))}
+          </p>
+        </div>
+      ) : (
+        <button type="button" onClick={() => act("claim")} className="g-name text-left" style={{ color: stateColour }}>
+          this {unit} happened
+        </button>
+      )}
+
+      {!pending && thisOne?.state === "disputed" ? (
+        <p className="g-meta mt-3 opacity-55">you two don’t agree yet — nothing has settled. keep talking.</p>
+      ) : null}
+
+      <p className="g-meta mt-3 opacity-45" data-testid="lesson-count">
+        {counted
+          ? `${counted} ${counted === 1 ? unit : `${unit}s`} counted · `
+          : ""}
+        each {unit} you both confirm, giver adds {SESSION_SPARKS} sparks for {forWhom}
+        {iGive ? "." : ". it costs you nothing."}
+      </p>
     </div>
   );
 }

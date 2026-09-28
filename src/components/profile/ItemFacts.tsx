@@ -1,5 +1,5 @@
 import type { Item } from "@/data/items";
-import { repeatLine, typeWord } from "@/data/items";
+import { typeWord } from "@/data/items";
 
 /**
  * THE ONE RICH READING OF AN ITEM'S PARAMETERS — used by every person's
@@ -25,8 +25,7 @@ export function itemFacts(item: Item): Fact[] {
   if (d.time) out.push({ label: "time", value: d.time });
   if (d.duration) out.push({ label: "how long", value: d.duration });
   if (d.where) out.push({ label: "where", value: d.where });
-  /* A REPEATING GIVE says what each time costs the receiver (repeatLine). */
-  if (d.cadence) out.push({ label: "how often", value: repeatLine(item.type, d) ?? d.cadence });
+  if (d.cadence) out.push({ label: "how often", value: d.cadence });
   if (d.until) out.push({ label: "available until", value: d.until });
   for (const [key, value] of Object.entries(d.extras ?? {}))
     if (value.trim()) out.push({ label: key, value: value.trim() });

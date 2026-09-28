@@ -7,6 +7,7 @@ import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX } from "@/component
 import { CAMERA, anchorOrigin } from "@/components/living-g/g-depth";
 import { GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
 import { giveHintStore } from "@/data/give-hint";
+import { giverRepeatLine } from "@/data/give-sessions";
 import {
   USES_CALENDAR,
   dayLabel,
@@ -25,7 +26,6 @@ import {
   CADENCE_OPTIONS,
   classifyKind,
   itemsStore,
-  repeatLine,
   suggestCadence,
   timeWindow,
   type Item,
@@ -806,12 +806,13 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   /* ---- THE FINISHED GIVE'S QUIET LINES ---- */
   const lineOf = (s: ChoiceStep): string => {
     const p = pickOf(s.id);
-    /* A REPEATING GIVE reads the way the receiver will see it:
-       "free each lesson · every other sunday" (items.ts repeatLine). */
+    /* A REPEATING GIVE tells the giver what it earns them:
+       "giver adds 10 sparks each lesson · every other sunday" (give-sessions).
+       Receivers only ever see the cadence — they pay nothing. */
     if (s.id === "often") {
       const cadence = p === OTHER ? typed(s.id) : (p ?? "");
       const kind = kindRaw === OTHER ? typed("kind") : type;
-      return repeatLine("give", { cadence, extras: { kind } }) ?? cadence;
+      return giverRepeatLine("give", { cadence, extras: { kind } }) ?? cadence;
     }
     if (p === OTHER) return typed(s.id);
     switch (s.id) {

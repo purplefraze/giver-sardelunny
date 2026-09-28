@@ -20,7 +20,6 @@ import {
   ME_ID,
   communityItems,
   detailBits,
-  repeatLine,
   itemLine,
   type BorrowSide,
   type ItemType,
@@ -345,10 +344,7 @@ export function CommunityFeed({
             /* A GIVE SAYS ITS NEIGHBOURHOOD — only ever the coarse label. */
             item.type === "give" && item.details?.where ? item.details.where : null,
             item.distanceKm === undefined ? null : `${item.distanceKm} km away`,
-            /* A REPEATING GIVE: what each time costs the receiver, and how often. */
-            status === "connecting"
-              ? "connecting"
-              : (repeatLine(item.type, item.details) ?? detailBits(item)[0] ?? null),
+            status === "connecting" ? "connecting" : detailBits(item)[0] ?? null,
           ].filter((f, i, all): f is string => Boolean(f) && all.indexOf(f) === i);
           return (
             <li key={item.id} className={index === 0 ? "pb-4" : "g-rule py-4"}>

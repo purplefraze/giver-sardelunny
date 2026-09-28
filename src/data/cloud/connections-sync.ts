@@ -6,6 +6,7 @@ import { sessionStore } from "@/data/cloud/session";
 import { localIdForProfile, profileIdForLocal } from "@/data/cloud/directory";
 import { changeConnectionState } from "@/lib/connections.functions";
 import { notify } from "@/data/cloud/notifications";
+import { loadSessions } from "@/data/cloud/sessions-sync";
 
 let started = false;
 
@@ -47,6 +48,8 @@ export async function loadConnections() {
     };
   });
   connectionsStore.mergeCloud(rows);
+  /* Lessons of repeating gives — a silent no-op until their sql is applied. */
+  await loadSessions().catch(() => undefined);
 }
 
 export async function startConnection(itemId: string): Promise<string> {

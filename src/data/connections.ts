@@ -19,6 +19,13 @@
 import { ME_ID, itemsStore, type ItemType } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
 import { giveCapState } from "@/data/give-cap";
+import {
+  SESSION_CAP_PER_CONNECTION,
+  SESSION_CAP_PER_WEEK,
+  cadencePeriod,
+  creditWeek,
+  periodKey,
+} from "@/data/give-sessions";
 
 export type ConnectionState =
   /** Intent expressed. Messaging is open. The activity is STILL ACTIVE. */
@@ -74,16 +81,37 @@ export type PastConnection = {
   at: number;
 };
 
+/**
+ * ONE LESSON / SESSION OF A REPEATING GIVE (give-sessions.ts). The same
+ * claim → confirm pattern as a connection, but it never completes the give:
+ * the connection stays open for the next one. One per cadence period.
+ */
+export type GiveSession = {
+  id: string;
+  connectionId: string;
+  /** "week:2026-09-28" — at most one counted session per period. */
+  period: string;
+  claimedBy: string;
+  confirmedBy: string[];
+  state: "awaiting" | "verified" | "disputed";
+  /** Giver added sparks for it (false when a cap was reached). */
+  credited: boolean;
+  creditedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export const MESSAGE_MAX = 280;
 
 type State = {
   connections: Connection[];
   messages: Message[];
   past: PastConnection[];
+  sessions: GiveSession[];
 };
 
 const KEY = "giver.connections.v1";
-const EMPTY: State = { connections: [], messages: [], past: [] };
+const EMPTY: State = { connections: [], messages: [], past: [], sessions: [] };
 
 const uid = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -102,6 +130,7 @@ function read(): State {
       connections: parsed.connections ?? [],
       messages: parsed.messages ?? [],
       past: parsed.past ?? [],
+      sessions: parsed.sessions ?? [],
     };
   } catch {
     return EMPTY;
@@ -205,6 +234,50 @@ function settle(c: Connection): Connection {
   return settled;
 }
 
+/* ------------------------------ GIVE SESSIONS ------------------------------ */
+
+/** How often this connection's give repeats, or null for a one-time give. */
+export function sessionPeriodOf(c: Connection) {
+  if (c.type !== "give") return null;
+  const item = itemsStore.get().items.find((i) => i.id === c.itemId);
+  return cadencePeriod(item?.details?.cadence);
+}
+
+/** A repeating give's connection counts lessons instead of settling once. */
+export const isRepeatingGiveConnection = (c: Connection) => sessionPeriodOf(c) !== null;
+
+export const sessionKey = (s: Pick<GiveSession, "connectionId" | "period">) =>
+  `session:${s.connectionId}:${s.period}`;
+
+/**
+ * THE CAPS. A confirmed session earns sparks only while this connection has
+ * fewer than SESSION_CAP_PER_CONNECTION credited sessions and the giver fewer
+ * than SESSION_CAP_PER_WEEK credited sessions this week across all gives.
+ */
+function mayCredit(s: State, c: Connection, now: number): boolean {
+  const credited = s.sessions.filter((x) => x.credited);
+  if (credited.filter((x) => x.connectionId === c.id).length >= SESSION_CAP_PER_CONNECTION)
+    return false;
+  const owners = new Map(s.connections.map((x) => [x.id, x.ownerId]));
+  const week = creditWeek(now);
+  const thisWeek = credited.filter(
+    (x) => owners.get(x.connectionId) === c.ownerId && creditWeek(x.creditedAt ?? x.updatedAt) === week,
+  );
+  return thisWeek.length < SESSION_CAP_PER_WEEK;
+}
+
+/**
+ * THE GIVER'S SPARKS FOR A SESSION land on the giver's own device, through the
+ * same earnSparks / rewarded-key path as every other spark — so the same
+ * lesson can never pay twice, even after a reload or on a second phone.
+ */
+function creditMine(s: State) {
+  const owners = new Map(s.connections.map((x) => [x.id, x.ownerId]));
+  for (const x of s.sessions)
+    if (x.state === "verified" && x.credited && owners.get(x.connectionId) === ME_ID)
+      myProfileStore.earnSparks(sessionKey(x));
+}
+
 export const connectionsStore = {
   mergeCloud(connections: Connection[]) {
     const s = ensure();
@@ -220,6 +293,90 @@ export const connectionsStore = {
       at: connection.settledAt ?? connection.updatedAt,
     }));
     commit({ ...s, connections: [...connections, ...localOnly], past });
+  },
+  /** Sessions read from give_sessions (only once that sql is applied). */
+  mergeCloudSessions(sessions: GiveSession[]) {
+    const s = ensure();
+    const localOnly = s.sessions.filter((x) => !/^[0-9a-f-]{36}$/i.test(x.connectionId));
+    const next = { ...s, sessions: [...sessions, ...localOnly] };
+    commit(next);
+    creditMine(next);
+  },
+
+  /**
+   * "THIS LESSON HAPPENED." One person's word for the current period. Refused
+   * when this period already has a confirmed session.
+   */
+  claimSession(connectionId: string, byId = ME_ID, now = Date.now()): { ok: boolean; reason?: string } {
+    const s = ensure();
+    const c = s.connections.find((x) => x.id === connectionId);
+    if (!c) return { ok: false, reason: "gone" };
+    const period = sessionPeriodOf(c);
+    if (!period) return { ok: false, reason: "not repeating" };
+    if (c.state === "cancelled" || c.state === "verified") return { ok: false, reason: "stage" };
+    if (!partiesOf(c).includes(byId)) return { ok: false, reason: "party" };
+    /* One question at a time: an unanswered claim is still the open one. */
+    if (s.sessions.some((x) => x.connectionId === c.id && x.state === "awaiting")) return { ok: true };
+    const key = periodKey(period, now);
+    const existing = s.sessions.find((x) => x.connectionId === c.id && x.period === key);
+    if (existing?.state === "verified") return { ok: false, reason: "period" };
+    const session: GiveSession = existing
+      ? { ...existing, state: "awaiting", claimedBy: byId, confirmedBy: [byId], updatedAt: now }
+      : {
+          id: uid(),
+          connectionId: c.id,
+          period: key,
+          claimedBy: byId,
+          confirmedBy: [byId],
+          state: "awaiting",
+          credited: false,
+          createdAt: now,
+          updatedAt: now,
+        };
+    commit({
+      ...s,
+      sessions: existing
+        ? s.sessions.map((x) => (x.id === existing.id ? session : x))
+        : [...s.sessions, session],
+    });
+    return { ok: true };
+  },
+
+  /**
+   * "DID THIS LESSON HAPPEN?" The other person answers. Yes = the session is
+   * verified and, within the caps, giver adds sparks to the giver. No = it is
+   * parked as disputed and nothing moves. The connection stays open either way.
+   */
+  respondSession(
+    connectionId: string,
+    agrees: boolean,
+    byId = ME_ID,
+    now = Date.now(),
+  ): { ok: boolean; credited?: boolean; reason?: string } {
+    const s = ensure();
+    const c = s.connections.find((x) => x.id === connectionId);
+    if (!c) return { ok: false, reason: "gone" };
+    const session = s.sessions.find((x) => x.connectionId === c.id && x.state === "awaiting");
+    if (!session) return { ok: false, reason: "state" };
+    if (!partiesOf(c).includes(byId)) return { ok: false, reason: "party" };
+    if (session.claimedBy === byId) return { ok: false, reason: "self" };
+    const next: GiveSession = agrees
+      ? (() => {
+          const credited = mayCredit(s, c, now);
+          return {
+            ...session,
+            state: "verified",
+            confirmedBy: Array.from(new Set([...session.confirmedBy, byId])),
+            credited,
+            ...(credited ? { creditedAt: now } : {}),
+            updatedAt: now,
+          };
+        })()
+      : { ...session, state: "disputed", confirmedBy: [], updatedAt: now };
+    const nextState = { ...s, sessions: s.sessions.map((x) => (x.id === session.id ? next : x)) };
+    commit(nextState);
+    if (agrees) creditMine(nextState);
+    return { ok: true, credited: next.credited };
   },
   subscribe(listener: () => void) {
     ensure();
@@ -468,9 +625,21 @@ export function myPastConnections(s: State) {
 
 /** Anything waiting on ME right now: an unanswered "did this happen?". */
 export function needsMyAnswer(s: State, meId = ME_ID) {
-  return s.connections.filter(
-    (c) => c.state === "awaiting" && c.claimedBy !== meId && partiesOf(c).includes(meId),
+  const lessons = new Set(
+    s.sessions.filter((x) => x.state === "awaiting" && x.claimedBy !== meId).map((x) => x.connectionId),
   );
+  return s.connections.filter(
+    (c) =>
+      partiesOf(c).includes(meId) &&
+      ((c.state === "awaiting" && c.claimedBy !== meId) || (isOpen(c) && lessons.has(c.id))),
+  );
+}
+
+/** The sessions of one connection, oldest first. */
+export function sessionsOf(s: State, connectionId: string) {
+  return s.sessions
+    .filter((x) => x.connectionId === connectionId)
+    .sort((a, b) => a.createdAt - b.createdAt);
 }
 
 /**

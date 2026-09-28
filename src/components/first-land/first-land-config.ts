@@ -67,6 +67,13 @@ export const FIRST_LAND_PLACE = {
    * broken after this many words, at this line height. STAND-IN.
    */
   question: { breakAfterWords: 2, lineHeightEm: 1.15 },
+  /**
+   * "communi-" + the G flows DOWN INTO THE TOP LOOP (the G's upper circle, where
+   * the question sits) and settles on its own line beneath the question, one
+   * line step below the question's last line (Frazer via Luna, 28 Sep 2026).
+   * The bottom loop stays empty during the moment.
+   */
+  communi: { loop: "top", linesBelowQuestion: 1 },
   /** The wish bank number, centred inside the wish toggle. */
   wishCount: "centred-in-wish-toggle",
   /**
@@ -118,6 +125,9 @@ export const FIRST_LAND_TIMING = {
   /** "communi-" + the G: in, hold, out. STAND-IN: starts this long after the
       question starts fading in. */
   communi: { afterQuestionMs: 500, fadeInMs: 500, holdMs: 1500, fadeOutMs: 800 },
+  /** …drifting down this far (px), eased, during its fade-in, so it reads as
+      flowing down into the loop. */
+  communiDrift: { px: 12 },
   /** STAND-IN: the helper rings at 12:00 and 10:30 appear / leave. */
   ringsFadeMs: 300,
   /** A skip tap is swallowed for this long after it lands. */

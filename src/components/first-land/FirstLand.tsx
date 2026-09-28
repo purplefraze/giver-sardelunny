@@ -23,7 +23,8 @@ import { useSvgUnits } from "./use-svg-units";
  *      green in give, purple in wish.
  *   4. "your sparks live in my wishes."
  *   5. the middle loop: "are you a giver?" (it stays)
- *   6. the bottom loop: "communi-" + the living G, in and out.
+ *   6. "communi-" + the living G flows down into the top loop, onto its own
+ *      line beneath the question, in and out. The bottom loop stays empty.
  *   7. free.
  *
  * Drawn INSIDE the Living G's own <svg> (World's overlay), in the G's units,
@@ -290,7 +291,16 @@ export function FirstLandArt({
       ? [words.slice(0, cut).join(" "), words.slice(cut).join(" ")]
       : [FIRST_LAND.copy.question];
   const lineStep = size * P.question.lineHeightEm;
-  const bottom = LOOP_CENTRE.bottom;
+  /* "communi-g" FLOWS DOWN INTO THE TOP LOOP: its own line beneath the
+     question, arriving from a short way above with an eased drift. */
+  const drift = moment
+    ? px(TM.communiDrift.px) * (1 - easeOut(clamp01((at - T.communiIn) / TM.communi.fadeInMs)))
+    : 0;
+  const communiY =
+    mid.y +
+    ((questionLines.length - 1) / 2) * lineStep +
+    P.communi.linesBelowQuestion * lineStep -
+    drift;
 
   /* ---- beats ---- */
   const dropLine = beat(
@@ -505,7 +515,7 @@ export function FirstLandArt({
         ))}
       </text>
       {communi > 0 ? (
-        <Communi x={bottom.x} y={bottom.y} size={size} upp={upp} opacity={communi} />
+        <Communi x={mid.x} y={communiY} size={size} upp={upp} opacity={communi} />
       ) : null}
     </g>
   );

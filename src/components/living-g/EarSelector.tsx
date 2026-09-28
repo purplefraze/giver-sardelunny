@@ -83,15 +83,12 @@ const STEM_HALF = EAR_GEOMETRY.stemWidth / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * THE WIRE, NOT A CIRCLE. The middle loop's stroke is BROKEN only where the
- * spine leaves it — the small negative-space gap between roughly 5 and 6
- * o'clock. Everywhere else the stroke is continuous, so the bead travels almost
- * the whole circumference: from the 5 o'clock lip (+60°) ANTICLOCKWISE past
- * 4:30, 3, 1:30, 12, 10:30, 9 and 7:30 to the 6 o'clock lip (-270°). Its angle
- * lives on ONE CONTINUOUS LINE with no wrap-around, so the bead can never
- * teleport across the gap or take a shortcut through empty space.
- * (The loop itself now RENDERS closed — loop-close.tsx bridges the traced
- * opening at draw time — but the bead's travel keeps these two ends.)
+ * THE LOOP (was "the wire"). The middle loop's traced stroke is broken where
+ * the spine leaves it (between roughly 5 and 6 o'clock), and the bead used to
+ * stop at those two lips (+60° / -270°). The loop now RENDERS closed
+ * (loop-close.tsx bridges the opening at draw time), so the bead travels it
+ * as ONE CLOSED LOOP: a continuous, unwrapped angle, compared with the seats
+ * modulo one turn (see `shortest` / `nearestTurn` below).
  *
  * THE SEATS — THE SOURCE OF TRUTH (clock positions), fixed on every Living G
  * everywhere in the app:
@@ -123,40 +120,31 @@ export const SEAT_ANGLE: Record<Seat, number> = {
   trade: rad(45), // 4:30
 };
 
-/** The wire's two physical ends — the two lips of the break. Nothing passes. */
-const TRACK_MIN = rad(-270);
-const TRACK_MAX = rad(60);
-
-
 const TAU = Math.PI * 2;
 
-/** Signed travel ALONG THE WIRE from `a` to `b` — plain distance, no wrapping. */
-const shortest = (a: number, b: number) => b - a;
+/**
+ * ONE CLOSED LOOP, ONE CONTINUOUS ANGLE (glide, 28 Sep 2026). The middle loop
+ * renders closed (loop-close.tsx), so the bead now travels it as a closed
+ * loop: its angle is UNWRAPPED (any number of turns) and every comparison
+ * with a seat is made modulo one turn. There is no clamp at the old 5–6
+ * o'clock lips any more, so the 4:30 → 6:00 stretch is travelled like every
+ * other stretch.
+ */
+const wrapPi = (d: number) => d - TAU * Math.round(d / TAU);
 
-/** The bead can only be where the stroke is. */
-const clampTrack = (a: number) => Math.min(TRACK_MAX, Math.max(TRACK_MIN, a));
+/** Signed travel round the loop from `a` to `b`, the short way (-π..π]. */
+const shortest = (a: number, b: number) => wrapPi(b - a);
+
+/** `raw` expressed as the representation (raw + k·2π) nearest `ref`. */
+const nearestTurn = (ref: number, raw: number) => ref + wrapPi(raw - ref);
 
 /**
- * A raw finger angle (-π..π] expressed as the point ON THE WIRE nearest the
- * bead's current position, then clamped to the wire's ends. A finger over the
- * physical gap simply holds the bead at the nearest lip.
+ * THE RELEASE GLIDE — an eased, time-based travel onto a seat (easeOutCubic).
+ * Duration grows with the distance: 240ms + 180ms per seat-gap (45°), capped
+ * at 650ms, so a one-seat move (the opening's give → lend) settles in 420ms.
  */
-const onTrack = (ref: number, raw: number) => {
-  let best = raw;
-  let bestD = Infinity;
-  for (let k = -2; k <= 2; k += 1) {
-    const c = raw + k * TAU;
-    const d = Math.abs(c - ref);
-    if (d < bestD) {
-      bestD = d;
-      best = c;
-    }
-  }
-  return clampTrack(best);
-};
-
-/** How near a seat (in radians of travel) counts as captured. */
-const CAPTURE = 0.34;
+const GLIDE_MS = (d: number) => Math.min(650, 240 + 180 * Math.min(1.5, Math.abs(d) / (Math.PI / 4)));
+const easeOutCubic = (x: number) => 1 - (1 - x) ** 3;
 
 /** A point on the track at a given angle, at any radius. */
 const at = (angle: number, r: number): P => ({
@@ -197,12 +185,12 @@ export const seatCentre = (seat: Seat): P => {
 
 
 
-/** Nearest seat measured ALONG THE WIRE — never across the break. */
+/** Nearest seat round the closed loop (modulo one turn). */
 function nearestOf(angle: number, seats: readonly Seat[]): Seat {
   let best: Seat = seats[0]!;
   let bestD = Infinity;
   for (const m of seats) {
-    const d = Math.abs(SEAT_ANGLE[m] - angle);
+    const d = Math.abs(shortest(angle, SEAT_ANGLE[m]));
     if (d < bestD) {
       bestD = d;
       best = m;
@@ -388,13 +376,17 @@ export function EarSelector({
   const titleSet = titleText(EAR.innerR);
 
 
-  const [drag, setDrag] = useState<number | null>(null);
-  const dragging = drag !== null;
+  /**
+   * DRAGGING — the bead follows the finger continuously. `offset` is the
+   * angle between the bead and the finger at grab time, so taking hold never
+   * makes the bead jump to the finger; from then on bead = finger + offset.
+   */
+  const [dragging, setDragging] = useState(false);
   const last = useRef<Seat>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
   const gesture = useRef<{ start: P; moved: boolean } | null>(null);
-  /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
-  const dragRef = useRef<number | null>(null);
+  /** Finger-to-bead angle offset while a drag is live (null otherwise). */
+  const dragRef = useRef<{ offset: number } | null>(null);
 
   /**
    * MY SPARKS ARE NEVER ON DISPLAY. A deliberate press and hold on MY OWN top
@@ -422,53 +414,65 @@ export function EarSelector({
     if (peekTimer.current) clearTimeout(peekTimer.current);
   }, []);
 
-  /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
+  /**
+   * ONE SOURCE OF TRUTH: the assembly's CONTINUOUS angle on the loop
+   * (radians, unwrapped). Seats are only REST points: while a finger holds
+   * the bead it sits exactly where the finger's projection on the loop is;
+   * on release (or on a seat change from a key or a seat tap) it glides,
+   * eased, to the seat — the short way round.
+   */
   const restAngle = SEAT_ANGLE[mode];
 
-  const [angle, setAngle] = useState(restAngle);
+  const [angle, setAngleState] = useState(restAngle);
   const angleRef = useRef(angle);
-
-  // Rest and magnet targets live ON THE WIRE: the bead always travels the real
-  // stroke between two seats, however far round the loop that is.
-  let target = clampTrack(restAngle);
-  if (drag !== null) {
-    const seat = SEAT_ANGLE[nearestOf(drag, seats)];
-
-    const pull = Math.max(0, 1 - Math.abs(seat - drag) / CAPTURE) * 0.55;
-    target = clampTrack(drag + (seat - drag) * pull);
-  }
-
-
-
-  const targetRef = useRef(target);
-  targetRef.current = target;
+  const setAngle = (a: number) => {
+    angleRef.current = a;
+    setAngleState(a);
+  };
   const raf = useRef<number | null>(null);
+  const stopGlide = () => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    raf.current = null;
+  };
 
-  useEffect(() => {
-    if (dragging) {
-      angleRef.current = targetRef.current;
-      setAngle(targetRef.current);
+  /** Glide (eased, time-based) from wherever the bead is to `seatAngle`. */
+  const glideTarget = useRef<number | null>(null);
+  const glideTo = (seatAngle: number) => {
+    /* Already gliding there: let that glide finish, never restart it. */
+    if (raf.current && glideTarget.current === seatAngle) return;
+    stopGlide();
+    glideTarget.current = seatAngle;
+    const from = angleRef.current;
+    const to = nearestTurn(from, seatAngle);
+    if (Math.abs(to - from) < 0.0015) {
+      setAngle(seatAngle);
       return;
     }
-    const step = () => {
-      const t = targetRef.current;
-      const next = angleRef.current + (t - angleRef.current) * 0.22;
-      if (Math.abs(t - next) < 0.0015) {
-        angleRef.current = t;
-        setAngle(t);
+    const ms = GLIDE_MS(to - from);
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / ms);
+      if (k >= 1) {
+        /* Parked: fold the angle back to the seat's canonical value (same
+           point on the loop), so it never accumulates turns. */
+        setAngle(seatAngle);
         raf.current = null;
         return;
       }
-      angleRef.current = next;
-      setAngle(next);
+      setAngle(from + (to - from) * easeOutCubic(k));
       raf.current = requestAnimationFrame(step);
     };
     raf.current = requestAnimationFrame(step);
-    return () => {
-      if (raf.current) cancelAnimationFrame(raf.current);
-      raf.current = null;
-    };
-  }, [dragging, mode, target]);
+  };
+
+  /* A seat change while no finger holds the bead (keys, seat taps, a parent
+     driving `mode`, the release commit): glide to it. */
+  useEffect(() => {
+    if (dragRef.current) return;
+    glideTo(restAngle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- glide on seat change only
+  }, [restAngle]);
+  useEffect(() => stopGlide, []);
 
   /** Where the ring actually is right now — text and hit area follow it. */
   const pose = poseAt(angle, weight);
@@ -483,14 +487,11 @@ export function EarSelector({
     p.x = e.clientX;
     p.y = e.clientY;
     const local = p.matrixTransform(ctm.inverse());
-    const raw = Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x);
     return {
       point: { x: local.x, y: local.y } as P,
-      // FINGER FREE, BEAD RAILED: only the angle is taken from the finger, and
-      // it is resolved onto the WIRE nearest the bead and clamped to its ends —
-      // so a finger swung across the break holds the bead at the nearest lip
-      // instead of teleporting it to the far side.
-      angle: onTrack(dragRef.current ?? angleRef.current, raw),
+      // FINGER FREE, BEAD RAILED: only the finger's polar angle about the
+      // loop's centre is taken — its projection onto the loop.
+      raw: Math.atan2(local.y - TRACK_C.y, local.x - TRACK_C.x),
     };
 
   };
@@ -530,11 +531,18 @@ export function EarSelector({
     const wasHeld = held.current;
     stopPeek();
     held.current = false;
-    if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
-    else if (g && !g.moved && !wasHeld) onTap?.();
-    gesture.current = null;
+    const wasDragging = dragRef.current !== null;
     dragRef.current = null;
-    setDrag(null);
+    setDragging(false);
+    if (wasDragging && seats.length) {
+      /* SEATS ARE REST POINTS: released, the bead glides (eased) to the
+         nearest seat — and that seat is committed. */
+      const near = nearestOf(angleRef.current, seats);
+      if (g?.moved) commit(near);
+      glideTo(SEAT_ANGLE[g?.moved ? near : mode]);
+    }
+    if (g && !g.moved && !wasHeld) onTap?.();
+    gesture.current = null;
   };
 
 
@@ -611,7 +619,11 @@ export function EarSelector({
           rx={STEM_HALF * 0.5}
           fill="var(--world-g)"
         />
-        {/* The ring's inside is NEGATIVE SPACE: no fill of its own. */}
+        {/* THE HOLE: opaque paper out to the stroke's inner edge (+1 unit,
+            hidden under the stroke) — the same rule as the sign-in toggle, so
+            nothing ever shows through the ring, parked or gliding. */}
+        <circle cx={0} cy={0} r={EAR.innerR + 1} fill="var(--world-bg)" data-toggle-hole="" />
+        {/* The ring's inside is NEGATIVE SPACE: never the seat colour. */}
         <circle
           cx={0}
           cy={0}
@@ -792,9 +804,11 @@ export function EarSelector({
           (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
           // LOCKED: the seat only STATES the mode; it cannot be dragged.
           if (locked) return;
-          const a = grab?.angle ?? angleRef.current;
-          dragRef.current = a;
-          setDrag(a);
+          stopGlide();
+          const raw = grab?.raw ?? angleRef.current;
+          /* The bead stays exactly where it is on grab: bead = finger + offset. */
+          dragRef.current = { offset: shortest(raw, angleRef.current) };
+          setDragging(true);
         }}
         onPointerMove={(e) => {
           if (activeId.current !== e.pointerId) return;
@@ -809,11 +823,16 @@ export function EarSelector({
             stopPeek();
             held.current = false;
           }
-          dragRef.current = move.angle;
-          setDrag(move.angle);
-          if (!g?.moved) return;
-          const near = nearestOf(move.angle, seats);
-          if (Math.abs(shortest(move.angle, SEAT_ANGLE[near])) < 0.2) commit(near);
+          /* CONTINUOUS: the finger's projected angle (plus the grab offset),
+             expressed as the turn nearest the bead — so the bead glides round
+             the closed loop with the finger, never stepping seat to seat. */
+          const next = nearestTurn(angleRef.current, move.raw + dragRef.current.offset);
+          setAngle(next);
+          if (!g?.moved || !seats.length) return;
+          /* The seat's colour and title follow as the bead PASSES a seat;
+             the bead's position never depends on it. */
+          const near = nearestOf(next, seats);
+          if (Math.abs(shortest(next, SEAT_ANGLE[near])) < 0.2) commit(near);
         }}
 
         onPointerUp={(e) => {

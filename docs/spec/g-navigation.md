@@ -5,36 +5,42 @@
 This document is the design source of truth for G navigation and G colour.
 The build does not yet match this spec.
 
-Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Communi-G Borrows** are the stop names.
+Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Communi-G Borrows** are the names of the Wish and Borrow stops.
 
 ---
 
 ## 1. Rectangle mechanic
 
-- The screen is a rectangle.
-- The toggle is locked at 12:00 on the rectangle and never moves relative to it.
+- The rectangle is the outline (perimeter) of the phone screen.
+- It is a rectangle because Communi-gy pages are working surfaces, such as forms to fill in and chats back and forth, and these cannot live inside a circle. The rectangle is the closest a page can get to the loop.
+- The toggle always sits at 12:00 on the top edge of the phone perimeter and never moves relative to it.
+- Behind the page, faded, is a zoomed-in portion of the G's lower loop. The toggle rides that line, and the page's position fades in relation to where it sits on the lower loop.
 - The rectangle travels the track, so the toggle appears to move around the loop.
 - This is how all screens propagate.
+- The system is taught through use, never explained.
 
 ## 2. Lower loop (Communi-gy)
 
 - The toggle orbits the middle loop.
 - At 6:00 you enter Communi-gy, and the screen becomes a rectangle on the lower loop.
-- The stops on the lower loop, listed in position order running counter-clockwise from 6:00:
+- The lower loop mirrors the middle loop's clock: each clock position means the same mode on both loops. The stops are the full mirror of the wheel (listed by clock position):
 
-  | Position | Stop | Colour |
-  | --- | --- | --- |
-  | 6:00 | Communi-gy everything map (home) | — |
-  | 9:00 | Communi-G Borrows | borrow colour (the lighter purple of the Borrow seat) |
-  | ~10:30 | Communi-G Wishes | purple |
+  | Position | Stop |
+  | --- | --- |
+  | ~1:30 | Give |
+  | ~3:00 | Lend |
+  | ~4:25 | Trade |
+  | 6:00 | Communi-gy everything map (home) |
+  | ~7:30 | Fund |
+  | 9:00 | Borrow (Communi-G Borrows): borrow colour, the lighter purple of the Borrow seat |
+  | ~10:30 | Wish (Communi-G Wishes): purple |
 
-- The lower-loop stops mirror the wheel seats: 9:00 Borrow, ~10:30 Wish.
+- No lower-loop stop is assigned at 12:00. On the middle loop, 12:00 is My G.
+- Tapping an action on a page (for example Wishes or Give) quickly moves the rectangle around the lower loop to that mode's clock position.
 - The page swaps strictly per mode.
-- The Communi-gy rectangle's frame stays red, and the page takes the mode colour. This is the screen frame inside Communi-gy, not the G's loop.
+- The page takes that mode's colour, and the Communi-gy rectangle's frame stays red. The frame is the screen frame inside Communi-gy, not the G's loop.
 - From the map, dragging up to 12:00 on the middle loop gives the full G at My G.
 - The profile is locked until the toggle is at 12:00 on the middle loop.
-
-> **Open: confirm stop order.** Frazer listed the stops as "6:00 home; ~10:30 Wishes; 9:00 Borrows". Counter-clockwise from 6:00 on a clock face reaches 9:00 before 10:30. The positions above (6:00, ~10:30, 9:00) are recorded exactly as given; only the listing order follows position.
 
 ## 3. Direction
 
@@ -55,6 +61,10 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 - Mode chrome takes the mode colour.
 - Granting mixes blue with their colour into the seat's hue.
 - Communi-gy: the Communi-gy rectangle's frame stays red; the page takes the mode colour. This is the screen frame inside Communi-gy, not the G's loop.
+
+## 5. Open
+
+- Does the lower loop have a 12:00 stop? None is assigned yet.
 
 ---
 

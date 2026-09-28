@@ -1026,8 +1026,11 @@ function Index() {
                 id: "browse",
                 open: browse !== null,
                 anchor: "bottom",
-                /* INSIDE COMMUNI-GY THE FRAME LOCKS TO RED, whatever the seat. */
+                /* INSIDE COMMUNI-GY THE LOOP LOCKS TO RED, whatever the seat. */
                 world: "communigy",
+                /* The unfurl carries the camera in; once arrived the room is
+                   the zoomed lower loop drawn by PerimeterToggle, not the G. */
+                bare: true,
                 children: browse ? (
                   <CommunityFeed
                     initialType={browse.type}
@@ -1052,6 +1055,12 @@ function Index() {
                       });
                     }}
                     onClose={() => setBrowse(null)}
+                    /* 12:00 ON THE LOWER LOOP IS THE EXIT: back to the full
+                       G with the toggle at 6:00 (communi-gy), the G red. */
+                    onExit={() => {
+                      setBrowse(null);
+                      setSeat("map");
+                    }}
                   />
 
                 ) : null,

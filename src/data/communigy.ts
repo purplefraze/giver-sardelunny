@@ -7,15 +7,18 @@ import { signInFeedLines, type SignInFeedKind } from "@/data/signin-feed";
  * COMMUNI-GY — everyone's bottom loop, opened. Pure data helpers for the
  * communi-gy view (CommunityFeed), its perimeter toggle and its map.
  *
- * THE MODES the perimeter toggle browses, in the wheel's spectrum order
- * (clockwise from 12:00, like EarSelector), with "everything" at 12:00:
- *   everything · give · lend · trade · fund · borrow · wish
+ * THE MODES the rectangle visits on the lower loop, at the wheel's seat
+ * angles (EarSelector SEAT_ANGLE; PerimeterToggle maps each mode to its
+ * seat), clockwise from 12:00 (the exit back to the full G):
+ *   give 1:30 · lend 3:00 · trade 4:30 · everything 6:00 (entry) ·
+ *   fund 7:30 · borrow 9:00 · wish 10:30
  * Lend is a borrow record with side "lend"; fund is a wish with a money
  * target (details.fundTarget). No new tables: this only reads Items.
  */
 export type CgMode = "everything" | SignInFeedKind;
 
-export const CG_MODES: CgMode[] = ["everything", "give", "lend", "trade", "fund", "borrow", "wish"];
+/** The modes in clock order from 1:30 (see above). */
+export const CG_MODES: CgMode[] = ["give", "lend", "trade", "everything", "fund", "borrow", "wish"];
 
 /** The mode colour (the frame stays red; this is the INTERIOR ink). */
 export const CG_COLOUR: Record<CgMode, string> = {

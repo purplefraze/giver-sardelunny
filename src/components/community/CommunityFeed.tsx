@@ -4,7 +4,6 @@ import { CommunigyMap } from "@/components/community/CommunigyMap";
 import { PerimeterToggle } from "@/components/community/PerimeterToggle";
 import {
   CG_INK,
-  CG_MODES,
   CG_WORD,
   NEAR_KM,
   inMode,
@@ -46,14 +45,16 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-GY (renamed from communi-g). The frame LOCKS TO RED here — the
- * view's data-world is "communigy", and a red border runs round it with the
- * PERIMETER TOGGLE on it (PerimeterToggle.tsx) browsing the modes: everything ·
- * give · lend · trade · fund · borrow · wish. The border and the ring stay red;
- * the interior text switches to the mode colour (--cg-ink). Two views of the
- * same filtered listings: the LIST, and the MAP (the 6:00 map seat's door),
- * where every listing drops a pin in its mode colour and a red circle marks
- * what is near me.
+ * COMMUNI-GY (renamed from communi-g). The screen is a rectangle on the G's
+ * lower loop, zoomed in so far that only the loop's red edge near it shows
+ * (PerimeterToggle.tsx). The rectangle's clock position on the loop is the
+ * mode, at the wheel's seat angles: give 1:30 · lend 3:00 · trade 4:30 ·
+ * everything 6:00 (entry) · fund 7:30 · borrow 9:00 · wish 10:30, and 12:00
+ * is the way back to the full G. The loop and the toggle stay red in every
+ * mode; only the text inside the rectangle takes the mode colour (--cg-ink).
+ * Two views of the same filtered listings: the LIST, and the MAP (the 6:00
+ * map seat's door), where every listing drops a pin in its mode colour and a
+ * red circle marks what is near me.
  */
 
 type Sort = "nearby" | "latest" | "popular";
@@ -87,6 +88,7 @@ export function CommunityFeed({
   onOpenProfile,
   onEditMine,
   onClose,
+  onExit,
 }: {
   initialType?: ItemType | null;
   /** OPENED ON MY OWN GIVES when arriving straight from publishing one. */
@@ -101,6 +103,8 @@ export function CommunityFeed({
   /** MY OWN POST, REOPENED WHERE IT WAS WRITTEN. */
   onEditMine?: (itemId: string) => void;
   onClose: () => void;
+  /** 12:00 ON THE LOWER LOOP: back to the full G, the toggle at 6:00. */
+  onExit?: () => void;
 }) {
   const items = useItems();
   const links = useConnections();
@@ -203,14 +207,14 @@ export function CommunityFeed({
     >
       <BackArrow onClick={onClose} label="back to my g" />
 
-      {/* THE RED FRAME + THE PERIMETER TOGGLE (the modes, round the border). */}
+      {/* THE RECTANGLE ON THE LOWER LOOP: its position is the mode. */}
       <PerimeterToggle
-        modes={CG_MODES}
         value={mode}
         onChange={(next) => {
           setMode(next);
           setScope("everyone");
         }}
+        onExit={onExit ?? onClose}
       />
 
       {/* COMMUNI-GY IN THE MODE'S COLOUR (red for everything). */}

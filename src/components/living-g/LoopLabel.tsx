@@ -13,22 +13,25 @@ import { loopInk } from "@/lib/loop-ink";
  */
 export const LOOP_LABEL = {
   fontFamily: "var(--giver-font)",
-  /** Regular. 500 was tried and read heavier than the brief; 400 holds up. */
-  weight: 400,
-  /** One CSS-pixel size per screen (converted to SVG units)… */
-  sizePx: 16,
+  /**
+   * READABLE AT PHONE DISTANCE (design director, 28 Sep 2026 — was 16px /
+   * weight 400 / 0.02em / cap 32.95 units in BOTH loops). Medium weight,
+   * no tracking, one size per loop:
+   *   middle loop (the G's upper loop, "give something")  17px, cap 33.0 units
+   *   bottom loop (communi-g, "what’s on offer")          20px, cap 38.9 units
+   */
+  weight: 500,
+  /** One CSS-pixel size per loop, per screen (converted to SVG units)… */
+  sizePx: { top: 17, bottom: 20 },
   /**
    * …never larger than this many G units, so on narrow phones the one size
-   * shrinks WITH the G (all loops together). 32.95 units is 14px at 320
-   * (scale 0.4249 px/unit), where "borrow something" still clears the middle
-   * loop's stroke by ≥8px each side; from ~372px wide it is 16px, so 390 and
-   * wider stay exactly 16px.
+   * shrinks WITH the G (both loops together, never per word).
    */
-  maxUnits: 32.95,
+  maxUnits: { top: 33.0, bottom: 38.9 },
   lineHeight: 1,
   /** One line, always: SVG text never wraps, and nothing here splits it. */
   maxLines: 1,
-  tracking: "0.02em",
+  tracking: "0",
   /** Where each label sits: the true centre of its own loop. */
   anchor: { top: LOOP_CENTRE.middle, bottom: LOOP_CENTRE.bottom },
   fadeMs: 180,
@@ -92,11 +95,11 @@ export function LoopLabels({ seat }: { seat: Seat }) {
     return () => window.clearTimeout(t);
   }, [seat]);
 
-  const size = Math.min(LOOP_LABEL.sizePx * upp, LOOP_LABEL.maxUnits);
+  const sizeOf = (loop: "top" | "bottom") =>
+    Math.min(LOOP_LABEL.sizePx[loop] * upp, LOOP_LABEL.maxUnits[loop]);
   const style: React.CSSProperties = {
     fontFamily: LOOP_LABEL.fontFamily,
     fontWeight: LOOP_LABEL.weight,
-    fontSize: size,
     lineHeight: LOOP_LABEL.lineHeight,
     letterSpacing: LOOP_LABEL.tracking,
     textTransform: "lowercase",
@@ -129,7 +132,7 @@ export function LoopLabels({ seat }: { seat: Seat }) {
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill={fill}
-                style={style}
+                style={{ ...style, fontSize: sizeOf(loop) }}
               >
                 {(loop === "top" ? copy.middle : copy.bottom).toLowerCase()}
               </text>

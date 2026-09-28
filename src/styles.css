@@ -1268,11 +1268,11 @@
   animation: signin-feed-roll var(--signin-feed-duration, 240s) linear infinite;
 }
 .signin-feed-row {
-  height: 23px;
-  line-height: 23px;
+  height: 25px;
+  line-height: 25px;
   white-space: nowrap;
   font-weight: 400;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0.01em;
   text-transform: lowercase;
 }
@@ -1282,12 +1282,12 @@
    (ConveyorToggle / signin-emphasis.ts). The defaults are the floor: the
    feed's balanced resting strengths. Size and weight never change. */
 .signin {
-  --emph-give: 0.38;
-  --emph-lend: 0.44;
-  --emph-trade: 0.34;
-  --emph-fund: 0.25;
-  --emph-borrow: 0.46;
-  --emph-wish: 0.23;
+  --emph-give: 0.62;
+  --emph-lend: 0.68;
+  --emph-trade: 0.58;
+  --emph-fund: 0.5;
+  --emph-borrow: 0.7;
+  --emph-wish: 0.48;
 }
 .signin-feed-row > .k-give { color: color-mix(in srgb, var(--mode-give) calc(var(--emph-give) * 100%), transparent); }
 .signin-feed-row > .k-lend { color: color-mix(in srgb, var(--mode-lend) calc(var(--emph-lend) * 100%), transparent); }

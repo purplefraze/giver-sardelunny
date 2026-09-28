@@ -89,25 +89,28 @@ const FEED_KIND: Partial<Record<Seat, SignInFeedKind>> = {
 /**
  * FEED PROMINENCE — OPACITY ONLY (the alpha of each action's one fixed tint;
  * size and weight never change, so nothing reflows).
- *   FLOOR = the feed's existing per-action strengths (unchanged).
- *   PEAK  = the strength when the toggle sits on that seat: clearly readable,
- *           still quieter than the ink of the email field.
+ *   FLOOR = the feed's resting per-action strength.
+ *   PEAK  = the strength when the toggle sits on that seat.
+ * Raised for 40+ readers (design director, 28 Sep 2026) — was FLOOR
+ * give .38 lend .44 trade .34 fund .25 borrow .46 wish .23, PEAK give .70
+ * lend .70 trade .62 fund .55 borrow .70 wish .58. The styles.css
+ * --emph-* defaults mirror FLOOR. Bright seat colours, no desaturation.
  */
 export const FEED_FLOOR: Record<SignInFeedKind, number> = {
-  give: 0.38,
-  lend: 0.44,
-  trade: 0.34,
-  fund: 0.25,
-  borrow: 0.46,
-  wish: 0.23,
+  give: 0.62,
+  lend: 0.68,
+  trade: 0.58,
+  fund: 0.5,
+  borrow: 0.7,
+  wish: 0.48,
 };
 export const FEED_PEAK: Record<SignInFeedKind, number> = {
-  give: 0.7,
-  lend: 0.7,
-  trade: 0.62,
-  fund: 0.55,
-  borrow: 0.7,
-  wish: 0.58,
+  give: 0.9,
+  lend: 0.9,
+  trade: 0.85,
+  fund: 0.8,
+  borrow: 0.9,
+  wish: 0.82,
 };
 
 export const FEED_KINDS = Object.keys(FEED_FLOOR) as SignInFeedKind[];

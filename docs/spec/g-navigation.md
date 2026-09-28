@@ -23,10 +23,11 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 
 - The toggle orbits the middle loop.
 - At 6:00 you enter Communi-gy, and the screen becomes a rectangle on the lower loop.
-- The lower loop mirrors the middle loop's clock: each clock position means the same mode on both loops. The stops are the full mirror of the wheel (listed by clock position):
+- The lower loop mirrors the middle loop's clock: each clock position from ~1:30 to ~10:30 means the same mode on both loops. The stops, listed by clock position:
 
   | Position | Stop |
   | --- | --- |
+  | 12:00 | Exit to the full living G: the toggle is at 6:00 on the middle loop, and the G is solid red |
   | ~1:30 | Give |
   | ~3:00 | Lend |
   | ~4:25 | Trade |
@@ -35,11 +36,10 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
   | 9:00 | Borrow (Communi-G Borrows): borrow colour, the lighter purple of the Borrow seat |
   | ~10:30 | Wish (Communi-G Wishes): purple |
 
-- No lower-loop stop is assigned at 12:00. On the middle loop, 12:00 is My G.
 - Tapping an action on a page (for example Wishes or Give) quickly moves the rectangle around the lower loop to that mode's clock position.
 - The page swaps strictly per mode.
 - The page takes that mode's colour, and the Communi-gy rectangle's frame stays red. The frame is the screen frame inside Communi-gy, not the G's loop.
-- From the map, dragging up to 12:00 on the middle loop gives the full G at My G.
+- The 12:00 position on the lower loop takes you back to the view of the full living G. The toggle is at 6:00 on the middle loop, and the G is red: solid red, because the toggle is on the 6:00 seat.
 - The profile is locked until the toggle is at 12:00 on the middle loop.
 
 ## 3. Direction
@@ -61,10 +61,6 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
 - Mode chrome takes the mode colour.
 - Granting mixes blue with their colour into the seat's hue.
 - Communi-gy: the Communi-gy rectangle's frame stays red; the page takes the mode colour. This is the screen frame inside Communi-gy, not the G's loop.
-
-## 5. Open
-
-- Does the lower loop have a 12:00 stop? None is assigned yet.
 
 ---
 

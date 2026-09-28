@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
 import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
-import { GThinMask, rimRadius, trackRadius, type GWeight } from "./g-weight";
+import { GThinMask, TOGGLE, rimRadius, trackRadius, type GWeight } from "./g-weight";
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.
@@ -253,8 +253,13 @@ export function EarSelector({
   /* The track at this weight — shadows the module's canonical (normal) values. */
   const RIM_R = rimRadius(weight);
   const TRACK_R = trackRadius(weight);
+  /* The piece at this weight (variant A at "middle": thinner ring and stem). */
+  const EAR = { ...EAR_GEOMETRY, ...TOGGLE[weight] };
+  const RING_MID = (EAR.innerR + EAR.outerR) / 2;
+  const RING_W = EAR.outerR - EAR.innerR;
   const STEM_FROM = RIM_R - 8;
-  const STEM_TO = TRACK_R - EAR_GEOMETRY.innerR - 6;
+  const STEM_TO = TRACK_R - EAR.innerR - 6;
+  const STEM_HALF = EAR.stemWidth / 2;
 
 
   const [drag, setDrag] = useState<number | null>(null);
@@ -500,15 +505,15 @@ export function EarSelector({
         <>
           <defs>
             <clipPath id={`ear-photo-${mode}`} clipPathUnits="userSpaceOnUse">
-              <circle cx={ear.x} cy={ear.y} r={EAR_GEOMETRY.innerR - 3} />
+              <circle cx={ear.x} cy={ear.y} r={EAR.innerR - 3} />
             </clipPath>
           </defs>
           <image
             href={photo}
-            x={ear.x - (EAR_GEOMETRY.innerR - 3)}
-            y={ear.y - (EAR_GEOMETRY.innerR - 3)}
-            width={(EAR_GEOMETRY.innerR - 3) * 2}
-            height={(EAR_GEOMETRY.innerR - 3) * 2}
+            x={ear.x - (EAR.innerR - 3)}
+            y={ear.y - (EAR.innerR - 3)}
+            width={(EAR.innerR - 3) * 2}
+            height={(EAR.innerR - 3) * 2}
             clipPath={`url(#ear-photo-${mode})`}
             preserveAspectRatio="xMidYMid slice"
             pointerEvents="none"
@@ -520,19 +525,19 @@ export function EarSelector({
       {badge ? (
         <g pointerEvents="none" opacity={dragging ? 0 : 0.95} style={{ transition: "opacity 180ms ease-out" }}>
           <circle
-            cx={ear.x + EAR_GEOMETRY.innerR * 0.82}
-            cy={ear.y + EAR_GEOMETRY.innerR * 0.82}
-            r={EAR_GEOMETRY.innerR * 0.42}
+            cx={ear.x + EAR.innerR * 0.82}
+            cy={ear.y + EAR.innerR * 0.82}
+            r={EAR.innerR * 0.42}
             fill="var(--world-g)"
           />
           <text
-            x={ear.x + EAR_GEOMETRY.innerR * 0.82}
-            y={ear.y + EAR_GEOMETRY.innerR * 0.82}
+            x={ear.x + EAR.innerR * 0.82}
+            y={ear.y + EAR.innerR * 0.82}
             textAnchor="middle"
             dominantBaseline="central"
             fill="var(--world-bg)"
             className="font-black"
-            style={{ fontSize: EAR_GEOMETRY.innerR * 0.44, letterSpacing: "-0.04em" }}
+            style={{ fontSize: EAR.innerR * 0.44, letterSpacing: "-0.04em" }}
           >
             {badge}
           </text>
@@ -546,8 +551,8 @@ export function EarSelector({
       */}
       {sparks !== undefined ? (
         <text
-          x={ear.x - Math.sin(angle) * (EAR_GEOMETRY.outerR + 46)}
-          y={ear.y + Math.cos(angle) * (EAR_GEOMETRY.outerR + 46)}
+          x={ear.x - Math.sin(angle) * (EAR.outerR + 46)}
+          y={ear.y + Math.cos(angle) * (EAR.outerR + 46)}
           textAnchor="middle"
           dominantBaseline="middle"
           fill="var(--giver-green)"

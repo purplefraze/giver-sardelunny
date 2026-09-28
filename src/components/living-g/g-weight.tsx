@@ -27,11 +27,27 @@ export const strokeInset = (weight: GWeight = "normal") =>
 export const rimRadius = (weight: GWeight = "normal") => LOOP_RIM_RADIUS.middle - strokeInset(weight);
 
 /**
- * The toggle's orbit: rim + the unchanged 24.5 white gap + the unchanged ring
- * radius 79. normal 300 → middle 287.5 (in by exactly the rim's 12.5).
+ * THE TOGGLE PIECE at each weight (ring outer/inner radius, stem width, units).
+ *   normal   the traced ear: outer 79, inner 50 (29-unit ring), stem 34.
+ *   middle   THIN-TOGGLE VARIANT A, set so that at 390px (scale 0.52279
+ *            px/unit, see GStage) the ring is 78px across with a 9px stroke
+ *            and the stem is ~10.5px: outer 74.6 (149.2 across), stroke 17.2,
+ *            inner 57.4, stem 20. All scale with the G.
+ */
+export const TOGGLE = {
+  normal: { outerR: EAR_GEOMETRY.outerR, innerR: EAR_GEOMETRY.innerR, stemWidth: EAR_GEOMETRY.stemWidth },
+  middle: { outerR: 74.6, innerR: 57.4, stemWidth: 20 },
+} as const;
+
+/**
+ * The toggle's orbit: rim + the unchanged 24.5 white gap + the ring's outer
+ * radius. normal 196.5 + 24.5 + 79 = 300; middle 184 + 24.5 + 74.6 = 283.1.
  */
 export const trackRadius = (weight: GWeight = "normal") =>
-  rimRadius(weight) + EAR_GEOMETRY.gap + EAR_GEOMETRY.outerR;
+  rimRadius(weight) + EAR_GEOMETRY.gap + TOGGLE[weight].outerR;
+
+/** How far the toggle assembly reaches from the middle loop's centre (orbit + ring). */
+export const toggleReach = (weight: GWeight = "normal") => trackRadius(weight) + TOGGLE[weight].outerR;
 
 /**
  * The toggle ring's HIGHEST RESTING top edge (give 1:30 / wish 10:30, ±45°
@@ -39,7 +55,10 @@ export const trackRadius = (weight: GWeight = "normal") =>
  * above this.
  */
 export const restingTop = (weight: GWeight = "normal") =>
-  LOOP_CENTRE.middle.y - trackRadius(weight) * Math.SQRT1_2 - EAR_GEOMETRY.outerR;
+  LOOP_CENTRE.middle.y - trackRadius(weight) * Math.SQRT1_2 - TOGGLE[weight].outerR;
+
+/** The toggle ring's top edge when dragged through 12:00 (not a seat). */
+export const noonTop = (weight: GWeight = "normal") => LOOP_CENTRE.middle.y - toggleReach(weight);
 
 /**
  * The G's lowest painted point (the bottom loop's outer edge) in viewBox units.

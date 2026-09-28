@@ -19,12 +19,12 @@ export const LOOP_LABEL = {
   sizePx: 16,
   /**
    * …never larger than this many G units, so on narrow phones the one size
-   * shrinks WITH the G (all loops together). 32.5 units is 16px once the G's
-   * scale reaches ~0.492 px/unit (≈389px wide), so 390 and wider stay exactly
-   * 16px; at 320 it is ≈13px and "borrow something" clears the middle loop's
-   * stroke by ≥8px each side.
+   * shrinks WITH the G (all loops together). 32.95 units is 14px at 320
+   * (scale 0.4249 px/unit), where "borrow something" still clears the middle
+   * loop's stroke by ≥8px each side; from ~372px wide it is 16px, so 390 and
+   * wider stay exactly 16px.
    */
-  maxUnits: 32.5,
+  maxUnits: 32.95,
   lineHeight: 1,
   /** One line, always: SVG text never wraps, and nothing here splits it. */
   maxLines: 1,

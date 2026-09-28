@@ -1,5 +1,5 @@
-import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
-import { gBottom, restingTop } from "./g-weight";
+import { LIVING_G_BOX, LIVING_G_FRAME, LOOP_CENTRE } from "./g-path";
+import { gBottom, noonTop, restingTop, toggleReach } from "./g-weight";
 
 /**
  * THE ONE canonical stage for every full-screen Living G.
@@ -36,9 +36,19 @@ export const CTA_BAND = "1.25rem";
  * the frame's decorative clearance. The frame keeps its full size (so nothing
  * inside it is ever repositioned), but the stage is sized against this inner
  * box, which lets the clearance bleed off-screen and the G itself grow.
- *   selector extremes measured in g-path: x -107..651, y -85..1133
+ * DERIVED from the live toggle geometry (g-weight.tsx), never a stale number:
+ * the ring's outer edge at lend (3:00) / borrow (9:00) is the orbit + the ring's
+ * outer radius from the middle loop's centre (x 272, which is also the frame's
+ * centre), so EDGE_AIR below is the exact paper between ring and screen edge.
+ *   middle weight: reach 283.1 + 74.6 = 357.7 → x -85.7..629.7 (715.4 wide),
+ *   y 298 − 357.7 = −59.7 .. 1133 (1192.7 tall)
+ * (Was 758 × 1218, from the old 300-unit orbit and 79-unit ring.)
  */
-const NEEDED = { width: 758, height: 1218 } as const;
+const REACH = toggleReach("middle");
+const NEEDED = {
+  width: 2 * REACH,
+  height: LIVING_G_BOX.height - (LOOP_CENTRE.middle.y - REACH),
+} as const;
 const FRAME_OVER_W = LIVING_G_FRAME.width / NEEDED.width;
 const FRAME_OVER_H = LIVING_G_FRAME.width / NEEDED.height;
 
@@ -61,7 +71,7 @@ const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFi
 
 /**
  * VERTICAL PLACE — CENTRED. The G's extent runs from its top (the toggle
- * ring's highest RESTING edge, give 1:30 / wish 10:30: viewBox y ≈ 15.7) to its
+ * ring's highest RESTING edge, give 1:30 / wish 10:30: viewBox y ≈ 23.2) to its
  * bottom (the bottom loop's lowest edge at the middle weight: y = 1120.5).
  * That extent is centred in the stage's height, so the paper above equals the
  * paper below — but its top never rises above G_TOP_MIN, the line 10px under
@@ -69,13 +79,18 @@ const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFi
  *
  * The stage box is a size container, so the same numbers CANONICAL_WIDTH uses
  * can be read in px here (cqw/cqh). The width itself is untouched.
- * (12:00 is not a seat: mid-drag the ring passes ~84 units above the top.)
  */
 export const G_TOP_MIN = "35.5px";
 const EXTENT_OVER_W = ((gBottom("middle") - restingTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
 /** CANONICAL_WIDTH, spelled in container units (identical value: the stage fills its container). */
 const STAGE_W = `min(calc((100cqw - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
-const G_TOP = `max(${G_TOP_MIN}, calc((100cqh - ${EXTENT_OVER_W} * ${STAGE_W}) / 2))`;
+/*
+ * …and on SHORT screens, low enough that the toggle ring dragged through 12:00
+ * (not a seat; its top is ~83 units above the resting top) keeps EDGE_AIR of
+ * paper under the screen's top edge.
+ */
+const NOON_OVER_W = ((restingTop("middle") - noonTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
+const G_TOP = `max(${G_TOP_MIN}, calc((100cqh - ${EXTENT_OVER_W} * ${STAGE_W}) / 2), calc(${EDGE_AIR} + ${NOON_OVER_W} * ${STAGE_W}))`;
 /* As a share of the stage box's OWN height, so a translate can apply it
    (a `top` percentage would read the screen's height, not the stage's). */
 const TOP_OVER_H = (((restingTop("middle") - LIVING_G_FRAME.y) / LIVING_G_FRAME.height) * 100).toFixed(4);

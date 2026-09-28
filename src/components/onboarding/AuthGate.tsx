@@ -60,7 +60,16 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) void finish(session.user.email ?? null);
     });
-    return () => sub.subscription.unsubscribe();
+    /* The waiting screen also lands when the session arrives from another
+       tab (sessionStore's storage / focus re-check). */
+    const unsub = sessionStore.subscribe(() => {
+      const s = sessionStore.get();
+      if (s.status === "ready") void finish(s.email);
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+      unsub();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once gate
   }, []);
 

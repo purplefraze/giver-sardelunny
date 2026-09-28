@@ -11,7 +11,11 @@ import {
 } from "@/components/living-g/g-path";
 import { G_STROKE, rimRadius, strokeInset } from "@/components/living-g/g-weight";
 import { signInFeedLines, type SignInFeedLine } from "@/data/signin-feed";
-import { OTP_LENGTH, type OtpSignIn } from "@/components/onboarding/use-otp-sign-in";
+import {
+  EMAIL_HAS_CODE,
+  OTP_LENGTH,
+  type OtpSignIn,
+} from "@/components/onboarding/use-otp-sign-in";
 import { useKeyboardFit } from "@/components/onboarding/use-keyboard-fit";
 import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
 import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
@@ -439,7 +443,7 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
   }, [otp.step]);
 
   const line = otp.error ?? otp.notice;
-  const lower = flipped || otp.step === "code";
+  const lower = flipped || otp.step !== "email";
 
   return (
     <div ref={root} className="signin relative h-full min-h-full w-full overflow-hidden lowercase">
@@ -494,9 +498,44 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
               >
                 <p className="signin-ask">are you a giver?</p>
                 <EmailField value={otp.email} onChange={otp.setEmail} scale={fit.s} />
-                <SendCircle label={otp.busy ? "sending" : "send code"} busy={otp.busy} />
+                <SendCircle
+                  label={otp.busy ? "sending" : EMAIL_HAS_CODE ? "send code" : "send link"}
+                  busy={otp.busy}
+                />
                 <div className="signin-under" aria-live="polite">
                   {line ? <p className="signin-line">{line}</p> : null}
+                </div>
+              </form>
+            ) : otp.step === "sent" ? (
+              /* LINK-ONLY EMAIL: no field to fill — the address it went to,
+                 then send again / use a different email. The caller lands
+                 on the G the moment the link signs this browser in. */
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void otp.resend();
+                }}
+                className="signin-inner signin-inner--sent"
+              >
+                <p className="signin-ask signin-line" aria-live="polite">
+                  {line ?? "check your email and tap log in"}
+                </p>
+                <p className="signin-field signin-sent-to">{otp.email.trim()}</p>
+                <div className="signin-under signin-under-links">
+                  <button
+                    type="submit"
+                    className="signin-link"
+                    disabled={otp.busy || otp.cooldown > 0}
+                  >
+                    {otp.busy
+                      ? "sending"
+                      : otp.cooldown > 0
+                        ? `send again in ${otp.cooldown}s`
+                        : "send again"}
+                  </button>
+                  <button type="button" className="signin-link" onClick={otp.changeEmail}>
+                    use a different email
+                  </button>
                 </div>
               </form>
             ) : (

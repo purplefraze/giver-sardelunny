@@ -38,8 +38,8 @@ import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
  *           ring: rim + the 24.5 white gap + ring radius 74.6 = orbit 283.1 —
  *           ONE continuous conveyor through all eight seats in clock order
  *           (ConveyorToggle.tsx): idle drift, drag either way the short way
- *           round, round the OUTSIDE of the lower loop to the 6:00 (map)
- *           dock, docking at 12:00 (my g); hollow in transit, filled on a seat
+ *           round, always on the middle loop (6:00 is the bottom of that
+ *           ring), docking at 12:00 (my g); always hollow, never filled
  *   COLOUR  the whole G (every loop, the upper ring and the toggle) is ONE
  *           solid seat colour; the bottom loop is red only at 6:00 (map)
  *   GIVE    at give (1:30) the big G is the g of the wordmark: "ıver" is set

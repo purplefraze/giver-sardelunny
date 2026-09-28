@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { FILL_MS } from "@/components/living-g/EarSelector";
 import { CG_COLOUR, type CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
@@ -16,10 +15,9 @@ import { haptics } from "@/lib/haptics";
  * the mode colour (the caller reads `value`).
  *
  * Same rules as the G's toggle:
- *   HOLLOW / FILLED  the ring's inside is negative space (the border runs
- *                    straight through it) except when settled on the active
- *                    station, where it fills with that mode's colour; the
- *                    fill cross-fades in FILL_MS.
+ *   ALWAYS HOLLOW    the ring's inside is negative space at every station,
+ *                    parked or moving (the border runs straight through it).
+ *                    It is never filled.
  *   DRAG             the finger carries it round the border (projected onto
  *                    the perimeter, the short way round); released, it snaps
  *                    to the nearest station.
@@ -165,7 +163,6 @@ export function PerimeterToggle({
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
 
-  const settled = !dragging && len > 0 && Math.abs(shortDelta(pos, station(value))) < 1.5;
   const here = pointAt(pos);
   const ang = (Math.atan2(here.ny, here.nx) * 180) / Math.PI;
 
@@ -221,9 +218,9 @@ export function PerimeterToggle({
                 );
               })
             : null}
-          {/* THE PIECE: the ring, centred on the border line. Hollow, the red
-              border runs straight through it and joins it on the
-              circumference; filled, it covers the border. */}
+          {/* THE PIECE: the ring, centred on the border line. Always hollow:
+              the red border runs straight through it and joins it on the
+              circumference. */}
           {len ? (
             <g
               transform={`translate(${here.x} ${here.y}) rotate(${ang})`}
@@ -233,7 +230,6 @@ export function PerimeterToggle({
               tabIndex={0}
               aria-label="communi-gy mode"
               aria-valuetext={value}
-              data-cg-toggle={settled ? "filled" : "hollow"}
               onPointerDown={(e) => {
                 e.stopPropagation();
                 drag.current = { id: e.pointerId };
@@ -274,13 +270,6 @@ export function PerimeterToggle({
                 }
               }}
             >
-              <circle
-                cx={0}
-                cy={0}
-                r={RING_R - RING_W / 2}
-                fill={CG_COLOUR[value]}
-                style={{ opacity: settled ? 1 : 0, transition: `opacity ${FILL_MS}ms ease-out` }}
-              />
               <circle
                 cx={0}
                 cy={0}

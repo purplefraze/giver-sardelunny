@@ -1,16 +1,10 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from "react";
 
-import {
-  FILL_MS,
-  FILL_TOL_DEG,
-  toggleGeometry,
-  type Seat,
-} from "@/components/living-g/EarSelector";
+import { toggleGeometry, type Seat } from "@/components/living-g/EarSelector";
+import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "@/components/living-g/g-path";
 import { togglePath } from "@/components/living-g/toggle-path";
-import { GThinMask } from "@/components/living-g/g-weight";
 import { haptics } from "@/lib/haptics";
 import {
-  CONVEYOR,
   FEED_KINDS,
   NOON,
   feedEmphasis,
@@ -42,30 +36,19 @@ import {
  *   REDUCED  prefers-reduced-motion: no drift at all; dragging still works and
  *            the colour / feed emphasis still follow it.
  *
- * LIFTED OVER THE G. Wherever the piece crosses a stroke of the G (the S-curve
- * waist, the lower loop between my g and fund), a paper-coloured footprint of
- * the WHOLE piece — the ring's disc and the stem, each grown by the same
- * 24.5-unit white gap the ring keeps from the rim — is painted over the
- * (thinned) G strokes only, underneath the piece. So the ring and the stem
- * never touch a stroke: the piece reads as passing OVER the waist. The upper
- * ring is drawn AFTER that footprint (`under`), so it is never cut and never
- * opens.
+ * THE PATH (toggle-path.ts): the middle loop's orbit, at every seat. The 6:00
+ * seat (map) is 6 o'clock on the middle loop, never on the bottom loop. The
+ * one continuous angle is the parameter (polar, about the middle loop's
+ * centre); the drift runs at an EVEN SPEED along the path's arc length.
  *
- * THE PATH (toggle-path.ts): the middle loop's orbit over the top, straight
- * sides, and the LOWER loop's orbit round the bottom — so the 6:00 dock (map)
- * sits outside the lower loop, never in the waist. The one continuous angle
- * is still the parameter (polar, about the middle loop's centre); the drift
- * runs at an EVEN SPEED along the path's arc length.
+ * ALWAYS HOLLOW. The ring is never filled: its inside is negative space at
+ * every seat, parked or moving (the feed shows through). Where it lies over a
+ * stroke of the G (the waist at 6:00), the stroke runs right up to the ring
+ * with no white gap, and a paper knock-out clipped to the G clears it inside
+ * the ring, so the inside always reads as background.
  *
- * HOLLOW / FILLED. The ring's inside is negative space (the G's stroke and
- * the feed show through; a crossed stroke joins it on the circumference) —
- * except when it sits on a seat: within FILL_TOL_DEG of a dock (released
- * off FILL_OUT_DEG, hysteresis) and not held by a finger, it fills with the
- * seat colour, and only then is the lift-over footprint painted. The fill
- * cross-fades in FILL_MS.
- *
- * EVERY FRAME (requestAnimationFrame, no React state): the piece's pose,
- * the footprint's position, and — only when they change — CSS custom
+ * EVERY FRAME (requestAnimationFrame, no React state): the piece's pose, the
+ * knock-out's position, and — only when they change — CSS custom
  * properties on the sign-in root: --seat (the nearest seat's colour, solid,
  * switched in one step), --emph-<action> (feed alpha per action) and
  * --give-mark (the give wordmark's presence). Nothing re-renders or reflows.
@@ -78,19 +61,8 @@ const STEP_DEG = 15;
 const GRIP_R = 110;
 const SETTLE_MS = 450;
 const DOCK_DEG = 15;
-/** Hysteresis: a filled ring empties only once it is this far off the dock. */
-const FILL_OUT_DEG = FILL_TOL_DEG + 1;
 const PATH = togglePath("middle");
 const DRIFT_UNITS_PER_S = PATH.length / LAP_S;
-/** Degrees to the nearest seat's dock (any turn). */
-const offDock = (deg: number) => {
-  let best = Infinity;
-  for (const c of CONVEYOR) {
-    const d = Math.abs(((((deg - c.at + 180) % 360) + 360) % 360) - 180);
-    if (d < best) best = d;
-  }
-  return best;
-};
 
 const smooth = (x: number) => x * x * (3 - 2 * x);
 const easeOut = (x: number) => 1 - (1 - x) ** 3;
@@ -113,19 +85,15 @@ export function ConveyorToggle({
   /** The sign-in root: the per-frame custom properties are written here. */
   root: RefObject<HTMLElement | null>;
   start?: Seat;
-  /** Drawn above the lift-over footprint and below the piece (the ring). */
+  /** Drawn above the knock-out and below the piece (the ring). */
   under?: ReactNode;
 }) {
   const g = toggleGeometry("middle");
   const C = g.centre;
-  const LIFT = g.EAR.gap;
   const id = useId().replace(/:/g, "");
   const piece = useRef<SVGGElement | null>(null);
-  const discKnock = useRef<SVGCircleElement | null>(null);
-  const stemKnock = useRef<SVGLineElement | null>(null);
+  const knock = useRef<SVGCircleElement | null>(null);
   const grip = useRef<SVGCircleElement | null>(null);
-  const fillDisc = useRef<SVGCircleElement | null>(null);
-  const footprint = useRef<SVGGElement | null>(null);
   const start0 = seatAngle(start);
   const angle = useRef(start0);
   const drag = useRef<{ id: number; offset: number } | null>(null);
@@ -134,15 +102,10 @@ export function ConveyorToggle({
   const reduced = useRef(false);
   const docked = useRef(false);
 
-  /** The ring's centre and the stem's root (under the rim) at an angle. */
+  /** The ring's centre and the piece's rotation at an angle. */
   const place = (deg: number) => {
     const p = PATH.poseDeg(deg);
-    const back = g.TRACK_R - g.RIM_R;
-    return {
-      ring: { x: p.x, y: p.y },
-      root: { x: p.x - p.nx * back, y: p.y - p.ny * back },
-      deg: p.deg,
-    };
+    return { ring: { x: p.x, y: p.y }, deg: p.deg };
   };
 
   useEffect(() => {
@@ -162,34 +125,17 @@ export function ConveyorToggle({
 
     let painted = NaN;
     let seat = "";
-    let full = false;
-    let wasHeld = false;
     const paint = () => {
       const deg = angle.current;
-      const holding = drag.current !== null;
-      /* FILLED only when sitting on a dock and not held (hysteresis). */
-      const off = offDock(deg);
-      const nextFull = !holding && (full ? off < FILL_OUT_DEG : off < FILL_TOL_DEG);
-      if (nextFull !== full) {
-        full = nextFull;
-        const o = full ? "1" : "0";
-        fillDisc.current?.style.setProperty("opacity", o);
-        footprint.current?.style.setProperty("opacity", o);
-      }
-      if (Math.abs(deg - painted) < 0.005 && holding === wasHeld) return;
-      wasHeld = holding;
+      if (Math.abs(deg - painted) < 0.005) return;
       painted = deg;
-      const { ring, root: root0, deg: out } = place(deg);
+      const { ring, deg: out } = place(deg);
       piece.current?.setAttribute(
         "transform",
         `translate(${ring.x.toFixed(2)} ${ring.y.toFixed(2)}) rotate(${out.toFixed(3)})`,
       );
-      discKnock.current?.setAttribute("cx", ring.x.toFixed(2));
-      discKnock.current?.setAttribute("cy", ring.y.toFixed(2));
-      stemKnock.current?.setAttribute("x1", root0.x.toFixed(2));
-      stemKnock.current?.setAttribute("y1", root0.y.toFixed(2));
-      stemKnock.current?.setAttribute("x2", ring.x.toFixed(2));
-      stemKnock.current?.setAttribute("y2", ring.y.toFixed(2));
+      knock.current?.setAttribute("cx", ring.x.toFixed(2));
+      knock.current?.setAttribute("cy", ring.y.toFixed(2));
       const blend = seatBlend(deg);
       put("--seat", seatColour(blend));
       const emph = feedEmphasis(blend);
@@ -268,37 +214,26 @@ export function ConveyorToggle({
     settle();
   };
 
-  const { ring: ring0, root: root0, deg: out0 } = place(start0);
+  const { ring: ring0, deg: out0 } = place(start0);
   return (
     <g>
       <defs>
-        <GThinMask id={`${id}-thin`} weight="middle" transformed />
+        <clipPath id={`${id}-g`} clipPathUnits="userSpaceOnUse">
+          <path d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} />
+        </clipPath>
       </defs>
-      {/* The lift-over footprint: paper over the (thinned) G strokes only —
-          painted ONLY while the ring is filled (sitting on a seat). */}
-      <g
-        ref={footprint}
-        mask={`url(#${id}-thin)`}
+      {/* The knock-out: paper over the G's strokes inside the ring only, out
+          to the ring's stroke centreline (hidden under the ring), clipped to
+          the full-weight artwork so the thinned stroke's fringe goes too. */}
+      <circle
+        ref={knock}
+        cx={ring0.x}
+        cy={ring0.y}
+        r={g.RING_MID}
+        fill="var(--world-bg)"
+        clipPath={`url(#${id}-g)`}
         pointerEvents="none"
-        style={{ opacity: 0, transition: `opacity ${FILL_MS}ms ease-out` }}
-      >
-        <circle
-          ref={discKnock}
-          cx={ring0.x}
-          cy={ring0.y}
-          r={g.EAR.outerR + LIFT}
-          fill="var(--world-bg)"
-        />
-        <line
-          ref={stemKnock}
-          x1={root0.x}
-          y1={root0.y}
-          x2={ring0.x}
-          y2={ring0.y}
-          stroke="var(--world-bg)"
-          strokeWidth={g.EAR.stemWidth + 2 * LIFT}
-        />
-      </g>
+      />
       {under}
       <g ref={piece} transform={`translate(${ring0.x} ${ring0.y}) rotate(${out0})`}>
         <rect
@@ -309,17 +244,6 @@ export function ConveyorToggle({
           rx={g.STEM_HALF * 0.5}
           fill="var(--world-g)"
           pointerEvents="none"
-        />
-        {/* The fill: the seat colour, only while sitting on a seat. */}
-        <circle
-          ref={fillDisc}
-          cx={0}
-          cy={0}
-          r={g.RING_MID}
-          fill="var(--world-g)"
-          pointerEvents="none"
-          data-toggle-fill=""
-          style={{ opacity: 0, transition: `opacity ${FILL_MS}ms ease-out` }}
         />
         {/* The ring: its inside is negative space (no fill). */}
         <circle

@@ -16,9 +16,9 @@ import { toggleReach } from "@/components/living-g/g-weight";
  *
  * WHAT MUST FIT is the same box GStage sizes the main G from (live toggle
  * geometry, g-weight.tsx / toggle-path.ts): my g's ring at 12:00 (noon top,
- * y = 298 − 357.7) down to the map dock's ring below the lower loop
- * (y = 1293.7) — 1353.4 units — so the toggle keeps its edge air at every
- * seat, including 6:00.
+ * y = 298 − 357.7) down to the artwork's bottom (y = 1133; the 6:00 ring
+ * sits on the middle loop, well above it) — 1192.7 units — so the toggle
+ * keeps its edge air at every seat.
  *
  * THE BASE POSE is read from an UNSCALED probe GStage (identical layout, never
  * transformed), so the numbers are exact and never read a half-finished

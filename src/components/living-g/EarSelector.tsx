@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
 import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
-import { GThinMask, TOGGLE, rimRadius, trackRadius, type GWeight } from "./g-weight";
+import { TOGGLE, rimRadius, trackRadius, type GWeight } from "./g-weight";
 import { togglePath, type TrackPose } from "./toggle-path";
 
 /**
@@ -162,10 +162,8 @@ const at = (angle: number, r: number): P => ({
 });
 
 /**
- * WHERE THE RING IS at a track angle (toggle-path.ts): the middle loop's
- * orbit over the top, straight sides, and the LOWER loop's orbit round the
- * bottom, so the 6:00 dock (map) sits outside the lower loop and never in the
- * waist. The angle stays the one parameter; only the point moves.
+ * WHERE THE RING IS at a track angle (toggle-path.ts): always on the middle
+ * loop's orbit, at every seat, 6:00 included. Never on the bottom loop.
  */
 const poseAt = (angle: number, weight: GWeight = "normal"): TrackPose =>
   togglePath(weight).pose(angle);
@@ -177,14 +175,11 @@ const inward = (pose: TrackPose, inset: number): P => ({
 });
 
 /**
- * THE TOGGLE'S INSIDE IS NEGATIVE SPACE — transparent, the G's stroke and the
- * paper (or feed) showing through — in every state EXCEPT sitting on the one
- * active seat, where it fills with the seat colour and covers what is under
- * it. "Sitting" = settled within FILL_TOL of the seat's dock (and not being
- * dragged). The fill cross-fades in FILL_MS so a pass never flickers.
+ * THE TOGGLE IS ALWAYS NEGATIVE SPACE: a hollow ring, never filled, at every
+ * seat, parked or moving. Where it lies over a stroke of the G (the waist at
+ * 6:00), that stroke runs right up to the ring with no white gap and is
+ * cleared inside it, so the inside always reads as background.
  */
-export const FILL_TOL_DEG = 3;
-export const FILL_MS = 150;
 
 /**
  * THE LIVE CENTRE OF THE TOP LOOP — the small circular selector itself, wherever
@@ -218,18 +213,9 @@ function nearestOf(angle: number, seats: readonly Seat[]): Seat {
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
 
 /**
- * THE WHITE GAP, in path units — drawn ONLY where the ring actually crosses
- * a stroke of the G (see the clipped knock-out below). Kept under the ring's
- * clearance to the S-curve at My G (~9–10 units at 4:25, measured), so it
- * can never eat into a stroke the ring does not touch (14 did: it shaved the
- * S-curve's edge and left a ghost hairline).
- */
-const KNOCK_GAP = 7;
-
-/**
  * THE PIECE'S GEOMETRY at a weight — the one construction every toggle draws
  * from (this selector, and the sign-in's conveyor toggle): track centre, rim,
- * orbit, ring mid-radius and stroke, stem span and half-width, knock-out gap.
+ * orbit, ring mid-radius and stroke, stem span and half-width.
  * Pure: the same numbers this file has always used.
  */
 export function toggleGeometry(weight: GWeight = "normal") {
@@ -246,7 +232,6 @@ export function toggleGeometry(weight: GWeight = "normal") {
     STEM_FROM: RIM_R - 8,
     STEM_TO: TRACK_R - EAR.innerR - 6,
     STEM_HALF: EAR.stemWidth / 2,
-    KNOCK_GAP,
   };
 }
 
@@ -409,9 +394,6 @@ export function EarSelector({
   /** Where the ring actually is right now — text and hit area follow it. */
   const pose = poseAt(angle, weight);
   const ear: P = { x: pose.x, y: pose.y };
-  /** FILLED only when settled on the active seat (see FILL_TOL_DEG). */
-  const filled =
-    !dragging && Math.abs(angle - SEAT_ANGLE[mode]) < (FILL_TOL_DEG * Math.PI) / 180;
   const knockId = useId().replace(/:/g, "");
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {
@@ -517,42 +499,30 @@ export function EarSelector({
         THE ONE RIGID ASSEMBLY. Authored on the +x radial axis in local terms,
         then placed by a single rotation about the track centre. Stem root under
         the rim, ring beyond it, distance between them fixed by construction.
-        The solid disc makes the piece PHYSICAL: whatever it sits on is hidden.
+        The ring is hollow and never filled.
       */}
-      {/* THE WHITE GAP, ONLY WHERE IT IS NEEDED: a paper-coloured stroke
-          along the ring's own outline, a little wider than the ring, CLIPPED
-          TO THE G'S ARTWORK — so it paints only where the ring actually
-          crosses a stroke of the G, and nowhere else. No full disc: a stroke
-          the ring does not touch (the S-curve at My G) stays unbroken. */}
+      {/* THE KNOCK-OUT: paper over the G's strokes inside the ring only, out
+          to the ring's stroke centreline (hidden under the ring), so a stroke
+          meets the ring's outer edge with no white gap. Clipped to the
+          full-weight artwork, which also covers a thinned stroke's
+          anti-aliased fringe, so no hairline is left. Where the ring crosses
+          nothing it paints nothing. */}
       <defs>
         <clipPath id={`${knockId}-g`} clipPathUnits="userSpaceOnUse">
           <path d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} />
         </clipPath>
-        {/* At the middle weight the gap is clipped to the THINNED strokes. */}
-        {weight !== "normal" ? <GThinMask id={`${knockId}-thin`} weight={weight} transformed /> : null}
       </defs>
-      {/* The white gap + the filled disc cover a stroke ONLY when filled
-          (settled on the active seat); hollow, the stroke runs straight
-          through the ring and joins it on the circumference. */}
-      <g
+      <circle
+        cx={ear.x}
+        cy={ear.y}
+        r={RING_MID}
+        fill="var(--world-bg)"
         pointerEvents="none"
-        style={{ opacity: filled ? 1 : 0, transition: `opacity ${FILL_MS}ms ease-out` }}
-      >
-        <circle
-          cx={ear.x}
-          cy={ear.y}
-          r={RING_MID}
-          fill="none"
-          stroke="var(--world-bg)"
-          strokeWidth={RING_W + KNOCK_GAP * 2}
-          {...(weight !== "normal" ? { mask: `url(#${knockId}-thin)` } : { clipPath: `url(#${knockId}-g)` })}
-        />
-        <circle cx={ear.x} cy={ear.y} r={RING_MID} fill="var(--world-g)" data-toggle-fill="" />
-      </g>
+        clipPath={`url(#${knockId}-g)`}
+      />
       <g
         transform={`translate(${ear.x} ${ear.y}) rotate(${pose.deg})`}
         pointerEvents="none"
-        data-toggle-filled={filled || undefined}
       >
         <rect
           x={STEM_FROM - TRACK_R}

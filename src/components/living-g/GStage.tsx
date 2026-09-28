@@ -42,10 +42,11 @@ export const CTA_BAND = "1.25rem";
  * outer radius from the middle loop's centre (x 272, which is also the frame's
  * centre), so EDGE_AIR below is the exact paper between ring and screen edge.
  *   middle weight: reach 283.1 + 74.6 = 357.7 → x -85.7..629.7 (715.4 wide),
- *   y 298 − 357.7 = −59.7 (my g's ring, now a seat at 12:00) .. 1293.7 (the
- *   map dock's ring at 6:00, OUTSIDE the lower loop — toggle-path.ts)
- *   = 1353.4 tall.
- * (Was 715.4 × 1192.7 while 6:00 docked in the waist; 758 × 1218 before that.)
+ *   y 298 − 357.7 = −59.7 (my g's ring, now a seat at 12:00) .. 1133 (the
+ *   artwork's bottom; the 6:00 ring rides the middle loop, well above it —
+ *   toggle-path.ts) = 1192.7 tall.
+ * (Was 715.4 × 1353.4 while 6:00 docked outside the lower loop; 758 × 1218
+ * before that.)
  */
 const REACH = toggleReach("middle");
 const NEEDED = {
@@ -84,8 +85,8 @@ const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFi
  * can be read in px here (cqw/cqh). The width itself is untouched.
  */
 export const G_TOP_MIN = "35.5px";
-/* THE EXTENT is now my g's ring at 12:00 (a seat) down to the map dock's ring
-   at 6:00: noonTop .. dockBottom. */
+/* THE EXTENT is my g's ring at 12:00 (a seat) down to the artwork's bottom:
+   noonTop .. dockBottom. */
 const EXTENT_OVER_W = ((dockBottom("middle") - noonTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
 /** CANONICAL_WIDTH, spelled in container units (identical value: the stage fills its container). */
 const STAGE_W = `min(calc((100cqw - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
@@ -94,7 +95,7 @@ const STAGE_W = `min(calc((100cqw - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFixed(5)
  * never less than EDGE_AIR under the screen's top, and the give / wish ring
  * tops (restingTop, ~83 units lower) never above G_TOP_MIN (the seal line).
  * The height term of CANONICAL_WIDTH keeps the whole extent inside the
- * screen minus CTA_BAND, so the map dock keeps ≥ EDGE_AIR below it too.
+ * screen minus CTA_BAND, so the G's bottom keeps ≥ EDGE_AIR below it too.
  */
 const NOON_OVER_W = ((restingTop("middle") - noonTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
 const G_TOP = `max(${EDGE_AIR}, calc(${G_TOP_MIN} - ${NOON_OVER_W} * ${STAGE_W}), calc((100cqh - ${EXTENT_OVER_W} * ${STAGE_W}) / 2))`;

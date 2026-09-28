@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { haptics } from "@/lib/haptics";
+import { rememberSignInEmail, rememberedSignInEmail, takeLinkNotice } from "@/lib/auth-callback";
 
 /**
  * SAME-CIRCLE SIGN-IN — the behaviour behind SignInView, shared by the
@@ -56,12 +57,29 @@ export function useOtpSignIn({
     setError(null);
   };
 
+  /* A LINK THAT DIDN'T WORK lands here, never on "access denied": back in the
+     same browser, the code step for the address it was sent to (resend is one
+     tap); anywhere else, the email step with that address to fill in. */
+  useEffect(() => {
+    const said = takeLinkNotice();
+    if (!said) return;
+    const known = rememberedSignInEmail();
+    if (known) {
+      setEmail(known);
+      setStep("code");
+      setError(`${said} — tap resend`);
+    } else {
+      setError(`${said} — send again`);
+    }
+  }, []);
+
   async function send(): Promise<boolean> {
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: `${window.location.origin}/` },
     });
     if (otpError) throw otpError;
+    rememberSignInEmail(email.trim());
     onSent?.();
     return true;
   }

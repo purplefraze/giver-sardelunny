@@ -39,7 +39,8 @@ import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
  *           ONE continuous conveyor through all eight seats in clock order
  *           (ConveyorToggle.tsx): idle drift, drag either way the short way
  *           round, always on the middle loop (6:00 is the bottom of that
- *           ring), docking at 12:00 (my g); always hollow, never filled;
+ *           ring), docking at 12:00 (my g); never filled with the seat
+ *           colour, its hole opaque paper so the feed never shows through;
  *           the nearest seat's title sits upright inside the ring
  *   COLOUR  the whole G (every loop, the upper ring and the toggle) is ONE
  *           solid seat colour; the bottom loop is red only at 6:00 (map)

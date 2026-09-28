@@ -46,11 +46,16 @@ import {
  * one continuous angle is the parameter (polar, about the middle loop's
  * centre); the drift runs at an EVEN SPEED along the path's arc length.
  *
- * ALWAYS HOLLOW. The ring is never filled: its inside is negative space at
- * every seat, parked or moving (the feed shows through). Where it lies over a
- * stroke of the G (the waist at 6:00), the stroke runs right up to the ring
- * with no white gap, and a paper knock-out clipped to the G clears it inside
- * the ring, so the inside always reads as background.
+ * NEVER FILLED, NEVER SEE-THROUGH. The ring is never filled with the seat
+ * colour: its inside is negative space at every seat, parked or moving — the
+ * white page background, NOT the feed. An opaque paper disc (var(--world-bg),
+ * the page's own white) covers exactly the ring's hole: above the feed and
+ * the G, below the ring's stroke and the title, its edge tucked HOLE_TUCK
+ * units under the stroke's inner edge so no anti-aliased seam lets the feed
+ * through and no white spills outside the ring (Frazer, 28 Sep 2026). Where
+ * the ring lies over a stroke of the G (the waist at 6:00), the stroke runs
+ * right up to the ring with no white gap, and a paper knock-out clipped to
+ * the G clears it under the ring's stroke too.
  *
  * THE SEAT'S TITLE sits inside the ring (SEAT_TITLE, the main G's table and
  * type): the NEAREST seat — the same seat --seat colours the G and ring
@@ -70,6 +75,8 @@ const STEP_DEG = 15;
 const GRIP_R = 110;
 const SETTLE_MS = 450;
 const DOCK_DEG = 15;
+/** The paper disc's edge, this far (units) under the stroke's inner edge. */
+const HOLE_TUCK = 1;
 const PATH = togglePath("middle");
 const DRIFT_UNITS_PER_S = PATH.length / LAP_S;
 
@@ -259,7 +266,17 @@ export function ConveyorToggle({
           fill="var(--world-g)"
           pointerEvents="none"
         />
-        {/* The ring: its inside is negative space (no fill). */}
+        {/* THE HOLE: opaque paper, so the feed never shows through the ring.
+            Out to the stroke's inner edge (+ HOLE_TUCK, hidden under it). */}
+        <circle
+          cx={0}
+          cy={0}
+          r={g.EAR.innerR + HOLE_TUCK}
+          fill="var(--world-bg)"
+          pointerEvents="none"
+          data-toggle-hole=""
+        />
+        {/* The ring: never filled with the seat colour. */}
         <circle
           cx={0}
           cy={0}

@@ -38,7 +38,8 @@ export function LedgerHistory({
   const me = useMyProfile();
   const events = eventsOf(useLedger(), currency);
   const colour = COLOUR[currency];
-  const balance = currency === "spark" ? me.sparks : me.sparkles;
+  /* SPARKS LIVE IN MY G: both pots — to give and to wish — are shown here. */
+  const balance = currency === "spark" ? me.sparks + me.giveSparks : me.sparkles;
   const held = currency === "spark" ? reservedTotal(me) : 0;
 
   return (
@@ -60,6 +61,11 @@ export function LedgerHistory({
         >
           {balance}
         </p>
+        {currency === "spark" && me.giveSparks ? (
+          <p className="g-meta mt-3 opacity-55" data-testid="spark-pots">
+            {me.giveSparks} to give · {me.sparks} to wish
+          </p>
+        ) : null}
         {held ? (
           <p className="g-meta mt-3 opacity-55">{held} held inside open wishes</p>
         ) : null}

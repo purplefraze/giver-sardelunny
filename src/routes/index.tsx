@@ -135,6 +135,11 @@ import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
 import { LoopLabels } from "@/components/living-g/LoopLabel";
 import { useLifecycle } from "@/hooks/use-lifecycle";
+import { WelcomeGrant } from "@/components/WelcomeGrant";
+import { GiveClosed } from "@/components/GiveClosed";
+import { claimWelcome, welcomeOwed } from "@/data/welcome-grant";
+import { markAsked, noteLiveGives } from "@/data/give-close";
+import { hasLiveGive, type Item } from "@/data/items";
 
 
 /**
@@ -514,6 +519,51 @@ function Index() {
   /** PRIVATE TO ME: how many conversations have something waiting inside. */
   const unread = unreadCount(links, ME_ID);
 
+  /*
+   * THE WELCOME GRANT (welcome-grant.ts): on the account's first land after
+   * the magic link — once the opening has handed over — giver grants 100
+   * sparks (50 to give · 50 to wish) and says so in two lines over the G at
+   * give (1:30). Once per account, never replayed.
+   */
+  const [grantLines, setGrantLines] = useState(false);
+  const grantChecked = useRef(false);
+  const landed =
+    hydrated &&
+    entered &&
+    !opening &&
+    !openingCover &&
+    !launchVeil &&
+    session.status === "ready" &&
+    editor === null &&
+    browse === null &&
+    detail === null &&
+    talking === null;
+  useEffect(() => {
+    if (!landed || grantChecked.current) return;
+    grantChecked.current = true;
+    void welcomeOwed().then((owed) => {
+      if (!owed) return;
+      setSeatState("give");
+      claimWelcome();
+      setGrantLines(true);
+    });
+  }, [landed]);
+
+  /*
+   * A GIVE OF MINE JUST CLOSED (give-close.ts): taken, done or past its day.
+   * Ask once — offer that again, or something else. No sparks, no "+10".
+   */
+  const [closedGive, setClosedGive] = useState<Item | null>(null);
+  useEffect(() => {
+    if (!hydrated || !entered) return;
+    const closed = noteLiveGives(items);
+    if (closed && !closedGive) {
+      markAsked(closed.id);
+      setClosedGive(closed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- items drive it
+  }, [items, hydrated, entered]);
+
   /**
    * THE TOGGLE IS THE WORLD: wish | give | trade | borrow — plus MY G, the one
    * destination seat at 12 o'clock. `mode` is the activity world, and it is
@@ -693,8 +743,9 @@ function Index() {
                 hideWord={!toggleWordsUnlocked}
                 {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
                 {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
-                /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
-                {...(!firstArrival ? { sparks: me.sparks } : {})}
+                /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data.
+                   SPARKS LIVE IN MY G: the balance peeks only at the my g seat. */
+                {...(!firstArrival && seat === "giver" ? { sparks: me.sparks + me.giveSparks } : {})}
 
                 /* TAP ON THE TOGGLE: enters the seat's action screen. */
                 onTap={tapToggle}
@@ -1162,6 +1213,30 @@ function Index() {
 
         </>
       )}
+      {/* TWO LINES OVER THE G ON THE FIRST LAND, THEN GONE. A tap skips. */}
+      {entered && grantLines ? <WelcomeGrant onDone={() => setGrantLines(false)} /> : null}
+      {/* A GIVE JUST CLOSED: offer that again, or something else. */}
+      {entered && closedGive && !opening && !grantLines ? (
+        <GiveClosed
+          item={closedGive}
+          stillLive={hasLiveGive(items, ME_ID)}
+          onClose={() => setClosedGive(null)}
+          onAgain={() => {
+            const id = closedGive.id;
+            setClosedGive(null);
+            /* Three already live: reopen the give flow with it instead. */
+            if (!itemsStore.republish(id))
+              window.dispatchEvent(new CustomEvent("giver:post-again", { detail: id }));
+          }}
+          onSomethingElse={() => {
+            setClosedGive(null);
+            setDetail(null);
+            setBrowse(null);
+            setSeat("give");
+            setEditor({ kind: "category", category: "give" });
+          }}
+        />
+      ) : null}
       {/* LAUNCH → G CROSSFADE: the settled wordmark over the fresh G, fading. */}
       {entered && launchVeil ? <LaunchScreen veil onDone={() => setLaunchVeil(false)} /> : null}
       {/* THE OWED OPENING (after /auth or the dev skip), over the G, then the

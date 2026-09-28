@@ -25,7 +25,7 @@
  *     TODO(payment-rails): charge through a real processor; never fake one.
  */
 
-import { ME_ID, itemsStore, type Item, type ItemsState } from "@/data/items";
+import { ME_ID, itemsStore, visibleToOthers, type Item, type ItemsState } from "@/data/items";
 import {
   FUND_CURRENCY,
   checkContribution,
@@ -149,7 +149,12 @@ export function fundableWishes(items: ItemsState, funderId = ME_ID): Item[] {
   return items.items
     .filter(
       (i) =>
-        i.type === "wish" && i.status === "active" && i.published && i.ownerId !== funderId,
+        i.type === "wish" &&
+        i.status === "active" &&
+        i.published &&
+        i.ownerId !== funderId &&
+        /* NO LIVE GIVE, NO VISIBLE WISH — and nothing to receive (items.ts). */
+        visibleToOthers(items, i, funderId),
     )
     .sort((a, b) => {
       /* Wishes that state a cost come first — they are the ones money answers. */

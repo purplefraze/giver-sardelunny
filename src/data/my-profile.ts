@@ -102,6 +102,15 @@ export type MyProfile = {
   sparksSeeded: boolean;
   /** One key per already-rewarded completed interaction. Never pays twice. */
   rewarded: string[];
+  /**
+   * THE WELCOME GRANT'S "TO GIVE" HALF (welcome-grant.ts). Separate from
+   * `sparks` (the "to wish" half, which wishes hold). Passing these to
+   * someone is NOT a give: it never counts as kindness and never unlocks
+   * anything.
+   */
+  giveSparks: number;
+  /** The welcome grant landed on this account (once, ever). */
+  welcomeGranted: boolean;
 };
 
 type Person = {
@@ -124,6 +133,8 @@ type Person = {
   reserved: Record<string, number>;
   sparksSeeded: boolean;
   rewarded: string[];
+  giveSparks: number;
+  welcomeGranted: boolean;
 };
 
 
@@ -157,6 +168,8 @@ const EMPTY_PERSON: Person = {
   reserved: {},
   sparksSeeded: false,
   rewarded: [],
+  giveSparks: 0,
+  welcomeGranted: false,
 };
 
 
@@ -502,15 +515,14 @@ export const myProfileStore = {
     itemsStore.remove(item.id);
   },
   /**
-   * COMPLETED GENEROSITY. A give that has actually reached another Giver is a
-   * completed act, and Giver — not the other person — recognises it with 10
-   * sparks. The ledger key makes the reward impossible to collect twice.
+   * MARK DONE. The item leaves circulation. No sparks: a give's handoff is
+   * paid by a later ticket (the phone tap), never faked here.
    */
   completeItem(category: Category, index: number) {
     const item = myProfileStore.get().records[category][index];
     if (!item) return;
+    /* A give marked done pays nothing yet: sparks on handoff come later. */
     itemsStore.complete(item.id);
-    if (category === "give") reward(`give:${item.id}`);
   },
   /**
    * SETTLE GENEROSITY. Called ONLY by the connection layer, and only once both
@@ -545,6 +557,33 @@ export const myProfileStore = {
         : "your wish was granted — sparks passed on",
       itemId,
     });
+  },
+
+  /**
+   * THE WELCOME GRANT — 100 sparks, 50 to give · 50 to wish, once per
+   * account, on the first land after the magic link (welcome-grant.ts).
+   * The "to wish" half is the ordinary balance: a new account already holds
+   * it (profiles.sparks defaults to 50), so it is only set when nothing was
+   * restored. The "to give" half is its own pot.
+   */
+  grantWelcome(toGive: number, toWish: number): boolean {
+    hydrate();
+    if (person.welcomeGranted) return false;
+    savePerson({
+      ...person,
+      sparks: person.sparksSeeded ? person.sparks : toWish,
+      sparksSeeded: true,
+      giveSparks: person.giveSparks + toGive,
+      welcomeGranted: true,
+    });
+    ledgerStore.record({
+      id: "grant:welcome",
+      currency: "spark",
+      kind: "received",
+      amount: toGive + toWish,
+      say: `giver gave you ${toGive + toWish} sparks · ${toGive} to give · ${toWish} to wish`,
+    });
+    return true;
   },
 
   /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */

@@ -66,8 +66,8 @@ import {
  *
  * EVERY FRAME (requestAnimationFrame, no React state): the piece's pose,
  * the footprint's position, and — only when they change — CSS custom
- * properties on the sign-in root: --seat (the two neighbouring seat colours
- * mixed by position, OKLCH), --emph-<action> (feed alpha per action) and
+ * properties on the sign-in root: --seat (the nearest seat's colour, solid,
+ * switched in one step), --emph-<action> (feed alpha per action) and
  * --give-mark (the give wordmark's presence). Nothing re-renders or reflows.
  */
 const LAP_S = 50;

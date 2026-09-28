@@ -137,13 +137,10 @@ const MODE_VAR: Record<Seat, string> = {
 };
 
 /**
- * THE SEAT COLOUR AT THIS BLEND: the two neighbouring seats' own tokens mixed
- * by the same weights in OKLCH, the shorter way round the hue wheel, so the
- * in-between colours stay as saturated as the seats themselves.
+ * THE SEAT COLOUR AT THIS BLEND: the nearest seat's own token, solid. The G is
+ * always one colour, so it switches to the next seat's colour in one step at
+ * the midpoint between two seats; neighbouring colours are never mixed.
  */
-export function seatColour(blend: SeatBlend, quantum = 0.5): string {
-  const pa = Math.round((blend.wa * 100) / quantum) * quantum;
-  if (pa >= 100 || blend.a === blend.b) return `var(${MODE_VAR[blend.a]})`;
-  if (pa <= 0) return `var(${MODE_VAR[blend.b]})`;
-  return `color-mix(in oklch shorter hue, var(${MODE_VAR[blend.a]}) ${pa}%, var(${MODE_VAR[blend.b]}))`;
+export function seatColour(blend: SeatBlend): string {
+  return `var(${MODE_VAR[blend.nearest]})`;
 }

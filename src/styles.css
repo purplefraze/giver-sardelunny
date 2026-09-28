@@ -244,9 +244,9 @@
          fund    7:30   #9E4B2C  deep clay brown
          borrow  9:00   #A58AD6  lavender
          wish    10:30  #9D00FF  prince purple
-       COMMUNI-GY RED (--mode-communigy) is also the bottom loop's colour
-       INSIDE communi-gy and on the sign-in email step; everywhere else the
-       bottom loop takes the seat colour.
+       THE G IS ONE SOLID COLOUR: the seat colour, every loop included. The
+       bottom loop (sign-in included) is never a separate colour, so it is
+       red (--mode-map / --mode-communigy) only when the toggle is at 6:00.
        TEXT TINTS for the two pale seats (form headings, tags and selected
        answers ONLY — the G, caret and send circle keep the true seat colour):
          lend #6E9200 · borrow #8B68CA  (--mode-lend-text / --mode-borrow-text)

@@ -1,17 +1,15 @@
 /**
- * THE WELCOME GRANT — 100 SPARKS, 50 TO GIVE · 50 TO WISH.
+ * THE WELCOME GRANT — 100 SPARKS: 50 SPARKS TO GIVE, 50 SPARKS TO WISH.
  *
  * On the first land after the magic link (the account's first session), giver
- * grants 100 sparks, split in two pots (my-profile.ts: `giveSparks` / `sparks`).
- * Two lowercase lines say so over the G at give (1:30) and fade:
- *
- *   50 to give · 50 to wish
- *   your sparks live in my g
+ * grants 100 sparks. Give sparks live in give (my-profile.ts `giveSparks`),
+ * wish sparks live in wish (`sparks`, the wish bank). Nothing is kept in my g.
+ * The moment that says so is first-land/FirstLand.tsx.
  *
  * ONCE PER ACCOUNT, NEVER REPLAYED: remembered on this device (localStorage)
  * AND on the account (auth user_metadata.welcome_grant_at — the same pattern
  * as the give hint), so a second phone neither replays the lines nor grants
- * twice. The balance itself is only ever shown in my g.
+ * twice. The only count ever shown is the wish bank, at the wish seat.
  *
  * "FIRST SESSION" = the account's last sign-in is within a day of its
  * creation (a brand-new magic-link account). Older accounts are not granted.
@@ -75,8 +73,8 @@ export async function welcomeOwed(): Promise<boolean> {
 }
 
 /**
- * GRANT AND REMEMBER — called the moment the lines appear, so a reload or a
- * skip can never replay them. The account write is best effort.
+ * GRANT AND REMEMBER — called the moment the first land begins, so a reload
+ * or a skip can never replay it. The account write is best effort.
  */
 export function claimWelcome() {
   rememberHere();

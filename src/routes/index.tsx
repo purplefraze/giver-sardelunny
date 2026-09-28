@@ -49,7 +49,7 @@ import { unreadCount } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { myAsMember, myProfileStore } from "@/data/my-profile";
+import { WISH_COMPOSE_KEY, myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
@@ -135,7 +135,8 @@ import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
 import { LoopLabels } from "@/components/living-g/LoopLabel";
 import { useLifecycle } from "@/hooks/use-lifecycle";
-import { WelcomeGrant } from "@/components/WelcomeGrant";
+import { FirstLandArt, FirstLandCatch, type FirstLandPhase } from "@/components/first-land/FirstLand";
+import { FIRST_LAND } from "@/components/first-land/first-land-config";
 import { GiveClosed } from "@/components/GiveClosed";
 import { claimWelcome, welcomeOwed } from "@/data/welcome-grant";
 import { markAsked, noteLiveGives } from "@/data/give-close";
@@ -520,12 +521,19 @@ function Index() {
   const unread = unreadCount(links, ME_ID);
 
   /*
-   * THE WELCOME GRANT (welcome-grant.ts): on the account's first land after
-   * the magic link — once the opening has handed over — giver grants 100
-   * sparks (50 to give · 50 to wish) and says so in two lines over the G at
-   * give (1:30). Once per account, never replayed.
+   * GIVER: FIRST LAND (first-land/FirstLand.tsx, welcome-grant.ts): on the
+   * account's first land after the magic link — once the opening has handed
+   * over — at give (1:30), giver grants 100 sparks and plays the one moment:
+   * they drop into my g, split 50 to give / 50 to wish, glow, then "your
+   * sparks live in my wishes.", "are you a giver?", "communi-" + the G.
+   * Once per account (device + account metadata), never replayed. A tap
+   * skips (and is swallowed). Reduced motion lands straight on the end.
+   * "free" = the moment is over; the question stays until the first move.
    */
-  const [grantLines, setGrantLines] = useState(false);
+  const [firstLand, setFirstLand] = useState<{ phase: FirstLandPhase; startedAt: number } | null>(
+    null,
+  );
+  const freeFirstLand = () => setFirstLand((f) => (f ? { ...f, phase: "free" } : f));
   const grantChecked = useRef(false);
   const landed =
     hydrated &&
@@ -545,9 +553,30 @@ function Index() {
       if (!owed) return;
       setSeatState("give");
       claimWelcome();
-      setGrantLines(true);
+      const still =
+        typeof window !== "undefined" &&
+        Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+      setFirstLand({ phase: still ? "free" : "moment", startedAt: performance.now() });
     });
   }, [landed]);
+  /* FREE: the first move anywhere (another seat, any world) and it is gone. */
+  useEffect(() => {
+    if (firstLand?.phase === "free" && (!landed || seat !== "give")) setFirstLand(null);
+  }, [firstLand, landed, seat]);
+
+  /*
+   * THE WISH BANK SETS 10 ASIDE WHEN A WISH BEGINS (my-profile.ts): opening
+   * the wish composer (or ask for funding, which publishes a wish) holds 10;
+   * closing it before it publishes gives them back. Also clears a hold left
+   * behind by a reload.
+   */
+  const composingWish =
+    (editor?.kind === "category" && editor.category === "wish") || editor?.kind === "ask-fund";
+  useEffect(() => {
+    if (!hydrated) return;
+    if (composingWish) myProfileStore.holdWishCompose();
+    else myProfileStore.releaseWishCompose();
+  }, [composingWish, hydrated, session.status]);
 
   /*
    * A GIVE OF MINE JUST CLOSED (give-close.ts): taken, done or past its day.
@@ -714,7 +743,9 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={atMap ? "map" : (activity ?? "profile")}
+            /* THE FIRST LAND KEEPS THE G LETTER MY G BLUE (the blue-letter
+               rule) — via this same colour prop, never the geometry. */
+            world={firstLand ? "home" : atMap ? "map" : (activity ?? "profile")}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -732,7 +763,12 @@ function Index() {
             overlay={
               <>
               {/* THE LOOP LABELS — always shown, one component for every seat. */}
-              <LoopLabels seat={seat} />
+              <LoopLabels
+                seat={seat}
+                quiet={
+                  firstLand ? ["top", "bottom"] : []
+                }
+              />
               <EarSelector
                 mode={seat}
                 weight="middle"
@@ -743,13 +779,23 @@ function Index() {
                 hideWord={!toggleWordsUnlocked}
                 {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
                 {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
-                /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data.
-                   SPARKS LIVE IN MY G: the balance peeks only at the my g seat. */
-                {...(!firstArrival && seat === "giver" ? { sparks: me.sparks + me.giveSparks } : {})}
+                /* WISH SPARKS LIVE IN WISH: the wish bank's count sits in the
+                   ring at the wish seat. No balance anywhere else (no give
+                   count, nothing in my g). First use has no account furniture. */
+                {...(!firstArrival && seat === "wish"
+                  ? { count: { value: me.sparks, colour: FIRST_LAND.colour.wish } }
+                  : {})}
 
                 /* TAP ON THE TOGGLE: enters the seat's action screen. */
                 onTap={tapToggle}
               />
+              {firstLand ? (
+                <FirstLandArt
+                  phase={firstLand.phase}
+                  startedAt={firstLand.startedAt}
+                  onEnd={freeFirstLand}
+                />
+              ) : null}
               </>
             }
 
@@ -811,6 +857,7 @@ function Index() {
             they ride my own top profile loop (see EarSelector).
           */}
           {!firstArrival &&
+          !firstLand &&
           activity !== null &&
           !funding &&
           !tutorialSeen &&
@@ -1213,10 +1260,31 @@ function Index() {
 
         </>
       )}
-      {/* TWO LINES OVER THE G ON THE FIRST LAND, THEN GONE. A tap skips. */}
-      {entered && grantLines ? <WelcomeGrant onDone={() => setGrantLines(false)} /> : null}
+      {/* THE FIRST LAND: a tap anywhere skips, and is swallowed. */}
+      {entered && firstLand ? (
+        <FirstLandCatch active={firstLand.phase === "moment"} onSkip={freeFirstLand} />
+      ) : null}
+      {/* WHILE A WISH IS BEING WRITTEN: the bank, and the 10 set aside for it. */}
+      {entered && composingWish && me.reserved[WISH_COMPOSE_KEY] ? (
+        <div
+          data-testid="wish-aside"
+          className="pointer-events-none absolute right-[30px] z-[45] lowercase"
+          style={{
+            top: 90,
+            fontFamily: FIRST_LAND.type.family,
+            fontSize: FIRST_LAND.type.regular.sizePx,
+            letterSpacing: 0,
+            color: FIRST_LAND.colour.wish,
+          }}
+        >
+          <span style={{ fontWeight: FIRST_LAND.type.strong.weight }}>{me.sparks}</span>
+          <span style={{ fontWeight: FIRST_LAND.type.regular.weight }}>
+            {` + ${me.reserved[WISH_COMPOSE_KEY]} aside`}
+          </span>
+        </div>
+      ) : null}
       {/* A GIVE JUST CLOSED: offer that again, or something else. */}
-      {entered && closedGive && !opening && !grantLines ? (
+      {entered && closedGive && !opening && firstLand?.phase !== "moment" ? (
         <GiveClosed
           item={closedGive}
           stillLive={hasLiveGive(items, ME_ID)}

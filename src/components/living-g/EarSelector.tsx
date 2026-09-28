@@ -3,6 +3,8 @@ import { haptics } from "@/lib/haptics";
 import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
 import { TOGGLE, rimRadius, trackRadius, type GWeight } from "./g-weight";
 import { togglePath, type TrackPose } from "./toggle-path";
+import { useSvgUnits } from "@/components/first-land/use-svg-units";
+import { FIRST_LAND } from "@/components/first-land/first-land-config";
 
 /**
  * MODE = WHERE THE SELECTOR SITS ON THE MIDDLE LOOP.
@@ -334,6 +336,7 @@ export function EarSelector({
   hideWord = false,
   weight = "normal",
   title = false,
+  count,
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;
@@ -380,6 +383,12 @@ export function EarSelector({
    * When shown it is the ONLY thing inside the ring (no photo).
    */
   title?: boolean;
+  /**
+   * THE WISH BANK: a count centred inside the ring (22px · 500, in its own
+   * colour — first-land-config.ts). Passed only while the toggle sits at the
+   * seat that owns the count; hidden mid-drag. The title steps down beneath it.
+   */
+  count?: { value: number; colour: string };
 }) {
   /* The track at this weight — shadows the module's canonical (normal) values. */
   /* The piece at this weight (variant A at "middle": thinner ring and stem). */
@@ -474,6 +483,10 @@ export function EarSelector({
   const pose = poseAt(angle, weight);
   const ear: P = { x: pose.x, y: pose.y };
   const knockId = useId().replace(/:/g, "");
+  const rootRef = useRef<SVGGElement | null>(null);
+  const { upp } = useSvgUnits(rootRef);
+  const showCount = count !== undefined && !dragging;
+  const countType = FIRST_LAND.type;
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {
     const svg = e.currentTarget.ownerSVGElement;
@@ -542,7 +555,7 @@ export function EarSelector({
   const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
 
   return (
-    <g>
+    <g ref={rootRef}>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
           MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
           dot as every other inactive destination — nothing about it is louder.
@@ -628,7 +641,11 @@ export function EarSelector({
       {title ? (
         <text
           x={ear.x + titleSet.dx}
-          y={ear.y + titleSet.dy}
+          y={
+            ear.y +
+            titleSet.dy +
+            (showCount ? EAR.innerR * FIRST_LAND.place.wishTitleDropOfInner : 0)
+          }
           textAnchor="middle"
           fill="var(--world-g)"
           pointerEvents="none"
@@ -637,6 +654,31 @@ export function EarSelector({
           style={titleSet.style}
         >
           {SEAT_TITLE[mode]}
+        </text>
+      ) : null}
+
+      {/* THE WISH BANK'S COUNT, centred in the ring's negative space. */}
+      {count !== undefined ? (
+        <text
+          x={ear.x}
+          y={ear.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill={count.colour}
+          pointerEvents="none"
+          data-testid="wish-bank"
+          style={{
+            fontFamily: countType.family,
+            fontWeight: countType.strong.weight,
+            fontSize: countType.strong.sizePx * upp,
+            letterSpacing: 0,
+            opacity: showCount ? 1 : 0,
+            transition: "opacity 160ms ease-out",
+            userSelect: "none",
+            WebkitUserSelect: "none",
+          }}
+        >
+          {count.value}
         </text>
       ) : null}
 

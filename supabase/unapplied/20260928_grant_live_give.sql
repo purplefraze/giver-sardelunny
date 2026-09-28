@@ -10,6 +10,11 @@
 --   src/data/items.ts            isLiveGive / hasLiveGive / visibleToOthers
 --   src/data/community-access.ts startBlock / receiveBlock
 --   src/data/welcome-grant.ts    the 100-spark grant (user_metadata mirror)
+--   (first land, 28 Sep 2026: give sparks live in give = give_sparks; wish
+--   sparks live in wish = profiles.sparks, the wish bank. The wish bank's
+--   compose hold — 10 set aside when a wish is begun, spent on publish,
+--   returned on cancel — rides the existing profiles.reserved jsonb under the
+--   key 'compose:wish'. No schema change; client-side like the old hold.)
 --   src/data/connections.ts      settle() no longer pays a give locally
 --
 -- A LIVE GIVE = type 'give', status 'active', published, and not past its

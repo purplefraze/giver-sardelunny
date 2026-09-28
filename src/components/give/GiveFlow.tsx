@@ -306,7 +306,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
       setScreen("verify");
       return;
     }
-    finish("it’s live in communi-gy");
+    finish("it’s live in communi-g");
   };
 
   const leave = () => onDone();
@@ -325,7 +325,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
           markFirstGiveVerified(account());
           itemsStore.patch(pending, { published: true });
           void push();
-          finish("it’s live in communi-gy");
+          finish("it’s live in communi-g");
         }}
       />
     );

@@ -12,9 +12,9 @@ import { CG_COLOUR, type CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-GY: THE RED PERIMETER STROKE IS THE TRACK (Frazer, 28 Sep 2026).
+ * COMMUNI-G: THE RED PERIMETER STROKE IS THE TRACK (Frazer, 28 Sep 2026).
  *
- * The communi-gy page never moves. It is always upright, full size and fills
+ * The communi-g page never moves. It is always upright, full size and fills
  * the screen: no rotation, no scale, no shadow, not even mid-drag. Only the
  * toggle travels, round the page's perimeter, and the page's content switches
  * mode when the toggle snaps to a seat.
@@ -555,7 +555,7 @@ export function PerimeterToggle({
             }}
             role="slider"
             tabIndex={0}
-            aria-label="communi-gy mode"
+            aria-label="communi-g mode"
             aria-valuetext={shown === "exit" ? "back to the g" : shown}
             data-cg-toggle=""
             data-cg-seat={shown}

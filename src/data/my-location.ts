@@ -7,7 +7,7 @@ import type { Pin } from "@/data/give-pins";
  * "I'M NEARBY" — THE PERSON'S APPROXIMATE LOCATION, ON THIS DEVICE ONLY.
  *
  * Asked for ONLY when the person taps (the borrow / lend form's allow-location
- * line, or near me in communi-gy's map) — never on load. What is kept is the
+ * line, or near me in communi-g's map) — never on load. What is kept is the
  * browser's position already OFFSET a few hundred metres (give-boundary
  * offsetPin, 200–400 m), so even this device never stores the exact spot. It
  * lives in localStorage only: nothing is written to items, profiles or any

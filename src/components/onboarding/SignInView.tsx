@@ -30,7 +30,7 @@ import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
  *   UPPER   the G's middle loop, redrawn as ONE closed ring at the G's own
  *           stroke (28.5 units, outer edge on the rim) with a white fill that
  *           clears the feed: "giver" over "kindness as currency"
- *   LOWER   the G's bottom (communi-gy) loop, left OPEN, its white feathered
+ *   LOWER   the G's bottom (communi-g) loop, left OPEN, its white feathered
  *           clear of the feed: quiet for ~3s, then a soft cross-fade to
  *           "are you a giver?", the email field and the send circle; after
  *           sending, the code field and its quiet lines take the same place

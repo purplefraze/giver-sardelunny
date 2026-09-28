@@ -75,7 +75,7 @@ export const EDGE_AIR = `${EDGE_AIR_PX}px`;
 /**
  * THE G'S SCALE IN PX PER VIEWBOX UNIT for a w × h screen: CANONICAL_WIDTH
  * over the frame's width, in numbers (0.52279 at 390 × 844). Anything drawn
- * outside the G that must match the G's toggle exactly (communi-gy's
+ * outside the G that must match the G's toggle exactly (communi-g's
  * PerimeterToggle) sizes itself with this.
  */
 export const gPxPerUnit = (w: number, h: number) =>

@@ -4,8 +4,8 @@ import type { Item, ItemType } from "@/data/items";
 import { signInFeedLines, type SignInFeedKind } from "@/data/signin-feed";
 
 /**
- * COMMUNI-GY — everyone's bottom loop, opened. Pure data helpers for the
- * communi-gy view (CommunityFeed), its loop-riding page toggle and its map.
+ * COMMUNI-G — everyone's bottom loop, opened. Pure data helpers for the
+ * communi-g view (CommunityFeed), its loop-riding page toggle and its map.
  *
  * THE MODES the page visits round the lower loop, at the wheel's seat
  * angles (EarSelector SEAT_ANGLE; PerimeterToggle maps each mode to its
@@ -38,7 +38,7 @@ export const CG_INK: Record<CgMode, string> = {
   borrow: "var(--mode-borrow-text)",
 };
 
-/** Plural words for the interior heading ("communi-gy trades"). */
+/** Plural words for the interior heading ("communi-g trades"). */
 export const CG_WORD: Record<CgMode, string> = {
   everything: "everything",
   give: "gives",

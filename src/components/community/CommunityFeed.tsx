@@ -45,7 +45,7 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-GY (renamed from communi-g). The page never moves: it is upright
+ * COMMUNI-G. The page never moves: it is upright
  * and full screen, with a thin red stroke round its perimeter as the track
  * (PerimeterToggle.tsx). The toggle, the main G's hollow ring in the current
  * seat's colour with the seat's word inside, travels along the stroke; its
@@ -62,7 +62,7 @@ type Sort = "nearby" | "latest" | "popular";
 
 const SORTS: Sort[] = ["nearby", "latest", "popular"];
 
-/** WHOSE ACTIVITY IS SHOWING. My own gives belong in communi-gy too. */
+/** WHOSE ACTIVITY IS SHOWING. My own gives belong in communi-g too. */
 type Scope = "everyone" | "mine";
 
 type View = "list" | "map";
@@ -120,7 +120,7 @@ export function CommunityFeed({
   const centre = myLocation?.pin ?? CITY_CENTRE;
   const ink = CG_INK[mode];
 
-  /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside communi-gy. */
+  /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside communi-g. */
   const [query, setQuery] = useState("");
 
   const needle = query.trim().toLowerCase();
@@ -235,14 +235,13 @@ export function CommunityFeed({
             <BackArrow onClick={onClose} label="back to my g" />
           </div>
 
-          {/* COMMUNI-GY IN THE MODE'S COLOUR (red for everything). */}
-          {/* One line inside the stroke: never wider than the content box
-              ("communi-gy" is 5.26 em wide in g-display's face and tracking). */}
+          {/* COMMUNI-G IN THE MODE'S COLOUR (red for everything). */}
+          {/* The shorter name fits at the normal g-display size on one line. */}
           <h1
             className="g-display"
-            style={{ color: ink, fontSize: "min(clamp(2.6rem, 13.5vw, 4.6rem), 18.5cqw)" }}
+            style={{ color: ink }}
           >
-            communi-gy
+            communi-g
           </h1>
           <p className="cg-mode-word" style={{ color: ink }}>
             {scope === "mine" ? `my ${CG_WORD[mode]}` : CG_WORD[mode]}

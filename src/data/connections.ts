@@ -22,6 +22,7 @@ import { giveCapState } from "@/data/give-cap";
 import {
   SESSION_CAP_PER_CONNECTION,
   SESSION_CAP_PER_WEEK,
+  SESSION_SPARKS,
   cadencePeriod,
   creditWeek,
   periodKey,
@@ -266,17 +267,12 @@ function mayCredit(s: State, c: Connection, now: number): boolean {
   return thisWeek.length < SESSION_CAP_PER_WEEK;
 }
 
-/**
- * THE GIVER'S SPARKS FOR A SESSION land on the giver's own device, through the
- * same earnSparks / rewarded-key path as every other spark — so the same
- * lesson can never pay twice, even after a reload or on a second phone.
+/*
+ * THE GIVER'S SPARKS FOR A SESSION are HELD AT 0 (SESSION_SPARKS) until the
+ * phone-tap ticket: a confirmed lesson is counted and nothing is paid, so no
+ * earnSparks call happens here. When sparks return they go through
+ * myProfileStore.earnSparks(sessionKey(x)) so a lesson can never pay twice.
  */
-function creditMine(s: State) {
-  const owners = new Map(s.connections.map((x) => [x.id, x.ownerId]));
-  for (const x of s.sessions)
-    if (x.state === "verified" && x.credited && owners.get(x.connectionId) === ME_ID)
-      myProfileStore.earnSparks(sessionKey(x));
-}
 
 export const connectionsStore = {
   mergeCloud(connections: Connection[]) {
@@ -300,7 +296,6 @@ export const connectionsStore = {
     const localOnly = s.sessions.filter((x) => !/^[0-9a-f-]{36}$/i.test(x.connectionId));
     const next = { ...s, sessions: [...sessions, ...localOnly] };
     commit(next);
-    creditMine(next);
   },
 
   /**
@@ -344,7 +339,7 @@ export const connectionsStore = {
 
   /**
    * "DID THIS LESSON HAPPEN?" The other person answers. Yes = the session is
-   * verified and, within the caps, giver adds sparks to the giver. No = it is
+   * verified and counted (sparks held at 0 for now). No = it is
    * parked as disputed and nothing moves. The connection stays open either way.
    */
   respondSession(
@@ -362,7 +357,7 @@ export const connectionsStore = {
     if (session.claimedBy === byId) return { ok: false, reason: "self" };
     const next: GiveSession = agrees
       ? (() => {
-          const credited = mayCredit(s, c, now);
+          const credited = SESSION_SPARKS > 0 && mayCredit(s, c, now);
           return {
             ...session,
             state: "verified",
@@ -375,7 +370,6 @@ export const connectionsStore = {
       : { ...session, state: "disputed", confirmedBy: [], updatedAt: now };
     const nextState = { ...s, sessions: s.sessions.map((x) => (x.id === session.id ? next : x)) };
     commit(nextState);
-    if (agrees) creditMine(nextState);
     return { ok: true, credited: next.credited };
   },
   subscribe(listener: () => void) {

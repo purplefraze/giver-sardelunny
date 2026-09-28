@@ -806,9 +806,9 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   /* ---- THE FINISHED GIVE'S QUIET LINES ---- */
   const lineOf = (s: ChoiceStep): string => {
     const p = pickOf(s.id);
-    /* A REPEATING GIVE tells the giver what it earns them:
-       "giver adds 10 sparks each lesson · every other sunday" (give-sessions).
-       Receivers only ever see the cadence — they pay nothing. */
+    /* A REPEATING GIVE shows its cadence. The per-lesson sparks line
+       (giverRepeatLine) is null while SESSION_SPARKS is held at 0 until the
+       phone-tap ticket, so the plain cadence shows. */
     if (s.id === "often") {
       const cadence = p === OTHER ? typed(s.id) : (p ?? "");
       const kind = kindRaw === OTHER ? typed("kind") : type;

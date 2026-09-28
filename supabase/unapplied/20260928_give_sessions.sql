@@ -2,6 +2,14 @@
 -- !!! UNAPPLIED — DO NOT RUN WITHOUT OWNER APPROVAL !!!
 --
 -- PER-LESSON SPARKS FOR REPEATING GIVES.
+--
+-- *** REWARD HELD AT 0 UNTIL THE PHONE-TAP TICKET. ***
+-- The two-person lesson confirm and the period / cap logic stay, but a
+-- confirmed lesson pays NOTHING for now: the client's SESSION_SPARKS is 0 and
+-- it never calls earnSparks for a session, and block 3 below sets
+-- pays := false, so no ledger_events 'session:' row and no profiles.sparks
+-- change is ever written. Where this header says "adds 10 sparks", read it as
+-- the rule to restore with the phone-tap ticket (flip pays back to the caps).
 -- Kept OUTSIDE supabase/migrations on purpose so no tool applies it by
 -- accident. Until it is applied the client degrades on its own: it probes
 -- for public.give_sessions, finds nothing, and cloud connections keep the
@@ -139,7 +147,8 @@ begin
       from public.give_sessions gs join public.connections cc on cc.id = gs.connection_id
       where cc.owner_id = c.owner_id and gs.credited
         and app_private.give_session_period('weekly', gs.credited_at) = app_private.give_session_period('weekly', now());
-    pays := n_connection < 12 and n_week < 5;
+    -- HELD AT 0 until the phone-tap ticket; restore with: n_connection < 12 and n_week < 5
+    pays := false and n_connection < 12 and n_week < 5;
     update public.give_sessions set state = 'verified', owner_confirmed = true, helper_confirmed = true,
       credited = pays, credited_at = case when pays then now() end, updated_at = now()
       where id = s.id returning * into s;

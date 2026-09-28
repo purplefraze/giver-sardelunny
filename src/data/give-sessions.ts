@@ -2,10 +2,12 @@
  * REPEATING GIVES ARE COUNTED LESSON BY LESSON.
  *
  * Receivers never pay for a give. For a give that repeats (weekly, every other
- * sunday, monthly…), giver adds SESSION_SPARKS to the GIVER for every lesson /
- * session that BOTH people confirm happened, the same way a one-time give is
- * confirmed. A one-time give keeps the old rule: +10, once, when the connection
- * is verified.
+ * sunday, monthly…), every lesson / session that BOTH people confirm happened
+ * is counted, the same way a one-time give is confirmed.
+ *
+ * HELD AT 0: a counted lesson pays nothing yet. Sparks for a handoff arrive with
+ * the phone-tap ticket; until then SESSION_SPARKS is 0, nothing calls
+ * earnSparks for a session, and no copy promises sparks.
  *
  * ABUSE GUARDS (mirrored in supabase/unapplied/20260928_give_sessions.sql):
  *   - at most ONE counted session per connection per cadence period
@@ -20,10 +22,8 @@
  *
  * Pure: no stores, no dom.
  */
-import { GENEROSITY_REWARD } from "@/data/my-profile";
-
-/** What giver adds for one confirmed lesson — the same ten sparks as always. */
-export const SESSION_SPARKS = GENEROSITY_REWARD;
+/** What giver adds for one confirmed lesson. HELD AT 0 until the phone-tap ticket. */
+export const SESSION_SPARKS = 0;
 export const SESSION_CAP_PER_CONNECTION = 12;
 export const SESSION_CAP_PER_WEEK = 5;
 
@@ -86,7 +86,8 @@ export const creditWeek = (at: number) => periodKey("week", at);
 /**
  * THE GIVER'S LINE on their own finished give card:
  * "giver adds 10 sparks each lesson · every other sunday". Null for gives that
- * do not repeat and for anything that is not a give.
+ * do not repeat, for anything that is not a give, and while SESSION_SPARKS is
+ * held at 0 (the card then shows the plain cadence).
  */
 export function giverRepeatLine(
   type: string,
@@ -94,6 +95,7 @@ export function giverRepeatLine(
     { cadence?: string | undefined; extras?: Record<string, string> | undefined } | undefined,
 ): string | null {
   const cadence = details?.cadence?.trim();
+  if (SESSION_SPARKS <= 0) return null;
   if (type !== "give" || !cadence || !cadencePeriod(cadence)) return null;
   const unit = sessionWord(details?.extras?.["kind"]);
   return `giver adds ${SESSION_SPARKS} sparks each ${unit} · ${cadence}`;

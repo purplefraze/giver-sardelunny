@@ -14,7 +14,6 @@ import {
   type Connection,
 } from "@/data/connections";
 import {
-  SESSION_SPARKS,
   nextPeriodStart,
   periodKey,
   sessionWord,
@@ -371,8 +370,9 @@ const shortDate = (ms: number) => {
 
 /**
  * "THIS LESSON HAPPENED" — the same claim / confirm as a connection, once per
- * cadence period, for a give that repeats. Each lesson both people confirm,
- * giver adds ten sparks for the giver. The receiver pays nothing.
+ * cadence period, for a give that repeats. Each lesson both people confirm is
+ * counted. Sparks for it are held at 0 until the phone-tap ticket, so nothing
+ * here promises any.
  */
 function LessonConfirm({
   c,
@@ -393,8 +393,6 @@ function LessonConfirm({
   const pending = sessions.find((x) => x.state === "awaiting");
   const thisOne = sessions.find((x) => x.period === periodKey(period, now));
   const counted = sessions.filter((x) => x.state === "verified").length;
-  const iGive = c.ownerId === ME_ID;
-  const forWhom = iGive ? "you" : theirName;
   const act = (action: "claim" | "confirm" | "dispute") => {
     buzz();
     void Promise.resolve(updateSession(c.id, action)).catch(() => undefined);
@@ -429,9 +427,7 @@ function LessonConfirm({
       ) : thisOne?.state === "verified" ? (
         <div>
           <p className="g-name" style={{ color: stateColour }}>
-            {thisOne.credited
-              ? `this ${unit} is counted. giver added ${SESSION_SPARKS} sparks for ${forWhom}.`
-              : `this ${unit} is counted. no sparks this time — the cap is reached.`}
+            this {unit} is counted.
           </p>
           <p className="g-meta mt-2 opacity-45">
             the next one can be confirmed from {shortDate(nextPeriodStart(period, now))}
@@ -451,8 +447,7 @@ function LessonConfirm({
         {counted
           ? `${counted} ${counted === 1 ? unit : `${unit}s`} counted · `
           : ""}
-        each {unit} you both confirm, giver adds {SESSION_SPARKS} sparks for {forWhom}
-        {iGive ? "." : ". it costs you nothing."}
+        each {unit} you both confirm is counted.
       </p>
     </div>
   );

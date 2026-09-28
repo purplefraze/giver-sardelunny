@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
@@ -15,6 +15,7 @@ import { useAppHeight } from "@/hooks/use-app-height";
 import { Onboarding } from "@/components/Onboarding";
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { useSession } from "@/hooks/use-session";
+import { sessionEndedPending } from "@/data/cloud/session";
 import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
@@ -238,6 +239,14 @@ function Index() {
    * still answering, a plain white cover keeps the G from flashing first.
    */
   const session = useSession();
+  /* A SESSION THAT ENDED ON ITS OWN (refresh failed, a write came back 401)
+     returns to the G sign-in, which says so. No email is ever sent for it. */
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (entered && session.status === "signed-out" && sessionEndedPending()) {
+      void navigate({ to: "/auth", search: {} });
+    }
+  }, [entered, session, navigate]);
   const [opening, setOpening] = useState(false);
   const owed = hydrated && entered && !opening ? openingPending() : null;
   const openingCover = owed !== null && session.status === "loading";

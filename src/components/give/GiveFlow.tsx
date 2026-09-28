@@ -13,17 +13,15 @@ import {
   type WhenPick,
 } from "@/data/give-when";
 import { savePin, pinFor } from "@/data/give-pins";
-import { firstGiveVerified, markFirstGiveVerified } from "@/data/first-give";
-import { ME_ID, itemsStore, timeWindow, type Item, type ItemDetails, type Topic } from "@/data/items";
+import { itemsStore, timeWindow, type Item, type ItemDetails, type Topic } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
-import { sessionStore } from "@/data/cloud/session";
+import { ensureLiveSession } from "@/data/cloud/session";
 import { pullItems, pushItems } from "@/data/cloud/items-sync";
 import { pickImages } from "@/lib/pick-image";
 import { prepareGivePhoto, uploadGivePhoto, type PreparedPhoto } from "@/lib/give-photo";
 import { haptics } from "@/lib/haptics";
 import { LocationPicker, type WhereAnswer } from "./LocationPicker";
 import { WhenPicker } from "./WhenPicker";
-import { FirstGiveCheck } from "./FirstGiveCheck";
 
 /**
  * GIVE, ONE LINE AT A TIME (/workspace/giver-give-infer/give-infer-*.png).
@@ -61,7 +59,10 @@ import { FirstGiveCheck } from "./FirstGiveCheck";
  *   details.date / startTime / endTime / time   the calendar answer
  *   details.expiresAt   UTC ISO
  *   details.photoPath + photos[0]   the uploaded photo (post-media bucket)
- *   published       false until the first-give check passes (first-give.ts)
+ *
+ * SIGNED IN = IT POSTS. No email is ever sent from here: with a live session
+ * the give goes straight through; a session that cannot be renewed returns
+ * the person to the G sign-in (session.ts ensureLiveSession).
  */
 
 const TOPIC_OF: Record<GiveType, Topic> = {
@@ -131,7 +132,7 @@ const CONDITIONS = ["like new", "good", "well loved"] as const;
 const READY = ["now", "in an hour", "this evening", "tomorrow"] as const;
 
 type Where = { label: string; online: boolean; pin: WhereAnswer["pin"] | null; mode: WhereAnswer["mode"] | null };
-type Screen = "form" | "map" | "when" | "ready" | "size" | "condition" | "expiry" | "expiry-date" | "verify";
+type Screen = "form" | "map" | "when" | "ready" | "size" | "condition" | "expiry" | "expiry-date";
 
 const INFER_MS = 450;
 const FALLBACK_MS = 1100;
@@ -164,7 +165,6 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   const [screen, setScreen] = useState<Screen>("form");
   const [problem, setProblem] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
-  const [pending, setPending] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement | null>(null);
   /* FIRST RUN: shown on this visit only; the flag is written on open. */
@@ -218,8 +218,6 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
     haptics.light();
   };
 
-  const account = () => sessionStore.get().userId ?? "local";
-
   const finish = (say: string) => {
     setLive(say);
     setWhat("");
@@ -236,7 +234,6 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
     setTagsSkipped(false);
     setExpiry(null);
     setFallback(false);
-    setPending(null);
     setScreen("form");
   };
 
@@ -274,6 +271,11 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
         : {}),
     };
     setBusy(true);
+    /* A dead session goes back to the G sign-in — never a login email. */
+    if ((await ensureLiveSession()) === "ended") {
+      setBusy(false);
+      return;
+    }
     const result = myProfileStore.addItem("give", what.trim(), undefined, undefined, { details });
     if (!result.ok || !result.id) {
       setBusy(false);
@@ -287,10 +289,6 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
     }
     const id = result.id;
     if (where.pin && !where.online) savePin(id, where.pin);
-    const mine = itemsStore.get().items.filter((i) => i.ownerId === ME_ID);
-    const verified = firstGiveVerified(account(), mine);
-    /* NOT LIVE UNTIL THE FIRST-GIVE CHECK PASSES (the existing published flag). */
-    if (!verified) itemsStore.patch(id, { published: false });
     let photoNote: string | null = null;
     if (photo) {
       const up = await uploadGivePhoto(id, photo);
@@ -301,35 +299,12 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
     setBusy(false);
     setProblem(photoNote);
     haptics.light();
-    if (!verified) {
-      setPending(id);
-      setScreen("verify");
-      return;
-    }
     finish("it’s live in communi-g");
   };
 
   const leave = () => onDone();
 
   /* ---- FULL-SCREEN STEPS ---- */
-  if (screen === "verify" && pending && type) {
-    return (
-      <FirstGiveCheck
-        title={itemsStore.get().items.find((i) => i.id === pending)?.text ?? what}
-        kind={type}
-        onBack={() => {
-          setLive("saved — it goes live after the quick check");
-          setScreen("form");
-        }}
-        onVerified={() => {
-          markFirstGiveVerified(account());
-          itemsStore.patch(pending, { published: true });
-          void push();
-          finish("it’s live in communi-g");
-        }}
-      />
-    );
-  }
   if (screen === "map" && type) {
     return (
       <LocationPicker

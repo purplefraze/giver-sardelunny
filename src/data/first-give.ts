@@ -1,37 +1,29 @@
 /**
- * FIRST-GIVE CHECK — CLIENT-SIDE ONLY FOR NOW.
- * (Server version: supabase/unapplied/20260928_give_trust.sql — NOT applied.)
+ * THE FIRST-GIVE EMAIL CHECK IS GONE.
  *
- * A new account's first give is saved with published:false (the existing
- * items.published flag) until the person enters one fresh code sent to their
- * email (Supabase signInWithOtp for the signed-in user's own address, then
- * verifyOtp type "email" — the same path as sign-in). Passing it marks the
- * account verified on this device and publishes the waiting give.
+ * It sent a signed-in person a fresh sign-in email (signInWithOtp) before
+ * their first give went live, and saved that give with published:false until
+ * they answered it. A signed-in person's gives now post straight away.
+ *
+ * Gives already held back on this device by the old check are released once
+ * here (published:true), so nothing stays invisible waiting for an email.
  */
-import type { Item } from "./items";
+import { ME_ID, itemsStore } from "./items";
 
-const KEY = "giver.first-give-verified.v1";
+const OLD_KEY = "giver.first-give-verified.v1";
+const RELEASED_KEY = "giver.first-give-released.v1";
 
-function read(): Record<string, number> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(window.localStorage.getItem(KEY) ?? "{}") as Record<string, number>;
-  } catch {
-    return {};
-  }
-}
-
-/** The account key: the signed-in user id, or "local" for a device-only account. */
-export function firstGiveVerified(account: string, myItems: readonly Item[]): boolean {
-  if (read()[account]) return true;
-  /* An account that already completed a give has plainly been real before. */
-  return myItems.some((i) => i.type === "give" && i.status === "completed");
-}
-
-export function markFirstGiveVerified(account: string) {
+export function releaseHeldGives() {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify({ ...read(), [account]: Date.now() }));
+    if (window.localStorage.getItem(RELEASED_KEY)) return;
+    for (const i of itemsStore.get().items) {
+      if (i.ownerId === ME_ID && i.type === "give" && i.status === "active" && !i.published) {
+        itemsStore.patch(i.id, { published: true });
+      }
+    }
+    window.localStorage.setItem(RELEASED_KEY, String(Date.now()));
+    window.localStorage.removeItem(OLD_KEY);
   } catch {
     /* quiet */
   }

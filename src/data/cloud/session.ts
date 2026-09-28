@@ -14,6 +14,8 @@
  * later without rebuilding the user model.
  */
 
+import { isAuthRetryableFetchError } from "@supabase/supabase-js";
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { consumeAuthCallback } from "@/lib/auth-callback";
@@ -49,6 +51,114 @@ let state: SessionState = EMPTY;
 const listeners = new Set<() => void>();
 let started = false;
 
+/**
+ * A SESSION THAT ENDED ON ITS OWN (refresh failed, a write came back 401).
+ * Never answered with an email: the person is returned to the G sign-in with
+ * one line and taps send themselves (useOtpSignIn reads takeSessionEnded).
+ *
+ *   LAST_USER  set while signed in; a reload that finds no session but this
+ *              key means the session died while the tab was closed
+ *   ENDED      "show the session-ended line on the sign-in"
+ */
+const LAST_USER_KEY = "giver.session.last-user.v1";
+const ENDED_KEY = "giver.session-ended.v1";
+/** The expiry of the last session seen, to tell a dead refresh from a tap on sign out. */
+let lastExpiresAt: number | null = null;
+/** True while ensureLiveSession is renewing: a SIGNED_OUT then is a dead session. */
+let renewing = false;
+
+function store(key: string, value: string | null) {
+  try {
+    if (value === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  } catch {
+    /* private mode */
+  }
+}
+function stored(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/** Signed out, and the sign-in owes the "session ended" line (a fresh snapshot, so listeners re-read). */
+const ENDED: SessionState = Object.freeze({ ...SIGNED_OUT });
+
+function markSessionEnded() {
+  store(ENDED_KEY, String(Date.now()));
+  store(LAST_USER_KEY, null);
+  lastExpiresAt = null;
+  if (state !== ENDED) commit(ENDED);
+}
+
+/** True while the sign-in owes the "session ended" line. */
+export function sessionEndedPending(): boolean {
+  return typeof window !== "undefined" && stored(ENDED_KEY) !== null;
+}
+
+/** Read once by the sign-in screen: did the last session end on its own? */
+export function takeSessionEnded(): boolean {
+  if (!sessionEndedPending()) return false;
+  store(ENDED_KEY, null);
+  return true;
+}
+
+/** A PostgREST / Storage / Functions answer that means "your token is no good". */
+export function isAuthFailure(err: unknown, status?: number): boolean {
+  if (status === 401) return true;
+  if (!err || typeof err !== "object") return false;
+  const e = err as {
+    status?: number;
+    statusCode?: string | number;
+    code?: string;
+    message?: string;
+  };
+  if (e.status === 401 || String(e.statusCode ?? "") === "401") return true;
+  if (e.code === "PGRST301" || e.code === "PGRST302" || e.code === "PGRST303") return true;
+  return /jwt|token.*expired|invalid claim/i.test(e.message ?? "");
+}
+
+/**
+ * BEFORE A WRITE: is there a live session? getSession() hands back a stored
+ * session (refreshing it first when it has expired, autoRefreshToken); if it
+ * still looks dead, one explicit refreshSession(). Never sends an email.
+ *
+ *   "live"   write away
+ *   "ended"  there was a session and it cannot be renewed — the UI returns to
+ *            the G sign-in with "session ended — send a new link"
+ *   "none"   never signed in on this device; the caller keeps its own rules
+ */
+export async function ensureLiveSession(force = false): Promise<"live" | "ended" | "none"> {
+  if (typeof window === "undefined") return "none";
+  const hadSession = state.userId !== null || stored(LAST_USER_KEY) !== null;
+  const nowS = Math.floor(Date.now() / 1000);
+  renewing = true;
+  try {
+    const { data } = await supabase.auth.getSession();
+    const s = data.session;
+    if (s && !force && (s.expires_at ?? 0) > nowS + 10) return "live";
+    if (s || force) {
+      const { data: refreshed, error } = await supabase.auth.refreshSession();
+      if (!error && refreshed.session) return "live";
+      /* Offline is not "ended": the write stays on this device and syncs later. */
+      if (error && isAuthRetryableFetchError(error)) return "live";
+    }
+    if (!hadSession) return "none";
+    /* The token was refused and cannot be renewed: forget it on this device
+       only (no server call, no email), so every screen agrees it has ended. */
+    if (s) await supabase.auth.signOut({ scope: "local" });
+  } catch {
+    /* decided below */
+  } finally {
+    renewing = false;
+  }
+  if (!hadSession) return "none";
+  markSessionEnded();
+  return "ended";
+}
+
 function commit(next: SessionState) {
   state = next;
   for (const l of listeners) l();
@@ -81,6 +191,9 @@ async function ensureProfile(userId: string, email: string | null): Promise<bool
 }
 
 async function load(userId: string, email: string | null) {
+  /* Signed in again: the session-ended line is no longer owed. */
+  store(LAST_USER_KEY, userId);
+  store(ENDED_KEY, null);
   const fetchBoth = () =>
     Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
@@ -122,7 +235,11 @@ export const sessionStore = {
     void consumeAuthCallback().then(() =>
       supabase.auth.getSession().then(({ data }) => {
         const user = data.session?.user;
+        lastExpiresAt = data.session?.expires_at ?? null;
         if (user) void load(user.id, user.email ?? null);
+        /* Signed in last time, no session now: it could not be renewed while
+           the tab was closed. The sign-in says so — no email is sent. */
+        else if (stored(LAST_USER_KEY)) markSessionEnded();
         else commit(SIGNED_OUT);
       }),
     );
@@ -144,14 +261,33 @@ export const sessionStore = {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") recheck();
     });
+    /* THE UI FOLLOWS THE CLIENT: SIGNED_OUT signs the UI out, TOKEN_REFRESHED
+       keeps it signed in (autoRefreshToken renews the token in the background). */
     supabase.auth.onAuthStateChange((event, session) => {
       /* The first answer comes from getSession above. */
       if (event === "INITIAL_SESSION") return;
       const user = session?.user;
       if (event === "SIGNED_OUT" || !user) {
+        /* Still waiting for the first answer (a stored session that could
+           not be renewed at start-up): the getSession answer above decides. */
+        if (state.status === "loading") return;
+        /* A sign-out while the token was expiring (or expired) is a refresh
+           that failed, not a tap on "sign out": the session ended. */
+        const nowS = Math.floor(Date.now() / 1000);
+        const died =
+          state.userId !== null &&
+          (renewing || (lastExpiresAt !== null && lastExpiresAt - nowS < 120));
+        lastExpiresAt = null;
+        if (died) {
+          markSessionEnded();
+          return;
+        }
+        /* A tap on "sign out": no line owed next time. */
+        if (state.userId !== null) store(LAST_USER_KEY, null);
         commit(SIGNED_OUT);
         return;
       }
+      lastExpiresAt = session?.expires_at ?? null;
       if (event === "TOKEN_REFRESHED" && state.userId === user.id) return;
       void load(user.id, user.email ?? null);
     });

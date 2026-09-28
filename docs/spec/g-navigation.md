@@ -1,6 +1,6 @@
 # G navigation + colour spec
 
-**Status:** Approved by Frazer, 27 Sep 2026. Communi-gy rules (sections 2 to 5) updated 28 Sep 2026: curved track.
+**Status:** Approved by Frazer, 27 Sep 2026. Communi-gy rules (sections 2 to 5) updated 28 Sep 2026: the page rides the lower loop.
 
 This document is the design source of truth for G navigation and G colour.
 The build does not yet match this spec.
@@ -33,24 +33,24 @@ Spellings are exact: **Communi-gy** is the place; **Communi-G Wishes** and **Com
   - Lend (3:00) opposite Borrow (9:00).
   - Wish (~10:30) opposite Trade (~4:30).
 
-## 2. Curved track mechanic
+## 2. The page rides the lower loop
 
-Frazer's Communi-gy rules, 28 Sep 2026 (curved track replaces the straight rectangular track).
+Frazer's Communi-gy rules, 28 Sep 2026. These replace the curved-track version, in which a visible red ring crossed the page.
 
-- The screen frame is the outline (perimeter) of the phone screen. It stays a rectangle because Communi-gy pages are working surfaces, such as forms to fill in and chats back and forth, and these cannot live inside a circle.
-- **Immersion.** Inside Communi-gy the view is zoomed into the lower loop. The loop is drawn as a red circle wider than the screen, so the whole loop is never on screen.
-- **Curved track.** The track is the lower loop's own arc, not the frame's straight edges. The toggle knob slides along that red arc.
-- **Frame follows the knob.** The screen frame moves with the knob's position on the curve. Because the frame is the screen, the loop is what pans on screen: the knob and the stretch of arc around it (out to the neighbouring dot on each side) are always kept in view, pushed towards the loop's outer side. At 6:00 the knob is at the bottom centre, at 9:00 at the middle of the left side, at 3:00 at the middle of the right side, and at 12:00 at the top centre. In between it eases smoothly along an inner path.
-- **Zoom.** The loop is as large as it can be while the knob's two neighbouring dots still fit across the screen's width at 6:00 and 12:00, where the arc runs across the narrow side of the screen. That keeps the loop wider than the screen and the nearby dots visible.
-- **Toggle.** The toggle is a hollow red ring on the arc, with the red track running through it. Holding and dragging it slides it along the curve, clockwise or counter-clockwise, as far as you like, and the frame goes with it. The knob stays on the line from the screen centre to the finger. On release it settles at the nearest clock position. Arrow keys step from position to position.
-- **Dots on the arc.** Each clock position has a seat-indicator dot, in that seat's colour, on the same red arc at its seat angle. The dots are evenly spaced along the curve, 45° apart, the same spacing as the wheel, and they pan with the arc. Dots that are far round the loop are off screen, and the neighbouring dots on either side of the knob are always on screen. The toggle covers the dot of the position it is on. Tapping a dot slides the knob, and the frame, to that position.
+- **The page is an opaque rectangle.** Each Communi-gy page is a full-size rectangle on a solid white background. It stays a rectangle because Communi-gy pages are working surfaces, such as forms to fill in and chats back and forth, and these cannot live inside a circle.
+- **The track is invisible.** The page rides the circle of the lower loop. The loop is the path the page travels, not an element on screen: no part of it is ever drawn on or through the page, and behind the page there is only white.
+- **Contact.** The toggle knob is the point where the page touches the loop. It sits on the page's edge, and the page's edge is always tangent to the loop at the knob.
+- **Motion.** As the knob travels round the loop, the page pans and rotates with it, so the knob stays on the loop and the page stays tangent to it. While moving, the page leans a few degrees in the direction of travel and shrinks very slightly, and a soft shadow shows its edge against the white. A faint red arc of the loop may appear in the white outside the page. It always lies underneath the page, so it can never cross the content.
+- **Settled.** At every stop the page is upright, at full size and fills the screen, with nothing visible around it. The knob rests where the upright page meets the loop at that stop: bottom centre at 6:00, the middle of the left side at 9:00, the middle of the right side at 3:00, top centre at 12:00, and the matching corner at 1:30, 4:30, 7:30 and 10:30.
+- **Toggle.** The toggle is a hollow red ring. Holding and dragging it carries the page round the loop, clockwise or counter-clockwise, as far as you like. The stop dots act as waypoints: with the finger on a dot, the page is at that stop, and halfway between two dots it is halfway round the loop between them. On release it settles at the nearest stop. Arrow keys step from stop to stop.
+- **Dots.** Each stop has a seat-indicator dot, in that seat's colour, on the page's perimeter. At rest the dots sit at the four edge midpoints and the four corners, in clock order, one per 45° of the loop. As the page rotates, the dots slide round its perimeter so they keep marking where each stop lies. The knob covers the dot of the stop it is on. Tapping a dot carries the page to that stop.
 - The system is taught through use, never explained.
 
 ## 3. Lower loop (Communi-gy)
 
 - The toggle orbits the middle loop.
-- **Entry at 6:00.** At the 6:00 seat you enter Communi-gy, and the view zooms into the lower loop with the knob at 6:00 on its arc, at the bottom centre of the screen.
-- The knob's clock position on the lower loop's arc sets the page. The lower loop uses the wheel's seat positions: each clock position from ~1:30 to ~10:30 means the same mode on both loops. The stops, listed by clock position:
+- **Entry at 6:00.** At the 6:00 seat you enter Communi-gy. The page opens upright and full screen, riding the lower loop at 6:00, with the knob at the bottom centre.
+- The knob's clock position on the lower loop sets the page. The lower loop uses the wheel's seat positions: each clock position from ~1:30 to ~10:30 means the same mode on both loops. The stops, listed by clock position:
 
   | Position | Stop |
   | --- | --- |
@@ -64,9 +64,9 @@ Frazer's Communi-gy rules, 28 Sep 2026 (curved track replaces the straight recta
   | ~10:30 | Wish (Communi-G Wishes) |
 
 - **12:00 is the exit.** My G's 12:00 seat is not a page inside Communi-gy. Releasing the knob at 12:00, or tapping the 12:00 dot, returns to the full living G with the toggle at 6:00 on the middle loop and the G solid red. Dragging past 12:00 without letting go does not exit, and the arrow keys skip 12:00. The back arrow remains available.
-- Tapping an action on a page (for example Wishes or Give) slides the knob (and the frame with it) along the lower loop's arc to that mode's clock position.
+- Tapping an action on a page (for example Wishes or Give) carries the page round the lower loop to that mode's clock position.
 - The page swaps strictly per mode.
-- **Always red.** While zoomed in, the lower loop and the toggle are red (#E8322B) in every mode. The only thing that changes with the mode is the text colour inside the screen frame, which is that seat's colour. The red loop marks the community and appears red only in this zoomed view.
+- **Always red.** Inside Communi-gy the lower loop, the toggle and the Communi-gy chrome are red (#E8322B) in every mode. The only thing that changes with the mode is the colour of the page's text, which is that seat's colour.
 - The profile is locked until the toggle is at 12:00 on the middle loop.
 
 ## 4. Direction, open and closed loops
@@ -74,7 +74,7 @@ Frazer's Communi-gy rules, 28 Sep 2026 (curved track replaces the straight recta
 - Counter-clockwise is primary.
 - Clockwise is allowed inside Communi-gy.
 - **Full G.** The middle loop is always drawn closed. The bottom loop is always drawn open (gapped): keep that negative space.
-- **Zoomed in.** The lower loop is drawn closed (a full circle) while inside Communi-gy, so the knob can travel all the way round the curve in either direction.
+- **Inside Communi-gy.** The lower loop is treated as closed (a full circle), so the page can travel all the way round it in either direction. It is a path only and is not drawn.
 - The traced G path data is never edited to open or close a loop; the closed middle loop is achieved at render time.
 
 ## 5. Colour (critical)
@@ -88,8 +88,8 @@ Frazer's Communi-gy rules, 28 Sep 2026 (curved track replaces the straight recta
 - Other members' content stays red.
 - Mode chrome takes the mode colour.
 - Granting mixes blue with their colour into the seat's hue.
-- Communi-gy: the zoomed-in lower loop and its toggle stay red in every mode; only the text inside the screen frame takes the mode colour (section 3).
+- Communi-gy: the lower loop and its toggle stay red in every mode; only the page's text takes the mode colour (section 3).
 
 ---
 
-*Approved by Frazer, 27 Sep 2026; Communi-gy rules updated 28 Sep 2026 (curved track). Mirrors the Navigation System and Colours pages in The Giver Bible (Notion).*
+*Approved by Frazer, 27 Sep 2026; Communi-gy rules updated 28 Sep 2026 (the page rides the lower loop). Mirrors the Navigation System and Colours pages in The Giver Bible (Notion).*

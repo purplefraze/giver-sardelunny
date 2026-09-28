@@ -1029,7 +1029,7 @@ function Index() {
                 /* INSIDE COMMUNI-GY THE LOOP LOCKS TO RED, whatever the seat. */
                 world: "communigy",
                 /* The unfurl carries the camera in; once arrived the room is
-                   the zoomed lower loop drawn by PerimeterToggle, not the G. */
+                   the page riding the lower loop (PerimeterToggle), not the G. */
                 bare: true,
                 children: browse ? (
                   <CommunityFeed

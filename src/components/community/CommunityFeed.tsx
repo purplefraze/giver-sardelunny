@@ -45,13 +45,14 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-GY (renamed from communi-g). The view is zoomed into the G's lower
- * loop, a red circle wider than the screen; the toggle knob slides along its
- * arc and the screen frame travels with it (PerimeterToggle.tsx). The knob's
- * clock position on the arc is the mode, at the wheel's seat angles:
- * give 1:30 · lend 3:00 · trade 4:30 · everything 6:00 (entry) · fund 7:30 ·
- * borrow 9:00 · wish 10:30, and 12:00 is the way back to the full G. The loop
- * and the toggle stay red in every mode; only the text inside the frame takes
+ * COMMUNI-GY (renamed from communi-g). The page is an opaque rectangle riding
+ * the circle of the G's lower loop (PerimeterToggle.tsx). The loop is never
+ * drawn: the toggle knob is the page's contact with it, and the page pans and
+ * turns round the loop as the knob travels, settling upright and full screen
+ * at each station. The knob's clock position on the loop is the mode, at the
+ * wheel's seat angles: give 1:30 · lend 3:00 · trade 4:30 · everything 6:00
+ * (entry) · fund 7:30 · borrow 9:00 · wish 10:30, and 12:00 is the way back
+ * to the full G. The knob stays red in every mode; only the page's text takes
  * the mode colour (--cg-ink).
  * Two views of the same filtered listings: the LIST, and the MAP (the 6:00
  * map seat's door), where every listing drops a pin in its mode colour and a
@@ -193,22 +194,19 @@ export function CommunityFeed({
     );
   };
 
-
   return (
     <div
       data-world="communigy"
       data-cg-mode={mode}
       data-cg-view={view}
-      className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-hidden"
+      className="relative h-full w-full overflow-hidden"
       style={{
         background: "var(--world-bg)",
         color: "var(--world-ink)",
         ["--cg-ink" as string]: ink,
       }}
     >
-      <BackArrow onClick={onClose} label="back to my g" />
-
-      {/* THE CURVED TRACK ON THE LOWER LOOP: the knob's position is the mode. */}
+      {/* THE PAGE RIDES THE LOWER LOOP: the knob's position is the mode. */}
       <PerimeterToggle
         value={mode}
         onChange={(next) => {
@@ -216,216 +214,220 @@ export function CommunityFeed({
           setScope("everyone");
         }}
         onExit={onExit ?? onClose}
-      />
+      >
+        <div className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col">
+          <BackArrow onClick={onClose} label="back to my g" />
 
-      {/* COMMUNI-GY IN THE MODE'S COLOUR (red for everything). */}
-      <h1 className="g-display" style={{ color: ink }}>
-        communi-gy
-      </h1>
-      <p className="cg-mode-word" style={{ color: ink }}>
-        {scope === "mine" ? `my ${CG_WORD[mode]}` : CG_WORD[mode]}
-      </p>
+          {/* COMMUNI-GY IN THE MODE'S COLOUR (red for everything). */}
+          <h1 className="g-display" style={{ color: ink }}>
+            communi-gy
+          </h1>
+          <p className="cg-mode-word" style={{ color: ink }}>
+            {scope === "mine" ? `my ${CG_WORD[mode]}` : CG_WORD[mode]}
+          </p>
 
-      {/* SEARCH — one big line. Type a word, see it. Tap the × to see it all again. */}
-      <div className="g-rule mt-3 flex items-center gap-3 pb-2">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="search"
-          autoComplete="off"
-          className="min-h-11 w-full border-0 bg-transparent text-[19px] font-black lowercase tracking-[0.02em] outline-none placeholder:opacity-30"
-          style={{ color: ink }}
-        />
-        {searching ? (
-          <button
-            type="button"
-            aria-label="clear search"
-            onClick={() => {
-              buzz();
-              setQuery("");
-            }}
-            className="min-h-11 min-w-11 text-[22px] font-black leading-none opacity-45"
-            style={{ color: ink }}
-          >
-            ×
-          </button>
-        ) : null}
-      </div>
-
-      {searching ? (
-        /* SEARCHING IS THE WHOLE SCREEN. No filters to fight with, just answers. */
-        <p className="g-meta mt-3 opacity-55">
-          {list.length === 0
-            ? `nothing matches “${query.trim()}”`
-            : `${list.length} ${list.length === 1 ? "match" : "matches"} for “${query.trim()}”`}
-        </p>
-      ) : (
-        <>
-          {/* ONE ROW OF WORDS: LIST · MAP · MINE (the modes live on the border). */}
-          <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-[15px] font-black lowercase tracking-[0.1em]">
-            {(["list", "map"] as const).map((v) => (
+          {/* SEARCH — one big line. Type a word, see it. Tap the × to see it all again. */}
+          <div className="g-rule mt-3 flex items-center gap-3 pb-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="search"
+              autoComplete="off"
+              className="min-h-11 w-full border-0 bg-transparent text-[19px] font-black lowercase tracking-[0.02em] outline-none placeholder:opacity-30"
+              style={{ color: ink }}
+            />
+            {searching ? (
               <button
-                key={v}
                 type="button"
+                aria-label="clear search"
                 onClick={() => {
                   buzz();
-                  setView(v);
+                  setQuery("");
                 }}
-                className={view === v ? "opacity-100" : "opacity-30"}
+                className="min-h-11 min-w-11 text-[22px] font-black leading-none opacity-45"
                 style={{ color: ink }}
-                aria-pressed={view === v}
               >
-                {v}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                buzz();
-                setScope(scope === "mine" ? "everyone" : "mine");
-              }}
-              className={scope === "mine" ? "opacity-100" : "opacity-30"}
-              style={{ color: ink }}
-              aria-pressed={scope === "mine"}
-            >
-              mine
-            </button>
-            {view === "map" ? (
-              <button
-                type="button"
-                onClick={() => void toggleNearMe()}
-                className={nearMe ? "opacity-100" : "opacity-30"}
-                style={{ color: ink }}
-                aria-pressed={nearMe}
-              >
-                near me
+                ×
               </button>
             ) : null}
           </div>
 
-          {view === "map" ? (
-            <p className="g-meta mt-3 min-h-6 opacity-60" style={{ color: ink }}>
-              {nearSay ??
-                (nearMe
-                  ? `${pins.length} nearby · within ${NEAR_KM} km of you`
-                  : `${pins.length} ${pins.length === 1 ? "pin" : "pins"} · the circle is ${NEAR_KM} km round ${myLocation ? "you" : "the city centre"}`)}
+          {searching ? (
+            /* SEARCHING IS THE WHOLE SCREEN. No filters to fight with, just answers. */
+            <p className="g-meta mt-3 opacity-55">
+              {list.length === 0
+                ? `nothing matches “${query.trim()}”`
+                : `${list.length} ${list.length === 1 ? "match" : "matches"} for “${query.trim()}”`}
             </p>
           ) : (
-            /* ONE TAP CHANGES THE ORDER. No menus, no icons. */
-            <button
-              type="button"
-              onClick={() => {
-                buzz();
-                setSort(SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length]!);
-              }}
-              className="g-meta mt-3 min-h-11 self-start text-left opacity-55"
-              style={{ color: ink }}
-            >
-              {sort} first — tap to change
-            </button>
-          )}
-        </>
-      )}
-
-
-      {view === "map" && !searching ? (
-        <CommunigyMap pins={pins} centre={centre} radiusKm={NEAR_KM} onOpen={onOpen} />
-      ) : null}
-
-      <ul className={view === "map" && !searching ? "hidden" : "mt-4 flex-1 overflow-y-auto pb-8"}>
-        {list.length === 0 && !searching ? (
-          <li className="g-lede opacity-55">nothing here yet — yours could be the first</li>
-        ) : null}
-        {list.map((item, index) => {
-          const owner = memberById(item.ownerId);
-          const status = activityStatus(links, item.id, item.status);
-          const line = itemLine(item);
-          /* AT MOST TWO FACTS. Distance and the one thing that matters most. */
-          const facts = [
-            /* A GIVE SAYS ITS NEIGHBOURHOOD — only ever the coarse label. */
-            item.type === "give" && item.details?.where ? item.details.where : null,
-            item.distanceKm === undefined ? null : `${item.distanceKm} km away`,
-            status === "connecting" ? "connecting" : detailBits(item)[0] ?? null,
-          ].filter((f, i, all): f is string => Boolean(f) && all.indexOf(f) === i);
-          return (
-            <li key={item.id} className={index === 0 ? "pb-4" : "g-rule py-4"}>
-              {/* THE WHOLE ROW OPENS THE ACTIVITY — one big, obvious target. */}
-              <button
-                type="button"
-                className="block w-full text-left"
-                onClick={() => {
-                  buzz();
-                  onOpen(item.id);
-                }}
-              >
-                {/* ONE PHOTO ON TOP when the give has one — none, no placeholder. */}
-                {item.type === "give" && item.photos?.[0] ? (
-                  <img
-                    src={item.photos[0]}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="gf-listing-photo"
-                  />
-                ) : null}
-                <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
-                  {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
-                </span>
-                <span
-                  className="g-post mt-1 block w-full overflow-hidden text-ellipsis whitespace-nowrap"
-                  style={{ color: ACTIVITY_FILL[item.type], fontSize: headlineSize(line) }}
+            <>
+              {/* ONE ROW OF WORDS: LIST · MAP · MINE (the modes live on the border). */}
+              <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-3 text-[15px] font-black lowercase tracking-[0.1em]">
+                {(["list", "map"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => {
+                      buzz();
+                      setView(v);
+                    }}
+                    className={view === v ? "opacity-100" : "opacity-30"}
+                    style={{ color: ink }}
+                    aria-pressed={view === v}
+                  >
+                    {v}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    buzz();
+                    setScope(scope === "mine" ? "everyone" : "mine");
+                  }}
+                  className={scope === "mine" ? "opacity-100" : "opacity-30"}
+                  style={{ color: ink }}
+                  aria-pressed={scope === "mine"}
                 >
-                  {line}
-                </span>
-                {facts.length ? (
-                  <span className="g-meta mt-1.5 block opacity-50">{facts.join(" · ")}</span>
+                  mine
+                </button>
+                {view === "map" ? (
+                  <button
+                    type="button"
+                    onClick={() => void toggleNearMe()}
+                    className={nearMe ? "opacity-100" : "opacity-30"}
+                    style={{ color: ink }}
+                    aria-pressed={nearMe}
+                  >
+                    near me
+                  </button>
                 ) : null}
-              </button>
+              </div>
 
-              {/* THE PERSON IS THEIR OWN DESTINATION. */}
-              <button
-                type="button"
-                onClick={() => {
-                  buzz();
-                  if (owner) onOpenProfile?.(owner.id);
-                }}
-                className="g-meta mt-1.5 min-h-11 font-black underline decoration-current/40 underline-offset-4"
-                style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
-              >
-                {owner ? owner.username : "someone"}
-              </button>
+              {view === "map" ? (
+                <p className="g-meta mt-3 min-h-6 opacity-60" style={{ color: ink }}>
+                  {nearSay ??
+                    (nearMe
+                      ? `${pins.length} nearby · within ${NEAR_KM} km of you`
+                      : `${pins.length} ${pins.length === 1 ? "pin" : "pins"} · the circle is ${NEAR_KM} km round ${myLocation ? "you" : "the city centre"}`)}
+                </p>
+              ) : (
+                /* ONE TAP CHANGES THE ORDER. No menus, no icons. */
+                <button
+                  type="button"
+                  onClick={() => {
+                    buzz();
+                    setSort(SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length]!);
+                  }}
+                  className="g-meta mt-3 min-h-11 self-start text-left opacity-55"
+                  style={{ color: ink }}
+                >
+                  {sort} first — tap to change
+                </button>
+              )}
+            </>
+          )}
 
-              {/* MY OWN POST IS MINE TO CHANGE OR TAKE DOWN, right here. */}
-              {item.ownerId === ME_ID ? (
-                <div className="flex items-baseline gap-6 text-[12px] font-black lowercase tracking-[0.16em]">
+          {view === "map" && !searching ? (
+            <CommunigyMap pins={pins} centre={centre} radiusKm={NEAR_KM} onOpen={onOpen} />
+          ) : null}
+
+          <ul
+            className={view === "map" && !searching ? "hidden" : "mt-4 flex-1 overflow-y-auto pb-8"}
+          >
+            {list.length === 0 && !searching ? (
+              <li className="g-lede opacity-55">nothing here yet — yours could be the first</li>
+            ) : null}
+            {list.map((item, index) => {
+              const owner = memberById(item.ownerId);
+              const status = activityStatus(links, item.id, item.status);
+              const line = itemLine(item);
+              /* AT MOST TWO FACTS. Distance and the one thing that matters most. */
+              const facts = [
+                /* A GIVE SAYS ITS NEIGHBOURHOOD — only ever the coarse label. */
+                item.type === "give" && item.details?.where ? item.details.where : null,
+                item.distanceKm === undefined ? null : `${item.distanceKm} km away`,
+                status === "connecting" ? "connecting" : (detailBits(item)[0] ?? null),
+              ].filter((f, i, all): f is string => Boolean(f) && all.indexOf(f) === i);
+              return (
+                <li key={item.id} className={index === 0 ? "pb-4" : "g-rule py-4"}>
+                  {/* THE WHOLE ROW OPENS THE ACTIVITY — one big, obvious target. */}
                   <button
                     type="button"
-                    className="min-h-11"
+                    className="block w-full text-left"
                     onClick={() => {
                       buzz();
-                      onEditMine?.(item.id);
+                      onOpen(item.id);
                     }}
-                    style={{ color: "var(--person-self-community)" }}
                   >
-                    change it
+                    {/* ONE PHOTO ON TOP when the give has one — none, no placeholder. */}
+                    {item.type === "give" && item.photos?.[0] ? (
+                      <img
+                        src={item.photos[0]}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="gf-listing-photo"
+                      />
+                    ) : null}
+                    <span className="g-heading block" style={{ color: ACTIVITY_FILL[item.type] }}>
+                      {item.type === "borrow" && item.side === "lend" ? "lend" : item.type}
+                    </span>
+                    <span
+                      className="g-post mt-1 block w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                      style={{ color: ACTIVITY_FILL[item.type], fontSize: headlineSize(line) }}
+                    >
+                      {line}
+                    </span>
+                    {facts.length ? (
+                      <span className="g-meta mt-1.5 block opacity-50">{facts.join(" · ")}</span>
+                    ) : null}
                   </button>
+
+                  {/* THE PERSON IS THEIR OWN DESTINATION. */}
                   <button
                     type="button"
-                    className="min-h-11 opacity-45"
                     onClick={() => {
                       buzz();
-                      itemsStore.remove(item.id);
+                      if (owner) onOpenProfile?.(owner.id);
                     }}
+                    className="g-meta mt-1.5 min-h-11 font-black underline decoration-current/40 underline-offset-4"
+                    style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
                   >
-                    take it down
+                    {owner ? owner.username : "someone"}
                   </button>
-                </div>
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
 
+                  {/* MY OWN POST IS MINE TO CHANGE OR TAKE DOWN, right here. */}
+                  {item.ownerId === ME_ID ? (
+                    <div className="flex items-baseline gap-6 text-[12px] font-black lowercase tracking-[0.16em]">
+                      <button
+                        type="button"
+                        className="min-h-11"
+                        onClick={() => {
+                          buzz();
+                          onEditMine?.(item.id);
+                        }}
+                        style={{ color: "var(--person-self-community)" }}
+                      >
+                        change it
+                      </button>
+                      <button
+                        type="button"
+                        className="min-h-11 opacity-45"
+                        onClick={() => {
+                          buzz();
+                          itemsStore.remove(item.id);
+                        }}
+                      >
+                        take it down
+                      </button>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </PerimeterToggle>
     </div>
   );
 }

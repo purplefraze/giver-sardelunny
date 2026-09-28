@@ -102,11 +102,11 @@ const CALENDAR_WHEN: Record<FormSeat, boolean> = {
 
 /**
  * AFTER PUBLISHING A BORROW (or a lend) the confirmation is a DOOR, not a
- * receipt: one tap goes straight into communi-gy, opened on my own posts.
+ * receipt: one tap goes straight into communi-g, opened on my own posts.
  */
 const PUBLISHED_TAP: Record<BorrowSide, string> = {
-  borrow: "tap to see your borrow request live in communi-gy",
-  lend: "tap to see your lend live in communi-gy",
+  borrow: "tap to see your borrow request live in communi-g",
+  lend: "tap to see your lend live in communi-g",
 };
 
 /** WHAT A PROBLEM LINE ASKS FOR when line 1 is still empty. */
@@ -119,11 +119,11 @@ const CATEGORY_ASK: Record<Category, string> = {
 
 /** WHAT CAME BACK. One line, then it steps out of the way. */
 const PUBLISHED_SAY: Record<"give" | "wish" | "trade" | "borrow" | "lend", string> = {
-  give: "it’s live in communi-gy",
-  wish: "your wish is live in communi-gy",
-  trade: "your trade is live in communi-gy",
-  borrow: "your borrow is live in communi-gy",
-  lend: "your lend is live in communi-gy",
+  give: "it’s live in communi-g",
+  wish: "your wish is live in communi-g",
+  trade: "your trade is live in communi-g",
+  borrow: "your borrow is live in communi-g",
+  lend: "your lend is live in communi-g",
 };
 
 /** BORROWING HAS TWO SIDES; the seat (or the door) already said which. */
@@ -197,7 +197,7 @@ export function CategoryForm({
   /** THE FUND SEAT: "ask for funding" — a Wish that states what it needs. */
   asksFunding?: boolean;
   onDone: () => void;
-  /** After publishing a borrow / lend: the tappable way into communi-gy. */
+  /** After publishing a borrow / lend: the tappable way into communi-g. */
   onSeeInCommunity?: () => void;
 }) {
   const me = useMyProfile();
@@ -460,13 +460,13 @@ export function CategoryForm({
       await pushItems();
       await pullItems();
     } catch {
-      setProblem("your words are safe, but communi-gy couldn’t be reached. tap send again.");
+      setProblem("your words are safe, but communi-g couldn’t be reached. tap send again.");
       haptics.warning();
       return;
     }
     setProblem(null);
     /* NEARBY, ON THIS DEVICE ONLY: if the person allowed location, their
-       borrow / lend sits at that (already offset) spot on communi-gy's map. */
+       borrow / lend sits at that (already offset) spot on communi-g's map. */
     const here = myLocationStore.get();
     if (category === "borrow" && here && lastSaved.current) savePin(lastSaved.current, here.pin);
     setLive(PUBLISHED_SAY[category === "borrow" ? side : category]);

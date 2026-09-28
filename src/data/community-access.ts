@@ -3,7 +3,7 @@ import { ME_ID, myItems, type ItemsState } from "@/data/items";
 /**
  * THE CARDINAL GIVER RULE — PARTICIPATION IS EARNED BY GIVING.
  *
- * communi-gy is VISIBLE to everyone: the bottom loop shows what's happening,
+ * communi-g is VISIBLE to everyone: the bottom loop shows what's happening,
  * and the feed can be opened and read. Interaction (responding, messaging,
  * sparkling, starting a connection) stays LOCKED until the person has posted
  * one active give of their own. This is NOT an onboarding step that expires —

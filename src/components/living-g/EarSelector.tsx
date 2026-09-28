@@ -39,8 +39,8 @@ export type Seat = (typeof SEATS)[number];
 
 /**
  * Every seat on the wire, in travel order (one end of the break -> the other).
- * MAP (6:00) is a door INTO communi-gy (the map / search view), never a
- * second community seat; communi-gy itself is always the bottom loop.
+ * MAP (6:00) is a door INTO communi-g (the map / search view), never a
+ * second community seat; communi-g itself is always the bottom loop.
  */
 export const FULL_SEATS = [
   "map",
@@ -113,7 +113,7 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
  * position lives.)
  */
 export const SEAT_ANGLE: Record<Seat, number> = {
-  map: rad(-270), // 6:00 — MAP / SEARCH, the door into communi-gy
+  map: rad(-270), // 6:00 — MAP / SEARCH, the door into communi-g
   fund: rad(-225), // 7:30 — FUND, between map and borrow
   borrow: rad(-180), // 9:00
   wish: rad(-135), // 10:30

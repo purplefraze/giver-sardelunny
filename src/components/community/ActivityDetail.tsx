@@ -66,7 +66,7 @@ export function ActivityDetail({
   onOpenConnection: (connectionId: string) => void;
   /** The person is always their own destination. */
   onOpenProfile?: (ownerId: string) => void;
-  /** communi-gy is visible; engaging still needs one active give. */
+  /** communi-g is visible; engaging still needs one active give. */
   onNeedGive?: () => void;
   /** The three-gives prompt's green circle: start a give. */
   onStartGive?: () => void;

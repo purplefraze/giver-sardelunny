@@ -5,9 +5,9 @@ import { CG_COLOUR, type CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-GY: THE RECTANGLE ON THE LOWER LOOP (Frazer, 28 Sep 2026).
+ * COMMUNI-G: THE RECTANGLE ON THE LOWER LOOP (Frazer, 28 Sep 2026).
  *
- * Inside communi-gy the camera is zoomed so far into the G's lower loop that
+ * Inside communi-g the camera is zoomed so far into the G's lower loop that
  * the whole loop is never on screen. The phone screen's perimeter is a
  * RECTANGLE sitting inside that loop, and it travels round it. Only the
  * loop's red edges near the rectangle are visible: the bottom edge at 6:00,
@@ -311,7 +311,7 @@ export function PerimeterToggle({
             style={{ cursor: dragging ? "grabbing" : "grab", touchAction: "none", outline: "none" }}
             role="slider"
             tabIndex={0}
-            aria-label="communi-gy mode"
+            aria-label="communi-g mode"
             aria-valuetext={here === "exit" ? "back to the g" : here}
             data-cg-toggle=""
             onPointerDown={(e) => {

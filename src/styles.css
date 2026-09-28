@@ -233,7 +233,7 @@
        are SEAT_ANGLE in EarSelector.tsx — eight seats in SPECTRUM order,
        clockwise from 6:00 (12:00 is my g's seat):
          seat    clock  colour
-         map     6:00   #E8322B  communi-gy red (the door into communi-gy)
+         map     6:00   #E8322B  communi-g red (the door into communi-g)
          fund    7:30   #9E4B2C  deep clay brown
          borrow  9:00   #C77DD6  pinkish purple (orchid): pinker and softer
                                  than wish, never lavender-grey
@@ -261,7 +261,7 @@
   --mode-borrow: #c77dd6;
   --mode-wish: #9d00ff;
   --mode-communigy: #e8322b;
-  /* The 6:00 seat IS communi-gy's door, so it wears the same red (a literal,
+  /* The 6:00 seat IS communi-g's door, so it wears the same red (a literal,
      not var(), because LoopLabel reads --mode-<seat> as a hex). */
   --mode-map: #e8322b;
   --mode-lend-text: #6e9200;
@@ -555,7 +555,7 @@
   --world-accent: var(--person-self-community);
 }
 
-/* Map (6:00) — the door into communi-gy: its red G on white. */
+/* Map (6:00) — the door into communi-g: its red G on white. */
 [data-world="map"] {
   --world-bg: var(--seat-bg);
   --world-g: var(--mode-map);
@@ -564,7 +564,7 @@
   --world-accent: var(--person-self);
 }
 
-/* COMMUNI-GY — the zoomed-in lower loop. The loop and its toggle LOCK TO RED
+/* COMMUNI-G — the zoomed-in lower loop. The loop and its toggle LOCK TO RED
    whatever seat you came from; only the text inside the rectangle follows the
    browsed mode (--cg-ink, set by CommunityFeed). White paper. */
 [data-world="communigy"] {
@@ -1756,7 +1756,7 @@
 .gf-ended { opacity: 0.45; }
 
 /* ---------------------------------------------------------------
-   COMMUNI-GY — the red frame, the mode word, the pale map.
+   COMMUNI-G — the red frame, the mode word, the pale map.
    --------------------------------------------------------------- */
 .cg-mode-word {
   margin-top: 2px;

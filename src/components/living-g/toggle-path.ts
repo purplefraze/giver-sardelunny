@@ -6,7 +6,7 @@ import { TOGGLE, trackRadius, type GWeight } from "./g-weight";
  *
  * The toggle rides the middle loop only: one circle about the middle loop's
  * centre at the orbit radius (rim + the 24.5 white gap + the ring's outer
- * radius), at every seat. 6:00 (map / communi-gy) is 6 o'clock on that
+ * radius), at every seat. 6:00 (map / communi-g) is 6 o'clock on that
  * circle, at the bottom of the middle loop where it meets the bottom loop;
  * the toggle is never on or below the bottom loop.
  *

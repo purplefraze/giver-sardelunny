@@ -7,7 +7,7 @@ import type { Pin } from "@/data/give-pins";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-GY'S MAP — THE PIN IS THE PRODUCT.
+ * COMMUNI-G'S MAP — THE PIN IS THE PRODUCT.
  *
  * Reuses the give flow's Leaflet setup (LocationPicker): Leaflet 1.9 loaded on
  * demand, OpenStreetMap tiles with visible attribution, no API key. The tiles

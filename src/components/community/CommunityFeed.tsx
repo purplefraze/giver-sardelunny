@@ -45,7 +45,7 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-GY (renamed from communi-g). The screen is a rectangle on the G's
+ * COMMUNI-G. The screen is a rectangle on the G's
  * lower loop, zoomed in so far that only the loop's red edge near it shows
  * (PerimeterToggle.tsx). The rectangle's clock position on the loop is the
  * mode, at the wheel's seat angles: give 1:30 · lend 3:00 · trade 4:30 ·
@@ -61,7 +61,7 @@ type Sort = "nearby" | "latest" | "popular";
 
 const SORTS: Sort[] = ["nearby", "latest", "popular"];
 
-/** WHOSE ACTIVITY IS SHOWING. My own gives belong in communi-gy too. */
+/** WHOSE ACTIVITY IS SHOWING. My own gives belong in communi-g too. */
 type Scope = "everyone" | "mine";
 
 type View = "list" | "map";
@@ -119,7 +119,7 @@ export function CommunityFeed({
   const centre = myLocation?.pin ?? CITY_CENTRE;
   const ink = CG_INK[mode];
 
-  /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside communi-gy. */
+  /** SEARCH LIVES HERE, NOT ON THE LIVING G: one quiet line, inside communi-g. */
   const [query, setQuery] = useState("");
 
   const needle = query.trim().toLowerCase();
@@ -217,9 +217,9 @@ export function CommunityFeed({
         onExit={onExit ?? onClose}
       />
 
-      {/* COMMUNI-GY IN THE MODE'S COLOUR (red for everything). */}
+      {/* COMMUNI-G IN THE MODE'S COLOUR (red for everything). */}
       <h1 className="g-display" style={{ color: ink }}>
-        communi-gy
+        communi-g
       </h1>
       <p className="cg-mode-word" style={{ color: ink }}>
         {scope === "mine" ? `my ${CG_WORD[mode]}` : CG_WORD[mode]}

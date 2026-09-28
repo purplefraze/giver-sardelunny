@@ -126,6 +126,24 @@ export const sessionStore = {
         else commit(SIGNED_OUT);
       }),
     );
+    /* THE LINK TAPPED IN ANOTHER TAB. supabase-js tells other tabs over
+       BroadcastChannel; as a fallback (older Safari, a missed message) a
+       signed-out tab re-reads the stored session when storage changes or the
+       tab comes back into view, so the waiting screen still lands on the G. */
+    const recheck = () => {
+      if (state.status !== "signed-out") return;
+      void supabase.auth.getSession().then(({ data }) => {
+        const user = data.session?.user;
+        if (user && state.status === "signed-out") void load(user.id, user.email ?? null);
+      });
+    };
+    window.addEventListener("storage", (e) => {
+      if (e.key === null || e.key.startsWith("sb-")) recheck();
+    });
+    window.addEventListener("focus", recheck);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") recheck();
+    });
     supabase.auth.onAuthStateChange((event, session) => {
       /* The first answer comes from getSession above. */
       if (event === "INITIAL_SESSION") return;

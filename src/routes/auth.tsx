@@ -86,7 +86,15 @@ function AuthScreen() {
     void supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user) void finish(data.session.user.email ?? null);
     });
-    return () => sub.subscription.unsubscribe();
+    /* The link tapped in another tab: sessionStore picks it up; land too. */
+    const unsub = sessionStore.subscribe(() => {
+      const s = sessionStore.get();
+      if (s.status === "ready") void finish(s.email);
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+      unsub();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once
   }, []);
 

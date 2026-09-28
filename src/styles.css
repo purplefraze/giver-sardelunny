@@ -1544,6 +1544,18 @@
 .signin-inner--code {
   --tail: calc(6px + 2 * min(12px, 6.2cqw) * 1.35 + 2px);
 }
+/* The link-only waiting step: no send circle, the two quiet links sit
+   where it was, under the address the link went to. */
+.signin-inner--sent {
+  --send: 0px;
+  --tail: calc(6px + 2 * min(12px, 6.2cqw) * 1.35 + 2px);
+}
+.signin-sent-to {
+  width: 84cqw;
+  font-size: min(15px, 7.4cqw);
+  overflow-wrap: anywhere;
+  border-bottom: 0;
+}
 .signin-send {
   position: absolute;
   left: 50%;

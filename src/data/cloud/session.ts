@@ -16,6 +16,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { consumeAuthCallback } from "@/lib/auth-callback";
+import { joinGiver } from "@/lib/invites.functions";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -52,11 +54,42 @@ function commit(next: SessionState) {
   for (const l of listeners) l();
 }
 
+/**
+ * A VERIFIED EMAIL IS ENOUGH. Whichever way I signed in (code, link, another
+ * tab), a missing profile row is created here — never treated as "denied".
+ * Once per user per page; failure still lands on the G.
+ */
+const ensured = new Set<string>();
+async function ensureProfile(userId: string, email: string | null): Promise<boolean> {
+  if (ensured.has(userId)) return false;
+  ensured.add(userId);
+  const handle =
+    (email?.split("@")[0] ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]/g, "")
+      .slice(0, 20) || "giver";
+  try {
+    /* Never hold the G hostage to a slow server: 4s, then land anyway. */
+    const res = await Promise.race([
+      joinGiver({ data: { handle, name: handle } }),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
+    return Boolean(res?.ok);
+  } catch {
+    return false;
+  }
+}
+
 async function load(userId: string, email: string | null) {
-  const [{ data: profile }, { data: roles }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-    supabase.from("user_roles").select("role").eq("user_id", userId),
-  ]);
+  const fetchBoth = () =>
+    Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+    ]);
+  let [{ data: profile }, { data: roles }] = await fetchBoth();
+  if (!profile && (await ensureProfile(userId, email))) {
+    [{ data: profile }, { data: roles }] = await fetchBoth();
+  }
   commit({
     status: "ready",
     userId,
@@ -83,12 +116,19 @@ export const sessionStore = {
   start() {
     if (started || typeof window === "undefined") return;
     started = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      const user = data.session?.user;
-      if (user) void load(user.id, user.email ?? null);
-      else commit(SIGNED_OUT);
-    });
+    /* An email link (token_hash / code / error) is settled first, so the
+       sign-in screen never flashes before a link session, and a failed link
+       arrives as one plain line instead of "access_denied" in the address. */
+    void consumeAuthCallback().then(() =>
+      supabase.auth.getSession().then(({ data }) => {
+        const user = data.session?.user;
+        if (user) void load(user.id, user.email ?? null);
+        else commit(SIGNED_OUT);
+      }),
+    );
     supabase.auth.onAuthStateChange((event, session) => {
+      /* The first answer comes from getSession above. */
+      if (event === "INITIAL_SESSION") return;
       const user = session?.user;
       if (event === "SIGNED_OUT" || !user) {
         commit(SIGNED_OUT);

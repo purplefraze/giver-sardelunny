@@ -1,5 +1,5 @@
 import { LIVING_G_BOX, LIVING_G_FRAME } from "./g-path";
-import { restingTop } from "./g-weight";
+import { gBottom, restingTop } from "./g-weight";
 
 /**
  * THE ONE canonical stage for every full-screen Living G.
@@ -60,23 +60,29 @@ const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFi
 
 
 /**
- * VERTICAL PLACE — hung from the top, not stood on the bottom. The G's top is
- * the toggle ring's highest RESTING edge (give 1:30 / wish 10:30 at the middle
- * weight: viewBox y ≈ 15.7) and it sits G_TOP below the screen's top: the
- * "sign in" / @name seal's box ends at 25.55px (top-2 + its 17.55px line), so
- * 35.5px leaves a 10px gap and the two read as one composition. Size is
- * untouched (CANONICAL_WIDTH above); only the vertical offset is derived here.
- * (12:00 is not a seat: mid-drag the ring passes up to ~84 units higher, at
- * the screen's centre line, clear of the seal.)
+ * VERTICAL PLACE — CENTRED. The G's extent runs from its top (the toggle
+ * ring's highest RESTING edge, give 1:30 / wish 10:30: viewBox y ≈ 15.7) to its
+ * bottom (the bottom loop's lowest edge at the middle weight: y = 1120.5).
+ * That extent is centred in the stage's height, so the paper above equals the
+ * paper below — but its top never rises above G_TOP_MIN, the line 10px under
+ * the "sign in" / @name seal (whose box ends at 25.55px).
+ *
+ * The stage box is a size container, so the same numbers CANONICAL_WIDTH uses
+ * can be read in px here (cqw/cqh). The width itself is untouched.
+ * (12:00 is not a seat: mid-drag the ring passes ~84 units above the top.)
  */
-export const G_TOP = "35.5px";
+export const G_TOP_MIN = "35.5px";
+const EXTENT_OVER_W = ((gBottom("middle") - restingTop("middle")) / LIVING_G_FRAME.width).toFixed(5);
+/** CANONICAL_WIDTH, spelled in container units (identical value: the stage fills its container). */
+const STAGE_W = `min(calc((100cqw - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFixed(5)}), calc((var(--app-h, 100dvh) - ${CTA_BAND}) * ${FRAME_OVER_H.toFixed(5)}))`;
+const G_TOP = `max(${G_TOP_MIN}, calc((100cqh - ${EXTENT_OVER_W} * ${STAGE_W}) / 2))`;
 /* As a share of the stage box's OWN height, so a translate can apply it
    (a `top` percentage would read the screen's height, not the stage's). */
 const TOP_OVER_H = (((restingTop("middle") - LIVING_G_FRAME.y) / LIVING_G_FRAME.height) * 100).toFixed(4);
 
 export function GStage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-0">
+    <div className="pointer-events-none absolute inset-0 z-0" style={{ containerType: "size" }}>
       <div
         // EXPLICIT centring, not flex alignment: the frame is intentionally
         // wider than the viewport (selector clearance), and a centred flex item

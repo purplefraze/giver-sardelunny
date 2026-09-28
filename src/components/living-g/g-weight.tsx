@@ -1,4 +1,4 @@
-import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
+import { EAR_GEOMETRY, LIVING_G_BOX, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
 
 /**
  * THE G'S STROKE WEIGHT — without touching the traced path.
@@ -40,6 +40,13 @@ export const trackRadius = (weight: GWeight = "normal") =>
  */
 export const restingTop = (weight: GWeight = "normal") =>
   LOOP_CENTRE.middle.y - trackRadius(weight) * Math.SQRT1_2 - EAR_GEOMETRY.outerR;
+
+/**
+ * The G's lowest painted point (the bottom loop's outer edge) in viewBox units.
+ * The traced outline's lowest point is y ≈ 1132.5 (box 1133); eroding moves
+ * that convex edge up by exactly the per-side inset: 1120.5 at middle.
+ */
+export const gBottom = (weight: GWeight = "normal") => LIVING_G_BOX.height - strokeInset(weight);
 
 /**
  * The erosion mask, in potrace space. Reference it from an element drawn in

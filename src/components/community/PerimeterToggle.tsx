@@ -7,47 +7,42 @@ import { haptics } from "@/lib/haptics";
 /**
  * COMMUNI-G LOWER-LOOP — ARM-ANCHORED + AUTO-RUN (Frazer, 29 Sep 2026).
  *
- * IN-COMMUNITY ONLY (enter Living G at 6:00). Middle-loop / living-g untouched.
+ * Middle-loop / living-g / g-path.ts untouched.
  *
- * Toggle = middle-loop piece MIRRORED INWARD:
- *   - Arm anchors on the INSIDE of the red track.
- *   - Bead/circle sits further into content (toward loop centre).
- *   - At 6:00 arm comes UP off the track into white — never a nub outside.
+ * Toggle = middle-loop MIRRORED INWARD:
+ *   arm roots on INSIDE of red track → bead floats into content.
+ *   At 6:00 arm comes UP off the track into white — never a nub outside.
  *
- * Auto-run: thumb initiates (press/drag); bead then cruises the track on its
- * own (track runs for the thumb). Thumb may ride or let go. Release snaps
- * nearest seat in travel direction. Drag stays primary; auto-run assists.
+ * Auto-run: hold keeps rolling PAST seats (no per-seat snap). Thumb initiates;
+ * track runs. Ride or let go. On let-go: snap nearest in travel direction.
+ * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
  *
- * Red = true-circle crop: 6/12 full arcs; 9/3 inward-curving corner pieces;
- * diagonals one corner. Dolly-in on entry. Press: subtle shrink + middle-loop peek.
- * Track #E8322B; bead/arm seat-coloured. 12:00 exits to full G.
+ * Ghost = next seat's coloured bead ON the track. Dolly-in on entry.
+ * Track #E8322B. Press: subtle shrink + middle-loop peek (ceiling).
  */
-const SNAP_MS = 200;
+const SNAP_MS = 220;
 const G_PX = 0.522784;
 const TRACK_STROKE = 28.5 * G_PX; // ≈ 14.90
 
-/** Bead ~52px — living-G ear proportions. */
-const TOGGLE_OUTER_R = 26;
+/** Bead sized so "communi-g" fits in full. */
+const TOGGLE_OUTER_R = 28;
 const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
-const TOGGLE_RING = 7.5;
+const TOGGLE_RING = 7.2;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
 const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
 const STEM_W = 8;
-/** Visible stem from track inner wall to bead outer edge (rest). */
-const STEM_LEN = 14;
-const POP_MS = 160;
-/** Press: subtle shrink — enough to hop next seat, not a dramatic zoom-out. */
+/** Clear gap: arm leaves track, bead sits in white. */
+const STEM_LEN = 22;
+const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
-const DOLLY_MS = 520;
-/** Entry starts slightly pulled back so the circle reads round. */
-const DOLLY_START = 0.86;
-/** Auto-run cruise (deg/ms) once the thumb has initiated travel. */
-const CRUISE_DEG_MS = 0.12;
-const CRUISE_MAX_DEG_MS = 0.28;
+const DOLLY_MS = 560;
+const DOLLY_START = 0.84;
+const CRUISE_DEG_MS = 0.14;
+const CRUISE_MAX_DEG_MS = 0.32;
 
 const DW = 390;
 const DH = 844;
-const HIT = 40;
+const HIT = 44;
 
 const RED = "#E8322B";
 
@@ -89,7 +84,6 @@ type Geom = {
   cx: number;
   cy: number;
   r: number;
-  /** Visible crop(s) of the true circle. */
   arcs: ArcSpan[];
   toggleDeg: number;
 };
@@ -125,75 +119,69 @@ const oneArc = (cx: number, cy: number, r: number, deg0: number, deg1: number) =
 const arcsPath = (g: Geom, r: number) => g.arcs.map((a) => oneArc(g.cx, g.cy, r, a.deg0, a.deg1)).join(" ");
 
 /**
- * True-circle crops.
- * 6/12: larger-R gentler arcs that climb into the corners (reads as a circle).
- * 9/3: smaller-R corner pieces that bow inward toward the bead (not edge-straight).
- * Diagonals: one corner.
+ * True-circle crops — R chosen so 6/12 climb into the corners (not a flat bowl);
+ * 9/3 bow inward toward the bead; diagonals stay one corner.
  */
-const SIDE_R = 560;
-/** Bead floats near/past the edge; attachment implied. */
-const SIDE_BEAD_X = -28;
-const DIAG_R = 520;
-/** 6/12 — large-enough R to read circular; near-semicircle so red climbs into corners. */
-const SMILE_R = 310;
-const SMILE_HALF = 96;
-const TOP_RIM_Y = 52;
+const SIDE_R = 500;
+const SIDE_BEAD_X = -32;
+const DIAG_R = 500;
+/** Climb into L/R: near-semicircle of a true circle. */
+const SMILE_R = 270;
+const SMILE_HALF = 102;
+const TOP_RIM_Y = 48;
 const BOTTOM_KISS_Y = DH - TRACK_STROKE / 2;
 
 const sideCx = (left: boolean) => (left ? SIDE_R + SIDE_BEAD_X : DW - (SIDE_R + SIDE_BEAD_X));
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
-  /** 9:00 — inward-bowing TL+BL corners; gap at bead (270°). */
   borrow: {
     cx: sideCx(true),
     cy: DH / 2,
     r: SIDE_R,
     arcs: [
-      { deg0: 218, deg1: 258 }, // BL — curves in toward bead
-      { deg0: 282, deg1: 322 }, // TL
+      { deg0: 210, deg1: 255 },
+      { deg0: 285, deg1: 330 },
     ],
     toggleDeg: 270,
   },
-  /** 3:00 — inward-bowing TR+BR corners; gap at bead (90°). */
   lend: {
     cx: sideCx(false),
     cy: DH / 2,
     r: SIDE_R,
     arcs: [
-      { deg0: 38, deg1: 78 }, // TR
-      { deg0: 102, deg1: 142 }, // BR
+      { deg0: 30, deg1: 75 },
+      { deg0: 105, deg1: 150 },
     ],
     toggleDeg: 90,
   },
   wish: {
-    cx: 475.696,
-    cy: 483.696,
+    cx: 470,
+    cy: 470,
     r: DIAG_R,
-    arcs: [{ deg0: 286.8, deg1: 345.5 }],
+    arcs: [{ deg0: 288, deg1: 348 }],
     toggleDeg: 315,
   },
   fund: {
-    cx: 475.696,
-    cy: DH - 483.696,
+    cx: 470,
+    cy: DH - 470,
     r: DIAG_R,
-    arcs: [{ deg0: 194.5, deg1: 253.2 }],
+    arcs: [{ deg0: 192, deg1: 252 }],
     toggleDeg: 225,
   },
   give: {
-    cx: DW - 475.696,
-    cy: 483.696,
+    cx: DW - 470,
+    cy: 470,
     r: DIAG_R,
-    arcs: [{ deg0: 14.5, deg1: 73.2 }],
+    arcs: [{ deg0: 12, deg1: 72 }],
     toggleDeg: 45,
   },
   trade: {
-    cx: DW - 475.696,
-    cy: DH - 483.696,
+    cx: DW - 470,
+    cy: DH - 470,
     r: DIAG_R,
-    arcs: [{ deg0: 106.8, deg1: 165.5 }],
+    arcs: [{ deg0: 108, deg1: 168 }],
     toggleDeg: 135,
   },
-  /** 12:00 rainbow — full top arc; arm hangs bead into content. */
   exit: {
     cx: DW / 2,
     cy: TOP_RIM_Y + SMILE_R,
@@ -201,7 +189,6 @@ const GEOM_DESIGN: Record<CgStation, Geom> = {
     arcs: [{ deg0: 360 - SMILE_HALF, deg1: SMILE_HALF }],
     toggleDeg: 0,
   },
-  /** 6:00 entry — bottom smile; arms L/R; white open above. */
   everything: {
     cx: DW / 2,
     cy: BOTTOM_KISS_Y - SMILE_R,
@@ -223,14 +210,14 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const lerpAngle = (a: number, b: number, t: number) => wrap(a + turn(a, b) * t);
 
 const lerpGeom = (a: Geom, b: Geom, t: number): Geom => {
-  // Prefer the destination's arc topology (corner count) past halfway.
   const arcsSrc = t < 0.5 ? a.arcs : b.arcs;
   const arcsDst = t < 0.5 ? b.arcs : a.arcs;
+  const u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
   const arcs =
     arcsSrc.length === arcsDst.length
       ? arcsSrc.map((s, i) => ({
-          deg0: lerpAngle(s.deg0, arcsDst[i]!.deg0, t < 0.5 ? t * 2 : (t - 0.5) * 2),
-          deg1: lerpAngle(s.deg1, arcsDst[i]!.deg1, t < 0.5 ? t * 2 : (t - 0.5) * 2),
+          deg0: lerpAngle(s.deg0, arcsDst[i]!.deg0, u),
+          deg1: lerpAngle(s.deg1, arcsDst[i]!.deg1, u),
         }))
       : (t < 0.5 ? a.arcs : b.arcs).map((s) => ({ ...s }));
   return {
@@ -253,41 +240,36 @@ const lerpHex = (a: string, b: string, t: number) => {
   };
   const [ar, ag, ab] = parse(a);
   const [br, bg, bb] = parse(b);
-  const r = Math.round(lerp(ar, br, t));
-  const g = Math.round(lerp(ag, bg, t));
-  const bl = Math.round(lerp(ab, bb, t));
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${bl.toString(16).padStart(2, "0")}`;
+  return `#${[lerp(ar, br, t), lerp(ag, bg, t), lerp(ab, bb, t)]
+    .map((n) => Math.round(n).toString(16).padStart(2, "0"))
+    .join("")}`;
 };
 
 /**
- * Middle-loop mirrored inward:
- *   arm root on INSIDE wall of red track → stem runs inward → bead in content.
- * Press only shrinks R (few %); stem length stays put.
+ * Arm on INSIDE of track → bead into content (toward centre).
+ * At 6:00: attach low on track, bead ABOVE in white, arm UP.
  */
 const organismParts = (g: Geom, pop: number) => {
   const R = g.r * (1 - (1 - DRAG_SHRINK) * pop);
   const u = outward(g.toggleDeg);
-  // Inner wall of the (shrunk) stroke — arm anchors here.
-  const attachR = Math.max(8, R - TRACK_STROKE / 2);
+  const attachR = Math.max(12, R - TRACK_STROKE / 2);
   const attach = { x: g.cx + attachR * u.x, y: g.cy + attachR * u.y };
-  // Bead further into content (toward centre). Stem fills the gap.
-  const beadR = Math.max(4, attachR - STEM_LEN - TOGGLE_OUTER_R);
+  const beadR = Math.max(6, attachR - STEM_LEN - TOGGLE_OUTER_R);
   const bead = { x: g.cx + beadR * u.x, y: g.cy + beadR * u.y };
-  // Tip buried in the ring stroke (middle-loop language).
   const stemTip = {
-    x: bead.x + u.x * (TOGGLE_INNER_R * 0.35),
-    y: bead.y + u.y * (TOGGLE_INNER_R * 0.35),
+    x: bead.x + u.x * (TOGGLE_INNER_R * 0.4),
+    y: bead.y + u.y * (TOGGLE_INNER_R * 0.4),
   };
-  return { R, bead, stemRoot: attach, stemTip, stemLen: STEM_LEN, attach };
+  // Ghost sits ON the stroke centreline (track), not in content.
+  const track = { x: g.cx + R * u.x, y: g.cy + R * u.y };
+  return { R, bead, stemRoot: attach, stemTip, stemLen: STEM_LEN, attach, track };
 };
 
-/** Hint of the middle loop peeking above Communi-G while pressed (ceiling). */
-const peekPath = (w: number, h: number, sx: number, sy: number) => {
-  // Design-space arc across the top — reads as middle-loop rim crop, not full G.
+const peekPath = (sx: number, sy: number) => {
   const cx = (DW / 2) * sx;
-  const cy = 210 * sy;
-  const r = 340 * ((sx + sy) / 2);
-  return oneArc(cx, cy, r, 322, 38);
+  const cy = 200 * sy;
+  const r = 360 * ((sx + sy) / 2);
+  return oneArc(cx, cy, r, 320, 40);
 };
 
 export function PerimeterToggle({
@@ -315,7 +297,9 @@ export function PerimeterToggle({
   const [dolly, setDolly] = useState(0);
   const [cruising, setCruising] = useState(false);
   const cruiseRaf = useRef(0);
-  const cruiseVel = useRef(0); // signed deg/ms
+  const cruiseVel = useRef(0);
+  const cruisingRef = useRef(false);
+  const holdTimer = useRef(0);
   const drag = useRef<{
     id: number;
     moved: boolean;
@@ -326,11 +310,11 @@ export function PerimeterToggle({
     angle: number;
   } | null>(null);
 
-  const cruisingRef = useRef(false);
-  const holdTimer = useRef(0);
   const goRef = useRef<(s: CgStation) => void>(() => {});
   const nearestRef = useRef<(d: number) => CgStation>(() => "everything");
   const neighbourRef = useRef<(s: CgStation, dir: 1 | -1) => CgStation>((s) => s);
+  const onExitRef = useRef(onExit);
+  onExitRef.current = onExit;
 
   const stopCruise = () => {
     cancelAnimationFrame(cruiseRaf.current);
@@ -350,7 +334,6 @@ export function PerimeterToggle({
     return () => ro.disconnect();
   }, []);
 
-  // Dolly-in on mount: pulled back → settled crop.
   useEffect(() => {
     const t0 = performance.now();
     let raf = 0;
@@ -363,18 +346,21 @@ export function PerimeterToggle({
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  useEffect(() => () => {
-    clearTimeout(holdTimer.current);
-    cancelAnimationFrame(cruiseRaf.current);
-  }, []);
+  useEffect(
+    () => () => {
+      clearTimeout(holdTimer.current);
+      cancelAnimationFrame(cruiseRaf.current);
+    },
+    [],
+  );
 
   useEffect(() => {
-    setGoal(value);
+    // External mode changes (not exit — exit is tap-only).
+    if (value !== "exit" as never) setGoal(value);
   }, [value]);
 
   const sx = size.w ? size.w / DW : 1;
   const sy = size.h ? size.h / DH : 1;
-
   const designAt = (s: CgStation) => scaleGeom(GEOM_DESIGN[s], sx, sy);
 
   const nearest = (deg: number): CgStation => {
@@ -393,6 +379,25 @@ export function PerimeterToggle({
   const neighbour = (s: CgStation, dir: 1 | -1): CgStation => {
     const i = STATIONS.indexOf(s);
     return STATIONS[(i + dir + STATIONS.length) % STATIONS.length]!;
+  };
+
+  /** Nearest parkable seat in travel direction (may be exit — park only). */
+  const nearestInDir = (deg: number, dir: 1 | -1): CgStation => {
+    let best: CgStation = nearest(deg);
+    let bestD = Infinity;
+    for (const s of STATIONS) {
+      const d = turn(deg, clockOf(s));
+      if (dir > 0 && d < -1) continue;
+      if (dir < 0 && d > 1) continue;
+      const ad = Math.abs(d);
+      if (ad < bestD) {
+        bestD = ad;
+        best = s;
+      }
+    }
+    // If nothing ahead, fall back to absolute nearest.
+    if (bestD === Infinity) return nearest(deg);
+    return best;
   };
 
   const restGeomAt = (deg: number): Geom => {
@@ -436,22 +441,37 @@ export function PerimeterToggle({
     setPos(next);
   };
 
+  /**
+   * Park at a seat. Exit is parkable — does NOT leave Communi-G.
+   * Leaving is only via exitByTap().
+   */
   const go = (s: CgStation) => {
-    if (s === "exit") {
-      haptics.light();
-      setGoal("exit");
-      return;
-    }
-    if (s !== value) {
+    if (s !== "exit" && s !== value) {
       haptics.light();
       onChange(s);
+    } else if (s === "exit") {
+      haptics.light();
     }
     setGoal(s);
   };
+
+  /** Explicit tap on my-g bead — the ONLY way out to Living G. */
+  const exitByTap = () => {
+    haptics.light();
+    stopCruise();
+    drag.current = null;
+    setDragging(false);
+    onExitRef.current();
+  };
+
   goRef.current = go;
   nearestRef.current = nearest;
   neighbourRef.current = neighbour;
 
+  /**
+   * Auto-run: rolls PAST seats while held. No mid-seat snap-stop.
+   * On finger-up: coast then snap nearest in travel direction (exit parks only).
+   */
   const startCruise = (dir: 1 | -1, speed: number) => {
     cancelAnimationFrame(cruiseRaf.current);
     lastDir.current = dir;
@@ -459,43 +479,27 @@ export function PerimeterToggle({
     cruiseVel.current = dir * mag;
     cruisingRef.current = true;
     setCruising(true);
-    const origin = drag.current?.start ?? nearestRef.current(posRef.current);
     let last = performance.now();
     const step = (now: number) => {
       const dt = Math.min(32, Math.max(0, now - last));
       last = now;
-      // Finger still down with no velocity: keep a gentle assist cruise.
-      if (drag.current && Math.abs(cruiseVel.current) < CRUISE_DEG_MS * 0.5) {
+      // Let-go: snap nearest in travel direction (follow track via go snap). No long coast past seats.
+      if (!drag.current) {
+        stopCruise();
+        goRef.current(nearestInDir(posRef.current, lastDir.current));
+        return;
+      }
+      if (Math.abs(cruiseVel.current) < CRUISE_DEG_MS * 0.5) {
         cruiseVel.current = lastDir.current * CRUISE_DEG_MS;
       }
-      // Finger up: coast with friction, then snap.
-      if (!drag.current) {
-        cruiseVel.current *= 0.975;
-      }
-      if (!drag.current && Math.abs(cruiseVel.current) < 0.02) {
-        stopCruise();
-        goRef.current(neighbourRef.current(nearestRef.current(posRef.current), lastDir.current));
-        return;
-      }
-      const next = posRef.current + cruiseVel.current * dt;
-      const fromSeat = drag.current?.start ?? origin;
-      const dirNow = lastDir.current;
-      const toward = neighbourRef.current(fromSeat, dirNow);
-      const mid = clockOf(fromSeat) + turn(clockOf(fromSeat), clockOf(toward)) / 2;
-      if (Math.abs(turn(clockOf(fromSeat), next)) >= Math.abs(turn(clockOf(fromSeat), mid)) - 0.01) {
-        stopCruise();
-        drag.current = null;
-        setDragging(false);
-        goRef.current(toward);
-        return;
-      }
-      put(next);
+      // Hold: keep rolling PAST seats — no per-seat snap-stop.
+      put(posRef.current + cruiseVel.current * dt);
       cruiseRaf.current = requestAnimationFrame(step);
     };
     cruiseRaf.current = requestAnimationFrame(step);
   };
 
-
+  // Snap animation to goal — never calls onExit (tap-only).
   useEffect(() => {
     if (dragging || cruisingRef.current || !size.w) return;
     const from = posRef.current;
@@ -503,11 +507,10 @@ export function PerimeterToggle({
     if (Math.abs(delta) < 0.05) {
       put(clockOf(goal));
       animatePop(0);
-      if (goal === "exit") onExit();
       return;
     }
     const steps = Math.max(1, Math.round(Math.abs(delta) / 45));
-    const dur = Math.min(SNAP_MS * steps, 560);
+    const dur = Math.min(SNAP_MS * steps, 580);
     const t0 = performance.now();
     snappingRef.current = true;
     setSnapping(true);
@@ -520,7 +523,6 @@ export function PerimeterToggle({
         put(clockOf(goal));
         snappingRef.current = false;
         setSnapping(false);
-        if (goal === "exit") onExit();
         return;
       }
       raf = requestAnimationFrame(step);
@@ -565,20 +567,18 @@ export function PerimeterToggle({
   const parts = live ? organismParts(live, pop) : null;
   const pathD = live && parts ? arcsPath(live, parts.R) : "";
 
-  /** Ghost next-seat bead ahead while sliding (middle-loop hint language). */
+  /** Ghost = next seat's coloured bead ON the track (stroke), not mid-content. */
   const plugs =
-    w && (dragging || cruising || pop > 0.3)
-      ? ([towardSeat, neighbour(here, (lastDir.current * -1) as 1 | -1)] as CgStation[])
-          .filter((s, i, a) => a.indexOf(s) === i)
+    w && (dragging || cruising || pop > 0.25)
+      ? [towardSeat]
           .map((s) => {
             const g = designAt(s);
-            const p = organismParts({ ...g, r: g.r * DRAG_SHRINK }, 1);
+            const p = organismParts(g, 0);
             const dist = Math.abs(turn(pos, clockOf(s)));
-            const opacity =
-              s === towardSeat ? Math.min(0.9, 0.25 + blend * 0.7) : Math.max(0, 0.35 - dist / 90);
-            return { s, bead: p.bead, opacity, colour: colourOf(s) };
+            const opacity = Math.min(0.95, 0.35 + blend * 0.65);
+            return { s, track: p.track, opacity: s === towardSeat ? opacity : Math.max(0, 0.3 - dist / 100), colour: colourOf(s) };
           })
-          .filter((p) => p.opacity > 0.05 && p.s !== shown)
+          .filter((p) => p.opacity > 0.08 && p.s !== shown)
       : [];
 
   const thetaForFinger = (clientX: number, clientY: number) => {
@@ -589,9 +589,10 @@ export function PerimeterToggle({
   };
 
   const dollyScale = lerp(DOLLY_START, 1, dolly);
-  // Origin near the active toggle so the crop eases in around the bead.
   const originX = parts ? (parts.bead.x / (w || 1)) * 100 : 50;
   const originY = parts ? (parts.bead.y / (h || 1)) * 100 : 50;
+
+  const titleSize = word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11;
 
   return (
     <div
@@ -611,22 +612,15 @@ export function PerimeterToggle({
       data-cg-arm="inward"
       data-cg-cruise={cruising ? "1" : "0"}
     >
-      {/* Middle-loop peek — only while pressed; sits above the Communi-G crop. */}
       {w && pop > 0.04 ? (
-        <svg
-          className="pointer-events-none absolute left-0 top-0 z-[5]"
-          width={w}
-          height={h}
-          aria-hidden="true"
-          data-cg-peek=""
-        >
+        <svg className="pointer-events-none absolute left-0 top-0 z-[5]" width={w} height={h} aria-hidden="true" data-cg-peek="">
           <path
-            d={peekPath(w, h, sx, sy)}
+            d={peekPath(sx, sy)}
             fill="none"
             stroke={RED}
-            strokeWidth={TRACK_STROKE * 0.9}
+            strokeWidth={TRACK_STROKE * 0.85}
             strokeLinecap="butt"
-            opacity={Math.min(0.55, pop * 0.55)}
+            opacity={Math.min(0.5, pop * 0.5)}
           />
         </svg>
       ) : null}
@@ -640,19 +634,13 @@ export function PerimeterToggle({
         }}
       >
         {w && live && parts ? (
-          <svg
-            className="pointer-events-none absolute left-0 top-0"
-            width={w}
-            height={h}
-            aria-hidden="true"
-            data-cg-world=""
-          >
+          <svg className="pointer-events-none absolute left-0 top-0" width={w} height={h} aria-hidden="true" data-cg-world="">
             <path
               d={pathD}
               fill="none"
               stroke={RED}
               strokeWidth={TRACK_STROKE}
-              strokeLinecap="butt"
+              strokeLinecap="round"
               data-cg-loop=""
               data-cg-track-w={TRACK_STROKE.toFixed(2)}
               data-cg-cx={live.cx.toFixed(1)}
@@ -661,18 +649,19 @@ export function PerimeterToggle({
 
             {plugs.map((p) => (
               <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
+                {/* Coloured bead ON the track — solid ring language of middle-loop seat hint. */}
                 <circle
-                  cx={p.bead.x}
-                  cy={p.bead.y}
+                  cx={p.track.x}
+                  cy={p.track.y}
                   r={TOGGLE_STROKE_R * sx}
                   fill="none"
                   stroke={p.colour}
                   strokeWidth={TOGGLE_RING * sx}
                 />
+                <circle cx={p.track.x} cy={p.track.y} r={(TOGGLE_INNER_R - 0.5) * sx} fill="var(--world-bg)" />
               </g>
             ))}
 
-            {/* Arm — root on track inside wall, tip into bead (content). */}
             <line
               x1={parts.stemRoot.x}
               y1={parts.stemRoot.y}
@@ -702,11 +691,22 @@ export function PerimeterToggle({
                     background: "transparent",
                     border: "none",
                   }}
-                  aria-label={s === "exit" ? "back to the g" : s}
+                  aria-label={s === "exit" ? "my g — leave communi-g" : s}
                   data-cg-loop-hit={s}
                   data-cg-dot-hit={s}
                   onClick={() => {
-                    if (snappingRef.current || dragging) return;
+                    if (dragging || cruisingRef.current) return;
+                    if (s === "exit") {
+                      // Tap my-g bead: leave only when already at/near 12. Otherwise park there.
+                      const atExit =
+                        Math.abs(turn(posRef.current, clockOf("exit"))) < 35 ||
+                        nearest(posRef.current) === "exit" ||
+                        goal === "exit";
+                      if (atExit) exitByTap();
+                      else go("exit");
+                      return;
+                    }
+                    if (snappingRef.current) return;
                     go(s);
                   }}
                 />
@@ -726,11 +726,12 @@ export function PerimeterToggle({
               touchAction: "none",
               border: "none",
               boxShadow: "none",
+              overflow: "visible",
             }}
             role="slider"
             tabIndex={0}
             aria-label="communi-g mode"
-            aria-valuetext={shown === "exit" ? "back to the g" : shown}
+            aria-valuetext={shown === "exit" ? "my g" : shown}
             data-cg-toggle=""
             data-cg-seat={shown}
             data-cg-settled={settled ? "1" : "0"}
@@ -739,10 +740,13 @@ export function PerimeterToggle({
               e.stopPropagation();
               clearTimeout(holdTimer.current);
               stopCruise();
-              const angle = live ? wrap((Math.atan2(
-                e.clientX - stage.current!.getBoundingClientRect().left - live.cx,
-                -(e.clientY - stage.current!.getBoundingClientRect().top - live.cy),
-              ) * 180) / Math.PI) : posRef.current;
+              const rect = stage.current!.getBoundingClientRect();
+              const angle = live
+                ? wrap(
+                    (Math.atan2(e.clientX - rect.left - live.cx, -(e.clientY - rect.top - live.cy)) * 180) /
+                      Math.PI,
+                  )
+                : posRef.current;
               drag.current = {
                 id: e.pointerId,
                 moved: false,
@@ -756,23 +760,20 @@ export function PerimeterToggle({
               animatePop(1);
               haptics.light();
               (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
-              // Press alone initiates a gentle auto-run in the last travel direction.
               holdTimer.current = window.setTimeout(() => {
                 if (!drag.current || drag.current.moved) return;
                 startCruise(lastDir.current, CRUISE_DEG_MS);
-              }, 140);
+              }, 120);
             }}
             onPointerMove={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId || snappingRef.current) return;
-              const dist = Math.hypot(e.clientX - d.x, e.clientY - d.y);
-              if (!d.moved && dist < 6) return;
+              if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
               clearTimeout(holdTimer.current);
               const now = performance.now();
               const finger = thetaForFinger(e.clientX, e.clientY);
               const delta = turn(d.angle, finger);
               const dt = Math.max(8, now - d.t);
-              // Thumb steers; track runs — velocity from finger sweep, bead auto-cruises.
               const speed = Math.min(CRUISE_MAX_DEG_MS, Math.abs(delta) / dt + CRUISE_DEG_MS);
               const dir: 1 | -1 = delta >= 0 ? 1 : -1;
               lastDir.current = dir;
@@ -788,29 +789,31 @@ export function PerimeterToggle({
               const d = drag.current;
               if (d?.id !== e.pointerId) return;
               clearTimeout(holdTimer.current);
+              const moved = d.moved;
               drag.current = null;
               setDragging(false);
-              if (d.moved || cruisingRef.current) {
-                // Let auto-run coast briefly; snap nearest in travel direction.
+              if (moved || cruisingRef.current) {
                 if (!cruisingRef.current) {
-                  go(neighbour(d.start, lastDir.current));
+                  go(nearestInDir(posRef.current, lastDir.current));
                   animatePop(0);
                 }
-                // else: cruise step handles snap on friction end / seat catch
               } else {
                 stopCruise();
                 animatePop(0);
+                // Tap on the my-g bead while parked at 12 — the only leave gesture.
+                if (nearest(posRef.current) === "exit" || goal === "exit") {
+                  exitByTap();
+                }
               }
             }}
             onPointerCancel={() => {
               const d = drag.current;
               clearTimeout(holdTimer.current);
               const moved = !!d?.moved;
-              const start = d?.start;
               drag.current = null;
               setDragging(false);
               if (moved || cruisingRef.current) {
-                if (!cruisingRef.current && start) go(neighbour(start, lastDir.current));
+                if (!cruisingRef.current) go(nearestInDir(posRef.current, lastDir.current));
               } else stopCruise();
               animatePop(0);
             }}
@@ -832,25 +835,20 @@ export function PerimeterToggle({
               height={TOGGLE_DIAM * sy}
               viewBox={`${-TOGGLE_OUTER_R} ${-TOGGLE_OUTER_R} ${TOGGLE_DIAM} ${TOGGLE_DIAM}`}
               aria-hidden="true"
+              style={{ overflow: "visible" }}
             >
-              <circle r={TOGGLE_INNER_R - 0.4} fill="var(--world-bg)" />
-              <circle
-                r={TOGGLE_STROKE_R}
-                fill="none"
-                stroke={colour}
-                strokeWidth={TOGGLE_RING}
-                data-cg-ring=""
-              />
+              <circle r={TOGGLE_INNER_R - 0.3} fill="var(--world-bg)" />
+              <circle r={TOGGLE_STROKE_R} fill="none" stroke={colour} strokeWidth={TOGGLE_RING} data-cg-ring="" />
               <text
                 textAnchor="middle"
                 dominantBaseline="central"
-                y={0}
+                y={0.4}
                 fill={colour}
                 style={{
                   fontFamily: "var(--giver-font, system-ui)",
-                  fontSize: word.length > 8 ? 7.5 : word.length > 5 ? 9 : 11,
+                  fontSize: titleSize,
                   fontWeight: 700,
-                  letterSpacing: "0.04em",
+                  letterSpacing: word === "communi-g" ? "-0.03em" : "0.02em",
                   textTransform: "lowercase",
                 }}
               >

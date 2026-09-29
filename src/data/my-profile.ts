@@ -95,13 +95,25 @@ export type MyProfile = {
   /**
    * RESERVED, NOT SPENT. A wish holds its 10 sparks until the wish is either
    * granted-and-verified (they settle) or withdrawn (they come back).
-   * Keyed by the wish's item id, so a reservation always has an owner.
+   * Keyed by the wish's item id, so a reservation always has an owner — or by
+   * WISH_COMPOSE_KEY while a wish is being written (set aside at compose
+   * start, moved onto the wish when it publishes, returned on cancel).
    */
   reserved: Record<string, number>;
   /** The onboarding balance lands exactly once. */
   sparksSeeded: boolean;
   /** One key per already-rewarded completed interaction. Never pays twice. */
   rewarded: string[];
+  /**
+   * GIVE SPARKS LIVE IN GIVE (welcome-grant.ts): the welcome grant's 50 to
+   * give. WISH SPARKS LIVE IN WISH: `sparks` is the wish bank, the count the
+   * wish seat shows. Nothing is kept "in my g". Passing give sparks to
+   * someone is NOT a give: it never counts as kindness and never unlocks
+   * anything. No give count is shown anywhere for now.
+   */
+  giveSparks: number;
+  /** The welcome grant landed on this account (once, ever). */
+  welcomeGranted: boolean;
 };
 
 type Person = {
@@ -124,6 +136,8 @@ type Person = {
   reserved: Record<string, number>;
   sparksSeeded: boolean;
   rewarded: string[];
+  giveSparks: number;
+  welcomeGranted: boolean;
 };
 
 
@@ -132,6 +146,8 @@ const KEY = "giver.my-profile.v1";
 
 /** POSTING A WISH COSTS. COMPLETED GENEROSITY EARNS. Same size, opposite sign. */
 export const WISH_COST = 10;
+/** The reservation key for the wish being written right now. */
+export const WISH_COMPOSE_KEY = "compose:wish";
 export const GENEROSITY_REWARD = 10;
 /** What onboarding leaves in the account: 100 given, 50 gifted onward. */
 export const STARTING_SPARKS = 50;
@@ -157,6 +173,8 @@ const EMPTY_PERSON: Person = {
   reserved: {},
   sparksSeeded: false,
   rewarded: [],
+  giveSparks: 0,
+  welcomeGranted: false,
 };
 
 
@@ -407,7 +425,9 @@ export const myProfileStore = {
   } {
     hydrate();
     if (!text.trim()) return { ok: false, reason: "empty" };
-    if (category === "wish" && person.sparks < WISH_COST)
+    /* The 10 set aside when this wish began are already out of the bank. */
+    const composed = category === "wish" ? (person.reserved[WISH_COMPOSE_KEY] ?? 0) : 0;
+    if (category === "wish" && !composed && person.sparks < WISH_COST)
       return { ok: false, reason: "sparks" };
     /*
       18+ AND A REAL ACCOUNT BEFORE ANYTHING IS PUBLISHED. The answer is only
@@ -422,10 +442,12 @@ export const myProfileStore = {
     /* A WISH RESERVES ITS SPARKS. They leave the balance but are not spent:
        they belong to the wish until it is granted and verified, or withdrawn. */
     if (category === "wish") {
+      const reserved = { ...person.reserved, [item.id]: composed || WISH_COST };
+      delete reserved[WISH_COMPOSE_KEY];
       savePerson({
         ...person,
-        sparks: person.sparks - WISH_COST,
-        reserved: { ...person.reserved, [item.id]: WISH_COST },
+        sparks: composed ? person.sparks : person.sparks - WISH_COST,
+        reserved,
       });
       ledgerStore.record({
         currency: "spark",
@@ -502,15 +524,14 @@ export const myProfileStore = {
     itemsStore.remove(item.id);
   },
   /**
-   * COMPLETED GENEROSITY. A give that has actually reached another Giver is a
-   * completed act, and Giver — not the other person — recognises it with 10
-   * sparks. The ledger key makes the reward impossible to collect twice.
+   * MARK DONE. The item leaves circulation. No sparks: a give's handoff is
+   * paid by a later ticket (the phone tap), never faked here.
    */
   completeItem(category: Category, index: number) {
     const item = myProfileStore.get().records[category][index];
     if (!item) return;
+    /* A give marked done pays nothing yet: sparks on handoff come later. */
     itemsStore.complete(item.id);
-    if (category === "give") reward(`give:${item.id}`);
   },
   /**
    * SETTLE GENEROSITY. Called ONLY by the connection layer, and only once both
@@ -545,6 +566,60 @@ export const myProfileStore = {
         : "your wish was granted — sparks passed on",
       itemId,
     });
+  },
+
+  /**
+   * THE WISH BANK SETS 10 ASIDE THE MOMENT A WISH BEGINS (50 → 40 + 10
+   * aside). Publishing moves them onto the wish (addItem); cancelling before
+   * publish returns them (releaseWishCompose). Once per open composer; false
+   * when the bank can't cover it (the form then says so on publish).
+   */
+  holdWishCompose(): boolean {
+    hydrate();
+    if (person.reserved[WISH_COMPOSE_KEY]) return true;
+    if (person.sparks < WISH_COST) return false;
+    savePerson({
+      ...person,
+      sparks: person.sparks - WISH_COST,
+      reserved: { ...person.reserved, [WISH_COMPOSE_KEY]: WISH_COST },
+    });
+    return true;
+  },
+  /** A wish closed before it published: its 10 come back to the bank. */
+  releaseWishCompose() {
+    hydrate();
+    const held = person.reserved[WISH_COMPOSE_KEY];
+    if (held === undefined) return;
+    const reserved = { ...person.reserved };
+    delete reserved[WISH_COMPOSE_KEY];
+    savePerson({ ...person, reserved, sparks: person.sparks + held });
+  },
+
+  /**
+   * THE WELCOME GRANT — 100 sparks, 50 to give · 50 to wish, once per
+   * account, on the first land after the magic link (welcome-grant.ts).
+   * The "to wish" half is the ordinary balance: a new account already holds
+   * it (profiles.sparks defaults to 50), so it is only set when nothing was
+   * restored. The "to give" half is its own pot.
+   */
+  grantWelcome(toGive: number, toWish: number): boolean {
+    hydrate();
+    if (person.welcomeGranted) return false;
+    savePerson({
+      ...person,
+      sparks: person.sparksSeeded ? person.sparks : toWish,
+      sparksSeeded: true,
+      giveSparks: person.giveSparks + toGive,
+      welcomeGranted: true,
+    });
+    ledgerStore.record({
+      id: "grant:welcome",
+      currency: "spark",
+      kind: "received",
+      amount: toGive + toWish,
+      say: `here’s a hundred sparks · ${toGive} sparks to give, ${toWish} sparks to wish`,
+    });
+    return true;
   },
 
   /** ONBOARDING LEAVES A REAL BALANCE — once, never on every reopen. */

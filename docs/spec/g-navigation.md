@@ -1,9 +1,8 @@
 # G navigation + colour spec
 
-**Status:** Approved by Frazer, 27 Sep 2026. Communi-g rules (sections 2 to 5) updated 28 Sep 2026: the red perimeter stroke is the track, the page never tilts, and the toggle is a hollow circle in the seat colour with the seat word inside.
+**Status:** Approved by Frazer, 27 Sep 2026. Communi-g spatial nav (sections 2 to 5) updated 29 Sep 2026: the phone rectangle rides the lower loop's arc; the toggle stays fixed at 12:00 on the rectangle; snap on midpoint.
 
 This document is the design source of truth for G navigation and G colour.
-The build does not yet match this spec.
 
 Spellings are exact: **Communi-g** is the place; **Communi-G Wishes** and **Communi-G Borrows** are the names of the Wish and Borrow stops.
 
@@ -33,24 +32,27 @@ Spellings are exact: **Communi-g** is the place; **Communi-G Wishes** and **Comm
   - Lend (3:00) opposite Borrow (9:00).
   - Wish (~10:30) opposite Trade (~4:30).
 
-## 2. The red perimeter stroke is the track
+## 2. The rectangle rides the lower loop
 
-Frazer's Communi-g rules, 28 Sep 2026 (7:08 AM call). These replace the "page rides the lower loop" version: the dots and the leaning, shrinking page are gone.
+Frazer's Communi-g spatial nav, 29 Sep 2026 (via Luna). These tighten how the phone rectangle moves on the lower loop.
 
-- **The page never moves.** Each Communi-g page is a full-size rectangle on a solid white background, always upright, full size and filling the screen. It never rotates, scales or shifts and has no shadow, not even mid-drag. It stays a rectangle because Communi-g pages are working surfaces, such as forms to fill in and chats back and forth, and these cannot live inside a circle.
-- **The track is a thin red stroke.** A thin red (#E8322B) stroke runs round the page's perimeter, just inside the screen edge: a rectangle with rounded corners that follow the loop's feel. It is the visible path the toggle travels. Its weight is a third of the toggle ring's stroke (3px on a 390px-wide screen), so it reads as a track without being heavy and belongs to the ring's stroke family.
-- **The stroke never crosses the content.** The page's content sits in its own box inside the stroke, clipped to it. The stroke sits the toggle ring's outer radius plus a few pixels (plus the safe area) in from each screen edge, so the whole toggle, which centres on the stroke, always stays on screen.
-- **No seat markers.** Seats have no dots or ticks, 12:00 included. Each seat is where the stroke faces that clock position: the middle of the bottom, left, right and top edges for 6:00, 9:00, 3:00 and 12:00, and the middle of each rounded corner for the diagonals.
-- **Toggle.** The toggle is the main G's toggle ring, at exactly the same size, stroke width and title type: a hollow circle in the colour of the current seat, with an opaque white interior (nothing shows through) and the seat's word inside in the seat colour, lowercase Helvetica Neue with +0.08em tracking, centred and upright. The words are communi-g (6:00), fund, borrow, wish, give, lend and trade. The toggle sits on the red stroke and centres on it.
-- **Moving the toggle.** Hold and drag the toggle round the stroke, clockwise or counter-clockwise, as far as you like. While it is held, its colour and word change to the nearest seat, as on the main G; at 12:00 it reads "my g" in my g's blue (#1E7BFF), because letting go there goes back to the full G. On release it snaps to the nearest seat along the stroke and the page content switches to that mode. Arrow keys step from seat to seat.
-- **Tapping the stroke.** Tapping the stroke near a seat (within about 22px of it along the stroke, anywhere between the screen edge and the content) goes to that seat.
+- **One place.** Communi-g is one continuous map. The faded lower loop sits behind the phone rectangle. Every mode lives on that same loop. Nothing swaps to a different page.
+- **The page is an opaque rectangle.** Each Communi-g page is a full-size rectangle on a solid white background. It stays a rectangle because Communi-g pages are working surfaces (forms, chats) and these cannot live inside a circle.
+- **Never tilts or shrinks.** The page stays upright and full size at every moment, including mid-drag. No rotation, no scale, no crooked lean.
+- **The rectangle rides the curve.** On drag, the rectangle travels along the lower loop's arc toward the next seat. You see it move around the G, not slide like a carousel. The seat is wherever the rectangle sits on the track.
+- **Toggle fixed at 12:00.** The toggle stays fixed at 12:00 on the top edge of the rectangle: the main G's toggle ring in the current seat's colour, with an opaque white interior and the seat's word inside (lowercase Helvetica Neue). It does not travel round the page.
+- **Thin red stroke at the join.** A thin red (#E8322B) stroke marks the edge where the page meets the lower loop. The red track (the lower loop itself) stays put behind the page.
+- **Snap, don't linger.** As soon as a drag crosses the midpoint between two seats, the rectangle magnets home along the remaining arc in about 180–220ms. No pause on a mid-transition frame. Reverse before the midpoint and it snaps back the same way.
+- **On snap.** Only the content inside the rectangle and the text colour for that mode change. The red track, loop geometry and living G behind stay put.
+- **Tap.** Tapping a perimeter seat jumps the rectangle along the curve with the same snap. Exit at lower-loop 12:00 opens to the full living G with the toggle at middle-loop 6:00.
+- **Drag both ways.** Clockwise and counter-clockwise.
 - The system is taught through use, never explained.
 
 ## 3. Lower loop (Communi-g)
 
 - The toggle orbits the middle loop.
-- **Entry at 6:00.** At the 6:00 seat you enter Communi-g. The page opens upright and full screen, with the toggle on the red stroke at the bottom centre, reading communi-g in red.
-- The toggle's clock position on the stroke sets the page. Communi-g uses the wheel's seat positions: each clock position from ~1:30 to ~10:30 means the same mode on the wheel and on the stroke. The seats, listed by clock position:
+- **Entry at 6:00.** At the 6:00 seat you enter Communi-g. The page opens upright and full screen, riding the lower loop at 6:00, with the toggle at the top centre of the rectangle.
+- The rectangle's clock position on the lower loop sets the mode. The seats, listed by clock position:
 
   | Position | Seat |
   | --- | --- |
@@ -63,18 +65,18 @@ Frazer's Communi-g rules, 28 Sep 2026 (7:08 AM call). These replace the "page ri
   | 9:00 | Borrow (Communi-G Borrows) |
   | ~10:30 | Wish (Communi-G Wishes) |
 
-- **12:00 is the exit.** My G's 12:00 seat is not a page inside Communi-g. Releasing the toggle at 12:00, or tapping the stroke at top centre, returns to the full living G with the toggle at 6:00 on the middle loop and the G solid red. Dragging past 12:00 without letting go does not exit, and the arrow keys skip 12:00. The back arrow remains available.
-- Tapping an action on a page (for example Wishes or Give) carries the toggle round the stroke to that mode's clock position.
-- The page swaps strictly per mode.
-- **Colours.** Inside Communi-g the perimeter stroke and the Communi-g chrome are red (#E8322B) in every mode. The toggle takes the colour of the seat it is on, and the page's text takes that seat's colour.
+- **12:00 is the exit.** My G's 12:00 seat is not a page inside Communi-g. Snapping to 12:00, or tapping the 12:00 perimeter seat, returns to the full living G with the toggle at 6:00 on the middle loop and the G solid red. Dragging past 12:00 without crossing its midpoint does not exit, and the arrow keys skip 12:00. The back arrow remains available.
+- Tapping an action on a page (for example Wishes or Give) carries the rectangle round the lower loop to that mode's clock position.
+- **Colours.** Inside Communi-g the red track and the contact stroke stay red (#E8322B) in every mode. The toggle takes the colour of the seat the rectangle is on, and the page's text takes that seat's colour.
 - The profile is locked until the toggle is at 12:00 on the middle loop.
+- Bottom loop label on the My G seat is just "communi-g".
 
 ## 4. Direction, open and closed loops
 
 - Counter-clockwise is primary.
 - Clockwise is allowed inside Communi-g.
 - **Full G.** The middle loop is always drawn closed. The bottom loop is always drawn open (gapped): keep that negative space.
-- **Inside Communi-g.** The track is the closed red stroke round the page, so the toggle can travel all the way round it in either direction.
+- **Inside Communi-g.** The lower loop is treated as closed (a full circle), so the rectangle can travel all the way round it in either direction. The living G and the red track stay put behind the page.
 - The traced G path data is never edited to open or close a loop; the closed middle loop is achieved at render time.
 
 ## 5. Colour (critical)
@@ -82,14 +84,13 @@ Frazer's Communi-g rules, 28 Sep 2026 (7:08 AM call). These replace the "page ri
 - The G is always one solid colour: never two-tone, tie-dye, gradient, blended or multi-colour.
 - No loop differs from the rest.
 - This holds at sign-in.
-- The G's colour is the colour of the seat the toggle is on.
-- The bottom loop, sign-in included, is red only when the toggle is at 6:00 (Map / Search). In every other seat it is the seat colour, the same as the rest of the G: purple in Wish, green in Give, and so on. The G is never two-tone.
+- **Normal world colour lock:** the G letter stays blue #1E7BFF; seat colour is air/field and toggle only.
+- Inside Communi-g the red track / seat-coloured text behaviour of section 3 holds (this brief overrides screen motion only).
 - You are blue.
 - Other members' content stays red.
 - Mode chrome takes the mode colour.
 - Granting mixes blue with their colour into the seat's hue.
-- Communi-g: the perimeter stroke stays red in every mode; the toggle and the page's text take the seat colour (section 3).
 
 ---
 
-*Approved by Frazer, 27 Sep 2026; Communi-g rules updated 28 Sep 2026 (the red perimeter stroke is the track; the toggle is a hollow circle in the seat colour with the seat word inside). Mirrors the Navigation System and Colours pages in The Giver Bible (Notion).*
+*Approved by Frazer, 27 Sep 2026; Communi-g spatial nav updated 29 Sep 2026 (rectangle rides the curve; toggle fixed at 12:00; snap on midpoint). Mirrors the Navigation System and Colours pages in The Giver Bible (Notion).*

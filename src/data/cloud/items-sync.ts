@@ -20,8 +20,9 @@ import {
   type ItemDetails,
   type ItemType,
 } from "@/data/items";
-import { sessionStore } from "@/data/cloud/session";
+import { ensureLiveSession, isAuthFailure, sessionStore } from "@/data/cloud/session";
 import { directoryStore, localIdForProfile } from "@/data/cloud/directory";
+import { releaseHeldGives } from "@/data/first-give";
 
 const CLOUD = "cloud:";
 
@@ -103,25 +104,34 @@ export async function pushItems() {
   try {
     const mine = itemsStore.get().items.filter((i) => i.ownerId === ME_ID);
     if (mine.length) {
-      const { error } = await supabase.from("items").upsert(
-        mine.map((i) => ({
-          owner_id: profileId,
-          local_id: i.id,
-          type: i.type,
-          side: i.side ?? null,
-          text: i.text,
-          offer: i.offer ?? null,
-          want: i.want ?? null,
-          note: i.note ?? null,
-          status: i.status,
-          priority: i.priority,
-          published: i.published,
-          photos: i.photos ?? [],
-          details: i.details ?? {},
-          boost_count: i.boostCount ?? 0,
-        })),
-        { onConflict: "owner_id,local_id" },
-      );
+      const write = () =>
+        supabase.from("items").upsert(
+          mine.map((i) => ({
+            owner_id: profileId,
+            local_id: i.id,
+            type: i.type,
+            side: i.side ?? null,
+            text: i.text,
+            offer: i.offer ?? null,
+            want: i.want ?? null,
+            note: i.note ?? null,
+            status: i.status,
+            priority: i.priority,
+            published: i.published,
+            photos: i.photos ?? [],
+            details: i.details ?? {},
+            boost_count: i.boostCount ?? 0,
+          })),
+          { onConflict: "owner_id,local_id" },
+        );
+      let { error, status } = await write();
+      /* A 401 IS NEVER ANSWERED WITH AN EMAIL. Renew the token once and retry;
+         if it cannot be renewed the session has ended and the UI returns to
+         the G sign-in ("session ended — send a new link"). */
+      if (error && isAuthFailure(error, status)) {
+        if ((await ensureLiveSession(true)) !== "live") return;
+        ({ error, status } = await write());
+      }
       if (error) throw error;
     }
   } finally {
@@ -158,6 +168,8 @@ export function localItemIdFor(cloudId: string): string | null {
 export function startItemsSync() {
   if (started || typeof window === "undefined") return;
   started = true;
+  /* Gives held back by the removed first-give email check go live. */
+  releaseHeldGives();
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   const schedulePush = () => {

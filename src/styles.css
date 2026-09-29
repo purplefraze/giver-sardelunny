@@ -564,8 +564,8 @@
   --world-accent: var(--person-self);
 }
 
-/* COMMUNI-G — the page riding the lower loop. The loop and its toggle LOCK TO RED
-   whatever seat you came from; only the text on the page follows the
+/* COMMUNI-G — the zoomed-in lower loop. The loop and its toggle LOCK TO RED
+   whatever seat you came from; only the text inside the rectangle follows the
    browsed mode (--cg-ink, set by CommunityFeed). White paper. */
 [data-world="communigy"] {
   --world-bg: var(--seat-bg);
@@ -1744,11 +1744,6 @@
 .gf-cap-g { position: absolute; top: min(76px, 9vh); left: 32px; line-height: 0; }
 .gf-cap-line { font-size: 19px; line-height: 1.45; color: var(--form-ink); margin: 26px 0 0; max-width: 28ch; }
 .gf-cap-quiet { display: block; margin-top: 40px; font-size: 13px; min-height: 44px; }
-
-/* ONE QUICK CHECK (FirstGiveCheck.tsx). */
-.gf-check-kind { font-size: 17px; color: color-mix(in oklab, var(--form-seat) 74%, #000); margin: 14px 0 0; }
-.gf-check-line { font-size: 19px; line-height: 1.45; color: var(--form-ink); margin: 84px 0 0; max-width: 24ch; }
-.gf-check-code { margin-top: 40px; height: 52px; font-size: 21px; }
 
 /* GOT IT + faded give actions. */
 .gf-faded { opacity: 0.4; }

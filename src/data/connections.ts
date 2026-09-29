@@ -17,6 +17,7 @@
  */
 
 import { ME_ID, itemsStore, type ItemType } from "@/data/items";
+import { receiveBlock, startBlock } from "@/data/community-access";
 import { myProfileStore } from "@/data/my-profile";
 import { giveCapState } from "@/data/give-cap";
 
@@ -176,9 +177,11 @@ function settle(c: Connection): Connection {
   const item = itemsStore.get().items.find((i) => i.id === c.itemId);
   const text = item?.text ?? "a giver connection";
 
-  /* Giver recognises the generous side — once per connection, per person. */
+  /* Giver recognises the generous side — once per connection, per person.
+     NOT FOR A GIVE: sparks on a give's handoff are a later ticket (the phone
+     tap), so closing a give pays nothing and shows no "+10" — never faked. */
   for (const id of generousIds(c)) {
-    if (id === ME_ID) myProfileStore.earnSparks(`connection:${c.id}:${id}`);
+    if (id === ME_ID && c.type !== "give") myProfileStore.earnSparks(`connection:${c.id}:${id}`);
   }
   /* A wish's reserved sparks have now done their job. */
   if (c.type === "wish") myProfileStore.releaseWish(c.itemId, false);
@@ -245,6 +248,8 @@ export const connectionsStore = {
     if (!item) return { ok: false, reason: "gone" };
     if (item.ownerId === byId) return { ok: false, reason: "self" };
     if (item.status !== "active") return { ok: false, reason: "closed" };
+    /* A LIVE GIVE OF MY OWN FIRST; nobody receives without one. */
+    if (startBlock(itemsStore.get(), item, byId)) return { ok: false, reason: "live-give" };
     /* THE THREE-GIVES CAP (client-side; server version unapplied). */
     if (
       item.type === "give" &&
@@ -336,6 +341,9 @@ export const connectionsStore = {
     if (c.state !== "awaiting") return { ok: false, reason: "state" };
     if (!partiesOf(c).includes(byId)) return { ok: false, reason: "party" };
     if (c.claimedBy === byId) return { ok: false, reason: "self" };
+    const item = itemsStore.get().items.find((i) => i.id === c.itemId);
+    if (agrees && item && receiveBlock(itemsStore.get(), item, c.helperId))
+      return { ok: false, reason: "live-give" };
 
     if (!agrees) {
       commit({

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
@@ -15,6 +15,7 @@ import { useAppHeight } from "@/hooks/use-app-height";
 import { Onboarding } from "@/components/Onboarding";
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { useSession } from "@/hooks/use-session";
+import { sessionEndedPending } from "@/data/cloud/session";
 import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
@@ -134,6 +135,11 @@ import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
 import { LoopLabels } from "@/components/living-g/LoopLabel";
 import { useLifecycle } from "@/hooks/use-lifecycle";
+import { FirstLandArt, FirstLandCatch, type FirstLandPhase } from "@/components/first-land/FirstLand";
+import { GiveClosed } from "@/components/GiveClosed";
+import { claimWelcome, welcomeOwed } from "@/data/welcome-grant";
+import { markAsked, noteLiveGives } from "@/data/give-close";
+import { hasLiveGive, type Item } from "@/data/items";
 
 
 /**
@@ -238,6 +244,14 @@ function Index() {
    * still answering, a plain white cover keeps the G from flashing first.
    */
   const session = useSession();
+  /* A SESSION THAT ENDED ON ITS OWN (refresh failed, a write came back 401)
+     returns to the G sign-in, which says so. No email is ever sent for it. */
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (entered && session.status === "signed-out" && sessionEndedPending()) {
+      void navigate({ to: "/auth", search: {} });
+    }
+  }, [entered, session, navigate]);
   const [opening, setOpening] = useState(false);
   const owed = hydrated && entered && !opening ? openingPending() : null;
   const openingCover = owed !== null && session.status === "loading";
@@ -420,7 +434,13 @@ function Index() {
     setIntro({ topic: category, help: false });
   };
 
+  /** The first land's own hand-over to give explains nothing (FirstLand.tsx). */
+  const quietSeat = useRef<Seat | null>(null);
   useEffect(() => {
+    if (quietSeat.current === seat) {
+      quietSeat.current = null;
+      return;
+    }
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
@@ -504,6 +524,104 @@ function Index() {
 
   /** PRIVATE TO ME: how many conversations have something waiting inside. */
   const unread = unreadCount(links, ME_ID);
+
+  /*
+   * GIVER: FIRST LAND — THE SPARK CEREMONY (first-land/FirstLand.tsx,
+   * welcome-grant.ts). Once per account (device + account metadata), in the
+   * first session after the magic link. It opens with the toggle on My G
+   * (12:00) — the only time the app ever opens there — and cannot be skipped:
+   * every tap is swallowed until beat 4 ("are you a giver?") settles, when the
+   * toggle is handed back at give (1:30). Reduced motion lands straight on
+   * the settled end state. "settled" = the question (and communi-g) stay
+   * until the first move.
+   *
+   * The account is known to be owed as soon as the session is ready, so the
+   * G is already blue with the bead at 12:00 while the opening hands over;
+   * the clock starts once the G is actually landed on.
+   */
+  const [firstLand, setFirstLand] = useState<{
+    phase: FirstLandPhase;
+    startedAt: number | null;
+    still: boolean;
+  } | null>(null);
+  const grantChecked = useRef(false);
+  const landed =
+    hydrated &&
+    entered &&
+    !opening &&
+    !openingCover &&
+    !launchVeil &&
+    session.status === "ready" &&
+    editor === null &&
+    browse === null &&
+    detail === null &&
+    talking === null;
+  useEffect(() => {
+    if (!hydrated || !entered || session.status !== "ready" || grantChecked.current) return;
+    grantChecked.current = true;
+    void welcomeOwed().then((owed) => {
+      if (!owed) return;
+      const still =
+        typeof window !== "undefined" &&
+        Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+      setSeatState((prev) => {
+        if (still && prev !== "give") quietSeat.current = "give";
+        return still ? "give" : "giver";
+      });
+      setFirstLand({ phase: still ? "settled" : "ceremony", startedAt: null, still });
+    });
+  }, [hydrated, entered, session.status]);
+  /* THE CLOCK starts once the G is landed on; the grant is claimed then. */
+  useEffect(() => {
+    if (!landed || !firstLand || firstLand.startedAt !== null) return;
+    claimWelcome();
+    setFirstLand({ ...firstLand, startedAt: performance.now() });
+  }, [landed, firstLand]);
+  /* BEAT 4 SETTLED: the toggle is handed back at give; taps work again. */
+  const settleFirstLand = () => {
+    quietSeat.current = "give";
+    setSeatState("give");
+    setFirstLand((f) => (f ? { ...f, phase: "settled" } : f));
+  };
+  /* FREE: the first move anywhere (another seat, any world) and it is gone. */
+  useEffect(() => {
+    if (
+      firstLand?.phase === "settled" &&
+      firstLand.startedAt !== null &&
+      (!landed || seat !== "give")
+    )
+      setFirstLand(null);
+  }, [firstLand, landed, seat]);
+  const ceremony = firstLand?.phase === "ceremony";
+
+  /*
+   * THE WISH BANK SETS 10 ASIDE WHEN A WISH BEGINS (my-profile.ts): opening
+   * the wish composer (or ask for funding, which publishes a wish) holds 10;
+   * closing it before it publishes gives them back. Also clears a hold left
+   * behind by a reload.
+   */
+  const composingWish =
+    (editor?.kind === "category" && editor.category === "wish") || editor?.kind === "ask-fund";
+  useEffect(() => {
+    if (!hydrated) return;
+    if (composingWish) myProfileStore.holdWishCompose();
+    else myProfileStore.releaseWishCompose();
+  }, [composingWish, hydrated, session.status]);
+
+  /*
+   * A GIVE OF MINE JUST CLOSED (give-close.ts): taken, done or past its day.
+   * Ask once — offer that again, or something else. No sparks, no "+10".
+   */
+  const [closedGive, setClosedGive] = useState<Item | null>(null);
+  useEffect(() => {
+    if (!hydrated || !entered) return;
+    const closed = noteLiveGives(items);
+    if (closed && !closedGive) {
+      markAsked(closed.id);
+      setClosedGive(closed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- items drive it
+  }, [items, hydrated, entered]);
 
   /**
    * THE TOGGLE IS THE WORLD: wish | give | trade | borrow — plus MY G, the one
@@ -655,7 +773,9 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            world={atMap ? "map" : (activity ?? "profile")}
+            /* THE CEREMONY starts from My G blue; its purple → green tint is
+               applied by the ceremony itself (FirstLand.tsx), never here. */
+            world={ceremony ? "home" : atMap ? "map" : (activity ?? "profile")}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -673,23 +793,36 @@ function Index() {
             overlay={
               <>
               {/* THE LOOP LABELS — always shown, one component for every seat. */}
-              <LoopLabels seat={seat} />
-              <EarSelector
-                mode={seat}
-                weight="middle"
-                /* THE SEAT'S TITLE sits inside the hollow ring. */
-                title
-                onChange={moveToggle}
-                seats={myGSeats}
-                hideWord={!toggleWordsUnlocked}
-                {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
-                {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
-                /* FIRST USE HAS NO ACCOUNT FURNITURE — not even hidden peek data. */
-                {...(!firstArrival ? { sparks: me.sparks } : {})}
-
-                /* TAP ON THE TOGGLE: enters the seat's action screen. */
-                onTap={tapToggle}
+              <LoopLabels
+                seat={seat}
+                quiet={
+                  firstLand ? ["top", "bottom"] : []
+                }
               />
+              {/* ONE TOGGLE: while the ceremony runs, it draws the only bead. */}
+              {ceremony ? null : (
+                <EarSelector
+                  mode={seat}
+                  weight="middle"
+                  /* THE SEAT'S TITLE sits inside the hollow ring. */
+                  title
+                  onChange={moveToggle}
+                  seats={myGSeats}
+                  hideWord={!toggleWordsUnlocked}
+                  {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
+                  {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
+                  /* TAP ON THE TOGGLE: enters the seat's action screen. */
+                  onTap={tapToggle}
+                />
+              )}
+              {firstLand ? (
+                <FirstLandArt
+                  phase={firstLand.phase}
+                  startedAt={firstLand.startedAt}
+                  still={firstLand.still}
+                  onSettle={settleFirstLand}
+                />
+              ) : null}
               </>
             }
 
@@ -751,6 +884,7 @@ function Index() {
             they ride my own top profile loop (see EarSelector).
           */}
           {!firstArrival &&
+          !firstLand &&
           activity !== null &&
           !funding &&
           !tutorialSeen &&
@@ -1153,6 +1287,30 @@ function Index() {
 
         </>
       )}
+      {/* THE CEREMONY: every tap is swallowed until beat 4 settles. */}
+      {entered && ceremony && firstLand?.startedAt !== null ? <FirstLandCatch active /> : null}
+      {/* A GIVE JUST CLOSED: offer that again, or something else. */}
+      {entered && closedGive && !opening && !ceremony ? (
+        <GiveClosed
+          item={closedGive}
+          stillLive={hasLiveGive(items, ME_ID)}
+          onClose={() => setClosedGive(null)}
+          onAgain={() => {
+            const id = closedGive.id;
+            setClosedGive(null);
+            /* Three already live: reopen the give flow with it instead. */
+            if (!itemsStore.republish(id))
+              window.dispatchEvent(new CustomEvent("giver:post-again", { detail: id }));
+          }}
+          onSomethingElse={() => {
+            setClosedGive(null);
+            setDetail(null);
+            setBrowse(null);
+            setSeat("give");
+            setEditor({ kind: "category", category: "give" });
+          }}
+        />
+      ) : null}
       {/* LAUNCH → G CROSSFADE: the settled wordmark over the fresh G, fading. */}
       {entered && launchVeil ? <LaunchScreen veil onDone={() => setLaunchVeil(false)} /> : null}
       {/* THE OWED OPENING (after /auth or the dev skip), over the G, then the

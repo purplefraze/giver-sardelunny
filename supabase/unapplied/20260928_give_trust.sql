@@ -15,6 +15,11 @@
 -- ---------------------------------------------------------------------------
 -- 1. FIRST-GIVE CHECK
 -- ---------------------------------------------------------------------------
+-- !!! SUPERSEDED 2026-09-28 — DO NOT APPLY THIS BLOCK. The client-side
+-- first-give email check was removed ("fix: signed-in posts never re-send a
+-- login link"): it emailed signed-in people a new sign-in link on their first
+-- give. Nothing calls confirm_first_give() any more, so this trigger would
+-- keep every new member's gives unpublished forever. Blocks 2-5 are unchanged.
 create table if not exists public.give_verifications (
   profile_id uuid primary key references public.profiles(id) on delete cascade,
   verified_at timestamptz not null default now()

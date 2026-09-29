@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
-import { ACTIVITY_FILL, ME_ID, itemLine, type Item, type ItemType } from "@/data/items";
+import { ACTIVITY_FILL, ME_ID, itemLine, visibleToOthers, type Item, type ItemType } from "@/data/items";
 import {
   STATE_WORD,
   activityStatus,
@@ -83,7 +83,9 @@ export function ActivityDetail({
   /* THE THREE-GIVES CAP (give-cap.ts, client-side): an overlay, so closing it
      returns exactly here. */
   const [capOpen, setCapOpen] = useState(false);
-  const item = items.items.find((i) => i.id === itemId);
+  /* WITHOUT A LIVE GIVE, NOTHING ELSE OF THEIRS IS VISIBLE (items.ts). */
+  const found = items.items.find((i) => i.id === itemId);
+  const item = found && visibleToOthers(items, found) ? found : undefined;
 
 
   if (!item)

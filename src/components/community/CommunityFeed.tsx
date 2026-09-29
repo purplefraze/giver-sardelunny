@@ -45,14 +45,14 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-G. The page never moves: it is upright
- * and full screen, with a thin red stroke round its perimeter as the track
- * (PerimeterToggle.tsx). The toggle, the main G's hollow ring in the current
- * seat's colour with the seat's word inside, travels along the stroke; its
- * position is the mode, at the wheel's seat angles: give 1:30 · lend 3:00 ·
- * trade 4:30 · everything 6:00 (entry) · fund 7:30 · borrow 9:00 · wish
- * 10:30, and 12:00 is the way back to the full G. The stroke stays red in
- * every mode; the page's text takes the mode colour (--cg-ink).
+ * COMMUNI-G SPATIAL NAV. One continuous map: the faded lower loop sits
+ * behind the phone rectangle (PerimeterToggle.tsx). The rectangle rides the
+ * lower loop's arc — upright, full size, never tilting — with the toggle
+ * fixed at 12:00 on its top edge. The seat is wherever the rectangle sits on
+ * the track (give 1:30 · lend 3:00 · trade 4:30 · everything 6:00 entry ·
+ * fund 7:30 · borrow 9:00 · wish 10:30; 12:00 exits). Crossing a midpoint
+ * snaps along the remaining arc; only content and text colour change. The
+ * red track stays; the page's text takes the mode colour (--cg-ink).
  * Two views of the same filtered listings: the LIST, and the MAP (the 6:00
  * map seat's door), where every listing drops a pin in its mode colour and a
  * red circle marks what is near me.
@@ -205,7 +205,7 @@ export function CommunityFeed({
         ["--cg-ink" as string]: ink,
       }}
     >
-      {/* THE PAGE RIDES THE LOWER LOOP: the knob's position is the mode. */}
+      {/* THE RECTANGLE RIDES THE LOWER LOOP: its place on the arc is the mode. */}
       <PerimeterToggle
         value={mode}
         onChange={(next) => {
@@ -214,10 +214,7 @@ export function CommunityFeed({
         }}
         onExit={onExit ?? onClose}
       >
-        {/* The content sits inside the red stroke (PerimeterToggle's content
-            box). --cg-clear is how far a toggle parked on a corner reaches in:
-            the back arrow and the heading start below it, and the bottom keeps
-            it clear, so a parked toggle never covers them. */}
+        {/* --cg-clear clears the toggle fixed at the page's top edge. */}
         <div
           className="relative flex h-full w-full flex-col"
           style={{

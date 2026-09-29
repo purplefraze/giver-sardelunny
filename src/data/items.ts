@@ -943,6 +943,31 @@ export const itemsStore = {
   },
 
   /**
+   * OFFER THAT AGAIN: the same give, live in communi-g again. A window that
+   * has already passed is cleared so it does not close again at once.
+   * False when three gives are already live (MAX_ACTIVE).
+   */
+  republish(id: string): boolean {
+    const s = ensure();
+    const item = s.items.find((i) => i.id === id);
+    if (!item || item.type !== "give") return false;
+    const others = activeOf(s.items, item.ownerId, "give").filter((i) => i.id !== id);
+    if (others.length >= MAX_ACTIVE.give) return false;
+    let details = item.details;
+    if (details && itemExpired(item)) {
+      const { expiresAt: _e, until: _u, date: _d, ...rest } = details;
+      details = rest;
+    }
+    itemsStore.patch(id, {
+      status: "active",
+      published: true,
+      priority: others.length,
+      ...(details ? { details } : {}),
+    });
+    return true;
+  },
+
+  /**
    * THE WINDOW CLOSES BY ITSELF. Anything whose availability day has passed
    * leaves circulation quietly and keeps every word it was given.
    */
@@ -1049,9 +1074,37 @@ function activeOf(items: Item[], ownerId: string, type: ItemType) {
     .sort((a, b) => a.priority - b.priority);
 }
 
+/**
+ * A LIVE GIVE — currently offered in communi-g: a give that is active,
+ * published and still inside its window. Not completed, not withdrawn
+ * (removed), not archived, not past its day.
+ */
+export function isLiveGive(item: Item, now = Date.now()): boolean {
+  return item.type === "give" && item.status === "active" && item.published && !itemExpired(item, now);
+}
+
+/** Does this person have a give live in communi-g right now? */
+export function hasLiveGive(state: ItemsState, ownerId: string, now = Date.now()): boolean {
+  return state.items.some((i) => i.ownerId === ownerId && isLiveGive(i, now));
+}
+
+/**
+ * WITHOUT A LIVE GIVE, NOTHING ELSE OF THEIRS IS VISIBLE TO OTHER PEOPLE —
+ * no wish, trade, borrow, lend or fund. My own things are always visible to
+ * me. Client-side only until supabase/unapplied/20260928_grant_live_give.sql
+ * is applied (items select policy).
+ */
+export function visibleToOthers(state: ItemsState, item: Item, viewerId = ME_ID, now = Date.now()): boolean {
+  if (item.ownerId === viewerId) return true;
+  if (item.type === "give") return isLiveGive(item, now);
+  return hasLiveGive(state, item.ownerId, now);
+}
+
 /** MY list (or anyone's): active, in the owner's own priority order. */
 export function myItems(state: ItemsState, type: ItemType, ownerId = ME_ID) {
-  return activeOf(state.items, ownerId, type);
+  const list = activeOf(state.items, ownerId, type);
+  /* SOMEONE ELSE'S list only shows what other people may see. */
+  return ownerId === ME_ID ? list : list.filter((i) => visibleToOthers(state, i));
 }
 
 /** The owner's history: everything that is no longer active. */
@@ -1103,6 +1156,8 @@ export function communityItems(
     .filter((i) => i.status === "active" && i.published)
     /* EXPIRED GIVES DROP OUT OF BROWSE at once, before the sweep archives them. */
     .filter((i) => !itemExpired(i, now))
+    /* NO LIVE GIVE, NOTHING ELSE VISIBLE (my own always are, to me). */
+    .filter((i) => visibleToOthers(state, i, ME_ID, now))
     .filter((i) => (query.type ? i.type === query.type : true))
     .filter((i) => (query.ownerId ? i.ownerId === query.ownerId : true))
     .filter((i) => (query.excludeOwnerId ? i.ownerId !== query.excludeOwnerId : true))

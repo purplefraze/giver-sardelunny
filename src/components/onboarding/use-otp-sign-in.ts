@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { haptics } from "@/lib/haptics";
 import { rememberSignInEmail, rememberedSignInEmail, takeLinkNotice } from "@/lib/auth-callback";
 import { authRedirectOrigin } from "@/lib/public-origin";
+import { takeSessionEnded } from "@/data/cloud/session";
 
 /**
  * SAME-CIRCLE SIGN-IN — the behaviour behind SignInView, shared by the
@@ -88,6 +89,13 @@ export function useOtpSignIn({
      is one tap); anywhere else, the email step to fill in. */
   useEffect(() => {
     const said = takeLinkNotice();
+    /* A SESSION THAT ENDED ON ITS OWN: nothing was sent. The email step, the
+       last address filled in, one line — the person taps send themselves. */
+    if (!said && takeSessionEnded()) {
+      setEmail(rememberedSignInEmail());
+      setError("session ended — send a new link");
+      return;
+    }
     if (!said) return;
     const known = rememberedSignInEmail();
     if (known) {

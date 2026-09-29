@@ -70,7 +70,17 @@ type Shown = { key: number; seat: Seat; leaving: boolean };
  * collapses the animation). Purely visual: pointer events pass through to the
  * loops' existing tap targets.
  */
-export function LoopLabels({ seat }: { seat: Seat }) {
+export function LoopLabels({
+  seat,
+  quiet = [],
+}: {
+  seat: Seat;
+  /**
+   * Loops whose label steps aside (opacity only, LOOP_LABEL.fadeMs) while
+   * something else speaks there — the first land's lines. Taps are untouched.
+   */
+  quiet?: readonly ("top" | "bottom")[];
+}) {
   const root = useRef<SVGGElement | null>(null);
   const upp = useUnitsPerPx(root);
   const next = useRef(1);
@@ -129,7 +139,11 @@ export function LoopLabels({ seat }: { seat: Seat }) {
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill={fill}
-                style={style}
+                style={{
+                  ...style,
+                  opacity: quiet.includes(loop) ? 0 : 1,
+                  transition: `opacity ${LOOP_LABEL.fadeMs}ms ${LOOP_LABEL.easing}`,
+                }}
               >
                 {(loop === "top" ? copy.middle : copy.bottom).toLowerCase()}
               </text>

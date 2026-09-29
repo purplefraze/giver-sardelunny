@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { connectionsStore, type Connection } from "@/data/connections";
 import { itemsStore, ME_ID, type ItemType } from "@/data/items";
 import { giveCapState } from "@/data/give-cap";
+import { receiveBlock, startBlock } from "@/data/community-access";
 import { sessionStore } from "@/data/cloud/session";
 import { localIdForProfile, profileIdForLocal } from "@/data/cloud/directory";
 import { changeConnectionState } from "@/lib/connections.functions";
@@ -54,6 +55,9 @@ export async function startConnection(itemId: string): Promise<string> {
   if (!me) throw new Error("finish joining giver first");
   const item = itemsStore.get().items.find((candidate) => candidate.id === itemId);
   if (!item || item.ownerId === ME_ID) throw new Error("this connection cannot start");
+  /* A LIVE GIVE OF MY OWN FIRST, and nobody receives without one (community-access). */
+  const blocked = startBlock(itemsStore.get(), item, ME_ID);
+  if (blocked) throw new Error(blocked);
   /* THE THREE-GIVES CAP (client-side; the server rule is in the unapplied SQL). */
   const state = connectionsStore.get();
   if (
@@ -86,6 +90,13 @@ export async function startConnection(itemId: string): Promise<string> {
 }
 
 export async function updateConnection(connectionId: string, action: "handover" | "return" | "claim" | "confirm" | "dispute" | "cancel", value?: boolean) {
+  /* NOBODY RECEIVES WITHOUT A LIVE GIVE: nothing settles until they have one. */
+  if (action === "claim" || action === "confirm") {
+    const c = connectionsStore.get().connections.find((x) => x.id === connectionId);
+    const item = c ? itemsStore.get().items.find((i) => i.id === c.itemId) : undefined;
+    const blocked = c && item ? receiveBlock(itemsStore.get(), item, c.helperId) : null;
+    if (blocked) throw new Error(blocked);
+  }
   await changeConnectionState({ data: { connectionId, action, ...(value === undefined ? {} : { value }) } });
   await loadConnections();
   const connection = connectionsStore.get().connections.find((candidate) => candidate.id === connectionId);

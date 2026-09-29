@@ -32,17 +32,17 @@ Spellings are exact: **Communi-g** is the place; **Communi-G Wishes** and **Comm
   - Lend (3:00) opposite Borrow (9:00).
   - Wish (~10:30) opposite Trade (~4:30).
 
-## 2. Communi-g lower-loop navigation (edge-hugging)
+## 2. Communi-g lower-loop navigation (locked mocks)
 
-Frazer's corrected lower-loop nav, 29 Sep 2026 (via Luna).
+Frazer + Luna locked geometry, 29 Sep 2026. Matches `/workspace/mocks/communi-g-slivers/`.
 
-- **Edge-hug.** The toggle kisses the screen edge in the seat's direction (full bead always visible). `home = centre + (u/max|u|) × reach (L∞)` with `reach = half-size − outerR`. 6:00 bottom · 12:00 top · 9:00 left mid · 3:00 right mid · diagonals in their hemispheres.
-- **Mirror.** Top/bottom are vertical mirrors; left/right are horizontal mirrors. Structure only — each seat keeps its own title and colour.
-- **Tight outer space.** Loop radius sized so the far side of the circle (plus stroke) sits off-screen — local arc only, arms rise ~h/16–h/18 at 6:00/12:00; packs against the kissed edge.
-- **Track.** Red full circle, cropped by the frame per seat. Stroke `TRACK_STROKE = 32` CSS px (Frazer's ref crops). No phone frame border.
-- **Empty canvas.** Inside the loop is white only (surface for later).
-- **Toggle.** Seat-coloured ring, opaque white centre, seat name. Colours: communi-g #E8322B · fund #9E4B2C · borrow #C77DD6 · wish #9D00FF · my g #1E7BFF · give #4BE01E · lend #B5D334 · trade #FF6A13.
-- **Snap / exit.** Midpoint magnet ~200ms. Lower-loop 12:00 → full living G, toggle at middle-loop 6:00.
+- **One open crescent/sliver only** per seat — never a full red circle on screen.
+- **Stroke** living-G weight in screen px: `28.5 × 0.522784 ≈ 14.9`. Zoom never fattens it.
+- **Toggle** ~52px hollow ring (8px stroke), seat colour, white centre, lowercase seat name.
+- **Diagonals** (exact mirrors of Fund R=900 crescent into the corner): 7:30 fund #9E4B2C · 10:30 wish #9D00FF · 1:30 give #4BE01E · 4:30 trade #FF8A1E.
+- **Cardinals:** 12:00 my g #1E7BFF and 6:00 communi-g #E8322B are vertical mirrors (R=270). 9:00 borrow #B36BFF and 3:00 lend #B5D334 are vertical mirrors of a hard-flattened oval (Rx≈220, Ry≈720); toggle may clip the side edge.
+- **Empty white** interior. No phone frame border.
+- **Snap** midpoint magnet ~200ms. 12:00 exits to the full living G (toggle at middle-loop 6:00).
 
 ## 3. Lower loop (Communi-g)
 

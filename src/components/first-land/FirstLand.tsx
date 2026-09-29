@@ -19,10 +19,10 @@ import { useSvgUnits } from "./use-svg-units";
  *
  *   1. The G blue, the toggle on My G (12:00). Blue sparks fall from the top
  *      of the screen through the 12:00 hole and swirl round the inside of the
- *      middle loop. "here's a hundred sparks"
- *   2. "50 for you to wish". The toggle travels to 10:30 as the whole G tints
+ *      middle loop. "here's 100 sparks"
+ *   2. "50 to wish". The toggle travels to 10:30 as the whole G tints
  *      purple; half the sparks stream into the bead turning purple, rest, poof.
- *   3. "50 for you to give". The toggle travels back past 12:00 to 1:30 as the
+ *   3. "50 to give". The toggle travels back past 12:00 to 1:30 as the
  *      G tints green; the rest stream in turning green, rest, poof.
  *   4. "are you a giver?" — it stays. Ceremony over: the living G, taps work.
  *   5. "communi-g" fades into the bottom loop and stays at 60%.
@@ -356,9 +356,9 @@ export function FirstLandArt({
 
   /* ---- the copy, wrapped to fit inside the middle loop ---- */
   const [lines, setLines] = useState<Record<LineKey, string[]>>(() => ({
-    hundred: ["here’s a", "hundred", "sparks"],
-    wish: ["50 for you", "to wish"],
-    give: ["50 for you", "to give"],
+    hundred: ["here’s 100", "sparks"],
+    wish: ["50 to wish"],
+    give: ["50 to give"],
     question: ["are you", "a giver?"],
   }));
   useLayoutEffect(() => {

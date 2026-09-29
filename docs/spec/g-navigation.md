@@ -34,19 +34,17 @@ Spellings are exact: **Communi-g** is the place; **Communi-G Wishes** and **Comm
 
 ## 2. The rectangle rides the lower loop
 
-Frazer's Communi-g spatial nav, 29 Sep 2026 (via Luna). These tighten how the phone rectangle moves on the lower loop.
+Frazer's Communi-g spatial nav, 29 Sep 2026 (via Luna) — window on the zoomed lower loop.
 
-- **One place.** Communi-g is one continuous map. The faded lower loop sits behind the phone rectangle. Every mode lives on that same loop. Nothing swaps to a different page.
-- **The page is an opaque rectangle.** Each Communi-g page is a full-size rectangle on a solid white background. It stays a rectangle because Communi-g pages are working surfaces (forms, chats) and these cannot live inside a circle.
-- **Never tilts or shrinks.** The page stays upright and full size at every moment, including mid-drag. No rotation, no scale, no crooked lean.
-- **The rectangle rides the curve.** On drag, the rectangle travels along the lower loop's arc toward the next seat. You see it move around the G, not slide like a carousel. The seat is wherever the rectangle sits on the track.
-- **Toggle fixed at 12:00.** The toggle stays fixed at 12:00 on the top edge of the rectangle: the main G's toggle ring in the current seat's colour, with an opaque white interior and the seat's word inside (lowercase Helvetica Neue). It does not travel round the page.
-- **Thin red stroke at the join.** A thin red (#E8322B) stroke marks the edge where the page meets the lower loop. The red track (the lower loop itself) stays put behind the page.
-- **Snap, don't linger.** As soon as a drag crosses the midpoint between two seats, the rectangle magnets home along the remaining arc in about 180–220ms. No pause on a mid-transition frame. Reverse before the midpoint and it snaps back the same way.
-- **On snap.** Only the content inside the rectangle and the text colour for that mode change. The red track, loop geometry and living G behind stay put.
-- **Tap.** Tapping a perimeter seat jumps the rectangle along the curve with the same snap. Exit at lower-loop 12:00 opens to the full living G with the toggle at middle-loop 6:00.
-- **Drag both ways.** Clockwise and counter-clockwise.
-- The system is taught through use, never explained.
+- **One place.** Communi-g is one continuous map. The faded living G and a substantial red lower-loop trace sit behind the phone window. Every mode lives on that same loop.
+- **Zoom.** The lower loop dominates the view; little of the middle loop shows above the window.
+- **Trace weight.** The red circumference stroke matches the living G's outline weight at this zoom (not a hairline).
+- **Window.** An upright rectangle that takes most of the screen and sits lower on the screen (Wish-like). It never tilts or shrinks. As the user moves, the window slides around the circumference; at each seat some corners fall outside the red circle and are left cut (white + red trace show through — never filled). Intentional clips: 6:00 BL+BR · 3:00 TR+BR · 12:00 TR+TL · 1:30 TR.
+- **Toggle.** Travels with the window (top of the rectangle), seat-coloured ring with opaque white centre and seat word.
+- **Snap.** Midpoint cross magnets home in about 180–220ms. Reverse before the midpoint snaps back. On snap, only content and text colour change.
+- **Tap / exit.** Tapping a perimeter seat jumps along the curve. Exit at lower-loop 12:00 opens the full living G with the toggle at middle-loop 6:00.
+- Title and tabs stay readable inside the window (intentional corner clips must not cut mid-word).
+- **Stand-ins (spatial v2):** `LOOP_OF_MIN = 0.78`, `LOOP_CY_OF_H = 0.40`, `PAGE_MARGIN_X = 24`, `PAGE_TOP = 72`, `SLIDE = 28` (X clamped on-screen), track stroke = `G_STROKE.normal × (R / LOOP_RIM_RADIUS.bottom)`.
 
 ## 3. Lower loop (Communi-g)
 

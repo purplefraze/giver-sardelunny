@@ -45,14 +45,14 @@ import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
  * TWO DESTINATIONS, NEVER ONE: the headline opens the activity, the @username
  * opens the person.
  *
- * COMMUNI-G SPATIAL NAV. One continuous map: the faded lower loop sits
- * behind the phone rectangle (PerimeterToggle.tsx). The rectangle rides the
- * lower loop's arc — upright, full size, never tilting — with the toggle
- * fixed at 12:00 on its top edge. The seat is wherever the rectangle sits on
- * the track (give 1:30 · lend 3:00 · trade 4:30 · everything 6:00 entry ·
- * fund 7:30 · borrow 9:00 · wish 10:30; 12:00 exits). Crossing a midpoint
- * snaps along the remaining arc; only content and text colour change. The
- * red track stays; the page's text takes the mode colour (--cg-ink).
+ * COMMUNI-G SPATIAL NAV. One continuous map: a zoomed lower loop (substantial
+ * red trace) sits behind the phone window (PerimeterToggle.tsx). The window
+ * slides around the circumference — upright, lower on the screen, most of
+ * the screen — with corners clipped by the red circle. The toggle travels
+ * with the window. Seats: give 1:30 · lend 3:00 · trade 4:30 · everything
+ * 6:00 entry · fund 7:30 · borrow 9:00 · wish 10:30; 12:00 exits. Midpoint
+ * snap; only content and text colour change. Text stays readable inside the
+ * window (--cg-ink).
  * Two views of the same filtered listings: the LIST, and the MAP (the 6:00
  * map seat's door), where every listing drops a pin in its mode colour and a
  * red circle marks what is near me.
@@ -220,8 +220,8 @@ export function CommunityFeed({
           style={{
             paddingTop: "calc(var(--cg-clear, 48px) + 36px)",
             paddingBottom: "var(--cg-clear, 48px)",
-            paddingLeft: 2,
-            paddingRight: 2,
+            paddingLeft: 14,
+            paddingRight: 14,
             containerType: "inline-size",
           }}
         >

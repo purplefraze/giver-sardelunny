@@ -5,22 +5,22 @@ import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-G LOWER-LOOP — ARM-ANCHORED TOGGLE (Frazer, 29 Sep 2026).
+ * COMMUNI-G LOWER-LOOP — ARM-ANCHORED + AUTO-RUN (Frazer, 29 Sep 2026).
  *
  * IN-COMMUNITY ONLY (enter Living G at 6:00). Middle-loop / living-g untouched.
  *
  * Toggle = middle-loop piece MIRRORED INWARD:
  *   - Arm anchors on the INSIDE of the red track.
- *   - Bead/circle sits further into content space (toward loop centre).
- *   - Bead need not sit on the stroke (9/3 may float off-screen).
+ *   - Bead/circle sits further into content (toward loop centre).
+ *   - At 6:00 arm comes UP off the track into white — never a nub outside.
  *
- * Red track is always a true circle; the frame crops it:
- *   6/12 — full smile arcs; 9/3 — corner pieces only; diagonals — one corner.
+ * Auto-run: thumb initiates (press/drag); bead then cruises the track on its
+ * own (track runs for the thumb). Thumb may ride or let go. Release snaps
+ * nearest seat in travel direction. Drag stays primary; auto-run assists.
  *
- * Entry: subtle dolly-in (pulled back → zoomed crop) so the circle reads round
- * before the crop. Press: few-percent shrink + middle-loop peek above.
- * Release: run last-move direction, snap nearest seat; ghost bead while sliding.
- * Track always #E8322B; bead/arm take seat colour. 12:00 exits to full G.
+ * Red = true-circle crop: 6/12 full arcs; 9/3 inward-curving corner pieces;
+ * diagonals one corner. Dolly-in on entry. Press: subtle shrink + middle-loop peek.
+ * Track #E8322B; bead/arm seat-coloured. 12:00 exits to full G.
  */
 const SNAP_MS = 200;
 const G_PX = 0.522784;
@@ -36,11 +36,14 @@ const STEM_W = 8;
 /** Visible stem from track inner wall to bead outer edge (rest). */
 const STEM_LEN = 14;
 const POP_MS = 160;
-/** Press: subtle shrink only (few percent). */
-const DRAG_SHRINK = 0.96;
+/** Press: subtle shrink — enough to hop next seat, not a dramatic zoom-out. */
+const DRAG_SHRINK = 0.94;
 const DOLLY_MS = 520;
 /** Entry starts slightly pulled back so the circle reads round. */
 const DOLLY_START = 0.86;
+/** Auto-run cruise (deg/ms) once the thumb has initiated travel. */
+const CRUISE_DEG_MS = 0.12;
+const CRUISE_MAX_DEG_MS = 0.28;
 
 const DW = 390;
 const DH = 844;
@@ -122,41 +125,43 @@ const oneArc = (cx: number, cy: number, r: number, deg0: number, deg1: number) =
 const arcsPath = (g: Geom, r: number) => g.arcs.map((a) => oneArc(g.cx, g.cy, r, a.deg0, a.deg1)).join(" ");
 
 /**
- * True-circle crops (organism geometry).
- * 6/12: full smile. 9/3: corner pieces only (no red at bead). Diagonals: one corner.
+ * True-circle crops.
+ * 6/12: larger-R gentler arcs that climb into the corners (reads as a circle).
+ * 9/3: smaller-R corner pieces that bow inward toward the bead (not edge-straight).
+ * Diagonals: one corner.
  */
-const SIDE_R = 920;
-/** Bead floats past the left/right edge; attachment implied. */
-const SIDE_BEAD_X = -36;
+const SIDE_R = 560;
+/** Bead floats near/past the edge; attachment implied. */
+const SIDE_BEAD_X = -28;
 const DIAG_R = 520;
-/** 6/12 smile — round enough to read as a circle crop, not an oval strip. */
-const SMILE_R = 260;
-const SMILE_HALF = 78;
+/** 6/12 — bigger R vs screen, wider span so red climbs toward corners. */
+const SMILE_R = 400;
+const SMILE_HALF = 88;
 const TOP_RIM_Y = 52;
 const BOTTOM_KISS_Y = DH - TRACK_STROKE / 2;
 
 const sideCx = (left: boolean) => (left ? SIDE_R + SIDE_BEAD_X : DW - (SIDE_R + SIDE_BEAD_X));
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
-  /** 9:00 — TL + BL corner pieces; gap at bead (270°); bead floats left. */
+  /** 9:00 — inward-bowing TL+BL corners; gap at bead (270°). */
   borrow: {
     cx: sideCx(true),
     cy: DH / 2,
     r: SIDE_R,
     arcs: [
-      { deg0: 228, deg1: 258 }, // BL
-      { deg0: 282, deg1: 312 }, // TL
+      { deg0: 218, deg1: 258 }, // BL — curves in toward bead
+      { deg0: 282, deg1: 322 }, // TL
     ],
     toggleDeg: 270,
   },
-  /** 3:00 — TR + BR corner pieces; gap at bead (90°); bead floats right. */
+  /** 3:00 — inward-bowing TR+BR corners; gap at bead (90°). */
   lend: {
     cx: sideCx(false),
     cy: DH / 2,
     r: SIDE_R,
     arcs: [
-      { deg0: 48, deg1: 78 }, // TR
-      { deg0: 102, deg1: 132 }, // BR
+      { deg0: 38, deg1: 78 }, // TR
+      { deg0: 102, deg1: 142 }, // BR
     ],
     toggleDeg: 90,
   },
@@ -308,13 +313,32 @@ export function PerimeterToggle({
   const popRaf = useRef(0);
   const lastDir = useRef<1 | -1>(1);
   const [dolly, setDolly] = useState(0);
+  const [cruising, setCruising] = useState(false);
+  const cruiseRaf = useRef(0);
+  const cruiseVel = useRef(0); // signed deg/ms
   const drag = useRef<{
     id: number;
     moved: boolean;
     start: CgStation;
     x: number;
     y: number;
+    t: number;
+    angle: number;
   } | null>(null);
+
+  const cruisingRef = useRef(false);
+  const holdTimer = useRef(0);
+  const goRef = useRef<(s: CgStation) => void>(() => {});
+  const nearestRef = useRef<(d: number) => CgStation>(() => "everything");
+  const neighbourRef = useRef<(s: CgStation, dir: 1 | -1) => CgStation>((s) => s);
+
+  const stopCruise = () => {
+    cancelAnimationFrame(cruiseRaf.current);
+    cruiseRaf.current = 0;
+    cruiseVel.current = 0;
+    cruisingRef.current = false;
+    setCruising(false);
+  };
 
   useLayoutEffect(() => {
     const el = stage.current;
@@ -337,6 +361,11 @@ export function PerimeterToggle({
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
+  }, []);
+
+  useEffect(() => () => {
+    clearTimeout(holdTimer.current);
+    cancelAnimationFrame(cruiseRaf.current);
   }, []);
 
   useEffect(() => {
@@ -419,9 +448,56 @@ export function PerimeterToggle({
     }
     setGoal(s);
   };
+  goRef.current = go;
+  nearestRef.current = nearest;
+  neighbourRef.current = neighbour;
+
+  const startCruise = (dir: 1 | -1, speed: number) => {
+    cancelAnimationFrame(cruiseRaf.current);
+    lastDir.current = dir;
+    const mag = Math.min(CRUISE_MAX_DEG_MS, Math.max(CRUISE_DEG_MS, Math.abs(speed)));
+    cruiseVel.current = dir * mag;
+    cruisingRef.current = true;
+    setCruising(true);
+    const origin = drag.current?.start ?? nearestRef.current(posRef.current);
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(32, Math.max(0, now - last));
+      last = now;
+      // Finger still down with no velocity: keep a gentle assist cruise.
+      if (drag.current && Math.abs(cruiseVel.current) < CRUISE_DEG_MS * 0.5) {
+        cruiseVel.current = lastDir.current * CRUISE_DEG_MS;
+      }
+      // Finger up: coast with friction, then snap.
+      if (!drag.current) {
+        cruiseVel.current *= 0.975;
+      }
+      if (!drag.current && Math.abs(cruiseVel.current) < 0.02) {
+        stopCruise();
+        goRef.current(neighbourRef.current(nearestRef.current(posRef.current), lastDir.current));
+        return;
+      }
+      const next = posRef.current + cruiseVel.current * dt;
+      const fromSeat = drag.current?.start ?? origin;
+      const dirNow = lastDir.current;
+      const toward = neighbourRef.current(fromSeat, dirNow);
+      const mid = clockOf(fromSeat) + turn(clockOf(fromSeat), clockOf(toward)) / 2;
+      if (Math.abs(turn(clockOf(fromSeat), next)) >= Math.abs(turn(clockOf(fromSeat), mid)) - 0.01) {
+        stopCruise();
+        drag.current = null;
+        setDragging(false);
+        goRef.current(toward);
+        return;
+      }
+      put(next);
+      cruiseRaf.current = requestAnimationFrame(step);
+    };
+    cruiseRaf.current = requestAnimationFrame(step);
+  };
+
 
   useEffect(() => {
-    if (dragging || !size.w) return;
+    if (dragging || cruisingRef.current || !size.w) return;
     const from = posRef.current;
     const delta = turn(from, clockOf(goal));
     if (Math.abs(delta) < 0.05) {
@@ -455,34 +531,34 @@ export function PerimeterToggle({
       snappingRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [goal, dragging, size.w]);
+  }, [goal, dragging, cruising, size.w]);
 
   const { w, h } = size;
-  const settled = !dragging && !snapping && Math.abs(turn(pos, clockOf(goal))) < 0.2 && pop < 0.05;
+  const settled = !dragging && !snapping && !cruising && Math.abs(turn(pos, clockOf(goal))) < 0.2 && pop < 0.05;
   const here = nearest(pos);
   const towardSeat = neighbour(here, lastDir.current);
   const cHere = clockOf(here);
   const cToward = clockOf(towardSeat);
   const span = Math.abs(turn(cHere, cToward)) || 45;
   const traveled = Math.abs(turn(cHere, pos));
-  const blend = dragging || pop > 0.2 ? Math.min(1, traveled / span) : 0;
+  const blend = dragging || cruising || pop > 0.2 ? Math.min(1, traveled / span) : 0;
 
-  const shown: CgStation = dragging || pop > 0.5 ? here : goal;
+  const shown: CgStation = dragging || cruising || pop > 0.5 ? here : goal;
   const colour =
-    dragging || pop > 0.2
+    dragging || cruising || pop > 0.2
       ? lerpHex(colourOf(here), colourOf(towardSeat), blend * 0.85)
       : colourOf(shown);
-  const word = wordOf(dragging || pop > 0.5 ? (blend > 0.55 ? towardSeat : here) : shown);
+  const word = wordOf(dragging || cruising || pop > 0.5 ? (blend > 0.55 ? towardSeat : here) : shown);
 
   const geom = w
-    ? !dragging && !snapping
+    ? !dragging && !snapping && !cruising
       ? designAt(nearest(pos))
       : restGeomAt(pos)
     : null;
   const live: Geom | null = geom
     ? {
         ...geom,
-        toggleDeg: dragging || pop > 0.05 || snapping ? wrap(pos) : geom.toggleDeg,
+        toggleDeg: dragging || cruising || pop > 0.05 || snapping ? wrap(pos) : geom.toggleDeg,
       }
     : null;
 
@@ -491,7 +567,7 @@ export function PerimeterToggle({
 
   /** Ghost next-seat bead ahead while sliding (middle-loop hint language). */
   const plugs =
-    w && (dragging || pop > 0.3)
+    w && (dragging || cruising || pop > 0.3)
       ? ([towardSeat, neighbour(here, (lastDir.current * -1) as 1 | -1)] as CgStation[])
           .filter((s, i, a) => a.indexOf(s) === i)
           .map((s) => {
@@ -533,6 +609,7 @@ export function PerimeterToggle({
       data-cg-organism="1"
       data-cg-dolly={dolly.toFixed(2)}
       data-cg-arm="inward"
+      data-cg-cruise={cruising ? "1" : "0"}
     >
       {/* Middle-loop peek — only while pressed; sits above the Communi-G crop. */}
       {w && pop > 0.04 ? (
@@ -660,51 +737,82 @@ export function PerimeterToggle({
             onPointerDown={(e) => {
               if (snappingRef.current) return;
               e.stopPropagation();
+              clearTimeout(holdTimer.current);
+              stopCruise();
+              const angle = live ? wrap((Math.atan2(
+                e.clientX - stage.current!.getBoundingClientRect().left - live.cx,
+                -(e.clientY - stage.current!.getBoundingClientRect().top - live.cy),
+              ) * 180) / Math.PI) : posRef.current;
               drag.current = {
                 id: e.pointerId,
                 moved: false,
                 start: nearest(posRef.current),
                 x: e.clientX,
                 y: e.clientY,
+                t: performance.now(),
+                angle,
               };
               setDragging(true);
               animatePop(1);
               haptics.light();
               (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+              // Press alone initiates a gentle auto-run in the last travel direction.
+              holdTimer.current = window.setTimeout(() => {
+                if (!drag.current || drag.current.moved) return;
+                startCruise(lastDir.current, CRUISE_DEG_MS);
+              }, 140);
             }}
             onPointerMove={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId || snappingRef.current) return;
-              if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
-              d.moved = true;
-              const next = posRef.current + turn(posRef.current, thetaForFinger(e.clientX, e.clientY));
-              const dir: 1 | -1 = turn(clockOf(d.start), next) >= 0 ? 1 : -1;
+              const dist = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+              if (!d.moved && dist < 6) return;
+              clearTimeout(holdTimer.current);
+              const now = performance.now();
+              const finger = thetaForFinger(e.clientX, e.clientY);
+              const delta = turn(d.angle, finger);
+              const dt = Math.max(8, now - d.t);
+              // Thumb steers; track runs — velocity from finger sweep, bead auto-cruises.
+              const speed = Math.min(CRUISE_MAX_DEG_MS, Math.abs(delta) / dt + CRUISE_DEG_MS);
+              const dir: 1 | -1 = delta >= 0 ? 1 : -1;
               lastDir.current = dir;
-              const toward = neighbour(d.start, dir);
-              const mid = clockOf(d.start) + turn(clockOf(d.start), clockOf(toward)) / 2;
-              if (Math.abs(turn(clockOf(d.start), next)) >= Math.abs(turn(clockOf(d.start), mid))) {
-                drag.current = null;
-                setDragging(false);
-                go(toward);
-                return;
-              }
-              put(next);
+              d.moved = true;
+              d.x = e.clientX;
+              d.y = e.clientY;
+              d.t = now;
+              d.angle = finger;
+              if (!cruisingRef.current) startCruise(dir, speed);
+              else cruiseVel.current = dir * speed;
             }}
             onPointerUp={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId) return;
+              clearTimeout(holdTimer.current);
               drag.current = null;
               setDragging(false);
-              if (d.moved) {
-                go(neighbour(d.start, lastDir.current));
-              } else animatePop(0);
+              if (d.moved || cruisingRef.current) {
+                // Let auto-run coast briefly; snap nearest in travel direction.
+                if (!cruisingRef.current) {
+                  go(neighbour(d.start, lastDir.current));
+                  animatePop(0);
+                }
+                // else: cruise step handles snap on friction end / seat catch
+              } else {
+                stopCruise();
+                animatePop(0);
+              }
             }}
             onPointerCancel={() => {
               const d = drag.current;
+              clearTimeout(holdTimer.current);
+              const moved = !!d?.moved;
+              const start = d?.start;
               drag.current = null;
               setDragging(false);
-              if (d?.moved) go(neighbour(d.start, lastDir.current));
-              else animatePop(0);
+              if (moved || cruisingRef.current) {
+                if (!cruisingRef.current && start) go(neighbour(start, lastDir.current));
+              } else stopCruise();
+              animatePop(0);
             }}
             onKeyDown={(e) => {
               const modes = STATIONS.filter((s) => s !== "exit");

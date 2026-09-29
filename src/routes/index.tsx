@@ -49,7 +49,7 @@ import { unreadCount } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import type { Category } from "@/data/my-profile";
-import { WISH_COMPOSE_KEY, myAsMember, myProfileStore } from "@/data/my-profile";
+import { myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
 import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
@@ -136,7 +136,6 @@ import { initializeFirstUse } from "@/data/first-use";
 import { LoopLabels } from "@/components/living-g/LoopLabel";
 import { useLifecycle } from "@/hooks/use-lifecycle";
 import { FirstLandArt, FirstLandCatch, type FirstLandPhase } from "@/components/first-land/FirstLand";
-import { FIRST_LAND } from "@/components/first-land/first-land-config";
 import { GiveClosed } from "@/components/GiveClosed";
 import { claimWelcome, welcomeOwed } from "@/data/welcome-grant";
 import { markAsked, noteLiveGives } from "@/data/give-close";
@@ -435,7 +434,13 @@ function Index() {
     setIntro({ topic: category, help: false });
   };
 
+  /** The first land's own hand-over to give explains nothing (FirstLand.tsx). */
+  const quietSeat = useRef<Seat | null>(null);
   useEffect(() => {
+    if (quietSeat.current === seat) {
+      quietSeat.current = null;
+      return;
+    }
     /* FIRST ARRIVAL IS PURE PLAY: moving the toggle explains nothing and
        navigates nowhere until the person has built their profile. */
     if (!entered || !myProfileStore.get().built) return;
@@ -521,19 +526,24 @@ function Index() {
   const unread = unreadCount(links, ME_ID);
 
   /*
-   * GIVER: FIRST LAND (first-land/FirstLand.tsx, welcome-grant.ts): on the
-   * account's first land after the magic link — once the opening has handed
-   * over — at give (1:30), giver grants 100 sparks and plays the one moment:
-   * they drop into my g, split 50 to give / 50 to wish, glow, then "your
-   * sparks live in my wishes.", "are you a giver?", "communi-" + the G.
-   * Once per account (device + account metadata), never replayed. A tap
-   * skips (and is swallowed). Reduced motion lands straight on the end.
-   * "free" = the moment is over; the question stays until the first move.
+   * GIVER: FIRST LAND — THE SPARK CEREMONY (first-land/FirstLand.tsx,
+   * welcome-grant.ts). Once per account (device + account metadata), in the
+   * first session after the magic link. It opens with the toggle on My G
+   * (12:00) — the only time the app ever opens there — and cannot be skipped:
+   * every tap is swallowed until beat 4 ("are you a giver?") settles, when the
+   * toggle is handed back at give (1:30). Reduced motion lands straight on
+   * the settled end state. "settled" = the question (and communi-g) stay
+   * until the first move.
+   *
+   * The account is known to be owed as soon as the session is ready, so the
+   * G is already blue with the bead at 12:00 while the opening hands over;
+   * the clock starts once the G is actually landed on.
    */
-  const [firstLand, setFirstLand] = useState<{ phase: FirstLandPhase; startedAt: number } | null>(
-    null,
-  );
-  const freeFirstLand = () => setFirstLand((f) => (f ? { ...f, phase: "free" } : f));
+  const [firstLand, setFirstLand] = useState<{
+    phase: FirstLandPhase;
+    startedAt: number | null;
+    still: boolean;
+  } | null>(null);
   const grantChecked = useRef(false);
   const landed =
     hydrated &&
@@ -547,22 +557,42 @@ function Index() {
     detail === null &&
     talking === null;
   useEffect(() => {
-    if (!landed || grantChecked.current) return;
+    if (!hydrated || !entered || session.status !== "ready" || grantChecked.current) return;
     grantChecked.current = true;
     void welcomeOwed().then((owed) => {
       if (!owed) return;
-      setSeatState("give");
-      claimWelcome();
       const still =
         typeof window !== "undefined" &&
         Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
-      setFirstLand({ phase: still ? "free" : "moment", startedAt: performance.now() });
+      setSeatState((prev) => {
+        if (still && prev !== "give") quietSeat.current = "give";
+        return still ? "give" : "giver";
+      });
+      setFirstLand({ phase: still ? "settled" : "ceremony", startedAt: null, still });
     });
-  }, [landed]);
+  }, [hydrated, entered, session.status]);
+  /* THE CLOCK starts once the G is landed on; the grant is claimed then. */
+  useEffect(() => {
+    if (!landed || !firstLand || firstLand.startedAt !== null) return;
+    claimWelcome();
+    setFirstLand({ ...firstLand, startedAt: performance.now() });
+  }, [landed, firstLand]);
+  /* BEAT 4 SETTLED: the toggle is handed back at give; taps work again. */
+  const settleFirstLand = () => {
+    quietSeat.current = "give";
+    setSeatState("give");
+    setFirstLand((f) => (f ? { ...f, phase: "settled" } : f));
+  };
   /* FREE: the first move anywhere (another seat, any world) and it is gone. */
   useEffect(() => {
-    if (firstLand?.phase === "free" && (!landed || seat !== "give")) setFirstLand(null);
+    if (
+      firstLand?.phase === "settled" &&
+      firstLand.startedAt !== null &&
+      (!landed || seat !== "give")
+    )
+      setFirstLand(null);
   }, [firstLand, landed, seat]);
+  const ceremony = firstLand?.phase === "ceremony";
 
   /*
    * THE WISH BANK SETS 10 ASIDE WHEN A WISH BEGINS (my-profile.ts): opening
@@ -743,9 +773,9 @@ function Index() {
           */}
           <World
             /* THE TOGGLE'S WORLD OWNS THE COLOUR. My G is a destination, not a seat. */
-            /* THE FIRST LAND KEEPS THE G LETTER MY G BLUE (the blue-letter
-               rule) — via this same colour prop, never the geometry. */
-            world={firstLand ? "home" : atMap ? "map" : (activity ?? "profile")}
+            /* THE CEREMONY starts from My G blue; its purple → green tint is
+               applied by the ceremony itself (FirstLand.tsx), never here. */
+            world={ceremony ? "home" : atMap ? "map" : (activity ?? "profile")}
             /* ONE ACTIVE SEAT = ONE CLEAN SET OF IN-LOOP TEXT. */
             contentKey={seat}
             active={
@@ -769,31 +799,28 @@ function Index() {
                   firstLand ? ["top", "bottom"] : []
                 }
               />
-              <EarSelector
-                mode={seat}
-                weight="middle"
-                /* THE SEAT'S TITLE sits inside the hollow ring. */
-                title
-                onChange={moveToggle}
-                seats={myGSeats}
-                hideWord={!toggleWordsUnlocked}
-                {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
-                {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
-                /* WISH SPARKS LIVE IN WISH: the wish bank's count sits in the
-                   ring at the wish seat. No balance anywhere else (no give
-                   count, nothing in my g). First use has no account furniture. */
-                {...(!firstArrival && seat === "wish"
-                  ? { count: { value: me.sparks, colour: FIRST_LAND.colour.wish } }
-                  : {})}
-
-                /* TAP ON THE TOGGLE: enters the seat's action screen. */
-                onTap={tapToggle}
-              />
+              {/* ONE TOGGLE: while the ceremony runs, it draws the only bead. */}
+              {ceremony ? null : (
+                <EarSelector
+                  mode={seat}
+                  weight="middle"
+                  /* THE SEAT'S TITLE sits inside the hollow ring. */
+                  title
+                  onChange={moveToggle}
+                  seats={myGSeats}
+                  hideWord={!toggleWordsUnlocked}
+                  {...(!firstArrival && me.built && me.photo ? { photo: me.photo } : {})}
+                  {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
+                  /* TAP ON THE TOGGLE: enters the seat's action screen. */
+                  onTap={tapToggle}
+                />
+              )}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}
                   startedAt={firstLand.startedAt}
-                  onEnd={freeFirstLand}
+                  still={firstLand.still}
+                  onSettle={settleFirstLand}
                 />
               ) : null}
               </>
@@ -1260,31 +1287,10 @@ function Index() {
 
         </>
       )}
-      {/* THE FIRST LAND: a tap anywhere skips, and is swallowed. */}
-      {entered && firstLand ? (
-        <FirstLandCatch active={firstLand.phase === "moment"} onSkip={freeFirstLand} />
-      ) : null}
-      {/* WHILE A WISH IS BEING WRITTEN: the bank, and the 10 set aside for it. */}
-      {entered && composingWish && me.reserved[WISH_COMPOSE_KEY] ? (
-        <div
-          data-testid="wish-aside"
-          className="pointer-events-none absolute right-[30px] z-[45] lowercase"
-          style={{
-            top: 90,
-            fontFamily: FIRST_LAND.type.family,
-            fontSize: FIRST_LAND.type.regular.sizePx,
-            letterSpacing: 0,
-            color: FIRST_LAND.colour.wish,
-          }}
-        >
-          <span style={{ fontWeight: FIRST_LAND.type.strong.weight }}>{me.sparks}</span>
-          <span style={{ fontWeight: FIRST_LAND.type.regular.weight }}>
-            {` + ${me.reserved[WISH_COMPOSE_KEY]} aside`}
-          </span>
-        </div>
-      ) : null}
+      {/* THE CEREMONY: every tap is swallowed until beat 4 settles. */}
+      {entered && ceremony && firstLand?.startedAt !== null ? <FirstLandCatch active /> : null}
       {/* A GIVE JUST CLOSED: offer that again, or something else. */}
-      {entered && closedGive && !opening && firstLand?.phase !== "moment" ? (
+      {entered && closedGive && !opening && !ceremony ? (
         <GiveClosed
           item={closedGive}
           stillLive={hasLiveGive(items, ME_ID)}

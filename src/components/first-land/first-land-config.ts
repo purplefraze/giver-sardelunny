@@ -130,6 +130,16 @@ export const FIRST_LAND_MARK = {
   strokePx: 2,
   /** 1px after the hyphen. */
   gapPx: 1,
+  /**
+   * ON THE BASELINE (Frazer, 28 Sep 2026): the point where the S-curve joins
+   * the lower loop sits on the words' baseline, in line with the bottom of
+   * the "i". Measured off the canonical path (rasterised at 1 unit = 1px):
+   * the S-curve's lower arm becomes the lower loop's top at x ≈ 250–330,
+   * where the stroke runs y ≈ 562 (top edge) to 618.5 (bottom edge) in the
+   * G's box units. The BOTTOM edge of that join (ink, outline included) is
+   * set on the baseline, as the i's foot is. Read-only measurement.
+   */
+  joinBottomUnits: 618.5,
 } as const;
 
 /** Everything the ceremony needs, in one object. */

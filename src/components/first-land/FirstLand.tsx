@@ -213,9 +213,10 @@ function wrapInCircle(
 
 /**
  * "communi-" and then the mini G: the real path from g-path.ts in solid red,
- * scaled so its MIDDLE LOOP is the letters' x-height, its bead and bottom
- * loop falling where the G has them (the bottom loop below the baseline like
- * a descender), its ink matched to the letters, 1px after the hyphen.
+ * scaled so its MIDDLE LOOP is the letters' x-height, set so the point where
+ * the S-curve joins the lower loop sits on the baseline (level with the foot
+ * of the "i"), the lower loop below it like a descender, its ink matched to
+ * the letters, 1px after the hyphen.
  */
 function Communi({ size, upp, opacity }: { size: number; upp: number; opacity: number }) {
   const ty = FIRST_LAND.type;
@@ -251,7 +252,9 @@ function Communi({ size, upp, opacity }: { size: number; upp: number; opacity: n
   const left = LOOP_CENTRE.bottom.x - (textW + gap + markW) / 2;
   const baseline = LOOP_CENTRE.bottom.y + (ty.xHeightEm * size) / 2;
   const x0 = left + textW + gap - loopLeft * k + add / 2;
-  const y0 = baseline - (LOOP_CENTRE.middle.y + RIM) * k - add / 2;
+  /* The S-curve's join with the lower loop (its bottom ink edge) sits on the
+     baseline, level with the foot of the "i". */
+  const y0 = baseline - M.joinBottomUnits * k - add / 2;
   return (
     <g opacity={opacity} data-testid="first-land-communi">
       <text

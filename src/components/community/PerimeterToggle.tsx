@@ -31,8 +31,9 @@ import { haptics } from "@/lib/haptics";
  * show through; never filled).
  *
  *   ZOOM       Lower loop dominates; little of the middle loop shows above.
- *   TRACE      Stroke weight matches the living G's outline at this zoom
- *              (G_STROKE.normal × scale), not a hairline.
+ *   TRACE      Lower-loop stroke matches the living G, but at middle weight
+ *              × scale so it reads as the G's line — not a chunky frame.
+ *              No box border on the phone window; straight edges meet white.
  *   WINDOW     Axis-aligned rectangle, most of the screen, biased down.
  *              Translates toward the seat angle so the far corners clip:
  *              6:00 BL+BR · 3:00 TR+BR · 12:00 TR+TL · 1:30 TR · etc.
@@ -157,9 +158,11 @@ export function PerimeterToggle({
     const R = Math.max(1, Math.min(w, h) * LOOP_OF_MIN);
     const Cx = w / 2;
     const Cy = h * LOOP_CY_OF_H;
-    /* Stroke matches the living G's outline at this zoom. */
+    /* Scale the living G to this zoom. Trace uses MIDDLE weight so the
+     * line stays G-consistent without reading as a picture frame (~66px
+     * at normal was too chunky when zoomed in). */
     const gScale = R / LOOP_RIM_RADIUS.bottom;
-    const trackW = G_STROKE.normal * gScale;
+    const trackW = G_STROKE.middle * gScale;
     const k = gPxPerUnit(w || 390, h || 844);
     const tg = toggleGeometry("middle");
     const outerR = tg.EAR.outerR * k;
@@ -374,6 +377,11 @@ export function PerimeterToggle({
             width: geo.pageW,
             height: geo.pageH,
             background: "var(--world-bg)",
+            /* No framed border — straight edges meet white; only the G's
+             * own outline shows where the circle clips a corner. */
+            border: "none",
+            outline: "none",
+            boxShadow: "none",
             clipPath,
             WebkitClipPath: clipPath,
             willChange: "left, top, clip-path",

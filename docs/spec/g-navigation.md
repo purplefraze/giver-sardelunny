@@ -38,13 +38,13 @@ Frazer's Communi-g spatial nav, 29 Sep 2026 (via Luna) — window on the zoomed 
 
 - **One place.** Communi-g is one continuous map. The faded living G and a substantial red lower-loop trace sit behind the phone window. Every mode lives on that same loop.
 - **Zoom.** The lower loop dominates the view; little of the middle loop shows above the window.
-- **Trace weight.** The red circumference stroke matches the living G's outline weight at this zoom (not a hairline).
+- **Trace weight.** The red circumference stroke matches the living G at middle weight × zoom (not a hairline, not a chunky frame). No box border on the phone window — straight edges meet white; only the G outline shows where corners clip.
 - **Window.** An upright rectangle that takes most of the screen and sits lower on the screen (Wish-like). It never tilts or shrinks. As the user moves, the window slides around the circumference; at each seat some corners fall outside the red circle and are left cut (white + red trace show through — never filled). Intentional clips: 6:00 BL+BR · 3:00 TR+BR · 12:00 TR+TL · 1:30 TR.
 - **Toggle.** Travels with the window (top of the rectangle), seat-coloured ring with opaque white centre and seat word.
 - **Snap.** Midpoint cross magnets home in about 180–220ms. Reverse before the midpoint snaps back. On snap, only content and text colour change.
 - **Tap / exit.** Tapping a perimeter seat jumps along the curve. Exit at lower-loop 12:00 opens the full living G with the toggle at middle-loop 6:00.
 - Title and tabs stay readable inside the window (intentional corner clips must not cut mid-word).
-- **Stand-ins (spatial v2):** `LOOP_OF_MIN = 0.78`, `LOOP_CY_OF_H = 0.40`, `PAGE_MARGIN_X = 24`, `PAGE_TOP = 72`, `SLIDE = 28` (X clamped on-screen), track stroke = `G_STROKE.normal × (R / LOOP_RIM_RADIUS.bottom)`.
+- **Stand-ins (spatial v2):** `LOOP_OF_MIN = 0.78`, `LOOP_CY_OF_H = 0.40`, `PAGE_MARGIN_X = 24`, `PAGE_TOP = 72`, `SLIDE = 28` (X clamped on-screen), track stroke = `G_STROKE.middle × (R / LOOP_RIM_RADIUS.bottom)` (normal×scale read as a frame when zoomed; middle keeps G-consistent without the chunky border). No box stroke on the phone window.
 
 ## 3. Lower loop (Communi-g)
 

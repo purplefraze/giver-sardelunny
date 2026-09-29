@@ -127,8 +127,12 @@ const SIDE_R = 860;
 const SIDE_X = -10; // stroke past edge — bead clips at 9/3
 const DIAG_R = 520;
 const WISH_STROKE = { x: 108, y: 116 }; // TL corner only
-const TOP_R = 900;
+/** 6/12 smile — tighter R so L/R arcs rise; rest of loop off-screen. */
+const SMILE_R = 220;
+const SMILE_HALF = 75; // degrees each side of 6:00 / 12:00
 const TOP_RIM_Y = 48; // peak of rainbow under status; bead hangs below
+/** Stroke centreline so the outer edge kisses the bottom frame. */
+const BOTTOM_KISS_Y = DH - TRACK_STROKE / 2;
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
   borrow: {
@@ -179,22 +183,22 @@ const GEOM_DESIGN: Record<CgStation, Geom> = {
     deg1: 165.5,
     toggleDeg: 135,
   },
-  /** 12:00 rainbow — peak mid-top; bead on stroke, arm hangs into interior. */
+  /** 12:00 rainbow — peak under status; bead on stroke, arm hangs into interior. */
   exit: {
     cx: DW / 2,
-    cy: TOP_RIM_Y + TOP_R,
-    r: TOP_R,
-    deg0: 328,
-    deg1: 32,
+    cy: TOP_RIM_Y + SMILE_R,
+    r: SMILE_R,
+    deg0: 360 - SMILE_HALF,
+    deg1: SMILE_HALF,
     toggleDeg: 0,
   },
-  /** 6:00 entry — communi-g / map, red. */
+  /** 6:00 entry — bottom smile kissing the frame; red rises L/R of the bead. */
   everything: {
     cx: DW / 2,
-    cy: DH - (TOP_RIM_Y + TOP_R),
-    r: TOP_R,
-    deg0: 148,
-    deg1: 212,
+    cy: BOTTOM_KISS_Y - SMILE_R,
+    r: SMILE_R,
+    deg0: 180 - SMILE_HALF,
+    deg1: 180 + SMILE_HALF,
     toggleDeg: 180,
   },
 };

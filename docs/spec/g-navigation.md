@@ -32,19 +32,17 @@ Spellings are exact: **Communi-g** is the place; **Communi-G Wishes** and **Comm
   - Lend (3:00) opposite Borrow (9:00).
   - Wish (~10:30) opposite Trade (~4:30).
 
-## 2. The rectangle rides the lower loop
+## 2. Communi-g lower-loop navigation
 
-Frazer's Communi-g spatial nav, 29 Sep 2026 (via Luna) — window on the zoomed lower loop.
+Frazer's unified lower-loop nav, 29 Sep 2026 (via Luna).
 
-- **One place.** Communi-g is one continuous map. The faded living G and a substantial red lower-loop trace sit behind the phone window. Every mode lives on that same loop.
-- **Zoom.** The lower loop dominates the view; little of the middle loop shows above the window.
-- **Trace weight.** The red circumference stroke matches the living G at middle weight × zoom (not a hairline, not a chunky frame). No box border on the phone window — straight edges meet white; only the G outline shows where corners clip.
-- **Window.** An upright rectangle that takes most of the screen and sits lower on the screen (Wish-like). It never tilts or shrinks. As the user moves, the window slides around the circumference; at each seat some corners fall outside the red circle and are left cut (white + red trace show through — never filled). Intentional clips: 6:00 BL+BR · 3:00 TR+BR · 12:00 TR+TL · 1:30 TR.
-- **Toggle.** Travels with the window (top of the rectangle), seat-coloured ring with opaque white centre and seat word.
-- **Snap.** Midpoint cross magnets home in about 180–220ms. Reverse before the midpoint snaps back. On snap, only content and text colour change.
-- **Tap / exit.** Tapping a perimeter seat jumps along the curve. Exit at lower-loop 12:00 opens the full living G with the toggle at middle-loop 6:00.
-- Title and tabs stay readable inside the window (intentional corner clips must not cut mid-word).
-- **Stand-ins (spatial v2):** `LOOP_OF_MIN = 0.78`, `LOOP_CY_OF_H = 0.40`, `PAGE_MARGIN_X = 24`, `PAGE_TOP = 72`, `SLIDE = 28` (X clamped on-screen), track stroke = `G_STROKE.middle × (R / LOOP_RIM_RADIUS.bottom)` (normal×scale read as a frame when zoomed; middle keeps G-consistent without the chunky border). No box stroke on the phone window.
+- **One system.** The red arc is the track — a full circle, cropped by the phone frame so each seat only shows the arc where that seat sits.
+- **Empty canvas.** Inside the loop is white only (surface for later). No title, map, pins, or page content.
+- **Toggle.** Always fully visible. Rides the arc at the active seat. Seat-coloured ring, opaque white centre, seat name inside.
+- **Track stroke.** Red (#E8322B). Stand-in `TRACK_STROKE = 32` CSS px, matched to Frazer's reference crops (~24–37px on a 390-wide phone). Substantial, not hairline, not a chunky frame. No box border on the viewport.
+- **Seats (clock order).** 6:00 communi-g #E8322B · 7:30 fund #9E4B2C · 9:00 borrow #C77DD6 · 10:30 wish #9D00FF · 12:00 my g #1E7BFF (exit) · 1:30 give #4BE01E · 3:00 lend #B5D334 · 4:30 trade #FF6A13.
+- **Snap.** Midpoint cross → magnet home in ~200ms. Drag both ways. Reverse before the midpoint snaps back.
+- **Exit.** Lower-loop 12:00 opens the full living G with the toggle at middle-loop 6:00.
 
 ## 3. Lower loop (Communi-g)
 

@@ -134,9 +134,9 @@ const SIDE_R = 560;
 /** Bead floats near/past the edge; attachment implied. */
 const SIDE_BEAD_X = -28;
 const DIAG_R = 520;
-/** 6/12 — bigger R vs screen, wider span so red climbs toward corners. */
-const SMILE_R = 400;
-const SMILE_HALF = 88;
+/** 6/12 — large-enough R to read circular; near-semicircle so red climbs into corners. */
+const SMILE_R = 310;
+const SMILE_HALF = 96;
 const TOP_RIM_Y = 52;
 const BOTTOM_KISS_Y = DH - TRACK_STROKE / 2;
 

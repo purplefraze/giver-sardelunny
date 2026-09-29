@@ -30,10 +30,10 @@ const TOGGLE_RING = 7.5;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
 const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
 const STEM_W = 8;
-/** Rest arm (inward from stroke midline toward loop centre). */
-const STEM_REST = 6;
+/** Rest arm past the bead into the interior (must clear outerR to read). */
+const STEM_REST = 10;
 /** Extra arm length on press. */
-const STEM_POP = 14;
+const STEM_POP = 16;
 const POP_MS = 160;
 /** Loop shrink factor while pressed / sliding. */
 const DRAG_SHRINK = 0.88;
@@ -244,21 +244,20 @@ const lerpHex = (a: string, b: string, t: number) => {
  */
 const organismParts = (g: Geom, pop: number) => {
   const R = g.r * (1 - (1 - DRAG_SHRINK) * pop);
-  const stemLen = STEM_REST + STEM_POP * pop;
+  const beyond = STEM_REST + STEM_POP * pop; // length past bead outer edge
   const u = outward(g.toggleDeg);
   // Bead centre on the (shrunk) stroke
   const bead = { x: g.cx + R * u.x, y: g.cy + R * u.y };
-  // Arm from bead inward toward centre
-  const stemTip = {
-    x: bead.x - u.x * stemLen,
-    y: bead.y - u.y * stemLen,
-  };
-  // Root tucked into the stroke
+  // Arm: from near bead (stroke side) inward past the ring into white
   const stemRoot = {
-    x: bead.x + u.x * (TRACK_STROKE * 0.15),
-    y: bead.y + u.y * (TRACK_STROKE * 0.15),
+    x: bead.x - u.x * (TOGGLE_OUTER_R * 0.25),
+    y: bead.y - u.y * (TOGGLE_OUTER_R * 0.25),
   };
-  return { R, bead, stemRoot, stemTip, stemLen };
+  const stemTip = {
+    x: bead.x - u.x * (TOGGLE_OUTER_R + beyond),
+    y: bead.y - u.y * (TOGGLE_OUTER_R + beyond),
+  };
+  return { R, bead, stemRoot, stemTip, stemLen: beyond };
 };
 
 export function PerimeterToggle({

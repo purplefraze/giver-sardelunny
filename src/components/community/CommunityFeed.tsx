@@ -6,6 +6,7 @@ import type { BorrowSide, ItemType } from "@/data/items";
 
 /**
  * COMMUNI-G — lower-loop navigation shell (Frazer via Luna, 29 Sep 2026).
+ * IN-COMMUNITY ONLY: entered via living G 6:00. Full G lower loop has no toggle.
  *
  * The feed's list/map content is parked for later. Right now communi-g is the
  * empty white canvas inside the red lower-loop track, with the seat toggle

@@ -133,16 +133,23 @@ const arcPath = (g: Geom) => {
 
 /**
  * Mock-authored geometries at 390×844 (from communi-g-slivers render scripts).
- * Diagonals: Fund crescent R=900 into BL; Wish/Give/Trade are exact mirrors.
+ * Diagonals: Fund crescent R=420 inset BL (readable curve, staggered exit); Wish/Give/Trade are exact mirrors.
  * Cardinals: My G / Communi-g R=270; Borrow/Lend hard-flattened oval.
  */
-const FUND_CX = 680.396;
-const FUND_CY = 163.604;
-const FUND_R = 900;
-/** True 45° (225°) with equal inset so arms match; toggle on stroke midline. */
+/**
+ * Diagonal crescents: R=420 + corner inset so the G curve is readable
+ * (not edge-hugging straights). Ends stagger off-frame — incremental peel
+ * (fund visible from mid-bottom ~x=190 to mid-left ~y=650). Toggle on
+ * stroke midline at true 225° with equal arms; wish/give/trade exact mirrors.
+ */
+const FUND_R = 420;
+const FUND_TX = 80;
+const FUND_TY = 764;
 const FUND_TDEG = 225;
-const FUND_DEG0 = 194;
-const FUND_DEG1 = 256;
+const FUND_DEG0 = 173;
+const FUND_DEG1 = 277;
+const FUND_CX = FUND_TX + FUND_R / Math.SQRT2; // ≈ 376.985
+const FUND_CY = FUND_TY - FUND_R / Math.SQRT2; // ≈ 467.015
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
   fund: {
@@ -163,8 +170,8 @@ const GEOM_DESIGN: Record<CgStation, Geom> = {
     r: FUND_R,
     rx: FUND_R,
     ry: FUND_R,
-    deg0: 284.000,
-    deg1: 346.000,
+    deg0: 263.000,
+    deg1: 7.000,
     toggleDeg: 315.000,
   },
   give: {
@@ -174,8 +181,8 @@ const GEOM_DESIGN: Record<CgStation, Geom> = {
     r: FUND_R,
     rx: FUND_R,
     ry: FUND_R,
-    deg0: 14.000,
-    deg1: 76.000,
+    deg0: 353.000,
+    deg1: 97.000,
     toggleDeg: 45.000,
   },
   trade: {
@@ -185,8 +192,8 @@ const GEOM_DESIGN: Record<CgStation, Geom> = {
     r: FUND_R,
     rx: FUND_R,
     ry: FUND_R,
-    deg0: 104.000,
-    deg1: 166.000,
+    deg0: 83.000,
+    deg1: 187.000,
     toggleDeg: 135.000,
   },
   exit: {

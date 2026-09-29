@@ -8,9 +8,8 @@ import type { BorrowSide, ItemType } from "@/data/items";
  * COMMUNI-G — lower-loop navigation shell (Frazer via Luna, 29 Sep 2026).
  * IN-COMMUNITY ONLY: entered via living G 6:00. Full G lower loop has no toggle.
  *
- * Empty white canvas inside the red lower-loop track. Chrome (close /
- * download) sits below the status safe area at y≈85 so upper-corner seats
- * (wish / give) never collide with it.
+ * Organism lower-loop: red open crescent, bead on the track with inward arm,
+ * seat-coloured plug/socket morph (middle-loop language). Chrome at y≈85.
  */
 type Scope = "everyone" | "mine";
 type View = "list" | "map";

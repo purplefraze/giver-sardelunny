@@ -5,46 +5,53 @@ import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-G LOWER-LOOP — INNER-WALL TOGGLE (Frazer via Luna, 29 Sep 2026).
+ * COMMUNI-G LOWER-LOOP — ORGANISM NAV (Frazer locked, 29 Sep 2026).
  *
- * IN-COMMUNITY ONLY. Entered via living G 6:00. Full living G is untouched
- * and has no lower-loop toggle.
+ * IN-COMMUNITY ONLY (enter Living G at 6:00). Full Living G / middle-loop
+ * toggle is untouched — borrowed here as shape + plug/socket colour language.
  *
- * True-circle open crescents. Bead + arm sit on the INTERIOR wall of the
- * red track (negative space inside the loop), pointing inward — same
- * language as the middle-loop ear, mirrored in. Stroke ~14.9 screen px.
- * Matches `/workspace/mocks/communi-g-inner-wall/` for borrow + wish.
+ * - Red open-crescent track always (#E8322B); never fattens with zoom.
+ * - Hollow bead sits ON the red stroke (saves interior white); short arm
+ *   points inward; press extends arm + shrinks loop slightly.
+ * - While sliding: next seat's coloured hollow circle fades in ahead
+ *   (plug preview, same idea as middle-loop seat hints).
+ * - Toggle colour morphs with seat as you slide (middle-loop colour system).
+ * - Release: run along the track in last-move direction → snap to next seat.
+ * - 12:00 exits to the full Living G.
  */
 const SNAP_MS = 200;
 const G_PX = 0.522784;
 const TRACK_STROKE = 28.5 * G_PX; // ≈ 14.90
 
-/** Bead = inner-wall mock (~52px), living-G ear proportions. */
+/** Bead ~52px — living-G ear proportions, on the stroke. */
 const TOGGLE_OUTER_R = 26;
 const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
 const TOGGLE_RING = 7.5;
-const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING; // 18.5 (fill uses −0.4)
-const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2; // 22.25
+const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
+const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
 const STEM_W = 8;
-/** White gap between track inner rim and bead outer edge. */
-const GAP = 9.5;
-const TUCK = 3.2;
-const BURY = 2.4;
-/** Bead-centre inset from stroke centreline toward loop centre. */
+/** Rest arm (inward from stroke midline toward loop centre). */
+const STEM_REST = 6;
+/** Extra arm length on press. */
+const STEM_POP = 14;
+const POP_MS = 160;
+/** Loop shrink factor while pressed / sliding. */
+const DRAG_SHRINK = 0.88;
 
 const DW = 390;
 const DH = 844;
 const HIT = 40;
-const POP_MS = 160;
-/** On drag, loop shrinks slightly (community orbit), arm stays inward. */
-const DRAG_SHRINK = 0.92;
 
 const RED = "#E8322B";
 
+/**
+ * Seat colours — branch map, aligned with middle-loop --mode-* where they match.
+ * Track stays RED; only the toggle/arm/plug take these.
+ */
 const SEAT_COLOUR: Record<string, string> = {
-  everything: "#E8322B",
+  everything: "#E8322B", // 6:00 map / communi-g
   fund: "#9E4B2C",
-  borrow: "#B36BFF",
+  borrow: "#C77DD6", // --mode-borrow (middle-loop)
   wish: "#9D00FF",
   exit: "#1E7BFF",
   give: "#4BE01E",
@@ -105,91 +112,89 @@ const outward = (deg: number) => {
 const arcPath = (g: Geom) => {
   const p0 = angPt(g.cx, g.cy, g.r, g.deg0);
   const p1 = angPt(g.cx, g.cy, g.r, g.deg1);
-  let delta = wrap(g.deg1 - g.deg0);
+  const delta = wrap(g.deg1 - g.deg0);
   const large = delta > 180 ? 1 : 0;
   return `M${p0.x.toFixed(3)},${p0.y.toFixed(3)} A${g.r.toFixed(3)},${g.r.toFixed(3)} 0 ${large} 1 ${p1.x.toFixed(3)},${p1.y.toFixed(3)}`;
 };
 
 /**
- * Inner-wall geometries at 390×844 (from communi-g-inner-wall render.py).
- * Borrow/wish = Luna mocks; others = true-circle mirrors / cardinals.
+ * True-circle open crescents (organism geometry).
+ * 9/3: large R, toggle may clip side; corner arcs keep circle integrity.
+ * 12: rainbow top arc; toggle hangs inside.
+ * 10:30: TL corner crescent only.
  */
-const BORROW_R = 860;
-const BORROW_CX = 20 + BORROW_R; // 880
-const BORROW_CY = DH / 2; // 422
+const SIDE_R = 860;
+const SIDE_X = -10; // stroke past edge — bead clips at 9/3
 const DIAG_R = 520;
-const WISH_CX = 475.696;
-const WISH_CY = 483.696;
-const EXIT_R = 860;
-const EXIT_CX = DW / 2;
-const EXIT_CY = 72 + EXIT_R; // rim y=72 → bead clears chrome
+const WISH_STROKE = { x: 108, y: 116 }; // TL corner only
+const TOP_R = 900;
+const TOP_RIM_Y = 48; // peak of rainbow under status; bead hangs below
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
   borrow: {
-    cx: BORROW_CX,
-    cy: BORROW_CY,
-    r: BORROW_R,
-    deg0: 234.614,
-    deg1: 305.386,
+    cx: SIDE_X + SIDE_R,
+    cy: DH / 2,
+    r: SIDE_R,
+    deg0: 234.6,
+    deg1: 305.4,
     toggleDeg: 270,
   },
   lend: {
-    cx: DW - BORROW_CX,
-    cy: BORROW_CY,
-    r: BORROW_R,
-    deg0: 54.614,
-    deg1: 125.386,
+    cx: DW - (SIDE_X + SIDE_R),
+    cy: DH / 2,
+    r: SIDE_R,
+    deg0: 54.6,
+    deg1: 125.4,
     toggleDeg: 90,
   },
   wish: {
-    cx: WISH_CX,
-    cy: WISH_CY,
+    cx: 475.696,
+    cy: 483.696,
     r: DIAG_R,
-    deg0: 286.823,
-    deg1: 345.463,
+    deg0: 286.8,
+    deg1: 345.5,
     toggleDeg: 315,
   },
   fund: {
-    // Vertical mirror of wish
-    cx: WISH_CX,
-    cy: DH - WISH_CY,
+    cx: 475.696,
+    cy: DH - 483.696,
     r: DIAG_R,
-    deg0: 194.537,
-    deg1: 253.177,
+    deg0: 194.5,
+    deg1: 253.2,
     toggleDeg: 225,
   },
   give: {
-    // Horizontal mirror of wish
-    cx: DW - WISH_CX,
-    cy: WISH_CY,
+    cx: DW - 475.696,
+    cy: 483.696,
     r: DIAG_R,
-    deg0: 14.537,
-    deg1: 73.177,
+    deg0: 14.5,
+    deg1: 73.2,
     toggleDeg: 45,
   },
   trade: {
-    // Horizontal mirror of fund
-    cx: DW - WISH_CX,
-    cy: DH - WISH_CY,
+    cx: DW - 475.696,
+    cy: DH - 483.696,
     r: DIAG_R,
-    deg0: 106.823,
-    deg1: 165.463,
+    deg0: 106.8,
+    deg1: 165.5,
     toggleDeg: 135,
   },
+  /** 12:00 rainbow — peak mid-top; bead on stroke, arm hangs into interior. */
   exit: {
-    cx: EXIT_CX,
-    cy: EXIT_CY,
-    r: EXIT_R,
-    deg0: 342,
-    deg1: 18,
+    cx: DW / 2,
+    cy: TOP_RIM_Y + TOP_R,
+    r: TOP_R,
+    deg0: 328,
+    deg1: 32,
     toggleDeg: 0,
   },
+  /** 6:00 entry — communi-g / map, red. */
   everything: {
-    cx: EXIT_CX,
-    cy: DH - EXIT_CY,
-    r: EXIT_R,
-    deg0: 162,
-    deg1: 198,
+    cx: DW / 2,
+    cy: DH - (TOP_RIM_Y + TOP_R),
+    r: TOP_R,
+    deg0: 148,
+    deg1: 212,
     toggleDeg: 180,
   },
 };
@@ -215,20 +220,45 @@ const lerpGeom = (a: Geom, b: Geom, t: number): Geom => ({
   toggleDeg: lerpAngle(a.toggleDeg, b.toggleDeg, t),
 });
 
-/** Inward bead centre + stem endpoints (mock stem_radii). */
-const inwardParts = (g: Geom, pop: number) => {
+/** Hex blend for seat-colour morph while sliding. */
+const lerpHex = (a: string, b: string, t: number) => {
+  const parse = (h: string): [number, number, number] => {
+    const s = h.replace("#", "");
+    return [
+      Number.parseInt(s.slice(0, 2), 16) || 0,
+      Number.parseInt(s.slice(2, 4), 16) || 0,
+      Number.parseInt(s.slice(4, 6), 16) || 0,
+    ];
+  };
+  const [ar, ag, ab] = parse(a);
+  const [br, bg, bb] = parse(b);
+  const r = Math.round(lerp(ar, br, t));
+  const g = Math.round(lerp(ag, bg, t));
+  const bl = Math.round(lerp(ab, bb, t));
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${bl.toString(16).padStart(2, "0")}`;
+};
+
+/**
+ * Bead ON the stroke centreline. Arm points inward (toward loop centre).
+ * Press grows arm + shrinks R.
+ */
+const organismParts = (g: Geom, pop: number) => {
   const R = g.r * (1 - (1 - DRAG_SHRINK) * pop);
-  const half = TRACK_STROKE / 2;
-  const ri = R - half;
-  const rc = ri - GAP - TOGGLE_OUTER_R;
-  const rOut = ri + TUCK;
-  const rIn = rc + (TOGGLE_INNER_R - 0.4) + BURY;
+  const stemLen = STEM_REST + STEM_POP * pop;
   const u = outward(g.toggleDeg);
-  const bead = { x: g.cx + rc * u.x, y: g.cy + rc * u.y };
-  const stem0 = { x: g.cx + rIn * u.x, y: g.cy + rIn * u.y };
-  const stem1 = { x: g.cx + rOut * u.x, y: g.cy + rOut * u.y };
-  const rim = { x: g.cx + R * u.x, y: g.cy + R * u.y };
-  return { R, bead, stem0, stem1, rim, pathR: R };
+  // Bead centre on the (shrunk) stroke
+  const bead = { x: g.cx + R * u.x, y: g.cy + R * u.y };
+  // Arm from bead inward toward centre
+  const stemTip = {
+    x: bead.x - u.x * stemLen,
+    y: bead.y - u.y * stemLen,
+  };
+  // Root tucked into the stroke
+  const stemRoot = {
+    x: bead.x + u.x * (TRACK_STROKE * 0.15),
+    y: bead.y + u.y * (TRACK_STROKE * 0.15),
+  };
+  return { R, bead, stemRoot, stemTip, stemLen };
 };
 
 export function PerimeterToggle({
@@ -252,6 +282,7 @@ export function PerimeterToggle({
   const [pop, setPop] = useState(0);
   const popRef = useRef(0);
   const popRaf = useRef(0);
+  const lastDir = useRef<1 | -1>(1);
   const drag = useRef<{
     id: number;
     moved: boolean;
@@ -306,7 +337,7 @@ export function PerimeterToggle({
     const dPrev = Math.abs(turn(deg, clockOf(prev)));
     const dNext = Math.abs(turn(deg, clockOf(next)));
     const dHere = Math.abs(turn(deg, cHere));
-    if (dHere < 0.05) return designAt(here);
+    if (dHere < 2) return designAt(here);
     const toward = dPrev < dNext ? prev : next;
     const span = Math.abs(turn(cHere, clockOf(toward)));
     const traveled = Math.abs(turn(cHere, deg));
@@ -391,24 +422,52 @@ export function PerimeterToggle({
   const { w, h } = size;
   const settled = !dragging && !snapping && Math.abs(turn(pos, clockOf(goal))) < 0.2 && pop < 0.05;
   const here = nearest(pos);
-  const shown: CgStation = dragging || pop > 0.5 ? here : goal;
-  const colour = colourOf(shown);
-  const word = wordOf(shown);
+  const towardSeat = neighbour(here, lastDir.current);
+  const cHere = clockOf(here);
+  const cToward = clockOf(towardSeat);
+  const span = Math.abs(turn(cHere, cToward)) || 45;
+  const traveled = Math.abs(turn(cHere, pos));
+  const blend = dragging || pop > 0.2 ? Math.min(1, traveled / span) : 0;
 
-  const geom = w ? restGeomAt(pos) : null;
-  // Keep toggleDeg = current clock while dragging between seats
+  const shown: CgStation = dragging || pop > 0.5 ? here : goal;
+  const colour =
+    dragging || pop > 0.2
+      ? lerpHex(colourOf(here), colourOf(towardSeat), blend * 0.85)
+      : colourOf(shown);
+  const word = wordOf(dragging || pop > 0.5 ? (blend > 0.55 ? towardSeat : here) : shown);
+
+  const geom = w
+    ? !dragging && !snapping
+      ? designAt(nearest(pos))
+      : restGeomAt(pos)
+    : null;
   const live: Geom | null = geom
-    ? { ...geom, toggleDeg: dragging || pop > 0.05 ? wrap(pos) : geom.toggleDeg }
+    ? {
+        ...geom,
+        toggleDeg: dragging || pop > 0.05 || snapping ? wrap(pos) : geom.toggleDeg,
+      }
     : null;
 
-  const parts = live ? inwardParts(live, pop) : null;
-  const pathD =
-    live && parts
-      ? (() => {
-          const g = { ...live, r: parts.pathR };
-          return arcPath(g);
-        })()
-      : "";
+  const parts = live ? organismParts(live, pop) : null;
+  const pathD = live && parts ? arcPath({ ...live, r: parts.R }) : "";
+
+  /** Plug preview: next seat circle fading in ahead (middle-loop hint language). */
+  const plugs =
+    w && (dragging || pop > 0.3)
+      ? ([towardSeat, neighbour(here, (lastDir.current * -1) as 1 | -1)] as CgStation[])
+          .filter((s, i, a) => a.indexOf(s) === i)
+          .map((s) => {
+            const g = designAt(s);
+            const p = organismParts({ ...g, r: g.r * DRAG_SHRINK }, 1);
+            const dist = Math.abs(turn(pos, clockOf(s)));
+            const opacity =
+              s === towardSeat
+                ? Math.min(0.9, 0.25 + blend * 0.7)
+                : Math.max(0, 0.35 - dist / 90);
+            return { s, bead: p.bead, opacity, colour: colourOf(s) };
+          })
+          .filter((p) => p.opacity > 0.05 && p.s !== shown)
+      : [];
 
   const thetaForFinger = (clientX: number, clientY: number) => {
     const r = stage.current!.getBoundingClientRect();
@@ -426,11 +485,11 @@ export function PerimeterToggle({
       data-cg-clock={wrap(pos).toFixed(1)}
       data-cg-snapping={snapping ? "1" : "0"}
       data-cg-pop={pop.toFixed(2)}
-      data-cg-r={parts ? parts.pathR.toFixed(1) : ""}
+      data-cg-r={parts ? parts.R.toFixed(1) : ""}
       data-cg-track-w={TRACK_STROKE.toFixed(2)}
       data-cg-toggle-d={TOGGLE_DIAM}
       data-cg-kind="circle"
-      data-cg-inner="1"
+      data-cg-organism="1"
     >
       {w && live && parts ? (
         <svg
@@ -451,12 +510,27 @@ export function PerimeterToggle({
             data-cg-cx={live.cx.toFixed(1)}
             data-cg-cy={live.cy.toFixed(1)}
           />
-          {/* Stem always present — bridges red track inward to bead. */}
+
+          {/* Plug previews — next seat hollow circles fade in ahead. */}
+          {plugs.map((p) => (
+            <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
+              <circle
+                cx={p.bead.x}
+                cy={p.bead.y}
+                r={TOGGLE_STROKE_R * sx}
+                fill="none"
+                stroke={p.colour}
+                strokeWidth={TOGGLE_RING * sx}
+              />
+            </g>
+          ))}
+
+          {/* Arm — rest short; press extends inward. */}
           <line
-            x1={parts.stem0.x}
-            y1={parts.stem0.y}
-            x2={parts.stem1.x}
-            y2={parts.stem1.y}
+            x1={parts.stemRoot.x}
+            y1={parts.stemRoot.y}
+            x2={parts.stemTip.x}
+            y2={parts.stemTip.y}
             stroke={colour}
             strokeWidth={STEM_W * sx}
             strokeLinecap="round"
@@ -468,7 +542,7 @@ export function PerimeterToggle({
       {w
         ? STATIONS.map((s) => {
             const g = designAt(s);
-            const pt = inwardParts(g, 0).bead;
+            const pt = organismParts(g, 0).bead;
             return (
               <button
                 key={s}
@@ -535,6 +609,7 @@ export function PerimeterToggle({
             d.moved = true;
             const next = posRef.current + turn(posRef.current, thetaForFinger(e.clientX, e.clientY));
             const dir: 1 | -1 = turn(clockOf(d.start), next) >= 0 ? 1 : -1;
+            lastDir.current = dir;
             const toward = neighbour(d.start, dir);
             const mid = clockOf(d.start) + turn(clockOf(d.start), clockOf(toward)) / 2;
             if (Math.abs(turn(clockOf(d.start), next)) >= Math.abs(turn(clockOf(d.start), mid))) {
@@ -550,14 +625,16 @@ export function PerimeterToggle({
             if (d?.id !== e.pointerId) return;
             drag.current = null;
             setDragging(false);
-            if (d.moved) go(d.start);
-            else animatePop(0);
+            if (d.moved) {
+              // Release: continue in last-move direction to closest next seat.
+              go(neighbour(d.start, lastDir.current));
+            } else animatePop(0);
           }}
           onPointerCancel={() => {
             const d = drag.current;
             drag.current = null;
             setDragging(false);
-            if (d?.moved) go(d.start);
+            if (d?.moved) go(neighbour(d.start, lastDir.current));
             else animatePop(0);
           }}
           onKeyDown={(e) => {

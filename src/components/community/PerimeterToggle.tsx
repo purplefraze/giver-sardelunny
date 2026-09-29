@@ -1,64 +1,46 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { SEAT_ANGLE, SEAT_TITLE, type Seat } from "@/components/living-g/EarSelector";
-import { EAR_GEOMETRY } from "@/components/living-g/g-path";
-import { G_STROKE, TOGGLE } from "@/components/living-g/g-weight";
 import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-G LOWER-LOOP — LOCKED MOCK GEOMETRY (Frazer via Luna, 29 Sep 2026).
+ * COMMUNI-G LOWER-LOOP — INNER-WALL TOGGLE (Frazer via Luna, 29 Sep 2026).
  *
- * IN-COMMUNITY ONLY. This toggle exists only after the user enters communi-g
- * via the living G's 6:00 seat. On the full living G (all three loops) the
- * lower loop has NO toggle — it is just a loop. Pop/drag + crescents apply
- * here alone, never on the full-G view.
+ * IN-COMMUNITY ONLY. Entered via living G 6:00. Full living G is untouched
+ * and has no lower-loop toggle.
  *
- * Matches `/workspace/mocks/communi-g-slivers/`. One open crescent/sliver per
- * seat (never a full red circle). Stroke is living-G weight in SCREEN px
- * (~14.9) — zoom never fattens it. Toggle bead is IDENTICAL to the full-G
- * middle-loop ear (TOGGLE.middle): hollow seat-coloured ring, white centre,
- * seat name. Same pop gesture (loop shrinks, stem arm extends). Diagonals
- * are exact mirrors of Fund;
- * 6:00/12:00 minimal edge kiss (short arms). Borrow/lend full-height oval;
- * toggle may clip slightly so the oval sits further in.
- *
- * Spatial: midpoint snap ~200ms. On touch the toggle POPS — a stem arm
- * jets out to a slightly-shrunk middle-loop ring; drag follows that
- * curvature. On release it snaps home to the seat rest crescent.
- * 12:00 exits to the full living G (toggle returns to middle-loop 6:00).
+ * True-circle open crescents. Bead + arm sit on the INTERIOR wall of the
+ * red track (negative space inside the loop), pointing inward — same
+ * language as the middle-loop ear, mirrored in. Stroke ~14.9 screen px.
+ * Matches `/workspace/mocks/communi-g-inner-wall/` for borrow + wish.
  */
 const SNAP_MS = 200;
-/** Same G-unit → screen scale the living G uses at 390px. */
 const G_PX = 0.522784;
-/** Living-G middle weight — fixed screen px (zoom never fattens). */
-const TRACK_STROKE = G_STROKE.middle * G_PX; // ≈ 14.90
-/**
- * Bead shape REFERENCE = full-G middle-loop toggle (TOGGLE.middle) —
- * same hollow ring proportions + gap-length stem on pop. Living G itself
- * is untouched; this is communi-g only.
- */
-const EAR = TOGGLE.middle;
-const TOGGLE_OUTER_R = EAR.outerR * G_PX; // ≈ 39.0
-const TOGGLE_INNER_R = EAR.innerR * G_PX; // ≈ 30.0
-const TOGGLE_DIAM = TOGGLE_OUTER_R * 2; // ≈ 78
-const TOGGLE_RING = TOGGLE_OUTER_R - TOGGLE_INNER_R; // ≈ 9.0
-const TOGGLE_STROKE_R = (TOGGLE_INNER_R + TOGGLE_OUTER_R) / 2;
-/** Stem length = living-G ear gap; stem width = ear stemWidth. */
-const STEM_LEN = EAR_GEOMETRY.gap * G_PX; // ≈ 12.8
-const STEM_W = EAR.stemWidth * G_PX; // ≈ 10.5
-/** Design canvas the mock numbers are authored against. */
+const TRACK_STROKE = 28.5 * G_PX; // ≈ 14.90
+
+/** Bead = inner-wall mock (~52px), living-G ear proportions. */
+const TOGGLE_OUTER_R = 26;
+const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
+const TOGGLE_RING = 7.5;
+const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING; // 18.5 (fill uses −0.4)
+const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2; // 22.25
+const STEM_W = 8;
+/** White gap between track inner rim and bead outer edge. */
+const GAP = 9.5;
+const TUCK = 3.2;
+const BURY = 2.4;
+/** Bead-centre inset from stroke centreline toward loop centre. */
+
 const DW = 390;
 const DH = 844;
 const HIT = 40;
-/** Pop morph duration (ms) — shared gesture feel with EarSelector. */
 const POP_MS = 160;
-/** Drag ring radius as a share of min(screen) — shrunk loop for drag. */
-const DRAG_R_OF_MIN = 0.30;
+/** On drag, loop shrinks slightly (community orbit), arm stays inward. */
+const DRAG_SHRINK = 0.92;
 
 const RED = "#E8322B";
 
-/** Locked seat colours for this branch (mocks). */
 const SEAT_COLOUR: Record<string, string> = {
   everything: "#E8322B",
   fund: "#9E4B2C",
@@ -93,12 +75,9 @@ const colourOf = (s: CgStation) => SEAT_COLOUR[s] ?? RED;
 
 type Size = { w: number; h: number };
 type Geom = {
-  kind: "circle" | "oval";
   cx: number;
   cy: number;
   r: number;
-  rx: number;
-  ry: number;
   deg0: number;
   deg1: number;
   toggleDeg: number;
@@ -113,161 +92,143 @@ const turn = (a: number, b: number) => {
 };
 const easeOut = (u: number) => 1 - (1 - u) ** 3;
 
-const angPt = (g: Geom, deg: number) => {
+const angPt = (cx: number, cy: number, r: number, deg: number) => {
   const a = deg * RAD;
-  const rx = g.kind === "oval" ? g.rx : g.r;
-  const ry = g.kind === "oval" ? g.ry : g.r;
-  return { x: g.cx + rx * Math.sin(a), y: g.cy - ry * Math.cos(a) };
+  return { x: cx + r * Math.sin(a), y: cy - r * Math.cos(a) };
 };
 
-/** Arc path (clock degrees, sweep CW / SVG sweep-flag 1). */
+const outward = (deg: number) => {
+  const a = deg * RAD;
+  return { x: Math.sin(a), y: -Math.cos(a) };
+};
+
 const arcPath = (g: Geom) => {
-  const p0 = angPt(g, g.deg0);
-  const p1 = angPt(g, g.deg1);
-  const rx = g.kind === "oval" ? g.rx : g.r;
-  const ry = g.kind === "oval" ? g.ry : g.r;
+  const p0 = angPt(g.cx, g.cy, g.r, g.deg0);
+  const p1 = angPt(g.cx, g.cy, g.r, g.deg1);
   let delta = wrap(g.deg1 - g.deg0);
   const large = delta > 180 ? 1 : 0;
-  return `M${p0.x.toFixed(3)},${p0.y.toFixed(3)} A${rx.toFixed(3)},${ry.toFixed(3)} 0 ${large} 1 ${p1.x.toFixed(3)},${p1.y.toFixed(3)}`;
+  return `M${p0.x.toFixed(3)},${p0.y.toFixed(3)} A${g.r.toFixed(3)},${g.r.toFixed(3)} 0 ${large} 1 ${p1.x.toFixed(3)},${p1.y.toFixed(3)}`;
 };
 
 /**
- * Mock-authored geometries at 390×844 (from communi-g-slivers render scripts).
- * Diagonals: Fund crescent R=420 inset BL (readable curve, staggered exit); Wish/Give/Trade are exact mirrors.
- * Cardinals: My G / Communi-g R=270; Borrow/Lend hard-flattened oval.
+ * Inner-wall geometries at 390×844 (from communi-g-inner-wall render.py).
+ * Borrow/wish = Luna mocks; others = true-circle mirrors / cardinals.
  */
-/**
- * Diagonal crescents: R=420 + corner inset so the G curve is readable
- * (not edge-hugging straights). Ends stagger off-frame — incremental peel
- * (fund visible from mid-bottom ~x=190 to mid-left ~y=650). Toggle on
- * stroke midline at true 225° with equal arms; wish/give/trade exact mirrors.
- */
-const FUND_R = 420;
-const FUND_TX = 80;
-const FUND_TY = 764;
-const FUND_TDEG = 225;
-const FUND_DEG0 = 173;
-const FUND_DEG1 = 277;
-const FUND_CX = FUND_TX + FUND_R / Math.SQRT2; // ≈ 376.985
-const FUND_CY = FUND_TY - FUND_R / Math.SQRT2; // ≈ 467.015
+const BORROW_R = 860;
+const BORROW_CX = 20 + BORROW_R; // 880
+const BORROW_CY = DH / 2; // 422
+const DIAG_R = 520;
+const WISH_CX = 475.696;
+const WISH_CY = 483.696;
+const EXIT_R = 860;
+const EXIT_CX = DW / 2;
+const EXIT_CY = 72 + EXIT_R; // rim y=72 → bead clears chrome
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
-  fund: {
-    kind: "circle",
-    cx: FUND_CX,
-    cy: FUND_CY,
-    r: FUND_R,
-    rx: FUND_R,
-    ry: FUND_R,
-    deg0: FUND_DEG0,
-    deg1: FUND_DEG1,
-    toggleDeg: FUND_TDEG,
-  },
-  wish: {
-    kind: "circle",
-    cx: FUND_CX,
-    cy: DH - FUND_CY,
-    r: FUND_R,
-    rx: FUND_R,
-    ry: FUND_R,
-    deg0: 263.000,
-    deg1: 7.000,
-    toggleDeg: 315.000,
-  },
-  give: {
-    kind: "circle",
-    cx: DW - FUND_CX,
-    cy: DH - FUND_CY,
-    r: FUND_R,
-    rx: FUND_R,
-    ry: FUND_R,
-    deg0: 353.000,
-    deg1: 97.000,
-    toggleDeg: 45.000,
-  },
-  trade: {
-    kind: "circle",
-    cx: DW - FUND_CX,
-    cy: FUND_CY,
-    r: FUND_R,
-    rx: FUND_R,
-    ry: FUND_R,
-    deg0: 83.000,
-    deg1: 187.000,
-    toggleDeg: 135.000,
-  },
-  exit: {
-    kind: "circle",
-    cx: 195,
-    cy: 926.000,
-    r: 900,
-    rx: 900,
-    ry: 900,
-    deg0: 346.000,
-    deg1: 14.000,
-    toggleDeg: 0,
-  },
-  everything: {
-    kind: "circle",
-    cx: 195,
-    cy: -82.000,
-    r: 900,
-    rx: 900,
-    ry: 900,
-    deg0: 166.000,
-    deg1: 194.000,
-    toggleDeg: 180,
-  },
   borrow: {
-    kind: "oval",
-    cx: 246,
-    cy: 422,
-    r: 220,
-    rx: 220,
-    ry: 720,
-    deg0: 234.1,
-    deg1: 305.9,
+    cx: BORROW_CX,
+    cy: BORROW_CY,
+    r: BORROW_R,
+    deg0: 234.614,
+    deg1: 305.386,
     toggleDeg: 270,
   },
   lend: {
-    kind: "oval",
-    cx: DW - 246,
-    cy: 422,
-    r: 220,
-    rx: 220,
-    ry: 720,
-    deg0: 54.100,
-    deg1: 125.900,
+    cx: DW - BORROW_CX,
+    cy: BORROW_CY,
+    r: BORROW_R,
+    deg0: 54.614,
+    deg1: 125.386,
     toggleDeg: 90,
+  },
+  wish: {
+    cx: WISH_CX,
+    cy: WISH_CY,
+    r: DIAG_R,
+    deg0: 286.823,
+    deg1: 345.463,
+    toggleDeg: 315,
+  },
+  fund: {
+    // Vertical mirror of wish
+    cx: WISH_CX,
+    cy: DH - WISH_CY,
+    r: DIAG_R,
+    deg0: 194.537,
+    deg1: 253.177,
+    toggleDeg: 225,
+  },
+  give: {
+    // Horizontal mirror of wish
+    cx: DW - WISH_CX,
+    cy: WISH_CY,
+    r: DIAG_R,
+    deg0: 14.537,
+    deg1: 73.177,
+    toggleDeg: 45,
+  },
+  trade: {
+    // Horizontal mirror of fund
+    cx: DW - WISH_CX,
+    cy: DH - WISH_CY,
+    r: DIAG_R,
+    deg0: 106.823,
+    deg1: 165.463,
+    toggleDeg: 135,
+  },
+  exit: {
+    cx: EXIT_CX,
+    cy: EXIT_CY,
+    r: EXIT_R,
+    deg0: 342,
+    deg1: 18,
+    toggleDeg: 0,
+  },
+  everything: {
+    cx: EXIT_CX,
+    cy: DH - EXIT_CY,
+    r: EXIT_R,
+    deg0: 162,
+    deg1: 198,
+    toggleDeg: 180,
   },
 };
 
-
 const scaleGeom = (g: Geom, sx: number, sy: number): Geom => ({
-  ...g,
   cx: g.cx * sx,
   cy: g.cy * sy,
   r: g.r * ((sx + sy) / 2),
-  rx: g.rx * sx,
-  ry: g.ry * sy,
+  deg0: g.deg0,
+  deg1: g.deg1,
+  toggleDeg: g.toggleDeg,
 });
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const lerpAngle = (a: number, b: number, t: number) => wrap(a + turn(a, b) * t);
 
-const lerpGeom = (a: Geom, b: Geom, t: number): Geom => {
-  const kind = t < 0.5 ? a.kind : b.kind;
-  return {
-    kind,
-    cx: lerp(a.cx, b.cx, t),
-    cy: lerp(a.cy, b.cy, t),
-    r: lerp(a.r, b.r, t),
-    rx: lerp(a.rx, b.rx, t),
-    ry: lerp(a.ry, b.ry, t),
-    deg0: lerpAngle(a.deg0, b.deg0, t),
-    deg1: lerpAngle(a.deg1, b.deg1, t),
-    toggleDeg: lerpAngle(a.toggleDeg, b.toggleDeg, t),
-  };
+const lerpGeom = (a: Geom, b: Geom, t: number): Geom => ({
+  cx: lerp(a.cx, b.cx, t),
+  cy: lerp(a.cy, b.cy, t),
+  r: lerp(a.r, b.r, t),
+  deg0: lerpAngle(a.deg0, b.deg0, t),
+  deg1: lerpAngle(a.deg1, b.deg1, t),
+  toggleDeg: lerpAngle(a.toggleDeg, b.toggleDeg, t),
+});
+
+/** Inward bead centre + stem endpoints (mock stem_radii). */
+const inwardParts = (g: Geom, pop: number) => {
+  const R = g.r * (1 - (1 - DRAG_SHRINK) * pop);
+  const half = TRACK_STROKE / 2;
+  const ri = R - half;
+  const rc = ri - GAP - TOGGLE_OUTER_R;
+  const rOut = ri + TUCK;
+  const rIn = rc + (TOGGLE_INNER_R - 0.4) + BURY;
+  const u = outward(g.toggleDeg);
+  const bead = { x: g.cx + rc * u.x, y: g.cy + rc * u.y };
+  const stem0 = { x: g.cx + rIn * u.x, y: g.cy + rIn * u.y };
+  const stem1 = { x: g.cx + rOut * u.x, y: g.cy + rOut * u.y };
+  const rim = { x: g.cx + R * u.x, y: g.cy + R * u.y };
+  return { R, bead, stem0, stem1, rim, pathR: R };
 };
 
 export function PerimeterToggle({
@@ -288,7 +249,6 @@ export function PerimeterToggle({
   const [snapping, setSnapping] = useState(false);
   const snappingRef = useRef(false);
   const [goal, setGoal] = useState<CgStation>(value);
-  /** 0 = rest crescent; 1 = popped middle-loop drag ring + stem. */
   const [pop, setPop] = useState(0);
   const popRef = useRef(0);
   const popRaf = useRef(0);
@@ -352,23 +312,6 @@ export function PerimeterToggle({
     const traveled = Math.abs(turn(cHere, deg));
     const t = span < 1e-6 ? 0 : Math.min(1, traveled / span);
     return lerpGeom(designAt(here), designAt(toward), t);
-  };
-
-  /** Middle-loop drag ring: centred, slightly shrunk, full circle. */
-  const dragGeom = (deg: number): Geom => {
-    const { w, h } = size;
-    const R = Math.max(1, Math.min(w, h) * DRAG_R_OF_MIN);
-    return {
-      kind: "circle",
-      cx: w / 2,
-      cy: h / 2,
-      r: R,
-      rx: R,
-      ry: R,
-      deg0: 0,
-      deg1: 359.9,
-      toggleDeg: wrap(deg),
-    };
   };
 
   const animatePop = (to: number) => {
@@ -452,37 +395,25 @@ export function PerimeterToggle({
   const colour = colourOf(shown);
   const word = wordOf(shown);
 
-  const rest = w ? restGeomAt(pos) : null;
-  const dragG = w ? dragGeom(pos) : null;
-  const geom = rest && dragG ? lerpGeom(rest, dragG, pop) : rest;
-  const stem = STEM_LEN * pop;
+  const geom = w ? restGeomAt(pos) : null;
+  // Keep toggleDeg = current clock while dragging between seats
+  const live: Geom | null = geom
+    ? { ...geom, toggleDeg: dragging || pop > 0.05 ? wrap(pos) : geom.toggleDeg }
+    : null;
 
-  let toggle = { x: 0, y: 0 };
-  let rim = { x: 0, y: 0 };
-  if (geom) {
-    const a = geom.toggleDeg * RAD;
-    const rx = geom.kind === "oval" ? geom.rx : geom.r;
-    const ry = geom.kind === "oval" ? geom.ry : geom.r;
-    rim = { x: geom.cx + rx * Math.sin(a), y: geom.cy - ry * Math.cos(a) };
-    toggle = {
-      x: geom.cx + (rx + stem) * Math.sin(a),
-      y: geom.cy - (ry + stem) * Math.cos(a),
-    };
-  }
-
+  const parts = live ? inwardParts(live, pop) : null;
   const pathD =
-    w && geom
-      ? pop > 0.5
-        ? `M${(geom.cx + geom.r).toFixed(3)},${geom.cy.toFixed(3)} A${geom.r.toFixed(3)},${geom.r.toFixed(3)} 0 1 1 ${(geom.cx - geom.r).toFixed(3)},${geom.cy.toFixed(3)} A${geom.r.toFixed(3)},${geom.r.toFixed(3)} 0 1 1 ${(geom.cx + geom.r).toFixed(3)},${geom.cy.toFixed(3)}`
-        : arcPath(geom)
+    live && parts
+      ? (() => {
+          const g = { ...live, r: parts.pathR };
+          return arcPath(g);
+        })()
       : "";
 
   const thetaForFinger = (clientX: number, clientY: number) => {
     const r = stage.current!.getBoundingClientRect();
-    const cx = pop > 0.4 && dragG ? dragG.cx : geom!.cx;
-    const cy = pop > 0.4 && dragG ? dragG.cy : geom!.cy;
-    const x = clientX - r.left - cx;
-    const y = clientY - r.top - cy;
+    const x = clientX - r.left - live!.cx;
+    const y = clientY - r.top - live!.cy;
     return wrap((Math.atan2(x, -y) * 180) / Math.PI);
   };
 
@@ -495,14 +426,13 @@ export function PerimeterToggle({
       data-cg-clock={wrap(pos).toFixed(1)}
       data-cg-snapping={snapping ? "1" : "0"}
       data-cg-pop={pop.toFixed(2)}
-      data-cg-r={geom ? (geom.kind === "oval" ? geom.rx : geom.r).toFixed(1) : ""}
-      data-cg-ry={geom ? geom.ry.toFixed(1) : ""}
+      data-cg-r={parts ? parts.pathR.toFixed(1) : ""}
       data-cg-track-w={TRACK_STROKE.toFixed(2)}
       data-cg-toggle-d={TOGGLE_DIAM}
-      data-cg-kind={geom?.kind ?? ""}
-      data-cg-stem={stem.toFixed(1)}
+      data-cg-kind="circle"
+      data-cg-inner="1"
     >
-      {w && geom ? (
+      {w && live && parts ? (
         <svg
           className="pointer-events-none absolute left-0 top-0"
           width={w}
@@ -518,28 +448,27 @@ export function PerimeterToggle({
             strokeLinecap="butt"
             data-cg-loop=""
             data-cg-track-w={TRACK_STROKE.toFixed(2)}
-            data-cg-cx={geom.cx.toFixed(1)}
-            data-cg-cy={geom.cy.toFixed(1)}
+            data-cg-cx={live.cx.toFixed(1)}
+            data-cg-cy={live.cy.toFixed(1)}
           />
-          {stem > 0.5 ? (
-            <line
-              x1={rim.x}
-              y1={rim.y}
-              x2={toggle.x}
-              y2={toggle.y}
-              stroke={RED}
-              strokeWidth={STEM_W}
-              strokeLinecap="round"
-              data-cg-stem-arm=""
-            />
-          ) : null}
+          {/* Stem always present — bridges red track inward to bead. */}
+          <line
+            x1={parts.stem0.x}
+            y1={parts.stem0.y}
+            x2={parts.stem1.x}
+            y2={parts.stem1.y}
+            stroke={colour}
+            strokeWidth={STEM_W * sx}
+            strokeLinecap="round"
+            data-cg-stem-arm=""
+          />
         </svg>
       ) : null}
 
       {w
         ? STATIONS.map((s) => {
             const g = designAt(s);
-            const pt = angPt(g, g.toggleDeg);
+            const pt = inwardParts(g, 0).bead;
             return (
               <button
                 key={s}
@@ -564,14 +493,14 @@ export function PerimeterToggle({
           })
         : null}
 
-      {w && geom ? (
+      {w && parts ? (
         <div
           className="pointer-events-auto absolute left-0 top-0 z-30 flex items-center justify-center rounded-full outline-none focus:outline-none [-webkit-tap-highlight-color:transparent]"
           style={{
-            width: TOGGLE_DIAM,
-            height: TOGGLE_DIAM,
-            left: toggle.x - TOGGLE_OUTER_R,
-            top: toggle.y - TOGGLE_OUTER_R,
+            width: TOGGLE_DIAM * sx,
+            height: TOGGLE_DIAM * sy,
+            left: parts.bead.x - TOGGLE_OUTER_R * sx,
+            top: parts.bead.y - TOGGLE_OUTER_R * sy,
             cursor: dragging ? "grabbing" : "grab",
             touchAction: "none",
             border: "none",
@@ -645,13 +574,19 @@ export function PerimeterToggle({
           }}
         >
           <svg
-            width={TOGGLE_DIAM}
-            height={TOGGLE_DIAM}
+            width={TOGGLE_DIAM * sx}
+            height={TOGGLE_DIAM * sy}
             viewBox={`${-TOGGLE_OUTER_R} ${-TOGGLE_OUTER_R} ${TOGGLE_DIAM} ${TOGGLE_DIAM}`}
             aria-hidden="true"
           >
-            <circle r={TOGGLE_INNER_R} fill="var(--world-bg)" />
-            <circle r={TOGGLE_STROKE_R} fill="none" stroke={colour} strokeWidth={TOGGLE_RING} data-cg-ring="" />
+            <circle r={TOGGLE_INNER_R - 0.4} fill="var(--world-bg)" />
+            <circle
+              r={TOGGLE_STROKE_R}
+              fill="none"
+              stroke={colour}
+              strokeWidth={TOGGLE_RING}
+              data-cg-ring=""
+            />
             <text
               textAnchor="middle"
               dominantBaseline="central"
@@ -661,7 +596,7 @@ export function PerimeterToggle({
                 fontFamily: "var(--giver-font, system-ui)",
                 fontSize: word.length > 8 ? 7.5 : word.length > 5 ? 9 : 11,
                 fontWeight: 700,
-                letterSpacing: "0.02em",
+                letterSpacing: "0.04em",
                 textTransform: "lowercase",
               }}
             >

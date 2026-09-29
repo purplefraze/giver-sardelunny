@@ -12,43 +12,28 @@ import { CG_COLOUR, type CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-G LOWER-LOOP NAV (Frazer via Luna, 29 Sep 2026).
+ * COMMUNI-G LOWER-LOOP NAV — EDGE-HUGGING (Frazer via Luna, 29 Sep 2026).
  *
- * One unified system. The red arc is the track — a full circle, cropped by
- * the phone frame so each seat only shows the arc where that seat sits. The
- * toggle rides the arc, always fully on-screen, seat-coloured ring with
- * opaque white centre and the seat name. Inside the loop is empty white
- * canvas (surface for later) — no title, map, or pins.
+ * The red arc is the track (full circle, cropped by the phone frame). The
+ * seat-coloured toggle rides the arc and ALWAYS kisses the screen edge in
+ * the seat's direction — full bead visible, never cropped. Top/bottom are
+ * vertical mirrors; left/right are horizontal mirrors (structure only;
+ * each seat keeps its own title). Inside the loop is empty white. Outer
+ * negative space is minimised: the arc is packed against the kissed edge.
  *
- *   TRACK      Red (#E8322B). Stroke matched to Frazer's reference crops
- *              (~24–37 CSS px on a 390-wide phone; we use TRACK_STROKE).
- *   TOGGLE     Always visible; sits on the active seat of the arc.
- *   SEATS      6:00 communi-g · 7:30 fund · 9:00 borrow · 10:30 wish ·
- *              12:00 my g (exit) · 1:30 give · 3:00 lend · 4:30 trade.
- *   SNAP       Midpoint cross → magnet home in SNAP_MS. Drag both ways.
- *   EXIT       Lower-loop 12:00 → full living G (toggle at middle-loop 6:00).
- *   FRAME      No box border. Only the G outline (the red arc) clips the view.
+ *   EDGE-HUG   L∞ map: home = centre + (u/max|u|) × reach. Cardinals kiss
+ *              an edge; diagonals kiss a corner (7:30 lower-left, etc.).
+ *   RADIUS     Far side of the circle just off-screen, so each seat shows a
+ *              local arc (at 6:00 arms rise ~h/16–h/18, not a full ring).
+ *   TRACK      Red. TRACK_STROKE ≈ 32px (Frazer's ref crops).
+ *   SNAP       Midpoint → magnet home in SNAP_MS. 12:00 exits to the full G.
  */
 const SNAP_MS = 200;
 /**
- * Loop radius as a share of the shorter side. Large enough that the frame
- * crops most of the circle and only the active seat's arc stays in view.
- */
-const LOOP_OF_MIN = 0.92;
-/**
- * Where the active seat (and toggle) sits on screen. Upper-middle keeps the
- * toggle fully visible with the arc reading like the reference crops.
- */
-const HOME_Y_OF_H = 0.36;
-/**
- * Track stroke in CSS px. Measured from Frazer's ref crops on a 390-wide
- * phone: solid-red arc ~24–37px (ref-1 ≈36.5, ref-3 ≈24, ref-2 ≈18–stronger
- * when anti-alias included). 32px sits in that band — substantial, not a
- * hairline, not the old ~66px picture-frame.
+ * Track stroke in CSS px. Matched to Frazer's ref crops (~24–37px on a
+ * 390-wide phone). Substantial, not hairline, not a chunky frame.
  */
 const TRACK_STROKE = 32;
-/** Padding so the toggle never kisses the screen edge (px). */
-const TOGGLE_PAD = 10;
 /** Hit radius for a seat tap on the arc (px). */
 const HIT = 32;
 
@@ -132,7 +117,6 @@ export function PerimeterToggle({
 
   const geo = useMemo(() => {
     const { w, h } = size;
-    const R = Math.max(1, Math.min(w, h) * LOOP_OF_MIN);
     const k = gPxPerUnit(w || 390, h || 844);
     const tg = toggleGeometry("middle");
     const outerR = tg.EAR.outerR * k;
@@ -140,14 +124,22 @@ export function PerimeterToggle({
     const ringMid = tg.RING_MID * k;
     const ringW = tg.RING_W * k;
     const title = titleText(innerR);
-    /* Home keeps the toggle fully on-screen with a little paper. */
-    const homeX = w / 2;
-    const homeY = Math.min(
-      Math.max(outerR + TOGGLE_PAD, h * HOME_Y_OF_H),
-      h - outerR - TOGGLE_PAD,
-    );
+    /*
+     * R so the FAR side of the circle (plus half the stroke) sits just
+     * off-screen — no ghost hairline opposite the kissed edge. At 6:00:
+     * bottom-only arc, arms rise ~h/16–h/18. Packs against the edge.
+     *   H = (h − outerR) + TRACK_STROKE + 8
+     *   R = (H² + halfW²) / (2H)
+     */
+    const half = Math.max(1, w / 2);
+    const homeMaxY = Math.max(half + 1, h - outerR);
+    const H = homeMaxY + TRACK_STROKE + 8;
+    const R = Math.max(half + 1, (H * H + half * half) / (2 * H));
+    /* How far from centre the toggle may travel and still stay fully on-screen. */
+    const reachX = Math.max(0, w / 2 - outerR);
+    const reachY = Math.max(0, h / 2 - outerR);
     const trackW = TRACK_STROKE;
-    return { R, homeX, homeY, trackW, outerR, innerR, ringMid, ringW, title };
+    return { R, reachX, reachY, trackW, outerR, innerR, ringMid, ringW, title };
   }, [size]);
 
   const put = (next: number) => {
@@ -223,11 +215,22 @@ export function PerimeterToggle({
 
   const { w, h } = size;
   const u = unit(pos);
-  /* Circle slides under the home point so the active seat's arc is in frame. */
-  const Cx = geo.homeX - geo.R * u.x;
-  const Cy = geo.homeY - geo.R * u.y;
-  const toggleX = geo.homeX;
-  const toggleY = geo.homeY;
+  /*
+   * EDGE-HUG + MIRROR: L∞ map of the seat unit onto the inset screen box
+   * so EVERY seat kisses an edge (cardinals) or a corner (diagonals).
+   *   m = max(|ux|,|uy|); home = centre + (u/m) × reach
+   * 6:00 bottom · 12:00 top · 9:00 left · 3:00 right
+   * 7:30 lower-left corner · 1:30 upper-right · 10:30 upper-left · 4:30 lower-right.
+   * Top/bottom vertical mirrors; left/right horizontal mirrors.
+   */
+  const m = Math.max(Math.abs(u.x), Math.abs(u.y), 1e-6);
+  const homeX = w / 2 + (u.x / m) * geo.reachX;
+  const homeY = h / 2 + (u.y / m) * geo.reachY;
+  /* Circle slides under home so the active seat sits on the kissed edge. */
+  const Cx = homeX - geo.R * u.x;
+  const Cy = homeY - geo.R * u.y;
+  const toggleX = homeX;
+  const toggleY = homeY;
   const settled = !dragging && !snapping && Math.abs(turn(pos, clockOf(goal))) < 0.2;
   const here = nearest(pos);
   const shown: CgStation = dragging ? here : goal;
@@ -250,8 +253,10 @@ export function PerimeterToggle({
       data-cg-snapping={snapping ? "1" : "0"}
       data-cg-r={geo.R.toFixed(1)}
       data-cg-track-w={geo.trackW.toFixed(2)}
-      data-cg-home-x={geo.homeX.toFixed(1)}
-      data-cg-home-y={geo.homeY.toFixed(1)}
+      data-cg-home-x={homeX.toFixed(1)}
+      data-cg-home-y={homeY.toFixed(1)}
+      data-cg-reach-x={geo.reachX.toFixed(1)}
+      data-cg-reach-y={geo.reachY.toFixed(1)}
     >
       {/* EMPTY WHITE CANVAS — surface for later. No words, map, or pins. */}
 

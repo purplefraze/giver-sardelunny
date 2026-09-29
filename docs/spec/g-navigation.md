@@ -32,17 +32,17 @@ Spellings are exact: **Communi-g** is the place; **Communi-G Wishes** and **Comm
   - Lend (3:00) opposite Borrow (9:00).
   - Wish (~10:30) opposite Trade (~4:30).
 
-## 2. Communi-g lower-loop navigation
+## 2. Communi-g lower-loop navigation (edge-hugging)
 
-Frazer's unified lower-loop nav, 29 Sep 2026 (via Luna).
+Frazer's corrected lower-loop nav, 29 Sep 2026 (via Luna).
 
-- **One system.** The red arc is the track — a full circle, cropped by the phone frame so each seat only shows the arc where that seat sits.
-- **Empty canvas.** Inside the loop is white only (surface for later). No title, map, pins, or page content.
-- **Toggle.** Always fully visible. Rides the arc at the active seat. Seat-coloured ring, opaque white centre, seat name inside.
-- **Track stroke.** Red (#E8322B). Stand-in `TRACK_STROKE = 32` CSS px, matched to Frazer's reference crops (~24–37px on a 390-wide phone). Substantial, not hairline, not a chunky frame. No box border on the viewport.
-- **Seats (clock order).** 6:00 communi-g #E8322B · 7:30 fund #9E4B2C · 9:00 borrow #C77DD6 · 10:30 wish #9D00FF · 12:00 my g #1E7BFF (exit) · 1:30 give #4BE01E · 3:00 lend #B5D334 · 4:30 trade #FF6A13.
-- **Snap.** Midpoint cross → magnet home in ~200ms. Drag both ways. Reverse before the midpoint snaps back.
-- **Exit.** Lower-loop 12:00 opens the full living G with the toggle at middle-loop 6:00.
+- **Edge-hug.** The toggle kisses the screen edge in the seat's direction (full bead always visible). `home = centre + (u/max|u|) × reach (L∞)` with `reach = half-size − outerR`. 6:00 bottom · 12:00 top · 9:00 left mid · 3:00 right mid · diagonals in their hemispheres.
+- **Mirror.** Top/bottom are vertical mirrors; left/right are horizontal mirrors. Structure only — each seat keeps its own title and colour.
+- **Tight outer space.** Loop radius sized so the far side of the circle (plus stroke) sits off-screen — local arc only, arms rise ~h/16–h/18 at 6:00/12:00; packs against the kissed edge.
+- **Track.** Red full circle, cropped by the frame per seat. Stroke `TRACK_STROKE = 32` CSS px (Frazer's ref crops). No phone frame border.
+- **Empty canvas.** Inside the loop is white only (surface for later).
+- **Toggle.** Seat-coloured ring, opaque white centre, seat name. Colours: communi-g #E8322B · fund #9E4B2C · borrow #C77DD6 · wish #9D00FF · my g #1E7BFF · give #4BE01E · lend #B5D334 · trade #FF6A13.
+- **Snap / exit.** Midpoint magnet ~200ms. Lower-loop 12:00 → full living G, toggle at middle-loop 6:00.
 
 ## 3. Lower loop (Communi-g)
 

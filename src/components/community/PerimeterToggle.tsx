@@ -1,36 +1,34 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { SEAT_ANGLE, SEAT_TITLE, type Seat } from "@/components/living-g/EarSelector";
+import {
+  G_REGION_BANDS,
+  LIVING_G_PATH,
+  LIVING_G_TRANSFORM,
+  LOOP_CENTRE,
+  LOOP_RIM_RADIUS,
+} from "@/components/living-g/g-path";
+import { G_STROKE } from "@/components/living-g/g-weight";
 import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-G LOWER-LOOP — ARM-ANCHORED + BENTLEY HOLD (Frazer, 29 Sep 2026).
+ * COMMUNI-G LOWER LOOP — CANONICAL LIVING_G_PATH (Frazer, 30 Sep 2026).
  *
- * Middle-loop / living-g / g-path.ts untouched.
+ * Red track IS the locked lower loop of LIVING_G_PATH (+ LIVING_G_TRANSFORM).
+ * ViewBox / clip on G_REGION_BANDS.bottom — bowl + right mouth (My G–Give) subject;
+ * middle/top not. Not SVG A-arc. Not oval. Not CIRCLE_R. Mouth stays OPEN.
  *
- * Toggle = middle-loop MIRRORED INWARD:
- *   arm roots on INSIDE of red track → bead floats into content.
- *   At 6:00 arm comes UP off the track into white — circle hangs into the white;
- *   stem on the inside of the red smile — never down into the browser bar.
- *   At 12:00 same inward arm — bead hangs into white below the smile.
+ * Bead + inward stem ride REAL lower-loop rim: ray from LOOP_CENTRE.bottom onto
+ * LOOP_RIM_RADIUS.bottom (placement only). Visible stroke stays the path.
+ * Seats = existing Communi-G clocks; interpolate angle about bottom centre.
  *
- * ONE true-circle radius every seat (never oval / never squash to fit phone).
- * Off-screen track presumed. 6/12 kiss the rim; 9/3 mid-edge bead + corner arcs
- * on that same circle; diagonals one corner.
- *
- * Bentley motion: press beat (200ms) before any travel. Tap before beat stays put.
- * Hold after beat: roll to first seat → settle; clock-tick selection() every seat
- * cross (~900ms/seat hard cap, no skip/psycho) only while finger down.
- * Release: velocity=0, short snap nearest seat — no coast/flick run-on.
- * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
- *
- * Ghost = next seat's FILLED bead ON the track (no hollow rings). Dolly-in on entry.
- * Track #E8322B. Press: loop shrinks (~6%) + bead grows (~12%) + middle peek — one breath.
+ * Bentley: 200ms press gate, ~900ms/seat, selection() every seat, no flick,
+ * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts, inward stem at 6 into white.
+ * Entry dolly: filled/zoomed on 6:00 underside → settle readable bowl + opening.
  */
 const SNAP_MS = 220;
-const G_PX = 0.522784;
-const TRACK_STROKE = 28.5 * G_PX; // ≈ 14.90
+const TRACK_HALF = G_STROKE.normal / 2; // viewBox units — outer rim is LOOP_RIM_RADIUS
 
 /** Bead sized so "communi-g" fits in full. */
 const TOGGLE_OUTER_R = 32;
@@ -43,10 +41,11 @@ const STEM_W = 8;
 const STEM_LEN = 22;
 const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
-/** Bead grows on press — same pop breath as loop shrink. Modest so 9/3 mid-edge never swallows corner arcs. */
+/** Bead grows on press — same pop breath as loop shrink. */
 const BEAD_GROW = 1.12;
 const DOLLY_MS = 560;
-const DOLLY_START = 0.84;
+/** Start zoomed on 6:00 underside, settle to readable letter. */
+const DOLLY_START = 1.38;
 /** Press beat before any travel. Tap / flick before beat stays put. */
 const PRESS_MS = 200;
 /** One seat (~45°) — hard cap ~900ms/seat. No ramp, no psycho run. */
@@ -61,6 +60,10 @@ const DH = 844;
 const HIT = 44;
 
 const RED = "#E8322B";
+
+const BAND = G_REGION_BANDS.bottom;
+const C = LOOP_CENTRE.bottom;
+const RIM = LOOP_RIM_RADIUS.bottom;
 
 /**
  * ONE colour source: styles.css --mode-* tokens (same map CG_COLOUR / LoopLabel
@@ -105,14 +108,6 @@ const wordOf = (s: CgStation) => SEAT_TITLE[STATION_SEAT[s]];
 const colourOf = (s: CgStation) => modeHex(MODE_TOKEN[s] ?? "--mode-communigy");
 
 type Size = { w: number; h: number };
-type ArcSpan = { deg0: number; deg1: number };
-type Geom = {
-  cx: number;
-  cy: number;
-  r: number;
-  arcs: ArcSpan[];
-  toggleDeg: number;
-};
 
 const RAD = Math.PI / 180;
 const wrap = (d: number) => ((d % 360) + 360) % 360;
@@ -124,132 +119,7 @@ const turn = (a: number, b: number) => {
 const easeOut = (u: number) => 1 - (1 - u) ** 3;
 const easeInOut = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
 
-const angPt = (cx: number, cy: number, r: number, deg: number) => {
-  const a = deg * RAD;
-  return { x: cx + r * Math.sin(a), y: cy - r * Math.cos(a) };
-};
-
-const outward = (deg: number) => {
-  const a = deg * RAD;
-  return { x: Math.sin(a), y: -Math.cos(a) };
-};
-
-const oneArc = (cx: number, cy: number, r: number, deg0: number, deg1: number) => {
-  const p0 = angPt(cx, cy, r, deg0);
-  const p1 = angPt(cx, cy, r, deg1);
-  const delta = wrap(deg1 - deg0);
-  const large = delta > 180 ? 1 : 0;
-  return `M${p0.x.toFixed(3)},${p0.y.toFixed(3)} A${r.toFixed(3)},${r.toFixed(3)} 0 ${large} 1 ${p1.x.toFixed(3)},${p1.y.toFixed(3)}`;
-};
-
-const arcsPath = (g: Geom, r: number) => g.arcs.map((a) => oneArc(g.cx, g.cy, r, a.deg0, a.deg1)).join(" ");
-
-/**
- * ONE true-circle radius every seat — never oval, never squash to fit the phone.
- * Off-screen track presumed. 6/12 kiss rim so the arc reaches toward the corners;
- * 9/3 mid-edge bead + corner arcs on that same circle; diagonals one corner.
- */
-const CIRCLE_R = 500;
-const SIDE_BEAD_X = -32;
-/** Arc half-span past the frame so L/R ends read as corner reach (rest off-screen). */
-const SMILE_HALF = 90;
-const TOP_RIM_Y = 48;
-const BOTTOM_KISS_Y = DH - TRACK_STROKE / 2;
-
-const sideCx = (left: boolean) => (left ? CIRCLE_R + SIDE_BEAD_X : DW - (CIRCLE_R + SIDE_BEAD_X));
-
-const GEOM_DESIGN: Record<CgStation, Geom> = {
-  // Every seat: ONE continuous smile SMILE_HALF either side of toggleDeg (never two path cmds).
-  borrow: {
-    cx: sideCx(true),
-    cy: DH / 2,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 180, deg1: 360 }],
-    toggleDeg: 270,
-  },
-  lend: {
-    cx: sideCx(false),
-    cy: DH / 2,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 0, deg1: 180 }],
-    toggleDeg: 90,
-  },
-  wish: {
-    cx: 470,
-    cy: 470,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 225, deg1: 45 }],
-    toggleDeg: 315,
-  },
-  fund: {
-    cx: 470,
-    cy: DH - 470,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 135, deg1: 315 }],
-    toggleDeg: 225,
-  },
-  give: {
-    cx: DW - 470,
-    cy: 470,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 315, deg1: 135 }],
-    toggleDeg: 45,
-  },
-  trade: {
-    cx: DW - 470,
-    cy: DH - 470,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 45, deg1: 225 }],
-    toggleDeg: 135,
-  },
-  exit: {
-    cx: DW / 2,
-    cy: TOP_RIM_Y + CIRCLE_R,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 360 - SMILE_HALF, deg1: SMILE_HALF }],
-    toggleDeg: 0,
-  },
-  everything: {
-    cx: DW / 2,
-    cy: BOTTOM_KISS_Y - CIRCLE_R,
-    r: CIRCLE_R,
-    arcs: [{ deg0: 180 - SMILE_HALF, deg1: 180 + SMILE_HALF }],
-    toggleDeg: 180,
-  },
-};
-
-/** Uniform scale — same factor on x/y/r so the track stays a circle, never an oval. */
-const scaleGeom = (g: Geom, s: number): Geom => ({
-  cx: g.cx * s,
-  cy: g.cy * s,
-  r: g.r * s,
-  arcs: g.arcs.map((a) => ({ deg0: a.deg0, deg1: a.deg1 })),
-  toggleDeg: g.toggleDeg,
-});
-
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const lerpAngle = (a: number, b: number, t: number) => wrap(a + turn(a, b) * t);
-
-const lerpGeom = (a: Geom, b: Geom, t: number): Geom => {
-  const arcsSrc = t < 0.5 ? a.arcs : b.arcs;
-  const arcsDst = t < 0.5 ? b.arcs : a.arcs;
-  const u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-  const arcs =
-    arcsSrc.length === arcsDst.length
-      ? arcsSrc.map((s, i) => ({
-          deg0: lerpAngle(s.deg0, arcsDst[i]!.deg0, u),
-          deg1: lerpAngle(s.deg1, arcsDst[i]!.deg1, u),
-        }))
-      : (t < 0.5 ? a.arcs : b.arcs).map((s) => ({ ...s }));
-  return {
-    cx: lerp(a.cx, b.cx, t),
-    cy: lerp(a.cy, b.cy, t),
-    r: lerp(a.r, b.r, t),
-    arcs,
-    toggleDeg: lerpAngle(a.toggleDeg, b.toggleDeg, t),
-  };
-};
-
 const lerpHex = (a: string, b: string, t: number) => {
   const parse = (h: string): [number, number, number] => {
     const s = h.replace("#", "");
@@ -266,35 +136,60 @@ const lerpHex = (a: string, b: string, t: number) => {
     .join("")}`;
 };
 
+/** Clock deg → unit outward from LOOP_CENTRE.bottom (0 = 12:00, CW). */
+const outward = (deg: number) => {
+  const a = deg * RAD;
+  return { x: Math.sin(a), y: -Math.cos(a) };
+};
+
+type Frame = {
+  sFit: number;
+  svgX: number;
+  svgY: number;
+  svgW: number;
+  svgH: number;
+};
+
+/** Map bottom-band viewBox → screen (xMid YMax meet — bowl sits on phone). */
+const frameOf = (w: number, h: number): Frame => {
+  const sFit = Math.min(w / BAND.width, h / BAND.height);
+  const svgW = BAND.width * sFit;
+  const svgH = BAND.height * sFit;
+  return { sFit, svgX: (w - svgW) / 2, svgY: h - svgH, svgW, svgH };
+};
+
+const toScreen = (f: Frame, p: { x: number; y: number }) => ({
+  x: f.svgX + (p.x - BAND.x) * f.sFit,
+  y: f.svgY + (p.y - BAND.y) * f.sFit,
+});
+
 /**
  * Arm on INSIDE of track → bead into content (toward centre).
- * At 6:00: attach on inside of smile, bead ABOVE in white, arm UP — never into the browser bar.
- * At 12:00: same inward arm, bead hangs into white below.
+ * At 6:00: attach on inside of smile, bead ABOVE in white, arm UP.
  */
-const organismParts = (g: Geom, pop: number) => {
-  const R = g.r * (1 - (1 - DRAG_SHRINK) * pop);
-  const u = outward(g.toggleDeg);
-  // Inner wall of the stroke — stem roots here (inside of the red smile).
-  const attachR = Math.max(12, R - TRACK_STROKE / 2);
-  const attach = { x: g.cx + attachR * u.x, y: g.cy + attachR * u.y };
-  // Bead further toward centre (into the white). At 6:00 that is UP into the paper.
-  const beadR = Math.max(6, attachR - STEM_LEN - TOGGLE_OUTER_R);
-  const bead = { x: g.cx + beadR * u.x, y: g.cy + beadR * u.y };
+const organismParts = (deg: number, f: Frame, pop: number) => {
+  const shrink = 1 - (1 - DRAG_SHRINK) * pop;
+  const u = outward(deg);
+  const rim = RIM * shrink;
+  const half = TRACK_HALF * shrink;
+  // Inner wall of the stroke — stem roots here (inside of the red path).
+  const attachR = Math.max(12, rim - half);
+  const attachVb = { x: C.x + attachR * u.x, y: C.y + attachR * u.y };
+  const stemPx = STEM_LEN * (f.sFit || 1);
+  const beadPx = TOGGLE_OUTER_R * (f.sFit || 1);
+  // Bead further toward centre in viewBox units.
+  const inwardVb = (stemPx + beadPx) / (f.sFit || 1);
+  const beadR = Math.max(6, attachR - inwardVb);
+  const beadVb = { x: C.x + beadR * u.x, y: C.y + beadR * u.y };
+  const attach = toScreen(f, attachVb);
+  const bead = toScreen(f, beadVb);
   // Tip buried in the ring stroke toward the track (middle-loop language).
   const stemTip = {
     x: bead.x + u.x * (TOGGLE_INNER_R * 0.4),
     y: bead.y + u.y * (TOGGLE_INNER_R * 0.4),
   };
-  // Ghost sits ON the stroke centreline (track), not mid-content.
-  const track = { x: g.cx + R * u.x, y: g.cy + R * u.y };
-  return { R, bead, stemRoot: attach, stemTip, stemLen: STEM_LEN, attach, track };
-};
-
-const peekPath = (s: number) => {
-  const cx = (DW / 2) * s;
-  const cy = 200 * s;
-  const r = 360 * s;
-  return oneArc(cx, cy, r, 320, 40);
+  const track = toScreen(f, { x: C.x + rim * u.x, y: C.y + rim * u.y });
+  return { bead, stemRoot: attach, stemTip, attach, track, u };
 };
 
 export function PerimeterToggle({
@@ -410,20 +305,8 @@ export function PerimeterToggle({
     if (value !== "exit" as never) setGoal(value);
   }, [value]);
 
-  /** Width-driven uniform scale — never sx≠sy (that squashed the circle into an oval). */
-  const s = size.w ? size.w / DW : 1;
-  /**
-   * 6:00 only: kiss the measured bottom + CHROME_LIFT. Other seats stay on
-   * design cy so 12/wish/give are not shoved off the top.
-   */
-  const CHROME_LIFT = 30;
-  const designAt = (station: CgStation) => {
-    const g = scaleGeom(GEOM_DESIGN[station], s);
-    if (station !== "everything") return g;
-    const designBottom = BOTTOM_KISS_Y * s;
-    const targetBottom = size.h - TRACK_STROKE / 2 - CHROME_LIFT;
-    return { ...g, cy: g.cy + (targetBottom - designBottom) };
-  };
+  const frame = useMemo(() => frameOf(size.w || DW, size.h || DH), [size.w, size.h]);
+  const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
 
   const nearest = (deg: number): CgStation => {
     let best: CgStation = "everything";
@@ -441,24 +324,6 @@ export function PerimeterToggle({
   const neighbour = (s: CgStation, dir: 1 | -1): CgStation => {
     const i = STATIONS.indexOf(s);
     return STATIONS[(i + dir + STATIONS.length) % STATIONS.length]!;
-  };
-
-
-  const restGeomAt = (deg: number): Geom => {
-    const here = nearest(deg);
-    const i = STATIONS.indexOf(here);
-    const prev = STATIONS[(i - 1 + STATIONS.length) % STATIONS.length]!;
-    const next = STATIONS[(i + 1) % STATIONS.length]!;
-    const cHere = clockOf(here);
-    const dPrev = Math.abs(turn(deg, clockOf(prev)));
-    const dNext = Math.abs(turn(deg, clockOf(next)));
-    const dHere = Math.abs(turn(deg, cHere));
-    if (dHere < 2) return designAt(here);
-    const toward = dPrev < dNext ? prev : next;
-    const span = Math.abs(turn(cHere, clockOf(toward)));
-    const traveled = Math.abs(turn(cHere, deg));
-    const t = span < 1e-6 ? 0 : Math.min(1, traveled / span);
-    return lerpGeom(designAt(here), designAt(toward), t);
   };
 
   const animatePop = (to: number) => {
@@ -626,49 +491,44 @@ export function PerimeterToggle({
       : colourOf(shown);
   const word = wordOf(dragging || cruising || pop > 0.5 ? (blend > 0.55 ? towardSeat : here) : shown);
 
-  const geom = w
-    ? !dragging && !snapping && !cruising
-      ? designAt(nearest(pos))
-      : restGeomAt(pos)
-    : null;
-  const live: Geom | null = geom
-    ? {
-        ...geom,
-        toggleDeg: dragging || cruising || pop > 0.05 || snapping ? wrap(pos) : geom.toggleDeg,
-      }
-    : null;
-
-  const parts = live ? organismParts(live, pop) : null;
+  const liveDeg = dragging || cruising || pop > 0.05 || snapping ? wrap(pos) : clockOf(nearest(pos));
+  const parts = w ? organismParts(liveDeg, frame, pop) : null;
   /** Same pop / POP_MS / easeOut as loop shrink — one breath both ways. */
   const beadScale = 1 + (BEAD_GROW - 1) * pop;
-  const pathD = live && parts ? arcsPath(live, parts.R) : "";
+  const loopScale = 1 - (1 - DRAG_SHRINK) * pop;
 
   /** Ghost = next seat's FILLED coloured bead ON the track — never a hollow ring. */
   const plugs =
     w && (dragging || cruising || pop > 0.25)
       ? [towardSeat]
           .map((s) => {
-            const g = designAt(s);
-            const p = organismParts(g, 0);
+            const p = organismParts(clockOf(s), frame, 0);
             const dist = Math.abs(turn(pos, clockOf(s)));
             const opacity = Math.min(0.95, 0.35 + blend * 0.65);
-            return { s, track: p.track, opacity: s === towardSeat ? opacity : Math.max(0, 0.3 - dist / 100), colour: colourOf(s) };
+            return {
+              s,
+              track: p.track,
+              opacity: s === towardSeat ? opacity : Math.max(0, 0.3 - dist / 100),
+              colour: colourOf(s),
+            };
           })
           .filter((p) => p.opacity > 0.08 && p.s !== shown)
       : [];
 
   const thetaForFinger = (clientX: number, clientY: number) => {
     const r = stage.current!.getBoundingClientRect();
-    const x = clientX - r.left - live!.cx;
-    const y = clientY - r.top - live!.cy;
+    const x = clientX - r.left - centreScreen.x;
+    const y = clientY - r.top - centreScreen.y;
     return wrap((Math.atan2(x, -y) * 180) / Math.PI);
   };
 
   const dollyScale = lerp(DOLLY_START, 1, dolly);
   const originX = parts ? (parts.bead.x / (w || 1)) * 100 : 50;
-  const originY = parts ? (parts.bead.y / (h || 1)) * 100 : 50;
+  const originY = parts ? (parts.bead.y / (h || 1)) * 100 : 85;
 
   const titleSize = word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11;
+  const vb = `${BAND.x} ${BAND.y} ${BAND.width} ${BAND.height}`;
+  const px = frame.sFit || 1;
 
   return (
     <div
@@ -680,28 +540,15 @@ export function PerimeterToggle({
       data-cg-snapping={snapping ? "1" : "0"}
       data-cg-pop={pop.toFixed(2)}
       data-cg-bead-s={beadScale.toFixed(3)}
-      data-cg-r={parts ? parts.R.toFixed(1) : ""}
-      data-cg-track-w={TRACK_STROKE.toFixed(2)}
+      data-cg-r={RIM.toFixed(1)}
+      data-cg-track-w={(G_STROKE.normal * px).toFixed(2)}
       data-cg-toggle-d={TOGGLE_DIAM}
-      data-cg-kind="circle"
+      data-cg-kind="living-g-path"
       data-cg-organism="1"
       data-cg-dolly={dolly.toFixed(2)}
       data-cg-arm="inward"
       data-cg-cruise={cruising ? "1" : "0"}
     >
-      {w && pop > 0.04 ? (
-        <svg className="pointer-events-none absolute left-0 top-0 z-[5]" width={w} height={h} aria-hidden="true" data-cg-peek="">
-          <path
-            d={peekPath(s)}
-            fill="none"
-            stroke={RED}
-            strokeWidth={TRACK_STROKE * 0.85}
-            strokeLinecap="butt"
-            opacity={Math.min(0.5, pop * 0.5)}
-          />
-        </svg>
-      ) : null}
-
       <div
         className="absolute inset-0"
         style={{
@@ -710,24 +557,47 @@ export function PerimeterToggle({
           willChange: dolly < 1 ? "transform" : "auto",
         }}
       >
-        {w && live && parts ? (
-          <svg className="pointer-events-none absolute left-0 top-0" width={w} height={h} aria-hidden="true" data-cg-world="">
-            <path
-              d={pathD}
-              fill="none"
-              stroke={RED}
-              strokeWidth={TRACK_STROKE}
-              strokeLinecap="round"
+        {w && parts ? (
+          <svg
+            className="pointer-events-none absolute left-0 top-0 overflow-hidden"
+            width={w}
+            height={h}
+            aria-hidden="true"
+            data-cg-world=""
+          >
+            {/* Canonical lower loop — LIVING_G_PATH framed on bottom band. Mouth OPEN. */}
+            <svg
+              x={frame.svgX}
+              y={frame.svgY}
+              width={frame.svgW}
+              height={frame.svgH}
+              viewBox={vb}
+              preserveAspectRatio="xMidYMax meet"
+              overflow="hidden"
               data-cg-loop=""
-              data-cg-track-w={TRACK_STROKE.toFixed(2)}
-              data-cg-cx={live.cx.toFixed(1)}
-              data-cg-cy={live.cy.toFixed(1)}
-            />
+              data-cg-track-w={(G_STROKE.normal * px).toFixed(2)}
+              data-cg-cx={centreScreen.x.toFixed(1)}
+              data-cg-cy={centreScreen.y.toFixed(1)}
+            >
+              <defs>
+                <clipPath id="cg-bottom-band">
+                  <rect x={BAND.x} y={BAND.y} width={BAND.width} height={BAND.height} />
+                </clipPath>
+              </defs>
+              <g
+                clipPath="url(#cg-bottom-band)"
+                transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
+              >
+                <g transform={LIVING_G_TRANSFORM} fill={RED}>
+                  <path d={LIVING_G_PATH} />
+                </g>
+              </g>
+            </svg>
 
             {plugs.map((p) => (
               <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
                 {/* Next seat's FILLED bead ON the track — no hollow rings. */}
-                <circle cx={p.track.x} cy={p.track.y} r={TOGGLE_STROKE_R * s} fill={p.colour} data-cg-ghost-fill="" />
+                <circle cx={p.track.x} cy={p.track.y} r={TOGGLE_STROKE_R} fill={p.colour} data-cg-ghost-fill="" />
               </g>
             ))}
 
@@ -737,7 +607,7 @@ export function PerimeterToggle({
               x2={parts.stemTip.x}
               y2={parts.stemTip.y}
               stroke={colour}
-              strokeWidth={STEM_W * s}
+              strokeWidth={STEM_W}
               strokeLinecap="round"
               data-cg-stem-arm=""
             />
@@ -746,8 +616,7 @@ export function PerimeterToggle({
 
         {w
           ? STATIONS.map((s) => {
-              const g = designAt(s);
-              const pt = organismParts(g, 0).bead;
+              const pt = organismParts(clockOf(s), frame, 0).bead;
               return (
                 <button
                   key={s}
@@ -787,9 +656,9 @@ export function PerimeterToggle({
           <div
             className="pointer-events-auto absolute left-0 top-0 z-30 flex items-center justify-center rounded-full outline-none focus:outline-none [-webkit-tap-highlight-color:transparent]"
             style={{
-              width: TOGGLE_DIAM * s,
-              height: TOGGLE_DIAM * s,
-              transform: `translate(${(parts.bead.x - TOGGLE_OUTER_R * s).toFixed(2)}px, ${(parts.bead.y - TOGGLE_OUTER_R * s).toFixed(2)}px) scale(${beadScale.toFixed(4)})`,
+              width: TOGGLE_DIAM,
+              height: TOGGLE_DIAM,
+              transform: `translate(${(parts.bead.x - TOGGLE_OUTER_R).toFixed(2)}px, ${(parts.bead.y - TOGGLE_OUTER_R).toFixed(2)}px) scale(${beadScale.toFixed(4)})`,
               transformOrigin: "center center",
               cursor: dragging ? "grabbing" : "grab",
               touchAction: "none",
@@ -814,12 +683,10 @@ export function PerimeterToggle({
               stopCruise();
               const rect = stage.current!.getBoundingClientRect();
               const now = performance.now();
-              const angle = live
-                ? wrap(
-                    (Math.atan2(e.clientX - rect.left - live.cx, -(e.clientY - rect.top - live.cy)) * 180) /
-                      Math.PI,
-                  )
-                : posRef.current;
+              const angle = wrap(
+                (Math.atan2(e.clientX - rect.left - centreScreen.x, -(e.clientY - rect.top - centreScreen.y)) * 180) /
+                  Math.PI,
+              );
               drag.current = {
                 id: e.pointerId,
                 armed: false,
@@ -924,8 +791,8 @@ export function PerimeterToggle({
             }}
           >
             <svg
-              width={TOGGLE_DIAM * s}
-              height={TOGGLE_DIAM * s}
+              width={TOGGLE_DIAM}
+              height={TOGGLE_DIAM}
               viewBox={`${-TOGGLE_OUTER_R} ${-TOGGLE_OUTER_R} ${TOGGLE_DIAM} ${TOGGLE_DIAM}`}
               aria-hidden="true"
               style={{ overflow: "visible" }}

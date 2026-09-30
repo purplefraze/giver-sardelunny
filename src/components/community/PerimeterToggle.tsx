@@ -14,8 +14,9 @@ import { haptics } from "@/lib/haptics";
  *   At 6:00 arm comes UP off the track into white — never a nub outside.
  *
  * Bentley motion: press beat (~150ms) before any travel. Tap before beat stays put.
- * Hold after beat: cruise one seat per ~450ms in last-nudge direction — no accel,
- * no seat skip. Release: ease-snap nearest along track. Track+bead stay continuous.
+ * Hold after beat: roll to first seat → settle + one haptic click; then continuous
+ * roll (no per-seat magnet/buzz) until release. Shy ramp after ~1s toward ~350ms/seat
+ * (ceiling). Release: quiet ease-snap nearest. Track+bead stay continuous.
  * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
  *
  * Ghost = next seat's coloured bead ON the track. Dolly-in on entry.
@@ -42,12 +43,15 @@ const DOLLY_MS = 560;
 const DOLLY_START = 0.84;
 /** Press beat before travel starts (120–180ms band). Tap before beat stays put. */
 const PRESS_MS = 150;
-/** One seat (~45°) per hold interval — Bentley pace, no runaway. */
+/** One seat (~45°) — start pace ~500ms/seat; shy ramp floor ~350ms/seat. */
 const SEAT_SPAN_DEG = 45;
-const SEAT_MS = 450;
-const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.1°/ms
-/** Cap = cruise — no accel from finger flicks. */
-const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
+const SEAT_MS = 500;
+const SEAT_MS_FLOOR = 350;
+const RAMP_AFTER_MS = 1000;
+const RAMP_SPAN_MS = 800;
+const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.09°/ms start
+/** Hard ceiling — never faster than ~350ms/seat. */
+const CRUISE_MAX_DEG_MS = SEAT_SPAN_DEG / SEAT_MS_FLOOR;
 
 const DW = 390;
 const DH = 844;
@@ -319,6 +323,10 @@ export function PerimeterToggle({
   const cruiseVel = useRef(0);
   const cruisingRef = useRef(false);
   const holdTimer = useRef(0);
+  /** First seat click this hold — settle + one haptic, then continuous roll. */
+  const firstClickRef = useRef(false);
+  const cruiseStartRef = useRef(0);
+  const holdOriginRef = useRef<CgStation>("everything");
   const drag = useRef<{
     id: number;
     /** True after PRESS_MS — travel may start. Tap before armed stays put. */
@@ -330,7 +338,7 @@ export function PerimeterToggle({
     angle: number;
   } | null>(null);
 
-  const goRef = useRef<(s: CgStation) => void>(() => {});
+  const goRef = useRef<(s: CgStation, opts?: { quiet?: boolean }) => void>(() => {});
   const nearestRef = useRef<(d: number) => CgStation>(() => "everything");
   const neighbourRef = useRef<(s: CgStation, dir: 1 | -1) => CgStation>((s) => s);
   const onExitRef = useRef(onExit);
@@ -478,12 +486,13 @@ export function PerimeterToggle({
    * Park at a seat. Exit is parkable — does NOT leave Communi-G.
    * Leaving is only via exitByTap().
    */
-  const go = (s: CgStation) => {
+  const go = (s: CgStation, opts?: { quiet?: boolean }) => {
+    const quiet = !!opts?.quiet;
     if (s !== "exit" && s !== value) {
-      haptics.light();
+      if (!quiet) haptics.light();
       onChange(s);
     } else if (s === "exit") {
-      haptics.light();
+      if (!quiet) haptics.light();
     }
     setGoal(s);
   };
@@ -502,29 +511,63 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Hold cruise: capped one-seat-per-SEAT_MS along the continuous circle.
-   * Direction only from last nudge / current drag. No accel. No seat skip.
-   * On finger-up: stop cruise and ease-snap nearest in travel direction.
+   * Hold cruise: first seat settles with one haptic click, then continuous roll
+   * (no per-seat magnet / buzz). Shy ramp after RAMP_AFTER_MS toward SEAT_MS_FLOOR.
+   * On finger-up: quiet ease-snap nearest in travel direction.
    */
   const startCruise = (dir: 1 | -1) => {
     cancelAnimationFrame(cruiseRaf.current);
     lastDir.current = dir;
-    cruiseVel.current = dir * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
+    firstClickRef.current = false;
+    cruiseStartRef.current = performance.now();
+    holdOriginRef.current = drag.current?.start ?? nearestRef.current(posRef.current);
+    cruiseVel.current = dir * CRUISE_DEG_MS;
     cruisingRef.current = true;
     setCruising(true);
     let last = performance.now();
     const step = (now: number) => {
       const dt = Math.min(32, Math.max(0, now - last));
       last = now;
-      // Let-go: finish — snap nearest along track with visible ease (via go).
+      // Let-go: quiet snap nearest along track (first-seat click already buzzed).
       if (!drag.current) {
         stopCruise();
-        goRef.current(nearestInDir(posRef.current, lastDir.current));
+        goRef.current(nearestInDir(posRef.current, lastDir.current), { quiet: true });
         return;
       }
-      // Hold: fixed Bentley pace. Dir may flip from nudge; magnitude stays capped.
-      cruiseVel.current = lastDir.current * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
-      put(posRef.current + cruiseVel.current * dt);
+      // Shy ramp: after ~1s ease toward ~350ms/seat; hard ceiling — never spin.
+      const held = now - cruiseStartRef.current;
+      let seatMs = SEAT_MS;
+      if (held > RAMP_AFTER_MS) {
+        const u = Math.min(1, (held - RAMP_AFTER_MS) / RAMP_SPAN_MS);
+        seatMs = SEAT_MS + (SEAT_MS_FLOOR - SEAT_MS) * u;
+      }
+      const degMs = Math.min(CRUISE_MAX_DEG_MS, SEAT_SPAN_DEG / seatMs);
+      cruiseVel.current = lastDir.current * degMs;
+      const next = posRef.current + cruiseVel.current * dt;
+
+      // First seat while held: settle on it + one haptic, then keep rolling.
+      if (!firstClickRef.current) {
+        const origin = holdOriginRef.current;
+        const target = neighbourRef.current(origin, lastDir.current);
+        const tDeg = clockOf(target);
+        const before = turn(posRef.current, tDeg);
+        const after = turn(next, tDeg);
+        const crossed =
+          Math.abs(after) <= 1.5 ||
+          (lastDir.current > 0 && before > 0 && after <= 0) ||
+          (lastDir.current < 0 && before < 0 && after >= 0);
+        if (crossed) {
+          put(tDeg);
+          goRef.current(target); // settle + one haptic click
+          firstClickRef.current = true;
+          // Keep rolling past — no magnet-stop on following seats.
+          put(tDeg + cruiseVel.current * Math.min(dt, 8));
+          cruiseRaf.current = requestAnimationFrame(step);
+          return;
+        }
+      }
+
+      put(next);
       cruiseRaf.current = requestAnimationFrame(step);
     };
     cruiseRaf.current = requestAnimationFrame(step);
@@ -837,7 +880,8 @@ export function PerimeterToggle({
                 // along track with visible ease. If not yet cruising (edge), snap now.
                 animatePop(0);
                 if (!cruisingRef.current) {
-                  go(nearestInDir(posRef.current, lastDir.current));
+                  // Quiet — first-seat click already buzzed if we got that far.
+                  go(nearestInDir(posRef.current, lastDir.current), { quiet: true });
                 }
               } else {
                 // TAP before beat — stay on current seat.
@@ -856,7 +900,7 @@ export function PerimeterToggle({
               drag.current = null;
               setDragging(false);
               if (armed || cruisingRef.current) {
-                if (!cruisingRef.current) go(nearestInDir(posRef.current, lastDir.current));
+                if (!cruisingRef.current) go(nearestInDir(posRef.current, lastDir.current), { quiet: true });
               } else stopCruise();
               animatePop(0);
             }}

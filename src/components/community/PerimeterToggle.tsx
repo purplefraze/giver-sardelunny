@@ -11,7 +11,13 @@ import { haptics } from "@/lib/haptics";
  *
  * Toggle = middle-loop MIRRORED INWARD:
  *   arm roots on INSIDE of red track → bead floats into content.
- *   At 6:00 arm comes UP off the track into white — never a nub outside.
+ *   At 6:00 arm comes UP off the track into white — circle hangs into the white;
+ *   stem on the inside of the red smile — never down into the browser bar.
+ *   At 12:00 same inward arm — bead hangs into white below the smile.
+ *
+ * ONE true-circle radius every seat (never oval / never squash to fit phone).
+ * Off-screen track presumed. 6/12 kiss the rim; 9/3 mid-edge bead + corner arcs
+ * on that same circle; diagonals one corner.
  *
  * Bentley motion: press beat (200ms) before any travel. Tap before beat stays put.
  * Hold after beat: roll to first seat → settle + one haptic click; then continuous
@@ -19,7 +25,7 @@ import { haptics } from "@/lib/haptics";
  * Release: velocity=0, short snap nearest seat — no coast/flick run-on.
  * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
  *
- * Ghost = next seat's coloured bead ON the track. Dolly-in on entry.
+ * Ghost = next seat's FILLED bead ON the track (no hollow rings). Dolly-in on entry.
  * Track #E8322B. Press: loop shrinks (~6%) + bead grows (~12%) + middle peek — one breath.
  */
 const SNAP_MS = 220;
@@ -139,25 +145,24 @@ const oneArc = (cx: number, cy: number, r: number, deg0: number, deg1: number) =
 const arcsPath = (g: Geom, r: number) => g.arcs.map((a) => oneArc(g.cx, g.cy, r, a.deg0, a.deg1)).join(" ");
 
 /**
- * True-circle crops — R chosen so 6/12 climb into the corners (not a flat bowl);
- * 9/3 bow inward toward the bead; diagonals stay one corner.
+ * ONE true-circle radius every seat — never oval, never squash to fit the phone.
+ * Off-screen track presumed. 6/12 kiss rim so the arc reaches toward the corners;
+ * 9/3 mid-edge bead + corner arcs on that same circle; diagonals one corner.
  */
-const SIDE_R = 500;
+const CIRCLE_R = 500;
 const SIDE_BEAD_X = -32;
-const DIAG_R = 500;
-/** Climb into L/R: near-semicircle of a true circle. */
-const SMILE_R = 270;
-const SMILE_HALF = 102;
+/** Arc half-span past the frame so L/R ends read as corner reach (rest off-screen). */
+const SMILE_HALF = 90;
 const TOP_RIM_Y = 48;
 const BOTTOM_KISS_Y = DH - TRACK_STROKE / 2;
 
-const sideCx = (left: boolean) => (left ? SIDE_R + SIDE_BEAD_X : DW - (SIDE_R + SIDE_BEAD_X));
+const sideCx = (left: boolean) => (left ? CIRCLE_R + SIDE_BEAD_X : DW - (CIRCLE_R + SIDE_BEAD_X));
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
   borrow: {
     cx: sideCx(true),
     cy: DH / 2,
-    r: SIDE_R,
+    r: CIRCLE_R,
     arcs: [
       { deg0: 210, deg1: 255 },
       { deg0: 285, deg1: 330 },
@@ -167,7 +172,7 @@ const GEOM_DESIGN: Record<CgStation, Geom> = {
   lend: {
     cx: sideCx(false),
     cy: DH / 2,
-    r: SIDE_R,
+    r: CIRCLE_R,
     arcs: [
       { deg0: 30, deg1: 75 },
       { deg0: 105, deg1: 150 },
@@ -177,51 +182,52 @@ const GEOM_DESIGN: Record<CgStation, Geom> = {
   wish: {
     cx: 470,
     cy: 470,
-    r: DIAG_R,
+    r: CIRCLE_R,
     arcs: [{ deg0: 288, deg1: 348 }],
     toggleDeg: 315,
   },
   fund: {
     cx: 470,
     cy: DH - 470,
-    r: DIAG_R,
+    r: CIRCLE_R,
     arcs: [{ deg0: 192, deg1: 252 }],
     toggleDeg: 225,
   },
   give: {
     cx: DW - 470,
     cy: 470,
-    r: DIAG_R,
+    r: CIRCLE_R,
     arcs: [{ deg0: 12, deg1: 72 }],
     toggleDeg: 45,
   },
   trade: {
     cx: DW - 470,
     cy: DH - 470,
-    r: DIAG_R,
+    r: CIRCLE_R,
     arcs: [{ deg0: 108, deg1: 168 }],
     toggleDeg: 135,
   },
   exit: {
     cx: DW / 2,
-    cy: TOP_RIM_Y + SMILE_R,
-    r: SMILE_R,
+    cy: TOP_RIM_Y + CIRCLE_R,
+    r: CIRCLE_R,
     arcs: [{ deg0: 360 - SMILE_HALF, deg1: SMILE_HALF }],
     toggleDeg: 0,
   },
   everything: {
     cx: DW / 2,
-    cy: BOTTOM_KISS_Y - SMILE_R,
-    r: SMILE_R,
+    cy: BOTTOM_KISS_Y - CIRCLE_R,
+    r: CIRCLE_R,
     arcs: [{ deg0: 180 - SMILE_HALF, deg1: 180 + SMILE_HALF }],
     toggleDeg: 180,
   },
 };
 
-const scaleGeom = (g: Geom, sx: number, sy: number): Geom => ({
-  cx: g.cx * sx,
-  cy: g.cy * sy,
-  r: g.r * ((sx + sy) / 2),
+/** Uniform scale — same factor on x/y/r so the track stays a circle, never an oval. */
+const scaleGeom = (g: Geom, s: number): Geom => ({
+  cx: g.cx * s,
+  cy: g.cy * s,
+  r: g.r * s,
   arcs: g.arcs.map((a) => ({ deg0: a.deg0, deg1: a.deg1 })),
   toggleDeg: g.toggleDeg,
 });
@@ -267,28 +273,32 @@ const lerpHex = (a: string, b: string, t: number) => {
 
 /**
  * Arm on INSIDE of track → bead into content (toward centre).
- * At 6:00: attach low on track, bead ABOVE in white, arm UP.
+ * At 6:00: attach on inside of smile, bead ABOVE in white, arm UP — never into the browser bar.
+ * At 12:00: same inward arm, bead hangs into white below.
  */
 const organismParts = (g: Geom, pop: number) => {
   const R = g.r * (1 - (1 - DRAG_SHRINK) * pop);
   const u = outward(g.toggleDeg);
+  // Inner wall of the stroke — stem roots here (inside of the red smile).
   const attachR = Math.max(12, R - TRACK_STROKE / 2);
   const attach = { x: g.cx + attachR * u.x, y: g.cy + attachR * u.y };
+  // Bead further toward centre (into the white). At 6:00 that is UP into the paper.
   const beadR = Math.max(6, attachR - STEM_LEN - TOGGLE_OUTER_R);
   const bead = { x: g.cx + beadR * u.x, y: g.cy + beadR * u.y };
+  // Tip buried in the ring stroke toward the track (middle-loop language).
   const stemTip = {
     x: bead.x + u.x * (TOGGLE_INNER_R * 0.4),
     y: bead.y + u.y * (TOGGLE_INNER_R * 0.4),
   };
-  // Ghost sits ON the stroke centreline (track), not in content.
+  // Ghost sits ON the stroke centreline (track), not mid-content.
   const track = { x: g.cx + R * u.x, y: g.cy + R * u.y };
   return { R, bead, stemRoot: attach, stemTip, stemLen: STEM_LEN, attach, track };
 };
 
-const peekPath = (sx: number, sy: number) => {
-  const cx = (DW / 2) * sx;
-  const cy = 200 * sy;
-  const r = 360 * ((sx + sy) / 2);
+const peekPath = (s: number) => {
+  const cx = (DW / 2) * s;
+  const cy = 200 * s;
+  const r = 360 * s;
   return oneArc(cx, cy, r, 320, 40);
 };
 
@@ -398,9 +408,9 @@ export function PerimeterToggle({
     if (value !== "exit" as never) setGoal(value);
   }, [value]);
 
-  const sx = size.w ? size.w / DW : 1;
-  const sy = size.h ? size.h / DH : 1;
-  const designAt = (s: CgStation) => scaleGeom(GEOM_DESIGN[s], sx, sy);
+  /** Width-driven uniform scale — never sx≠sy (that squashed the circle into an oval). */
+  const s = size.w ? size.w / DW : 1;
+  const designAt = (station: CgStation) => scaleGeom(GEOM_DESIGN[station], s);
 
   const nearest = (deg: number): CgStation => {
     let best: CgStation = "everything";
@@ -615,7 +625,7 @@ export function PerimeterToggle({
   const beadScale = 1 + (BEAD_GROW - 1) * pop;
   const pathD = live && parts ? arcsPath(live, parts.R) : "";
 
-  /** Ghost = next seat's coloured bead ON the track (stroke), not mid-content. */
+  /** Ghost = next seat's FILLED coloured bead ON the track — never a hollow ring. */
   const plugs =
     w && (dragging || cruising || pop > 0.25)
       ? [towardSeat]
@@ -664,7 +674,7 @@ export function PerimeterToggle({
       {w && pop > 0.04 ? (
         <svg className="pointer-events-none absolute left-0 top-0 z-[5]" width={w} height={h} aria-hidden="true" data-cg-peek="">
           <path
-            d={peekPath(sx, sy)}
+            d={peekPath(s)}
             fill="none"
             stroke={RED}
             strokeWidth={TRACK_STROKE * 0.85}
@@ -698,16 +708,8 @@ export function PerimeterToggle({
 
             {plugs.map((p) => (
               <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
-                {/* Coloured bead ON the track — solid ring language of middle-loop seat hint. */}
-                <circle
-                  cx={p.track.x}
-                  cy={p.track.y}
-                  r={TOGGLE_STROKE_R * sx}
-                  fill="none"
-                  stroke={p.colour}
-                  strokeWidth={TOGGLE_RING * sx}
-                />
-                <circle cx={p.track.x} cy={p.track.y} r={(TOGGLE_INNER_R - 0.5) * sx} fill="var(--world-bg)" />
+                {/* Next seat's FILLED bead ON the track — no hollow rings. */}
+                <circle cx={p.track.x} cy={p.track.y} r={TOGGLE_STROKE_R * s} fill={p.colour} data-cg-ghost-fill="" />
               </g>
             ))}
 
@@ -717,7 +719,7 @@ export function PerimeterToggle({
               x2={parts.stemTip.x}
               y2={parts.stemTip.y}
               stroke={colour}
-              strokeWidth={STEM_W * sx}
+              strokeWidth={STEM_W * s}
               strokeLinecap="round"
               data-cg-stem-arm=""
             />
@@ -767,9 +769,9 @@ export function PerimeterToggle({
           <div
             className="pointer-events-auto absolute left-0 top-0 z-30 flex items-center justify-center rounded-full outline-none focus:outline-none [-webkit-tap-highlight-color:transparent]"
             style={{
-              width: TOGGLE_DIAM * sx,
-              height: TOGGLE_DIAM * sy,
-              transform: `translate(${(parts.bead.x - TOGGLE_OUTER_R * sx).toFixed(2)}px, ${(parts.bead.y - TOGGLE_OUTER_R * sy).toFixed(2)}px) scale(${beadScale.toFixed(4)})`,
+              width: TOGGLE_DIAM * s,
+              height: TOGGLE_DIAM * s,
+              transform: `translate(${(parts.bead.x - TOGGLE_OUTER_R * s).toFixed(2)}px, ${(parts.bead.y - TOGGLE_OUTER_R * s).toFixed(2)}px) scale(${beadScale.toFixed(4)})`,
               transformOrigin: "center center",
               cursor: dragging ? "grabbing" : "grab",
               touchAction: "none",
@@ -904,8 +906,8 @@ export function PerimeterToggle({
             }}
           >
             <svg
-              width={TOGGLE_DIAM * sx}
-              height={TOGGLE_DIAM * sy}
+              width={TOGGLE_DIAM * s}
+              height={TOGGLE_DIAM * s}
               viewBox={`${-TOGGLE_OUTER_R} ${-TOGGLE_OUTER_R} ${TOGGLE_DIAM} ${TOGGLE_DIAM}`}
               aria-hidden="true"
               style={{ overflow: "visible" }}

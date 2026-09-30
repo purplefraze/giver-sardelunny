@@ -87,13 +87,19 @@ export function GDepthLevel({
   const moving = phase === "opening" || phase === "closing";
   const origin = anchorOrigin(anchor);
   const lens = anchorLens(anchor);
-  /* A BARE ROOM fills the screen (safe areas only), like the form stills. */
+  /* A BARE ROOM fills the screen (safe areas only), like the form stills.
+   * inset-0 (top/right/bottom/left 0) then safe-area PAD — so CommunityFeed
+   * h-full has a real box on first layout (env()-only edges can collapse to 0). */
   const inset = bare
     ? {
-        top: "env(safe-area-inset-top)",
-        bottom: "env(safe-area-inset-bottom)",
-        left: "env(safe-area-inset-left)",
-        right: "env(safe-area-inset-right)",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        paddingTop: "env(safe-area-inset-top)",
+        paddingRight: "env(safe-area-inset-right)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingLeft: "env(safe-area-inset-left)",
       }
     : levelInset(depth);
 
@@ -178,7 +184,7 @@ export function GDepthLevel({
         runs the identical movement backwards: the content recedes into the loop.
       */}
       <div
-        className="absolute overflow-hidden motion-reduce:transition-none"
+        className={`absolute overflow-hidden motion-reduce:transition-none${bare ? " inset-0" : ""}`}
         style={{
           ...inset,
           borderRadius: bare ? 0 : "2.25rem",

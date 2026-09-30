@@ -5,7 +5,7 @@ import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-G LOWER-LOOP — ARM-ANCHORED + AUTO-RUN (Frazer, 29 Sep 2026).
+ * COMMUNI-G LOWER-LOOP — ARM-ANCHORED + BENTLEY HOLD (Frazer, 29 Sep 2026).
  *
  * Middle-loop / living-g / g-path.ts untouched.
  *
@@ -13,8 +13,9 @@ import { haptics } from "@/lib/haptics";
  *   arm roots on INSIDE of red track → bead floats into content.
  *   At 6:00 arm comes UP off the track into white — never a nub outside.
  *
- * Auto-run: hold keeps rolling PAST seats (no per-seat snap). Thumb initiates;
- * track runs. Ride or let go. On let-go: snap nearest in travel direction.
+ * Bentley motion: press beat (~150ms) before any travel. Tap before beat stays put.
+ * Hold after beat: cruise one seat per ~450ms in last-nudge direction — no accel,
+ * no seat skip. Release: ease-snap nearest along track. Track+bead stay continuous.
  * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
  *
  * Ghost = next seat's coloured bead ON the track. Dolly-in on entry.
@@ -39,8 +40,14 @@ const DRAG_SHRINK = 0.94;
 const BEAD_GROW = 1.12;
 const DOLLY_MS = 560;
 const DOLLY_START = 0.84;
-const CRUISE_DEG_MS = 0.14;
-const CRUISE_MAX_DEG_MS = 0.32;
+/** Press beat before travel starts (120–180ms band). Tap before beat stays put. */
+const PRESS_MS = 150;
+/** One seat (~45°) per hold interval — Bentley pace, no runaway. */
+const SEAT_SPAN_DEG = 45;
+const SEAT_MS = 450;
+const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.1°/ms
+/** Cap = cruise — no accel from finger flicks. */
+const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
 
 const DW = 390;
 const DH = 844;
@@ -314,7 +321,8 @@ export function PerimeterToggle({
   const holdTimer = useRef(0);
   const drag = useRef<{
     id: number;
-    moved: boolean;
+    /** True after PRESS_MS — travel may start. Tap before armed stays put. */
+    armed: boolean;
     start: CgStation;
     x: number;
     y: number;
@@ -494,30 +502,28 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Auto-run: rolls PAST seats while held. No mid-seat snap-stop.
-   * On finger-up: coast then snap nearest in travel direction (exit parks only).
+   * Hold cruise: capped one-seat-per-SEAT_MS along the continuous circle.
+   * Direction only from last nudge / current drag. No accel. No seat skip.
+   * On finger-up: stop cruise and ease-snap nearest in travel direction.
    */
-  const startCruise = (dir: 1 | -1, speed: number) => {
+  const startCruise = (dir: 1 | -1) => {
     cancelAnimationFrame(cruiseRaf.current);
     lastDir.current = dir;
-    const mag = Math.min(CRUISE_MAX_DEG_MS, Math.max(CRUISE_DEG_MS, Math.abs(speed)));
-    cruiseVel.current = dir * mag;
+    cruiseVel.current = dir * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
     cruisingRef.current = true;
     setCruising(true);
     let last = performance.now();
     const step = (now: number) => {
       const dt = Math.min(32, Math.max(0, now - last));
       last = now;
-      // Let-go: snap nearest in travel direction (follow track via go snap). No long coast past seats.
+      // Let-go: finish — snap nearest along track with visible ease (via go).
       if (!drag.current) {
         stopCruise();
         goRef.current(nearestInDir(posRef.current, lastDir.current));
         return;
       }
-      if (Math.abs(cruiseVel.current) < CRUISE_DEG_MS * 0.5) {
-        cruiseVel.current = lastDir.current * CRUISE_DEG_MS;
-      }
-      // Hold: keep rolling PAST seats — no per-seat snap-stop.
+      // Hold: fixed Bentley pace. Dir may flip from nudge; magnitude stays capped.
+      cruiseVel.current = lastDir.current * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
       put(posRef.current + cruiseVel.current * dt);
       cruiseRaf.current = requestAnimationFrame(step);
     };
@@ -780,7 +786,7 @@ export function PerimeterToggle({
                 : posRef.current;
               drag.current = {
                 id: e.pointerId,
-                moved: false,
+                armed: false,
                 start: nearest(posRef.current),
                 x: e.clientX,
                 y: e.clientY,
@@ -791,44 +797,50 @@ export function PerimeterToggle({
               animatePop(1);
               haptics.light();
               (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+              // PRESS THRESHOLD: no travel until beat. Nudges only update direction.
               holdTimer.current = window.setTimeout(() => {
-                if (!drag.current || drag.current.moved) return;
-                startCruise(lastDir.current, CRUISE_DEG_MS);
-              }, 120);
+                const cur = drag.current;
+                if (!cur || cur.id !== e.pointerId) return;
+                cur.armed = true;
+                startCruise(lastDir.current);
+              }, PRESS_MS);
             }}
             onPointerMove={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId || snappingRef.current) return;
-              if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
-              clearTimeout(holdTimer.current);
-              const now = performance.now();
               const finger = thetaForFinger(e.clientX, e.clientY);
               const delta = turn(d.angle, finger);
-              const dt = Math.max(8, now - d.t);
-              const speed = Math.min(CRUISE_MAX_DEG_MS, Math.abs(delta) / dt + CRUISE_DEG_MS);
-              const dir: 1 | -1 = delta >= 0 ? 1 : -1;
-              lastDir.current = dir;
-              d.moved = true;
-              d.x = e.clientX;
-              d.y = e.clientY;
-              d.t = now;
-              d.angle = finger;
-              if (!cruisingRef.current) startCruise(dir, speed);
-              else cruiseVel.current = dir * speed;
+              // Ignore micro-jitter; real nudge updates direction only.
+              if (Math.hypot(e.clientX - d.x, e.clientY - d.y) >= 6 || Math.abs(delta) >= 2) {
+                const dir: 1 | -1 = delta >= 0 ? 1 : -1;
+                lastDir.current = dir;
+                d.x = e.clientX;
+                d.y = e.clientY;
+                d.t = performance.now();
+                d.angle = finger;
+                // After armed: flip cruise dir only — never raise speed.
+                if (d.armed && cruisingRef.current) {
+                  cruiseVel.current = dir * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
+                }
+              }
+              // Before armed: do NOT start travel, do NOT clear press timer.
             }}
             onPointerUp={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId) return;
               clearTimeout(holdTimer.current);
-              const moved = d.moved;
+              const armed = d.armed;
               drag.current = null;
               setDragging(false);
-              if (moved || cruisingRef.current) {
+              if (armed || cruisingRef.current) {
+                // RELEASE after hold: ease press breath down; cruise frame snaps nearest
+                // along track with visible ease. If not yet cruising (edge), snap now.
+                animatePop(0);
                 if (!cruisingRef.current) {
                   go(nearestInDir(posRef.current, lastDir.current));
-                  animatePop(0);
                 }
               } else {
+                // TAP before beat — stay on current seat.
                 stopCruise();
                 animatePop(0);
                 // Tap on the my-g bead while parked at 12 — the only leave gesture.
@@ -840,10 +852,10 @@ export function PerimeterToggle({
             onPointerCancel={() => {
               const d = drag.current;
               clearTimeout(holdTimer.current);
-              const moved = !!d?.moved;
+              const armed = !!d?.armed;
               drag.current = null;
               setDragging(false);
-              if (moved || cruisingRef.current) {
+              if (armed || cruisingRef.current) {
                 if (!cruisingRef.current) go(nearestInDir(posRef.current, lastDir.current));
               } else stopCruise();
               animatePop(0);

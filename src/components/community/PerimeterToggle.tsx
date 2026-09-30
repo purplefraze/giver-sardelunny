@@ -418,17 +418,16 @@ export function PerimeterToggle({
   /** Width-driven uniform scale — never sx≠sy (that squashed the circle into an oval). */
   const s = size.w ? size.w / DW : 1;
   /**
-   * After scaleGeom by width: shift EVERY seat so (cy+r) at 6:00 kisses the
-   * MEASURED stage height − stroke/2, plus ~24–36px EXTRA lift so the smile and
-   * its inward stem sit fully above Safari / Lovable chrome. One radius — no oval.
+   * 6:00 only: kiss the measured bottom + CHROME_LIFT. Other seats stay on
+   * design cy so 12/wish/give are not shoved off the top.
    */
   const CHROME_LIFT = 30;
   const designAt = (station: CgStation) => {
     const g = scaleGeom(GEOM_DESIGN[station], s);
+    if (station !== "everything") return g;
     const designBottom = BOTTOM_KISS_Y * s;
     const targetBottom = size.h - TRACK_STROKE / 2 - CHROME_LIFT;
-    const dy = targetBottom - designBottom;
-    return { ...g, cy: g.cy + dy };
+    return { ...g, cy: g.cy + (targetBottom - designBottom) };
   };
 
   const nearest = (deg: number): CgStation => {

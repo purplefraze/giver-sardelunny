@@ -18,7 +18,7 @@ import { haptics } from "@/lib/haptics";
  * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
  *
  * Ghost = next seat's coloured bead ON the track. Dolly-in on entry.
- * Track #E8322B. Press: subtle shrink + middle-loop peek (ceiling).
+ * Track #E8322B. Press: loop shrinks (~6%) + bead grows (~12%) + middle peek — one breath.
  */
 const SNAP_MS = 220;
 const G_PX = 0.522784;
@@ -35,6 +35,8 @@ const STEM_W = 8;
 const STEM_LEN = 22;
 const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
+/** Bead grows on press — same pop breath as loop shrink. Modest so 9/3 mid-edge never swallows corner arcs. */
+const BEAD_GROW = 1.12;
 const DOLLY_MS = 560;
 const DOLLY_START = 0.84;
 const CRUISE_DEG_MS = 0.14;
@@ -364,6 +366,19 @@ export function PerimeterToggle({
     [],
   );
 
+  /** Shot/debug only: freeze press breath (grown bead + shrunk loop) without cruise. */
+  useEffect(() => {
+    const w = window as Window & { __cgForcePress?: (on: boolean) => void };
+    w.__cgForcePress = (on) => {
+      cancelAnimationFrame(popRaf.current);
+      popRef.current = on ? 1 : 0;
+      setPop(on ? 1 : 0);
+    };
+    return () => {
+      delete w.__cgForcePress;
+    };
+  }, []);
+
   useEffect(() => {
     // External mode changes (not exit — exit is tap-only).
     if (value !== "exit" as never) setGoal(value);
@@ -575,6 +590,8 @@ export function PerimeterToggle({
     : null;
 
   const parts = live ? organismParts(live, pop) : null;
+  /** Same pop / POP_MS / easeOut as loop shrink — one breath both ways. */
+  const beadScale = 1 + (BEAD_GROW - 1) * pop;
   const pathD = live && parts ? arcsPath(live, parts.R) : "";
 
   /** Ghost = next seat's coloured bead ON the track (stroke), not mid-content. */
@@ -613,6 +630,7 @@ export function PerimeterToggle({
       data-cg-clock={wrap(pos).toFixed(1)}
       data-cg-snapping={snapping ? "1" : "0"}
       data-cg-pop={pop.toFixed(2)}
+      data-cg-bead-s={beadScale.toFixed(3)}
       data-cg-r={parts ? parts.R.toFixed(1) : ""}
       data-cg-track-w={TRACK_STROKE.toFixed(2)}
       data-cg-toggle-d={TOGGLE_DIAM}
@@ -730,13 +748,14 @@ export function PerimeterToggle({
             style={{
               width: TOGGLE_DIAM * sx,
               height: TOGGLE_DIAM * sy,
-              transform: `translate(${(parts.bead.x - TOGGLE_OUTER_R * sx).toFixed(2)}px, ${(parts.bead.y - TOGGLE_OUTER_R * sy).toFixed(2)}px)`,
+              transform: `translate(${(parts.bead.x - TOGGLE_OUTER_R * sx).toFixed(2)}px, ${(parts.bead.y - TOGGLE_OUTER_R * sy).toFixed(2)}px) scale(${beadScale.toFixed(4)})`,
+              transformOrigin: "center center",
               cursor: dragging ? "grabbing" : "grab",
               touchAction: "none",
               border: "none",
               boxShadow: "none",
               overflow: "visible",
-              willChange: dragging || cruising || snapping ? "transform" : "auto",
+              willChange: dragging || cruising || snapping || pop > 0.02 ? "transform" : "auto",
             }}
             role="slider"
             tabIndex={0}
@@ -745,6 +764,8 @@ export function PerimeterToggle({
             data-cg-toggle=""
             data-cg-seat={shown}
             data-cg-settled={settled ? "1" : "0"}
+            data-cg-bead-s={beadScale.toFixed(3)}
+            data-cg-pressed={pop > 0.5 ? "1" : "0"}
             onPointerDown={(e) => {
               if (snappingRef.current) return;
               e.stopPropagation();

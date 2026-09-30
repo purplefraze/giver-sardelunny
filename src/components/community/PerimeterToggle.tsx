@@ -13,10 +13,10 @@ import { haptics } from "@/lib/haptics";
  *   arm roots on INSIDE of red track → bead floats into content.
  *   At 6:00 arm comes UP off the track into white — never a nub outside.
  *
- * Bentley motion: press beat (~150ms) before any travel. Tap before beat stays put.
+ * Bentley motion: press beat (200ms) before any travel. Tap before beat stays put.
  * Hold after beat: roll to first seat → settle + one haptic click; then continuous
- * roll (no per-seat magnet/buzz) until release. Shy ramp after ~1s toward ~350ms/seat
- * (ceiling). Release: quiet ease-snap nearest. Track+bead stay continuous.
+ * roll (~500ms/seat hard cap, no skip/psycho) only while finger down.
+ * Release: velocity=0, short snap nearest seat — no coast/flick run-on.
  * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
  *
  * Ghost = next seat's coloured bead ON the track. Dolly-in on entry.
@@ -41,17 +41,14 @@ const DRAG_SHRINK = 0.94;
 const BEAD_GROW = 1.12;
 const DOLLY_MS = 560;
 const DOLLY_START = 0.84;
-/** Press beat before travel starts (120–180ms band). Tap before beat stays put. */
-const PRESS_MS = 150;
-/** One seat (~45°) — start pace ~500ms/seat; shy ramp floor ~350ms/seat. */
+/** Press beat before any travel. Tap / flick before beat stays put. */
+const PRESS_MS = 200;
+/** One seat (~45°) — hard cap ~500ms/seat. No ramp, no psycho run. */
 const SEAT_SPAN_DEG = 45;
 const SEAT_MS = 500;
-const SEAT_MS_FLOOR = 350;
-const RAMP_AFTER_MS = 1000;
-const RAMP_SPAN_MS = 800;
-const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.09°/ms start
-/** Hard ceiling — never faster than ~350ms/seat. */
-const CRUISE_MAX_DEG_MS = SEAT_SPAN_DEG / SEAT_MS_FLOOR;
+const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.09°/ms
+/** Hard cap = cruise pace — never feed flick speed into roll. */
+const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
 
 const DW = 390;
 const DH = 844;
@@ -325,7 +322,6 @@ export function PerimeterToggle({
   const holdTimer = useRef(0);
   /** First seat click this hold — settle + one haptic, then continuous roll. */
   const firstClickRef = useRef(false);
-  const cruiseStartRef = useRef(0);
   const holdOriginRef = useRef<CgStation>("everything");
   const drag = useRef<{
     id: number;
@@ -335,6 +331,8 @@ export function PerimeterToggle({
     x: number;
     y: number;
     t: number;
+    /** Pointerdown time — gate uses this (never overwritten by moves). */
+    downAt: number;
     angle: number;
   } | null>(null);
 
@@ -422,24 +420,6 @@ export function PerimeterToggle({
     return STATIONS[(i + dir + STATIONS.length) % STATIONS.length]!;
   };
 
-  /** Nearest parkable seat in travel direction (may be exit — park only). */
-  const nearestInDir = (deg: number, dir: 1 | -1): CgStation => {
-    let best: CgStation = nearest(deg);
-    let bestD = Infinity;
-    for (const s of STATIONS) {
-      const d = turn(deg, clockOf(s));
-      if (dir > 0 && d < -1) continue;
-      if (dir < 0 && d > 1) continue;
-      const ad = Math.abs(d);
-      if (ad < bestD) {
-        bestD = ad;
-        best = s;
-      }
-    }
-    // If nothing ahead, fall back to absolute nearest.
-    if (bestD === Infinity) return nearest(deg);
-    return best;
-  };
 
   const restGeomAt = (deg: number): Geom => {
     const here = nearest(deg);
@@ -511,15 +491,14 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Hold cruise: first seat settles with one haptic click, then continuous roll
-   * (no per-seat magnet / buzz). Shy ramp after RAMP_AFTER_MS toward SEAT_MS_FLOOR.
-   * On finger-up: quiet ease-snap nearest in travel direction.
+   * Hold cruise (only after PRESS_MS gate): first seat settles with one haptic
+   * click, then continuous roll at ~SEAT_MS/seat while finger is down.
+   * Finger-up must stopCruise + snap nearest — this path is belt-and-suspenders.
    */
   const startCruise = (dir: 1 | -1) => {
     cancelAnimationFrame(cruiseRaf.current);
     lastDir.current = dir;
     firstClickRef.current = false;
-    cruiseStartRef.current = performance.now();
     holdOriginRef.current = drag.current?.start ?? nearestRef.current(posRef.current);
     cruiseVel.current = dir * CRUISE_DEG_MS;
     cruisingRef.current = true;
@@ -528,21 +507,14 @@ export function PerimeterToggle({
     const step = (now: number) => {
       const dt = Math.min(32, Math.max(0, now - last));
       last = now;
-      // Let-go: quiet snap nearest along track (first-seat click already buzzed).
+      // Finger gone: no coast — vel already zeroed on up; snap nearest only.
       if (!drag.current) {
         stopCruise();
-        goRef.current(nearestInDir(posRef.current, lastDir.current), { quiet: true });
+        goRef.current(nearestRef.current(posRef.current), { quiet: true });
         return;
       }
-      // Shy ramp: after ~1s ease toward ~350ms/seat; hard ceiling — never spin.
-      const held = now - cruiseStartRef.current;
-      let seatMs = SEAT_MS;
-      if (held > RAMP_AFTER_MS) {
-        const u = Math.min(1, (held - RAMP_AFTER_MS) / RAMP_SPAN_MS);
-        seatMs = SEAT_MS + (SEAT_MS_FLOOR - SEAT_MS) * u;
-      }
-      const degMs = Math.min(CRUISE_MAX_DEG_MS, SEAT_SPAN_DEG / seatMs);
-      cruiseVel.current = lastDir.current * degMs;
+      // Fixed Bentley pace — hard cap, no flick speed, no psycho ramp.
+      cruiseVel.current = lastDir.current * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
       const next = posRef.current + cruiseVel.current * dt;
 
       // First seat while held: settle on it + one haptic, then keep rolling.
@@ -821,6 +793,7 @@ export function PerimeterToggle({
               clearTimeout(holdTimer.current);
               stopCruise();
               const rect = stage.current!.getBoundingClientRect();
+              const now = performance.now();
               const angle = live
                 ? wrap(
                     (Math.atan2(e.clientX - rect.left - live.cx, -(e.clientY - rect.top - live.cy)) * 180) /
@@ -833,17 +806,20 @@ export function PerimeterToggle({
                 start: nearest(posRef.current),
                 x: e.clientX,
                 y: e.clientY,
-                t: performance.now(),
+                t: now,
+                downAt: now,
                 angle,
               };
               setDragging(true);
               animatePop(1);
               haptics.light();
               (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
-              // PRESS THRESHOLD: no travel until beat. Nudges only update direction.
+              // GATE: bead does not move for PRESS_MS. No travel / inertia / angle change.
               holdTimer.current = window.setTimeout(() => {
                 const cur = drag.current;
                 if (!cur || cur.id !== e.pointerId) return;
+                // Elapsed check wins over timer races (device flick / jank).
+                if (performance.now() - cur.downAt < PRESS_MS) return;
                 cur.armed = true;
                 startCruise(lastDir.current);
               }, PRESS_MS);
@@ -853,7 +829,8 @@ export function PerimeterToggle({
               if (d?.id !== e.pointerId || snappingRef.current) return;
               const finger = thetaForFinger(e.clientX, e.clientY);
               const delta = turn(d.angle, finger);
-              // Ignore micro-jitter; real nudge updates direction only.
+              // Ignore micro-jitter; real nudge updates hold direction only.
+              // Before armed: never move bead, never clear press timer, never start travel.
               if (Math.hypot(e.clientX - d.x, e.clientY - d.y) >= 6 || Math.abs(delta) >= 2) {
                 const dir: 1 | -1 = delta >= 0 ? 1 : -1;
                 lastDir.current = dir;
@@ -861,33 +838,29 @@ export function PerimeterToggle({
                 d.y = e.clientY;
                 d.t = performance.now();
                 d.angle = finger;
-                // After armed: flip cruise dir only — never raise speed.
+                // After armed: flip cruise dir only — never raise speed from flick.
                 if (d.armed && cruisingRef.current) {
                   cruiseVel.current = dir * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
                 }
               }
-              // Before armed: do NOT start travel, do NOT clear press timer.
             }}
             onPointerUp={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId) return;
               clearTimeout(holdTimer.current);
-              const armed = d.armed;
+              const elapsed = performance.now() - d.downAt;
+              // Elapsed gate wins — armed flag alone can race a near-zero flick.
+              const wasHold = d.armed && elapsed >= PRESS_MS;
               drag.current = null;
               setDragging(false);
-              if (armed || cruisingRef.current) {
-                // RELEASE after hold: ease press breath down; cruise frame snaps nearest
-                // along track with visible ease. If not yet cruising (edge), snap now.
-                animatePop(0);
-                if (!cruisingRef.current) {
-                  // Quiet — first-seat click already buzzed if we got that far.
-                  go(nearestInDir(posRef.current, lastDir.current), { quiet: true });
-                }
+              // KILL FLICK/COAST: finger-up velocity = 0. No leftover speed into cruise.
+              stopCruise();
+              animatePop(0);
+              if (wasHold) {
+                // Short snap nearest seat only — no coast past seats, no run-on.
+                go(nearest(posRef.current), { quiet: true });
               } else {
-                // TAP before beat — stay on current seat.
-                stopCruise();
-                animatePop(0);
-                // Tap on the my-g bead while parked at 12 — the only leave gesture.
+                // TAP / flick before gate — stay on current seat.
                 if (nearest(posRef.current) === "exit" || goal === "exit") {
                   exitByTap();
                 }
@@ -896,13 +869,26 @@ export function PerimeterToggle({
             onPointerCancel={() => {
               const d = drag.current;
               clearTimeout(holdTimer.current);
-              const armed = !!d?.armed;
+              const elapsed = d ? performance.now() - d.downAt : 0;
+              const wasHold = !!d?.armed && elapsed >= PRESS_MS;
               drag.current = null;
               setDragging(false);
-              if (armed || cruisingRef.current) {
-                if (!cruisingRef.current) go(nearestInDir(posRef.current, lastDir.current), { quiet: true });
-              } else stopCruise();
+              stopCruise();
               animatePop(0);
+              if (wasHold) go(nearest(posRef.current), { quiet: true });
+            }}
+            onLostPointerCapture={() => {
+              // Capture lost without up (device quirk) — same as cancel: no coast.
+              const d = drag.current;
+              if (!d) return;
+              clearTimeout(holdTimer.current);
+              const elapsed = performance.now() - d.downAt;
+              const wasHold = d.armed && elapsed >= PRESS_MS;
+              drag.current = null;
+              setDragging(false);
+              stopCruise();
+              animatePop(0);
+              if (wasHold) go(nearest(posRef.current), { quiet: true });
             }}
             onKeyDown={(e) => {
               const modes = STATIONS.filter((s) => s !== "exit");

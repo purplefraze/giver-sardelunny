@@ -20,8 +20,8 @@ import { haptics } from "@/lib/haptics";
  * on that same circle; diagonals one corner.
  *
  * Bentley motion: press beat (200ms) before any travel. Tap before beat stays put.
- * Hold after beat: roll to first seat → settle + one haptic click; then continuous
- * roll (~500ms/seat hard cap, no skip/psycho) only while finger down.
+ * Hold after beat: roll to first seat → settle; clock-tick selection() every seat
+ * cross (~900ms/seat hard cap, no skip/psycho) only while finger down.
  * Release: velocity=0, short snap nearest seat — no coast/flick run-on.
  * 12:00 / my-g: TAP ONLY exits to Living G — drag/cruise may park at 12 and stay.
  *
@@ -33,7 +33,7 @@ const G_PX = 0.522784;
 const TRACK_STROKE = 28.5 * G_PX; // ≈ 14.90
 
 /** Bead sized so "communi-g" fits in full. */
-const TOGGLE_OUTER_R = 28;
+const TOGGLE_OUTER_R = 32;
 const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
 const TOGGLE_RING = 7.2;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
@@ -49,10 +49,10 @@ const DOLLY_MS = 560;
 const DOLLY_START = 0.84;
 /** Press beat before any travel. Tap / flick before beat stays put. */
 const PRESS_MS = 200;
-/** One seat (~45°) — hard cap ~500ms/seat. No ramp, no psycho run. */
+/** One seat (~45°) — hard cap ~900ms/seat. No ramp, no psycho run. */
 const SEAT_SPAN_DEG = 45;
-const SEAT_MS = 500;
-const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.09°/ms
+const SEAT_MS = 900;
+const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.05°/ms
 /** Hard cap = cruise pace — never feed flick speed into roll. */
 const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
 
@@ -159,52 +159,47 @@ const BOTTOM_KISS_Y = DH - TRACK_STROKE / 2;
 const sideCx = (left: boolean) => (left ? CIRCLE_R + SIDE_BEAD_X : DW - (CIRCLE_R + SIDE_BEAD_X));
 
 const GEOM_DESIGN: Record<CgStation, Geom> = {
+  // Every seat: ONE continuous smile SMILE_HALF either side of toggleDeg (never two path cmds).
   borrow: {
     cx: sideCx(true),
     cy: DH / 2,
     r: CIRCLE_R,
-    arcs: [
-      { deg0: 210, deg1: 255 },
-      { deg0: 285, deg1: 330 },
-    ],
+    arcs: [{ deg0: 180, deg1: 360 }],
     toggleDeg: 270,
   },
   lend: {
     cx: sideCx(false),
     cy: DH / 2,
     r: CIRCLE_R,
-    arcs: [
-      { deg0: 30, deg1: 75 },
-      { deg0: 105, deg1: 150 },
-    ],
+    arcs: [{ deg0: 0, deg1: 180 }],
     toggleDeg: 90,
   },
   wish: {
     cx: 470,
     cy: 470,
     r: CIRCLE_R,
-    arcs: [{ deg0: 288, deg1: 348 }],
+    arcs: [{ deg0: 225, deg1: 45 }],
     toggleDeg: 315,
   },
   fund: {
     cx: 470,
     cy: DH - 470,
     r: CIRCLE_R,
-    arcs: [{ deg0: 192, deg1: 252 }],
+    arcs: [{ deg0: 135, deg1: 315 }],
     toggleDeg: 225,
   },
   give: {
     cx: DW - 470,
     cy: 470,
     r: CIRCLE_R,
-    arcs: [{ deg0: 12, deg1: 72 }],
+    arcs: [{ deg0: 315, deg1: 135 }],
     toggleDeg: 45,
   },
   trade: {
     cx: DW - 470,
     cy: DH - 470,
     r: CIRCLE_R,
-    arcs: [{ deg0: 108, deg1: 168 }],
+    arcs: [{ deg0: 45, deg1: 225 }],
     toggleDeg: 135,
   },
   exit: {
@@ -330,7 +325,7 @@ export function PerimeterToggle({
   const cruiseVel = useRef(0);
   const cruisingRef = useRef(false);
   const holdTimer = useRef(0);
-  /** First seat click this hold — settle + one haptic, then continuous roll. */
+  /** First seat this hold — brief land once; later seats tick without magnet-stop. */
   const firstClickRef = useRef(false);
   const holdOriginRef = useRef<CgStation>("everything");
   const drag = useRef<{
@@ -519,15 +514,18 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Hold cruise (only after PRESS_MS gate): first seat settles with one haptic
-   * click, then continuous roll at ~SEAT_MS/seat while finger is down.
-   * Finger-up must stopCruise + snap nearest — this path is belt-and-suspenders.
+   * Hold cruise (only after PRESS_MS gate): clock-tick selection() on every
+   * seat-clock cross; go() settles word/colour. First seat may land briefly;
+   * no magnet-stop after first. No tick before gate / on quiet finger-up snap.
+   * Continuous roll at ~SEAT_MS/seat while finger is down.
    */
   const startCruise = (dir: 1 | -1) => {
     cancelAnimationFrame(cruiseRaf.current);
     lastDir.current = dir;
     firstClickRef.current = false;
     holdOriginRef.current = drag.current?.start ?? nearestRef.current(posRef.current);
+    /** Last seat already ticked this hold — next cross is its neighbour. */
+    let lastTicked: CgStation = holdOriginRef.current;
     cruiseVel.current = dir * CRUISE_DEG_MS;
     cruisingRef.current = true;
     setCruising(true);
@@ -545,26 +543,28 @@ export function PerimeterToggle({
       cruiseVel.current = lastDir.current * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
       const next = posRef.current + cruiseVel.current * dt;
 
-      // First seat while held: settle on it + one haptic, then keep rolling.
-      if (!firstClickRef.current) {
-        const origin = holdOriginRef.current;
-        const target = neighbourRef.current(origin, lastDir.current);
-        const tDeg = clockOf(target);
-        const before = turn(posRef.current, tDeg);
-        const after = turn(next, tDeg);
-        const crossed =
-          Math.abs(after) <= 1.5 ||
-          (lastDir.current > 0 && before > 0 && after <= 0) ||
-          (lastDir.current < 0 && before < 0 && after >= 0);
-        if (crossed) {
+      // Every seat-clock cross while cruising: selection tick + go settle.
+      const target = neighbourRef.current(lastTicked, lastDir.current);
+      const tDeg = clockOf(target);
+      const before = turn(posRef.current, tDeg);
+      const after = turn(next, tDeg);
+      const crossed =
+        Math.abs(after) <= 1.5 ||
+        (lastDir.current > 0 && before > 0 && after <= 0) ||
+        (lastDir.current < 0 && before < 0 && after >= 0);
+      if (crossed) {
+        haptics.selection();
+        goRef.current(target, { quiet: true }); // word/colour settle; selection was the tick
+        lastTicked = target;
+        if (!firstClickRef.current) {
           put(tDeg);
-          goRef.current(target); // settle + one haptic click
           firstClickRef.current = true;
           // Keep rolling past — no magnet-stop on following seats.
           put(tDeg + cruiseVel.current * Math.min(dt, 8));
           cruiseRaf.current = requestAnimationFrame(step);
           return;
         }
+        // After first: no magnet — fall through and continue at next.
       }
 
       put(next);

@@ -52,8 +52,8 @@ type Props = {
   overlay?: React.ReactNode;
   /**
    * THE ONE ACTIVE STATE THE LOOPS ARE HOLDING (eg the current mode).
-   * When it changes, every loop's content is UNMOUNTED and rebuilt, so no
-   * previous state's words, fades or timers can survive underneath the new one.
+   * When it changes, in-loop content CROSSFADES (LOOP_LABEL.fadeMs) — the G
+   * surface stays mounted; only the material shifts. Never remount the <g>.
    */
   contentKey?: string;
   /**
@@ -192,9 +192,9 @@ export function LivingG({
   const thin = weight === "middle";
 
   /**
-   * ONE ACTIVE STATE AT A TIME. The instant the loops start holding a new state,
-   * every in-flight cue, hold and swell of the previous one is cancelled — no
-   * stale fade can carry a dead state's words into the new one.
+   * ONE ACTIVE STATE AT A TIME. Cancel in-flight cues on seat change.
+   * In-loop words crossfade via <LoopLabels> (LOOP_LABEL.fadeMs); this G
+   * surface stays mounted — contentKey must NEVER appear in a region <g> key.
    */
   useEffect(() => {
     if (cueTimer.current) clearTimeout(cueTimer.current);
@@ -351,12 +351,9 @@ export function LivingG({
 
 
       {/*
-        REGION CONTENT — ONE STATE, ONE SET OF WORDS PER LOOP.
-        The whole group is keyed by the active state, so switching state UNMOUNTS
-        the previous state's words outright instead of fading them behind the new
-        ones. And a loop's action prompt and its content are MUTUALLY EXCLUSIVE:
-        while the prompt is readable the content is not mounted, and vice versa —
-        two complete states can never occupy the same negative space.
+        REGION CONTENT — surface stays; seat words crossfade in <LoopLabels>
+        (LOOP_LABEL.fadeMs). Region <g> keys are stable (never contentKey).
+        Prompt and content remain mutually exclusive inside each loop.
       */}
       {ORDER.map((key) => {
         const region = regions?.[key];
@@ -371,7 +368,7 @@ export function LivingG({
         const promptShown = lines.length > 0 && (showLabels || cue === key);
 
         return (
-          <g key={`content-${key}-${contentKey}`} pointerEvents="none">
+          <g key={`content-${key}`} pointerEvents="none">
             {promptShown ? null : (
               <g
                 style={{
@@ -408,7 +405,6 @@ export function LivingG({
               </text>
             ) : null}
           </g>
-
         );
       })}
 

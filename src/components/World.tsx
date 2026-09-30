@@ -45,8 +45,8 @@ type Props = {
    */
   teach?: boolean;
   /**
-   * THE ONE ACTIVE STATE the loops are holding (e.g. the current mode). Changing
-   * it unmounts the previous state's in-loop words completely.
+   * THE ONE ACTIVE STATE the loops are holding (e.g. the current mode).
+   * In-loop words crossfade via LoopLabels; LivingG surface stays mounted.
    */
   contentKey?: string;
 

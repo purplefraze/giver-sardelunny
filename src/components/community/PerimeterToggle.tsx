@@ -46,15 +46,25 @@ const HIT = 44;
 
 const RED = "#E8322B";
 
-const SEAT_COLOUR: Record<string, string> = {
-  everything: "#E8322B",
-  fund: "#9E4B2C",
-  borrow: "#C77DD6",
-  wish: "#9D00FF",
-  exit: "#1E7BFF",
-  give: "#4BE01E",
-  lend: "#B5D334",
-  trade: "#FF8A1E",
+/**
+ * ONE colour source: styles.css --mode-* tokens (same map CG_COLOUR / LoopLabel
+ * read). Hex resolved at call time for lerpHex — no second hard-coded table.
+ */
+const MODE_TOKEN: Record<string, string> = {
+  everything: "--mode-communigy",
+  fund: "--mode-fund",
+  borrow: "--mode-borrow",
+  wish: "--mode-wish",
+  exit: "--mode-giver",
+  give: "--mode-give",
+  lend: "--mode-lend",
+  trade: "--mode-trade",
+};
+
+const modeHex = (token: string): string => {
+  if (typeof document === "undefined") return RED;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  return /^#[0-9a-fA-F]{3,8}$/i.test(v) ? v : RED;
 };
 
 export type CgStation = CgMode | "exit";
@@ -76,7 +86,7 @@ const clockOf = (s: CgStation) =>
 const STATIONS = (Object.keys(STATION_SEAT) as CgStation[]).sort((x, y) => clockOf(x) - clockOf(y));
 
 const wordOf = (s: CgStation) => SEAT_TITLE[STATION_SEAT[s]];
-const colourOf = (s: CgStation) => SEAT_COLOUR[s] ?? RED;
+const colourOf = (s: CgStation) => modeHex(MODE_TOKEN[s] ?? "--mode-communigy");
 
 type Size = { w: number; h: number };
 type ArcSpan = { deg0: number; deg1: number };
@@ -283,7 +293,7 @@ export function PerimeterToggle({
   children?: React.ReactNode;
 }) {
   const stage = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState<Size>({ w: 0, h: 0 });
+  const [size, setSize] = useState<Size>({ w: DW, h: DH }); /* design size → red smile on first paint */
   const [pos, setPos] = useState(() => clockOf(value));
   const posRef = useRef(pos);
   const [dragging, setDragging] = useState(false);
@@ -720,13 +730,13 @@ export function PerimeterToggle({
             style={{
               width: TOGGLE_DIAM * sx,
               height: TOGGLE_DIAM * sy,
-              left: parts.bead.x - TOGGLE_OUTER_R * sx,
-              top: parts.bead.y - TOGGLE_OUTER_R * sy,
+              transform: `translate(${(parts.bead.x - TOGGLE_OUTER_R * sx).toFixed(2)}px, ${(parts.bead.y - TOGGLE_OUTER_R * sy).toFixed(2)}px)`,
               cursor: dragging ? "grabbing" : "grab",
               touchAction: "none",
               border: "none",
               boxShadow: "none",
               overflow: "visible",
+              willChange: dragging || cruising || snapping ? "transform" : "auto",
             }}
             role="slider"
             tabIndex={0}

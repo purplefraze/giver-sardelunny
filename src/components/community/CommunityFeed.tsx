@@ -1,15 +1,16 @@
 import { useState } from "react";
 
 import { PerimeterToggle } from "@/components/community/PerimeterToggle";
-import { modeFor, type CgMode } from "@/data/communigy";
+import { CG_INK, CG_WORD, modeFor, type CgMode } from "@/data/communigy";
 import type { BorrowSide, ItemType } from "@/data/items";
 
 /**
- * COMMUNI-G — lower-loop navigation shell (Frazer via Luna, 29 Sep 2026).
+ * COMMUNI-G — lower-loop navigation shell (Frazer, 30 Sep 2026).
  * IN-COMMUNITY ONLY: entered via living G 6:00. Full G lower loop has no toggle.
  *
- * Organism lower-loop: red open crescent, bead on the track with inward arm,
- * seat-coloured plug/socket morph (middle-loop language). No iOS capture chrome.
+ * Red middle-weight track frames the phone; the white hole is the page.
+ * Interior holds the mode heading (CG_WORD) — give at 1:30 reads as the give
+ * page. No new Give wizard this turn.
  */
 type Scope = "everyone" | "mine";
 type View = "list" | "map";
@@ -32,6 +33,7 @@ export function CommunityFeed({
   onExit?: () => void;
 }) {
   const [mode, setMode] = useState<CgMode>(modeFor(initialType, initialSide));
+  const ink = CG_INK[mode];
 
   return (
     <div
@@ -43,9 +45,30 @@ export function CommunityFeed({
         border: "none",
         boxShadow: "none",
         outline: "none",
+        ["--cg-ink" as string]: ink,
       }}
     >
-      <PerimeterToggle value={mode} onChange={setMode} onExit={onExit ?? onClose} />
+      <PerimeterToggle value={mode} onChange={setMode} onExit={onExit ?? onClose}>
+        <div
+          className="flex h-full w-full flex-col items-center justify-center px-3 text-center"
+          data-cg-interior-page=""
+        >
+          <h1
+            className="g-display"
+            data-cg-interior-heading=""
+            style={{
+              color: ink,
+              fontSize: "clamp(1.6rem, 9vw, 2.6rem)",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              textTransform: "lowercase",
+              lineHeight: 1.05,
+            }}
+          >
+            {CG_WORD[mode]}
+          </h1>
+        </div>
+      </PerimeterToggle>
     </div>
   );
 }

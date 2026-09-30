@@ -1,34 +1,38 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { SEAT_ANGLE, SEAT_TITLE, type Seat } from "@/components/living-g/EarSelector";
 import {
+  BOTTOM_LOOP_INTERIOR,
   G_REGION_BANDS,
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
   LOOP_CENTRE,
   LOOP_RIM_RADIUS,
 } from "@/components/living-g/g-path";
-import { G_STROKE } from "@/components/living-g/g-weight";
+import { G_STROKE, GThinMask, strokeInset } from "@/components/living-g/g-weight";
 import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
  * COMMUNI-G LOWER LOOP — CANONICAL LIVING_G_PATH (Frazer, 30 Sep 2026).
  *
- * Red track IS the locked lower loop of LIVING_G_PATH (+ LIVING_G_TRANSFORM).
- * ViewBox / clip on G_REGION_BANDS.bottom — bowl + right mouth (My G–Give) subject;
- * middle/top not. Not SVG A-arc. Not oval. Not CIRCLE_R. Mouth stays OPEN.
+ * Red track IS the locked lower loop of LIVING_G_PATH (+ LIVING_G_TRANSFORM),
+ * drawn middle-weight via GThinMask (G_STROKE.middle = 28.5) — same as LivingG.
+ * Not full-fill sausage. Not CIRCLE_R. Mouth stays OPEN.
  *
- * Bead + inward stem ride REAL lower-loop rim: ray from LOOP_CENTRE.bottom onto
- * LOOP_RIM_RADIUS.bottom (placement only). Visible stroke stays the path.
- * Seats = existing Communi-G clocks; interpolate angle about bottom centre.
+ * CAMERA: we are INSIDE the loop. Zoom on BOTTOM_LOOP_INTERIOR so the hole is
+ * the working page; red track frames the edges and overflows. Never park the
+ * whole bowl at the bottom (no xMidYMax / svgY = h − svgH).
  *
- * Bentley: 200ms press gate, ~900ms/seat, selection() every seat, no flick,
+ * Bead + inward stem ride the thinned lower-loop rim. Seats = Communi-G clocks.
+ *
+ * Bentley: PRESS_MS 200, SEAT_MS 650, selection() every seat, no flick,
  * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts, inward stem at 6 into white.
- * Entry dolly: filled/zoomed on 6:00 underside → settle readable bowl + opening.
+ * Entry dolly: zoomed on 6:00 underside → settle to interior crop.
  */
 const SNAP_MS = 220;
-const TRACK_HALF = G_STROKE.normal / 2; // viewBox units — outer rim is LOOP_RIM_RADIUS
+/** Middle-weight half-stroke (LivingG thin). Outer rim = LOOP_RIM − inset. */
+const TRACK_HALF = G_STROKE.middle / 2;
 
 /** Bead sized so "communi-g" fits in full. */
 const TOGGLE_OUTER_R = 32;
@@ -48,9 +52,9 @@ const DOLLY_MS = 560;
 const DOLLY_START = 1.38;
 /** Press beat before any travel. Tap / flick before beat stays put. */
 const PRESS_MS = 200;
-/** One seat (~45°) — hard cap ~900ms/seat. No ramp, no psycho run. */
+/** One seat (~45°) — 650ms/seat (was 900; Frazer: toggle too slow). No ramp, no flick. */
 const SEAT_SPAN_DEG = 45;
-const SEAT_MS = 900;
+const SEAT_MS = 650;
 const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.05°/ms
 /** Hard cap = cruise pace — never feed flick speed into roll. */
 const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
@@ -63,7 +67,11 @@ const RED = "#E8322B";
 
 const BAND = G_REGION_BANDS.bottom;
 const C = LOOP_CENTRE.bottom;
-const RIM = LOOP_RIM_RADIUS.bottom;
+/** Outer rim of the MIDDLE-weight stroke (normal outer − per-side erosion). */
+const RIM = LOOP_RIM_RADIUS.bottom - strokeInset("middle");
+const INTERIOR = BOTTOM_LOOP_INTERIOR;
+/** Modest phone margin — interior width ≈ phone − this (Frazer: ~24–40px). */
+const INTERIOR_MARGIN = 32;
 
 /**
  * ONE colour source: styles.css --mode-* tokens (same map CG_COLOUR / LoopLabel
@@ -150,12 +158,24 @@ type Frame = {
   svgH: number;
 };
 
-/** Map bottom-band viewBox → screen (xMid YMax meet — bowl sits on phone). */
+/**
+ * Map bottom-band viewBox → screen: CENTER BOTTOM_LOOP_INTERIOR on the phone.
+ * Floor = interior width ≈ phone − margin. Push zoom up so the hole owns the
+ * screen, but keep 3/9 beads + 6:00 stem on canvas (no seat lost off-edge).
+ * Track overflows where the geometry demands — we never see the whole G.
+ */
 const frameOf = (w: number, h: number): Frame => {
-  const sFit = Math.min(w / BAND.width, h / BAND.height);
+  const sByW = (w - 2 * INTERIOR_MARGIN) / (INTERIOR.rx * 2);
+  /** Bead sits inward of the thinned rim by stem + outerR (viewBox units). */
+  const beadR = Math.max(24, RIM - TRACK_HALF - (STEM_LEN + TOGGLE_OUTER_R));
+  const sBead = (w / 2 - 6) / beadR; // 3/9 toggle stays on canvas
+  const sRim = (h / 2 - 12) / RIM; // 6:00 outer kiss on canvas
+  const sFit = Math.min(Math.max(sByW, sByW * 1.3), sBead, sRim);
   const svgW = BAND.width * sFit;
   const svgH = BAND.height * sFit;
-  return { sFit, svgX: (w - svgW) / 2, svgY: h - svgH, svgW, svgH };
+  const svgX = w / 2 - (INTERIOR.cx - BAND.x) * sFit;
+  const svgY = h / 2 - (INTERIOR.cy - BAND.y) * sFit;
+  return { sFit, svgX, svgY, svgW, svgH };
 };
 
 const toScreen = (f: Frame, p: { x: number; y: number }) => ({
@@ -196,13 +216,15 @@ export function PerimeterToggle({
   value,
   onChange,
   onExit,
+  children,
 }: {
   value: CgMode;
   onChange: (next: CgMode) => void;
   onExit: () => void;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }) {
   const stage = useRef<HTMLDivElement | null>(null);
+  const thinId = `cg-thin-${useId().replace(/:/g, "")}`;
   const [size, setSize] = useState<Size>({ w: DW, h: DH }); /* design size → red smile on first paint */
   const [pos, setPos] = useState(() => clockOf(value));
   const posRef = useRef(pos);
@@ -307,6 +329,30 @@ export function PerimeterToggle({
 
   const frame = useMemo(() => frameOf(size.w || DW, size.h || DH), [size.w, size.h]);
   const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
+    /** White hole = working page; inset from the stroke. Clamped to the phone
+   *  so when the ellipse overflows, the slot still fills the visible paper. */
+  const hole = useMemo(() => {
+    const pad = INTERIOR.inset;
+    const tl = toScreen(frame, {
+      x: INTERIOR.cx - INTERIOR.rx + pad,
+      y: INTERIOR.cy - INTERIOR.ry + pad,
+    });
+    const br = toScreen(frame, {
+      x: INTERIOR.cx + INTERIOR.rx - pad,
+      y: INTERIOR.cy + INTERIOR.ry - pad,
+    });
+    const inset = 10;
+    const left = Math.max(inset, tl.x);
+    const top = Math.max(inset, tl.y);
+    const right = Math.min((size.w || DW) - inset, br.x);
+    const bottom = Math.min((size.h || DH) - inset, br.y);
+    return {
+      left,
+      top,
+      width: Math.max(0, right - left),
+      height: Math.max(0, bottom - top),
+    };
+  }, [frame, size.w, size.h]);
 
   const nearest = (deg: number): CgStation => {
     let best: CgStation = "everything";
@@ -524,7 +570,7 @@ export function PerimeterToggle({
 
   const dollyScale = lerp(DOLLY_START, 1, dolly);
   const originX = parts ? (parts.bead.x / (w || 1)) * 100 : 50;
-  const originY = parts ? (parts.bead.y / (h || 1)) * 100 : 85;
+  const originY = parts ? (parts.bead.y / (h || 1)) * 100 : 50;
 
   const titleSize = word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11;
   const vb = `${BAND.x} ${BAND.y} ${BAND.width} ${BAND.height}`;
@@ -541,7 +587,9 @@ export function PerimeterToggle({
       data-cg-pop={pop.toFixed(2)}
       data-cg-bead-s={beadScale.toFixed(3)}
       data-cg-r={RIM.toFixed(1)}
-      data-cg-track-w={(G_STROKE.normal * px).toFixed(2)}
+      data-cg-track-w={(G_STROKE.middle * px).toFixed(2)}
+      data-cg-weight="middle"
+      data-cg-camera="interior"
       data-cg-toggle-d={TOGGLE_DIAM}
       data-cg-kind="living-g-path"
       data-cg-organism="1"
@@ -572,24 +620,29 @@ export function PerimeterToggle({
               width={frame.svgW}
               height={frame.svgH}
               viewBox={vb}
-              preserveAspectRatio="xMidYMax meet"
+              preserveAspectRatio="xMidYMid meet"
               overflow="hidden"
               data-cg-loop=""
-              data-cg-track-w={(G_STROKE.normal * px).toFixed(2)}
+              data-cg-track-w={(G_STROKE.middle * px).toFixed(2)}
+              data-cg-weight="middle"
+              data-cg-camera="interior"
               data-cg-cx={centreScreen.x.toFixed(1)}
               data-cg-cy={centreScreen.y.toFixed(1)}
+              data-cg-hole-cx={toScreen(frame, { x: INTERIOR.cx, y: INTERIOR.cy }).x.toFixed(1)}
+              data-cg-hole-cy={toScreen(frame, { x: INTERIOR.cx, y: INTERIOR.cy }).y.toFixed(1)}
             >
               <defs>
                 <clipPath id="cg-bottom-band">
                   <rect x={BAND.x} y={BAND.y} width={BAND.width} height={BAND.height} />
                 </clipPath>
+                <GThinMask id={thinId} weight="middle" />
               </defs>
               <g
                 clipPath="url(#cg-bottom-band)"
                 transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
               >
                 <g transform={LIVING_G_TRANSFORM} fill={RED}>
-                  <path d={LIVING_G_PATH} />
+                  <path d={LIVING_G_PATH} mask={`url(#${thinId})`} />
                 </g>
               </g>
             </svg>
@@ -614,6 +667,24 @@ export function PerimeterToggle({
           </svg>
         ) : null}
 
+        {/* White hole = the page. Absolute, inset from the stroke. */}
+        {w && children ? (
+          <div
+            className="pointer-events-none absolute z-[5] overflow-hidden"
+            style={{
+              left: hole.left,
+              top: hole.top,
+              width: hole.width,
+              height: hole.height,
+            }}
+            data-cg-interior=""
+            data-cg-interior-w={hole.width.toFixed(1)}
+            data-cg-interior-h={hole.height.toFixed(1)}
+          >
+            <div className="pointer-events-auto h-full w-full">{children}</div>
+          </div>
+        ) : null}
+
         {w
           ? STATIONS.map((s) => {
               const pt = organismParts(clockOf(s), frame, 0).bead;
@@ -621,7 +692,7 @@ export function PerimeterToggle({
                 <button
                   key={s}
                   type="button"
-                  className="pointer-events-auto absolute left-0 top-0 z-10 rounded-full [-webkit-tap-highlight-color:transparent]"
+                  className="pointer-events-auto absolute left-0 top-0 z-20 rounded-full [-webkit-tap-highlight-color:transparent]"
                   style={{
                     width: HIT * 2,
                     height: HIT * 2,

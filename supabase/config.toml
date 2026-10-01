@@ -1,1 +1,4 @@
 project_id = "owjnkgyngwupailrlhgd"
+
+[functions.match-wish]
+verify_jwt = true

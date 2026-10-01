@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { PerimeterToggle } from "@/components/community/PerimeterToggle";
+import { WishMatch } from "@/components/community/WishMatch";
 import { CG_INK, modeFor, type CgMode } from "@/data/communigy";
 import type { BorrowSide, ItemType } from "@/data/items";
 
@@ -9,8 +10,7 @@ import type { BorrowSide, ItemType } from "@/data/items";
  * IN-COMMUNITY ONLY: entered via living G 6:00. Full G lower loop has no toggle.
  *
  * Red middle-weight track frames the phone; the white hole is the page.
- * Interior children slot stays EMPTY — seat word lives ONLY in the live bead.
- * No new Give wizard this turn.
+ * Seat word lives ONLY in the live bead. Wish seat holds the match page.
  */
 type Scope = "everyone" | "mine";
 type View = "list" | "map";
@@ -18,6 +18,7 @@ type View = "list" | "map";
 export function CommunityFeed({
   initialType = null,
   initialSide,
+  onOpen,
   onClose,
   onExit,
 }: {
@@ -49,8 +50,10 @@ export function CommunityFeed({
       }}
     >
       <PerimeterToggle value={mode} onChange={setMode} onExit={onExit ?? onClose}>
-        {/* Empty hole — no interior seat word. */}
-        <div className="h-full w-full" data-cg-interior-page="" />
+        {/* Seat word lives in the bead. Wish seat holds the match page. */}
+        <div className="h-full w-full" data-cg-interior-page="">
+          {mode === "wish" ? <WishMatch onOpen={onOpen} /> : null}
+        </div>
       </PerimeterToggle>
     </div>
   );

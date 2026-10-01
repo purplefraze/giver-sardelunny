@@ -4,28 +4,36 @@ import { myProfileStore } from "@/data/my-profile";
 import { useMyProfile } from "@/hooks/use-my-profile";
 
 /**
- * MY G — a personal world, not a form.
- * Same idea as the communi-g loop: one blue place, locations around it,
- * the bead moves and the interior changes. Pinch out and it is the same
- * place, only wide enough to see every location at once.
- * Existing account fields are read, never asked again.
+ * MY G — a blue world, not a form.
+ * One circle. The bead sits on the track. The word lives only in the bead.
+ * The hole stays empty until that place already has something.
+ * Pinching changes the scale of this same place. Living G path is not used.
  */
 
-const BLUE = "var(--giver-blue)";
-const INK = "var(--giver-ink)";
-const PAPER = "var(--giver-paper)";
+const BLUE = "#2F6FED";
+const PAPER = "#F7F4EF";
+const INK = "#1C1A17";
 
 const PLACES = [
-  { id: "identity", label: "me", line: "this is me" },
-  { id: "who", label: "who", line: "beyond the account" },
-  { id: "aura", label: "aura", line: "how i show up" },
-  { id: "footprint", label: "footprint", line: "what i have done here" },
-  { id: "thanks", label: "thanks", line: "what people have said" },
-  { id: "life", label: "life", line: "what i like around here" },
-  { id: "messages", label: "messages", line: "people i am talking to" },
+  { id: "me", word: "me" },
+  { id: "who", word: "who" },
+  { id: "aura", word: "aura" },
+  { id: "footprint", word: "footprint" },
+  { id: "thanks", word: "thanks" },
+  { id: "life", word: "life" },
+  { id: "messages", word: "messages" },
 ] as const;
 
 type PlaceId = (typeof PLACES)[number]["id"];
+
+const CX = 195;
+const CY = 390;
+const TRACK_R = 148;
+const STROKE = 17;
+const INNER = TRACK_R - STROKE / 2;
+const BEAD_R = 28;
+const ARM = 12;
+const ARM_W = 10;
 
 const KEY = "giver-myg-world";
 
@@ -41,6 +49,8 @@ const readExtra = (): Extra => {
   }
 };
 
+const ang = (i: number) => -Math.PI / 2 + (i / PLACES.length) * Math.PI * 2;
+
 export function MyGRing({
   onClose,
   onMessages,
@@ -51,12 +61,14 @@ export function MyGRing({
   onAccount: () => void;
 }) {
   const me = useMyProfile();
-  const [place, setPlace] = useState<PlaceId>("identity");
+  const [index, setIndex] = useState(0);
   const [scale, setScale] = useState(1);
+  const [editing, setEditing] = useState(false);
   const [extra, setExtra] = useState<Extra>(readExtra);
-  const drag = useRef<{ y: number; angle: number } | null>(null);
+  const drag = useRef<number | null>(null);
   const pinch = useRef<number | null>(null);
-  const wide = scale < 0.72;
+  const place = PLACES[index];
+  const wide = scale < 0.78;
 
   const save = (next: Extra) => {
     setExtra(next);
@@ -65,48 +77,6 @@ export function MyGRing({
     } catch {
       /* a note can wait */
     }
-  };
-
-  const age = ageFrom(me.birthday);
-  const name = me.username ? `@${me.username}` : "your name is already on the account";
-
-  const spin = (dir: number) => {
-    const i = PLACES.findIndex((p) => p.id === place);
-    setPlace(PLACES[(i + dir + PLACES.length) % PLACES.length].id);
-  };
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (wide) return;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    drag.current = {
-      y: rect.top + rect.height / 2,
-      angle: Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2)),
-    };
-  };
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    const g = drag.current;
-    if (!g || wide) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const next = Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2));
-    let delta = next - g.angle;
-    if (delta > Math.PI) delta -= Math.PI * 2;
-    if (delta < -Math.PI) delta += Math.PI * 2;
-    if (Math.abs(delta) < 0.4) return;
-    spin(delta > 0 ? 1 : -1);
-    g.angle = next;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length < 2) return;
-    const a = e.touches[0];
-    const b = e.touches[1];
-    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-    if (pinch.current == null) pinch.current = dist;
-    const next = Math.min(1, Math.max(0.55, scale * (dist / pinch.current)));
-    setScale(next);
-    pinch.current = dist;
   };
 
   const photo = (file: File) => {
@@ -118,146 +88,144 @@ export function MyGRing({
     reader.readAsDataURL(file);
   };
 
-  const interior = (id: PlaceId) => {
-    if (id === "identity") {
-      return (
-        <>
-          <label className="block">
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && photo(e.target.files[0])} />
-            <span
-              className="mx-auto grid h-20 w-20 place-items-center overflow-hidden rounded-full text-[10px]"
-              style={{ background: me.photo ? `center/cover url(${me.photo})` : "color-mix(in oklab, var(--giver-blue) 16%, white)", color: BLUE }}
-            >
-              {me.photo ? "" : "picture"}
-            </span>
-          </label>
-          <p className="mt-2 text-sm" style={{ color: INK }}>{name}</p>
-          <p className="text-xs" style={{ color: BLUE }}>{age != null ? age : "birthday already on the account, or not yet"}</p>
-          <p className="mt-2 text-sm" style={{ color: INK }}>{me.aboutMe || "a short introduction, when you want one"}</p>
-        </>
-      );
-    }
-    if (id === "who") {
-      return (
-        <textarea
-          value={extra.who}
-          onChange={(e) => save({ ...extra, who: e.target.value })}
-          placeholder="something the community would not know from the account"
-          className="w-full resize-none bg-transparent text-center text-sm outline-none"
-          rows={4}
-        />
-      );
-    }
-    if (id === "aura") {
-      return (
-        <ul className="space-y-1 text-sm" style={{ color: INK }}>
-          <li>{me.sparks} sparks</li>
-          <li>aura still quiet</li>
-          <li>{me.records.give.length + me.records.wish.length + me.records.trade.length + me.records.borrow.length} things in motion</li>
-        </ul>
-      );
-    }
-    if (id === "footprint") {
-      return (
-        <ul className="space-y-1 text-sm" style={{ color: INK }}>
-          <li>{me.records.give.length} gives</li>
-          <li>{me.records.wish.length} wishes</li>
-          <li>{me.records.trade.length} trades</li>
-          <li>{me.records.borrow.length} borrows and lends</li>
-        </ul>
-      );
-    }
-    if (id === "thanks") {
-      return (
-        <textarea
-          value={extra.thanks}
-          onChange={(e) => save({ ...extra, thanks: e.target.value })}
-          placeholder="a thank-you, when someone leaves one"
-          className="w-full resize-none bg-transparent text-center text-sm outline-none"
-          rows={4}
-        />
-      );
-    }
-    if (id === "life") {
-      return (
-        <textarea
-          value={extra.life}
-          onChange={(e) => save({ ...extra, life: e.target.value })}
-          placeholder="what you like to do around the neighborhood"
-          className="w-full resize-none bg-transparent text-center text-sm outline-none"
-          rows={4}
-        />
-      );
-    }
-    return (
-      <button type="button" onClick={onMessages} className="text-sm underline" style={{ color: BLUE }}>
-        open messages
-      </button>
-    );
+  const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (wide) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const box = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - box.left) / box.width) * 390 - CX;
+    const y = ((e.clientY - box.top) / box.height) * 780 - CY;
+    drag.current = Math.atan2(y, x);
   };
 
+  const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (drag.current == null || wide) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - box.left) / box.width) * 390 - CX;
+    const y = ((e.clientY - box.top) / box.height) * 780 - CY;
+    const next = Math.atan2(y, x);
+    let delta = next - drag.current;
+    if (delta > Math.PI) delta -= Math.PI * 2;
+    if (delta < -Math.PI) delta += Math.PI * 2;
+    if (Math.abs(delta) < 0.42) return;
+    setIndex((i) => (i + (delta > 0 ? 1 : -1) + PLACES.length) % PLACES.length);
+    setEditing(false);
+    drag.current = next;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) return;
+    const a = e.touches[0];
+    const b = e.touches[1];
+    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    if (pinch.current == null) pinch.current = dist;
+    setScale((s) => Math.min(1, Math.max(0.58, s * (dist / (pinch.current || dist)))));
+    pinch.current = dist;
+  };
+
+  const known = () => {
+    const age = ageFrom(me.birthday);
+    if (place.id === "me") {
+      const bits = [me.username ? `@${me.username}` : "", age != null ? String(age) : "", me.aboutMe].filter(Boolean);
+      return { photo: me.photo, lines: bits };
+    }
+    if (place.id === "who") return { photo: null, lines: extra.who ? [extra.who] : [] };
+    if (place.id === "thanks") return { photo: null, lines: extra.thanks ? [extra.thanks] : [] };
+    if (place.id === "life") return { photo: null, lines: extra.life ? [extra.life] : [] };
+    if (place.id === "aura") {
+      const lines = [];
+      if (me.sparks) lines.push(`${me.sparks} sparks`);
+      return { photo: null, lines };
+    }
+    if (place.id === "footprint") {
+      const lines = [
+        me.records.give.length ? `${me.records.give.length} gives` : "",
+        me.records.wish.length ? `${me.records.wish.length} wishes` : "",
+        me.records.trade.length ? `${me.records.trade.length} trades` : "",
+        me.records.borrow.length ? `${me.records.borrow.length} borrows` : "",
+      ].filter(Boolean);
+      return { photo: null, lines };
+    }
+    return { photo: null, lines: [] as string[] };
+  };
+
+  const body = known();
+  const hasInterior = Boolean(body.photo) || body.lines.length > 0;
+  const theta = ang(index);
+  const ux = Math.cos(theta);
+  const uy = Math.sin(theta);
+  const armEnd = INNER;
+  const beadAt = armEnd + ARM + BEAD_R;
+
   return (
-    <div
-      className="relative h-full overflow-hidden"
-      style={{ background: PAPER, color: INK }}
-      onTouchMove={onTouchMove}
-      onTouchEnd={() => { pinch.current = null; }}
-    >
-      <button type="button" onClick={onClose} className="absolute left-4 top-4 z-10 text-xs" style={{ color: BLUE }}>back</button>
-      <button type="button" onClick={() => setScale(wide ? 1 : 0.62)} className="absolute right-4 top-4 z-10 text-xs" style={{ color: BLUE }}>
-        {wide ? "move in" : "see it all"}
+    <div className="relative h-full" style={{ background: PAPER }} onTouchMove={onTouchMove} onTouchEnd={() => { pinch.current = null; }}>
+      <button type="button" onClick={onClose} className="absolute left-4 top-4 z-10 text-xs" style={{ color: BLUE }} aria-label="back">
+        back
       </button>
-      <div
-        className="absolute left-1/2 top-1/2"
-        style={{ transform: `translate(-50%, -50%) scale(${scale})`, width: 320, height: 320 }}
+      <svg
+        viewBox="0 0 390 780"
+        className="h-full w-full"
+        style={{ transform: `scale(${scale})`, transformOrigin: "50% 46%" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={() => { drag.current = null; }}
       >
-        <div className="absolute inset-8 rounded-full" style={{ boxShadow: `inset 0 0 0 12px ${BLUE}` }} />
+        <circle cx={CX} cy={CY} r={TRACK_R} fill="none" stroke={BLUE} strokeWidth={STROKE} />
         {PLACES.map((p, i) => {
-          const a = (i / PLACES.length) * Math.PI * 2 - Math.PI / 2;
-          const on = p.id === place && !wide;
+          const a = ang(i);
+          const tick = INNER - 1;
           return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => { setPlace(p.id); setScale(1); }}
-              className="absolute grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[9px]"
-              style={{
-                left: `${50 + Math.cos(a) * 48}%`,
-                top: `${50 + Math.sin(a) * 48}%`,
-                background: on ? BLUE : PAPER,
-                color: on ? PAPER : BLUE,
-                boxShadow: `inset 0 0 0 2px ${BLUE}`,
-              }}
-            >
-              {p.label}
-            </button>
+            <circle key={p.id} cx={CX + Math.cos(a) * tick} cy={CY + Math.sin(a) * tick} r={2.2} fill={BLUE} opacity={i === index ? 0 : 0.45} />
           );
         })}
-        {!wide ? (
-          <div className="absolute inset-16 grid place-items-center px-4 text-center">
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: BLUE }}>{PLACES.find((p) => p.id === place)?.line}</p>
-              <div className="mt-3">{interior(place)}</div>
-            </div>
+        <g transform={`translate(${CX + ux * beadAt} ${CY + uy * beadAt}) rotate(${(theta * 180) / Math.PI})`}>
+          <rect x={-BEAD_R - ARM} y={-ARM_W / 2} width={ARM} height={ARM_W} fill={BLUE} />
+          <circle r={BEAD_R} fill={PAPER} stroke={BLUE} strokeWidth={7} />
+          <text textAnchor="middle" y={4} fill={BLUE} fontSize={place.word.length > 8 ? 8 : 11} fontFamily="Helvetica, sans-serif">
+            {place.word}
+          </text>
+        </g>
+      </svg>
+      {!wide && hasInterior ? (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <div className="w-36 text-center text-sm" style={{ color: INK }}>
+            {body.photo ? <img src={body.photo} alt="" className="mx-auto mb-2 h-16 w-16 rounded-full object-cover" /> : null}
+            {body.lines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
           </div>
-        ) : null}
-      </div>
-      {wide ? (
-        <div className="absolute inset-x-0 bottom-0 max-h-[46%] overflow-y-auto px-6 pb-8 text-sm">
-          <p style={{ color: BLUE }}>the whole g, still the same place</p>
-          {PLACES.map((p) => (
-            <button key={p.id} type="button" onClick={() => { setPlace(p.id); setScale(1); }} className="mt-3 block text-left">
-              <span style={{ color: BLUE }}>{p.label}</span>
-              <span className="ml-2">{p.line}</span>
-            </button>
-          ))}
-          <button type="button" onClick={onAccount} className="mt-4 block text-xs" style={{ color: BLUE }}>
-            account details, only if something is missing
-          </button>
         </div>
+      ) : null}
+      {!wide ? (
+        <button
+          type="button"
+          className="absolute inset-0 m-auto h-28 w-28"
+          aria-label={place.word}
+          onClick={() => {
+            if (place.id === "messages") onMessages();
+            else setEditing(true);
+          }}
+        />
+      ) : null}
+      {editing && !wide && (place.id === "who" || place.id === "thanks" || place.id === "life") ? (
+        <textarea
+          autoFocus
+          value={extra[place.id]}
+          onChange={(e) => save({ ...extra, [place.id]: e.target.value })}
+          onBlur={() => setEditing(false)}
+          className="absolute inset-x-16 top-1/2 -translate-y-1/2 bg-transparent text-center text-sm outline-none"
+          rows={3}
+        />
+      ) : null}
+      {editing && !wide && place.id === "me" ? (
+        <label className="absolute inset-x-0 top-1/2 grid -translate-y-1/2 place-items-center">
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && photo(e.target.files[0])} />
+          <span className="text-xs" style={{ color: BLUE }}>picture</span>
+        </label>
+      ) : null}
+      {wide ? (
+        <button type="button" onClick={onAccount} className="absolute bottom-6 left-0 right-0 text-center text-[10px]" style={{ color: BLUE }}>
+          account
+        </button>
       ) : null}
     </div>
   );

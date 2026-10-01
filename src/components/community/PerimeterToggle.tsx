@@ -31,7 +31,8 @@ import { haptics } from "@/lib/haptics";
  * ends via extra-erode (source_weight_vb ≈ LAND_STROKE_PX / sFit).
  *
  * Bentley: PRESS_MS 200, SEAT_MS 550, selection() every seat, no flick,
- * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts on-stroke, inward stem.
+ * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts on-stroke.
+ * Bead = toggle: STEM_LEN 0, flush square chord on inner wall (no stem arm).
  */
 const SNAP_MS = 220;
 /** Bead sized so "communi-g" fits in full. */
@@ -40,9 +41,11 @@ const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
 const TOGGLE_RING = 7.2;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
 const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
-const STEM_W = 8;
-/** Clear gap: arm leaves track, bead sits in white — screen px (camera-independent). */
-const STEM_LEN = 22;
+/** ~90° track-facing cut: chord distance from bead centre (screen px). */
+const CUT_HALF = Math.PI / 4;
+const CHORD_D = TOGGLE_OUTER_R * Math.cos(CUT_HALF);
+/** Flush: no stem arm — chord sits on inner wall of red stroke. */
+const STEM_LEN = 0;
 const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
 /** Bead grows on press — same pop breath as loop shrink. */
@@ -243,6 +246,39 @@ const rayMaxInkCached = (deg: number) => {
   return v;
 };
 
+/** Min fill radius along clock-ray (viewBox). First ink from centre — full-path INNER wall. 0 = none. */
+const rayMinInk = (deg: number): number => {
+  const u = outward(deg);
+  let lo = 0;
+  let hi = 0;
+  let found = false;
+  for (let r = 40; r <= RIM_FULL + 80; r += 10) {
+    if (isInkVb({ x: C.x + r * u.x, y: C.y + r * u.y })) {
+      hi = r;
+      found = true;
+      break;
+    }
+    lo = r;
+  }
+  if (!found) return 0;
+  for (let i = 0; i < 22; i++) {
+    const mid = (lo + hi) / 2;
+    if (isInkVb({ x: C.x + mid * u.x, y: C.y + mid * u.y })) hi = mid;
+    else lo = mid;
+  }
+  return hi;
+};
+const rayMinCache = new Map<number, number>();
+const rayMinInkCached = (deg: number) => {
+  const k = Math.round(wrap(deg) * 2) / 2;
+  let v = rayMinCache.get(k);
+  if (v == null) {
+    v = rayMinInk(k);
+    rayMinCache.set(k, v);
+  }
+  return v;
+};
+
 /**
  * Pin point on LIVING ink for this clock seat.
  * Mouth seats (give ~1:30): clock-ray may miss — pin NEAREST painted outer point
@@ -300,38 +336,66 @@ const toScreen = (f: Frame, p: { x: number; y: number }) => ({
 });
 
 /**
- * Arm on INSIDE of track → bead into content (toward centre).
- * At 6:00: attach on inside of smile, bead ABOVE in white, arm UP.
- * Mouth seats: ride NEAREST ink (not empty paper) so bead never floats.
- * Stem/bead lengths are screen-px — divide by sFit for viewBox.
+ * D-shape: full circle cut by straight chord perpendicular to radial u.
+ * Track-facing flat at distance `d` from centre toward u; white side stays circular.
+ * ~90° cut when d = R·cos(45°). large-arc keeps the inward body.
+ */
+const dShapePath = (R: number, d: number, ux: number, uy: number): string => {
+  const ang = Math.atan2(uy, ux);
+  const half = Math.acos(Math.min(1, Math.max(-1, d / Math.max(1e-6, R))));
+  const a1 = ang - half;
+  const a2 = ang + half;
+  const x1 = R * Math.cos(a1);
+  const y1 = R * Math.sin(a1);
+  const x2 = R * Math.cos(a2);
+  const y2 = R * Math.sin(a2);
+  // Chord x1→x2, then large arc x2→x1 on the keep (inward / −u) side.
+  // sweep=1 picks the 270° body away from +u (track); verified vs give/6 shots.
+  return `M ${x1.toFixed(3)} ${y1.toFixed(3)} L ${x2.toFixed(3)} ${y2.toFixed(3)} A ${R} ${R} 0 1 1 ${x1.toFixed(3)} ${y1.toFixed(3)} Z`;
+};
+
+/**
+ * Bead flush on INNER wall of red stroke (attachR). STEM_LEN=0 — no gap, no arm.
+ * Track-facing edge = straight chord on attach; bead body in white (inward).
+ * Mouth seats: ride NEAREST ink so bead never floats.
+ * Chord depth CHORD_D is screen-px — divide by sFit for viewBox.
  */
 const organismParts = (deg: number, f: Frame, pop: number) => {
   const shrink = 1 - (1 - DRAG_SHRINK) * pop;
   const sFit = f.sFit || 1;
-  const half = halfAt(sFit) * shrink;
   const pin = pinInkVb(deg, sFit);
   const dx = pin.x - C.x;
   const dy = pin.y - C.y;
   const pinR = Math.hypot(dx, dy) || rimAt(sFit);
   const u = { x: dx / pinR, y: dy / pinR };
-  const rim = pinR * shrink;
-  // Inner wall of the stroke — stem roots here (inside of the red path).
-  const attachR = Math.max(12, rim - half);
+  /**
+   * Flush target = PAINTED (eroded) INNER wall of the real path along this ray.
+   * Full-path inner = rayMinInk; erosion pushes that edge outward by erodeInset.
+   * Mouth / empty ray: fall back to nearest-ink pin inset by painted width.
+   * Camera pin stays (d29a04b) — bead may sit in the overflow sliver past pin.
+   */
+  const hitMin = rayMinInkCached(deg);
+  const hitMax = rayMaxInkCached(deg);
+  const erode = erodeInsetVb(sFit);
+  const paintedW = sourceWeightVb(sFit);
+  let attachR: number;
+  if (hitMin >= 40 && hitMax > hitMin + paintedW * 0.5) {
+    attachR = (hitMin + erode) * shrink;
+  } else {
+    // Empty paper (mouth): inner = nearest outer pin − painted width.
+    attachR = Math.max(12, (pinR - paintedW) * shrink);
+  }
   const attachVb = { x: C.x + attachR * u.x, y: C.y + attachR * u.y };
-  // Screen-fixed stem + bead → viewBox inward.
-  const inwardVb = (STEM_LEN + TOGGLE_OUTER_R) / sFit;
+  // STEM_LEN 0 + CHORD_D: centre is CHORD_D inward so flat face = attach (inner wall).
+  const inwardVb = (STEM_LEN + CHORD_D) / sFit;
   const beadR = Math.max(6, attachR - inwardVb);
   const beadVb = { x: C.x + beadR * u.x, y: C.y + beadR * u.y };
   const attach = toScreen(f, attachVb);
   const bead = toScreen(f, beadVb);
-  // Tip buried in the ring stroke toward the track (middle-loop language).
-  const stemTip = {
-    x: bead.x + u.x * (TOGGLE_INNER_R * 0.4),
-    y: bead.y + u.y * (TOGGLE_INNER_R * 0.4),
-  };
-  const track = toScreen(f, { x: C.x + rim * u.x, y: C.y + rim * u.y });
-  const onStroke = rayMaxInkCached(deg) >= rimAt(sFit) * 0.55 || isInkVb(attachVb);
-  return { bead, stemRoot: attach, stemTip, attach, track, u, onStroke };
+  const erodedOuterR = hitMax > hitMin ? hitMax - erode : rimAt(sFit);
+  const track = toScreen(f, { x: C.x + erodedOuterR * u.x, y: C.y + erodedOuterR * u.y });
+  const onStroke = hitMax >= rimAt(sFit) * 0.55 || isInkVb(attachVb);
+  return { bead, attach, track, u, onStroke };
 };
 
 export function PerimeterToggle({
@@ -488,7 +552,7 @@ export function PerimeterToggle({
   const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
   const inMotion = zoom > 0.55;
   /**
-   * White hole = working page (CG_WORD) in open paper — not on the edge sliver.
+   * White hole = working page in open paper — empty of seat words; word lives in bead.
    * Sliver depth eases with zoom (rest: deeper edge band; motion: tighter).
    */
   const hole = useMemo(() => {
@@ -701,12 +765,23 @@ export function PerimeterToggle({
 
   const liveDeg = dragging || cruising || pop > 0.05 || snapping ? wrap(pos) : clockOf(nearest(pos));
   const parts = w ? organismParts(liveDeg, frame, pop) : null;
+  // Keep bead on-canvas when true eroded inner sits past the kissed edge (rest-6).
+  if (parts && w) {
+    const margin = CHORD_D + 4;
+    const bx = Math.min(w - margin, Math.max(margin, parts.bead.x));
+    const by = Math.min(h - margin, Math.max(margin, parts.bead.y));
+    if (bx !== parts.bead.x || by !== parts.bead.y) {
+      const dx = bx - parts.bead.x;
+      const dy = by - parts.bead.y;
+      parts.bead = { x: bx, y: by };
+      parts.attach = { x: parts.attach.x + dx, y: parts.attach.y + dy };
+    }
+  }
   /** Same pop / POP_MS / easeOut as loop shrink — one breath both ways. */
   const beadScale = 1 + (BEAD_GROW - 1) * pop;
   const loopScale = 1 - (1 - DRAG_SHRINK) * pop;
 
-  /** Ghost = next seat's FILLED coloured bead ON the stroke — never a hollow ring.
-   *  Hide if off-canvas OR off-path (e.g. green on lend / brown on borrow). */
+  /** Ghost = next seat's flush square-cut bead (same D-shape) — only on-stroke + on-canvas. */
   const plugs =
     w && (dragging || cruising || pop > 0.25)
       ? [towardSeat]
@@ -716,7 +791,8 @@ export function PerimeterToggle({
             const opacity = Math.min(0.95, 0.35 + blend * 0.65);
             return {
               s,
-              track: p.track,
+              bead: p.bead,
+              u: p.u,
               onStroke: p.onStroke,
               opacity: s === towardSeat ? opacity : Math.max(0, 0.3 - dist / 100),
               colour: colourOf(s),
@@ -726,7 +802,7 @@ export function PerimeterToggle({
             if (p.opacity <= 0.08 || p.s === shown) return false;
             if (!p.onStroke) return false;
             const m = 8;
-            return p.track.x >= -m && p.track.x <= w + m && p.track.y >= -m && p.track.y <= h + m;
+            return p.bead.x >= -m && p.bead.x <= w + m && p.bead.y >= -m && p.bead.y <= h + m;
           })
       : [];
 
@@ -767,7 +843,7 @@ export function PerimeterToggle({
       data-cg-kind="living-g-path"
       data-cg-organism="1"
       data-cg-dolly={dolly.toFixed(2)}
-      data-cg-arm="inward"
+      data-cg-arm="flush-square"
       data-cg-cruise={cruising ? "1" : "0"}
     >
       <div
@@ -834,20 +910,19 @@ export function PerimeterToggle({
               data-cg-chrome=""
             >
               {plugs.map((p) => (
-                <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
-                  <circle cx={p.track.x} cy={p.track.y} r={TOGGLE_STROKE_R} fill={p.colour} data-cg-ghost-fill="" />
+                <g
+                  key={p.s}
+                  opacity={p.opacity}
+                  data-cg-plug={p.s}
+                  transform={`translate(${p.bead.x.toFixed(2)} ${p.bead.y.toFixed(2)})`}
+                >
+                  <path
+                    d={dShapePath(TOGGLE_OUTER_R, CHORD_D, p.u.x, p.u.y)}
+                    fill={p.colour}
+                    data-cg-ghost-fill=""
+                  />
                 </g>
               ))}
-              <line
-                x1={parts.stemRoot.x}
-                y1={parts.stemRoot.y}
-                x2={parts.stemTip.x}
-                y2={parts.stemTip.y}
-                stroke={colour}
-                strokeWidth={STEM_W}
-                strokeLinecap="round"
-                data-cg-stem-arm=""
-              />
             </svg>
           </>
         ) : null}
@@ -1052,9 +1127,17 @@ export function PerimeterToggle({
               viewBox={`${-TOGGLE_OUTER_R} ${-TOGGLE_OUTER_R} ${TOGGLE_DIAM} ${TOGGLE_DIAM}`}
               aria-hidden="true"
               style={{ overflow: "visible" }}
+              data-cg-bead-shape="flush-square"
             >
-              <circle r={TOGGLE_INNER_R - 0.3} fill="var(--world-bg)" />
-              <circle r={TOGGLE_STROKE_R} fill="none" stroke={colour} strokeWidth={TOGGLE_RING} data-cg-ring="" />
+              <defs>
+                <clipPath id={`${thinId}-bead`}>
+                  <path d={dShapePath(TOGGLE_OUTER_R, CHORD_D, parts.u.x, parts.u.y)} />
+                </clipPath>
+              </defs>
+              <g clipPath={`url(#${thinId}-bead)`}>
+                <circle r={TOGGLE_INNER_R - 0.3} fill="var(--world-bg)" />
+                <circle r={TOGGLE_STROKE_R} fill="none" stroke={colour} strokeWidth={TOGGLE_RING} data-cg-ring="" />
+              </g>
               <text
                 textAnchor="middle"
                 dominantBaseline="central"

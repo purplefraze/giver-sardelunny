@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { PerimeterToggle } from "@/components/community/PerimeterToggle";
-import { CG_INK, CG_WORD, modeFor, type CgMode } from "@/data/communigy";
+import { CG_INK, modeFor, type CgMode } from "@/data/communigy";
 import type { BorrowSide, ItemType } from "@/data/items";
 
 /**
@@ -9,8 +9,8 @@ import type { BorrowSide, ItemType } from "@/data/items";
  * IN-COMMUNITY ONLY: entered via living G 6:00. Full G lower loop has no toggle.
  *
  * Red middle-weight track frames the phone; the white hole is the page.
- * Interior holds the mode heading (CG_WORD) — give at 1:30 reads as the give
- * page. No new Give wizard this turn.
+ * Interior children slot stays EMPTY — seat word lives ONLY in the live bead.
+ * No new Give wizard this turn.
  */
 type Scope = "everyone" | "mine";
 type View = "list" | "map";
@@ -49,25 +49,8 @@ export function CommunityFeed({
       }}
     >
       <PerimeterToggle value={mode} onChange={setMode} onExit={onExit ?? onClose}>
-        <div
-          className="flex h-full w-full flex-col items-center justify-center px-3 text-center"
-          data-cg-interior-page=""
-        >
-          <h1
-            className="g-display"
-            data-cg-interior-heading=""
-            style={{
-              color: ink,
-              fontSize: "clamp(1.6rem, 9vw, 2.6rem)",
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              textTransform: "lowercase",
-              lineHeight: 1.05,
-            }}
-          >
-            {CG_WORD[mode]}
-          </h1>
-        </div>
+        {/* Empty hole — no interior seat word. */}
+        <div className="h-full w-full" data-cg-interior-page="" />
       </PerimeterToggle>
     </div>
   );

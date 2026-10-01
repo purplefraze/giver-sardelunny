@@ -18,6 +18,7 @@ import { useSession } from "@/hooks/use-session";
 import { sessionEndedPending } from "@/data/cloud/session";
 import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
+import { MyGRing } from "@/components/profile/MyGRing";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { GiveFlow } from "@/components/give/GiveFlow";
 import { IntentIntake } from "@/intelligence/IntentIntake";
@@ -371,6 +372,8 @@ function Index() {
 
   /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
   const [choose, setChoose] = useState(false);
+  const [myG, setMyG] = useState(false);
+  const lastToggleTap = useRef(0);
   /** The voluntary help area — every explanation, on demand. */
   const [help, setHelp] = useState(false);
 
@@ -679,7 +682,8 @@ function Index() {
    * top loop, and it opens my own profile — or, before it exists, its setup.
    */
   const openMyG = () => {
-    setup();
+    lifecycleStore.discoverProfile();
+    setMyG(true);
   };
 
   /**
@@ -717,8 +721,14 @@ function Index() {
    * onTap). One tap enters the seat, exactly like the middle loop.
    */
   const tapToggle = () => {
-    /* The loops always say what each seat does, so there is no "what is
-       this?" first tap any more: one tap on the toggle enters the seat. */
+    const now = Date.now();
+    /* A double tap from any seat is my g. A single tap on the blue 12 is too. */
+    if (now - lastToggleTap.current < 320) {
+      lastToggleTap.current = 0;
+      openMyG();
+      return;
+    }
+    lastToggleTap.current = now;
     noteToggleUse();
     enterSelectedWorld();
   };
@@ -1179,6 +1189,23 @@ function Index() {
                   <ConnectionsList
                     onOpen={(id) => setTalking(id)}
                     onClose={() => setThreads(false)}
+                  />
+                ) : null,
+              },
+
+              {
+                id: "my-g",
+                open: myG,
+                anchor: "top",
+                bare: true,
+                world: "me",
+                children: myG ? (
+                  <MyGRing
+                    onClose={() => setMyG(false)}
+                    onMessages={() => {
+                      setMyG(false);
+                      setThreads(true);
+                    }}
                   />
                 ) : null,
               },

@@ -124,8 +124,6 @@ const turn = (a: number, b: number) => {
   return d;
 };
 const easeOut = (u: number) => 1 - (1 - u) ** 3;
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
 /** Clock deg → unit outward from LOOP_CENTRE.bottom (0 = 12:00, CW). */
 const outward = (deg: number) => {
   const a = deg * RAD;
@@ -471,17 +469,12 @@ export function PerimeterToggle({
     [size.w, size.h, liveAngle],
   );
   const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
-  /**
-   * White hole = working page in open paper — empty of seat words; word lives in bead.
-   * Sliver depth eases with zoom (rest: deeper edge band; motion: tighter).
-   */
+  /** White hole = working page in open paper; the seat word lives in the bead. */
   const hole = useMemo(() => {
     const w = size.w || DW;
     const h = size.h || DH;
     const inset = 12;
     const u = outward(liveAngle);
-    const diag = Math.abs(u.x) >= 0.35 && Math.abs(u.y) >= 0.35;
-    const restBand = diag ? 150 : 92;
     const motionBand = 72;
     const band = motionBand;
     let left = inset;
@@ -697,7 +690,7 @@ export function PerimeterToggle({
       parts.stemTip = { x: parts.stemTip.x + dx, y: parts.stemTip.y + dy };
     }
   }
-  /** Scale locked at 1 — no pop RAF fighting the finger. */
+  /** Scale locked at 1 — no second animated value fights the shared angle. */
   const beadScale = 1;
   const loopScale = 1;
 

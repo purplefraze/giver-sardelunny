@@ -13,30 +13,27 @@ import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
 /**
- * COMMUNI-G LOWER LOOP — CANONICAL LIVING_G_PATH (Frazer, 30 Sep 2026).
+ * COMMUNI-G LOWER LOOP — CANONICAL LIVING_G_PATH (Frazer, 1 Oct 2026).
  *
  * Red track IS the locked lower loop of LIVING_G_PATH (+ LIVING_G_TRANSFORM),
  * drawn via GThinMask-pattern erosion — same path as LivingG. Not CIRCLE_R.
  * Mouth stays OPEN.
  *
- * ONE CAMERA, scale-around-pin (not two-shot cut, not recenter):
- *   REST   (zoom=0) — settled: sFit ~1.85, LIVE seat ink pinned to screen
- *           edge (EDGE_INSET). Overflow = continuous sliver; far side off-canvas.
- *   MOTION (zoom=1) — finger down / follow: sFit ~1.32–1.42, scale DOWN around
- *           the SAME edge pin — loop shrinks toward press, ±1 neighbor seats.
- *           Never lerp look-at toward centre. Pin rides with camDeg (local wall).
- *   zoom lerps 0↔1 over SWOOP_MS (visible swoop). Never camT flip / clip swap.
+ * TOUCH MODEL (direct manipulation — finger = toggle):
+ *   Pointer down → capture + FREEZE camera at press frame (no swoop/recenter/scale).
+ *   First move ≥2px drives immediately (no PRESS_MS travel gate).
+ *   Bead angle = atan2(finger − frozen loop centre). 1:1, no lag/spring/cruise.
+ *   Colour + bead word hard-swap ONLY when bead centre crosses next labeled seat.
+ *   Detent haptic on cross only — never magnet off finger, never freeze while moving.
+ *   Pointer up → snap nearest labeled ≤ SNAP_MS (220). No coast.
+ *   Tap 12 exits; tap elsewhere no travel.
  *
- * Stroke decoupled from camera: painted on-screen width ~LAND_STROKE_PX at both
- * ends via extra-erode (source_weight_vb ≈ LAND_STROKE_PX / sFit).
+ * CAMERA: REST/MOTION swoop ONLY when NOT dragging. Finger-down freezes press frame
+ * so frameOf cannot swoop under the thumb.
  *
- * PRESS_MS 200 gate, SEAT_MS 420 release snap, selection() every detent (~11.25°),
- * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts on-stroke.
- * Toggle = circle bead + rectangular arm (STEM_LEN 14), ONE piece. Arm along +u;
- * track-facing end square-cut flush on painted INNER wall (attachR).
- * Armed finger-down: bead angle = finger angle about loop centre (1:1). No cruise.
- * Invisible detents bias ≤±2.5° + selection on cross; must not pull off finger.
- * Finger-up: snap nearest LABELED seat only (SEAT_MS). No coast/flick.
+ * Toggle = circle bead + short contact arm (STEM_LEN 0). Square 90° end kisses
+ * painted INNER wall — no white air between toggle and red. No bleed.
+ * Stroke: LAND_STROKE_PX 17, geometricPrecision, open mouth, empty hole.
  */
 /** Bead sized so "communi-g" fits in full. */
 const TOGGLE_OUTER_R = 32;
@@ -44,26 +41,29 @@ const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
 const TOGGLE_RING = 7.2;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
 const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
-/** Rectangular arm width (screen px) — square-cut ends, not round caps. */
+/** Rectangular contact-arm width (screen px) — square-cut 90° ends. */
 const STEM_W = 10;
-/** Visible stem from painted inner wall to bead outer edge (screen px). */
-const STEM_LEN = 14;
+/**
+ * STEM_LEN 0: bead outer edge + square arm end kiss painted INNER wall.
+ * No air gap (STEM_LEN 14 was air). Arm is contact piece only — no white between
+ * toggle and red.
+ */
+const STEM_LEN = 0;
 const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
-/** Bead grows on press — same pop breath as loop shrink. */
+/** Bead grows on press — press feedback only; does NOT drive camera. */
 const BEAD_GROW = 1.12;
 const DOLLY_MS = 560;
 /** Start slightly tighter on entry, settle to rest crop. */
 const DOLLY_START = 1.18;
-/** Press beat before any travel. Tap / flick before beat stays put. */
-const PRESS_MS = 200;
-/** One labeled seat (~45°) — 420ms/seat. */
+/** First pointer move ≥ ARM_PX drives immediately (no travel-delay gate). */
+const ARM_PX = 2;
+/** Release snap to nearest labeled seat — ≤220ms, no coast. */
+const SNAP_MS = 220;
+/** One labeled seat (~45°). */
 const SEAT_SPAN_DEG = 45;
-const SEAT_MS = 420;
-/** 3 invisible detents between labeled seats → ~11.25° each. */
+/** 3 invisible detents between labeled seats → ~11.25° each (haptic only). */
 const DETENT_SPAN_DEG = SEAT_SPAN_DEG / 4;
-/** Invisible detent bias while finger drives — must stay under thumb (±2–3°). */
-const FOLLOW_BIAS_DEG = 2.5;
 
 const DW = 390;
 const DH = 844;
@@ -88,7 +88,7 @@ const SWOOP_MS = 480;
 
 /**
  * ONE colour source: styles.css --mode-* tokens (same map CG_COLOUR / LoopLabel
- * read). Hex resolved at call time for lerpHex — no second hard-coded table.
+ * read). Hex resolved at call time — hard-swap only, no travel lerp.
  */
 const MODE_TOKEN: Record<string, string> = {
   everything: "--mode-communigy",
@@ -141,21 +141,6 @@ const easeOut = (u: number) => 1 - (1 - u) ** 3;
 const easeInOut = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const lerpHex = (a: string, b: string, t: number) => {
-  const parse = (h: string): [number, number, number] => {
-    const s = h.replace("#", "");
-    return [
-      Number.parseInt(s.slice(0, 2), 16) || 0,
-      Number.parseInt(s.slice(2, 4), 16) || 0,
-      Number.parseInt(s.slice(4, 6), 16) || 0,
-    ];
-  };
-  const [ar, ag, ab] = parse(a);
-  const [br, bg, bb] = parse(b);
-  return `#${[lerp(ar, br, t), lerp(ag, bg, t), lerp(ab, bb, t)]
-    .map((n) => Math.round(n).toString(16).padStart(2, "0"))
-    .join("")}`;
-};
 
 /** Clock deg → unit outward from LOOP_CENTRE.bottom (0 = 12:00, CW). */
 const outward = (deg: number) => {
@@ -369,7 +354,7 @@ const armPath = (
 /**
  * Circle bead + rectangular arm, ONE piece. Arm along +u toward track.
  * Track-facing end = square cut flush on painted INNER wall (attachR).
- * STEM_LEN / STEM_W are screen-px — divide by sFit for viewBox placement.
+ * STEM_LEN 0 + STEM_W: short contact arm, square end on INNER wall.
  * Mouth seats: ride NEAREST ink so bead never floats.
  */
 const organismParts = (deg: number, f: Frame, pop: number) => {
@@ -444,30 +429,28 @@ export function PerimeterToggle({
   const popRaf = useRef(0);
   const lastDir = useRef<1 | -1>(1);
   const [dolly, setDolly] = useState(0);
-  const [cruising, setCruising] = useState(false);
-  const cruiseRaf = useRef(0);
-  const cruiseVel = useRef(0);
-  const cruisingRef = useRef(false);
-  /** One-camera swoop 0=rest … 1=motion (eased, never flipped). */
+  /** One-camera swoop 0=rest … 1=motion — ONLY when NOT dragging. */
   const [zoom, setZoom] = useState(0);
   const zoomRef = useRef(0);
   const zoomRaf = useRef(0);
-  const holdTimer = useRef(0);
-  /** First seat this hold — brief land once; later seats tick without magnet-stop. */
-  const firstClickRef = useRef(false);
-  const holdOriginRef = useRef<CgStation>("everything");
+  /** Frozen press-frame camera — set on pointerdown, cleared on up. */
+  const [freezeCam, setFreezeCam] = useState<{ deg: number; zoom: number } | null>(null);
+  const freezeCamRef = useRef<{ deg: number; zoom: number } | null>(null);
+  /** Frozen on-screen loop centre for finger→angle projection. */
+  const freezeCentreRef = useRef<{ x: number; y: number } | null>(null);
   /** Last detent / labeled seat that already fired this hold (finger-follow). */
   const followDetentRef = useRef(0);
   const followLabeledRef = useRef<CgStation>("everything");
+  /** Hard-swap seat shown while dragging (colour + word). */
+  const [dragSeat, setDragSeat] = useState<CgStation>(value);
   const drag = useRef<{
     id: number;
-    /** True after PRESS_MS — finger may drive bead. Tap before armed stays put. */
+    /** True after first move ≥ ARM_PX — finger drives bead. Tap stays put. */
     armed: boolean;
     start: CgStation;
     x: number;
     y: number;
     t: number;
-    /** Pointerdown time — gate uses this (never overwritten by moves). */
     downAt: number;
     angle: number;
   } | null>(null);
@@ -477,14 +460,6 @@ export function PerimeterToggle({
   const neighbourRef = useRef<(s: CgStation, dir: 1 | -1) => CgStation>((s) => s);
   const onExitRef = useRef(onExit);
   onExitRef.current = onExit;
-
-  const stopCruise = () => {
-    cancelAnimationFrame(cruiseRaf.current);
-    cruiseRaf.current = 0;
-    cruiseVel.current = 0;
-    cruisingRef.current = false;
-    setCruising(false);
-  };
 
   useLayoutEffect(() => {
     const el = stage.current;
@@ -517,14 +492,12 @@ export function PerimeterToggle({
 
   useEffect(
     () => () => {
-      clearTimeout(holdTimer.current);
-      cancelAnimationFrame(cruiseRaf.current);
       cancelAnimationFrame(zoomRaf.current);
     },
     [],
   );
 
-  /** Shot/debug only: freeze press breath (grown bead + shrunk loop) without cruise. */
+  /** Shot/debug only: freeze press breath (grown bead + shrunk loop). */
   useEffect(() => {
     const w = window as Window & { __cgForcePress?: (on: boolean) => void };
     w.__cgForcePress = (on) => {
@@ -539,14 +512,35 @@ export function PerimeterToggle({
 
   useEffect(() => {
     // External mode changes (not exit — exit is tap-only).
-    if (value !== "exit" as never) setGoal(value);
+    if (value !== "exit" as never) {
+      setGoal(value);
+      if (!drag.current) {
+        followLabeledRef.current = value;
+        setDragSeat(value);
+      }
+    }
   }, [value]);
 
-  /** Live clock — follows bead while dragging/cruising/snapping. */
-  const camDeg = wrap(pos);
-  /** Motion target while finger drives; rest on release. Zoom eases — never flips. */
-  const zoomTarget = dragging || cruising || pop > 0.15 ? 1 : 0;
+  /**
+   * Camera clock: FROZEN at press while dragging so frameOf cannot swoop under thumb.
+   * Live pos only drives camera when NOT dragging.
+   */
+  const camDeg = freezeCam ? freezeCam.deg : wrap(pos);
+  const frameZoom = freezeCam ? freezeCam.zoom : zoom;
+  /**
+   * REST/MOTION swoop ONLY when NOT dragging. While finger down, zoom stays frozen
+   * at press frame — no SWOOP under thumb.
+   */
+  const zoomTarget = dragging ? (freezeCam?.zoom ?? zoomRef.current) : snapping ? 1 : 0;
   useEffect(() => {
+    if (dragging) {
+      // Hold frozen — cancel any in-flight swoop.
+      cancelAnimationFrame(zoomRaf.current);
+      const hold = freezeCamRef.current?.zoom ?? zoomRef.current;
+      zoomRef.current = hold;
+      setZoom(hold);
+      return;
+    }
     cancelAnimationFrame(zoomRaf.current);
     const from = zoomRef.current;
     const to = zoomTarget;
@@ -565,16 +559,16 @@ export function PerimeterToggle({
     };
     zoomRaf.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(zoomRaf.current);
-  }, [zoomTarget]);
+  }, [zoomTarget, dragging]);
 
-  /** One camera: rest↔motion via eased zoom. No landClipRect / camT cut. */
+  /** One camera: rest↔motion via eased zoom when not dragging. Frozen while dragging. */
   const frame = useMemo(
-    () => frameOf(size.w || DW, size.h || DH, camDeg, zoom),
+    () => frameOf(size.w || DW, size.h || DH, camDeg, frameZoom),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [size.w, size.h, camDeg, zoom],
+    [size.w, size.h, camDeg, frameZoom],
   );
   const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
-  const inMotion = zoom > 0.55;
+  const inMotion = frameZoom > 0.55;
   /**
    * White hole = working page in open paper — empty of seat words; word lives in bead.
    * Sliver depth eases with zoom (rest: deeper edge band; motion: tighter).
@@ -587,7 +581,7 @@ export function PerimeterToggle({
     const diag = Math.abs(u.x) >= 0.35 && Math.abs(u.y) >= 0.35;
     const restBand = diag ? 150 : 92;
     const motionBand = 72;
-    const band = lerp(restBand, motionBand, zoom);
+    const band = lerp(restBand, motionBand, frameZoom);
     let left = inset;
     let top = inset;
     let right = w - inset;
@@ -602,7 +596,7 @@ export function PerimeterToggle({
       width: Math.max(0, right - left),
       height: Math.max(0, bottom - top),
     };
-  }, [size.w, size.h, camDeg, zoom]);
+  }, [size.w, size.h, camDeg, frameZoom]);
 
   const nearest = (deg: number): CgStation => {
     let best: CgStation = "everything";
@@ -690,9 +684,11 @@ export function PerimeterToggle({
   /** Explicit tap on my-g bead — the ONLY way out to Living G. */
   const exitByTap = () => {
     haptics.light();
-    stopCruise();
     drag.current = null;
     setDragging(false);
+    freezeCamRef.current = null;
+    freezeCentreRef.current = null;
+    setFreezeCam(null);
     onExitRef.current();
   };
 
@@ -701,21 +697,17 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Armed finger-follow: bead angle = finger angle about loop centre (1:1).
-   * Invisible detents bias ≤ FOLLOW_BIAS_DEG + selection() on cross.
-   * No fixed-speed cruise — finger owns pos. Labeled seat settle via go().
+   * Direct finger-follow: bead angle = finger angle about FROZEN loop centre (1:1).
+   * No magnet / cruise / spring. Detent haptic on cross only.
+   * Colour + word hard-swap ONLY when bead centre crosses next labeled seat.
    */
   const followFinger = (fingerDeg: number) => {
-    // Light detent bias ±FOLLOW_BIAS_DEG — never yank off thumb.
-    const magnetTarget = nearestDetent(fingerDeg);
-    const mDiff = turn(fingerDeg, magnetTarget);
-    const bias = Math.max(-FOLLOW_BIAS_DEG, Math.min(FOLLOW_BIAS_DEG, mDiff * 0.4));
-    const next = wrap(fingerDeg + bias);
+    const next = wrap(fingerDeg);
 
     const dirTurn = turn(posRef.current, next);
     if (Math.abs(dirTurn) >= 0.4) lastDir.current = dirTurn >= 0 ? 1 : -1;
 
-    // Detent cross → selection tick (labeled + invisible).
+    // Detent cross → selection tick (haptic only — never pulls bead).
     const dTarget = nearestDetent(next);
     const dBefore = turn(posRef.current, dTarget);
     const dAfter = turn(next, dTarget);
@@ -729,21 +721,30 @@ export function PerimeterToggle({
       followDetentRef.current = dTarget;
     }
 
-    // Labeled seat change → settle word/colour (no snap while dragging).
-    const labeled = nearestRef.current(next);
-    if (labeled !== followLabeledRef.current) {
+    // Hard-swap colour/word when bead centre crosses next labeled seat clock.
+    const curLabeled = followLabeledRef.current;
+    const nextLabeled = neighbourRef.current(curLabeled, lastDir.current);
+    const seatDeg = clockOf(nextLabeled);
+    const sBefore = turn(posRef.current, seatDeg);
+    const sAfter = turn(next, seatDeg);
+    const seatCrossed =
+      nextLabeled !== curLabeled &&
+      (Math.abs(sAfter) <= 1.2 ||
+        (lastDir.current > 0 && sBefore > 0 && sAfter <= 0) ||
+        (lastDir.current < 0 && sBefore < 0 && sAfter >= 0));
+    if (seatCrossed) {
       if (!dCrossed) haptics.selection();
-      goRef.current(labeled, { quiet: true });
-      followLabeledRef.current = labeled;
-      firstClickRef.current = true;
+      goRef.current(nextLabeled, { quiet: true });
+      followLabeledRef.current = nextLabeled;
+      setDragSeat(nextLabeled);
     }
 
     put(next);
   };
 
-  // Snap animation to goal — never calls onExit (tap-only).
+  // Snap animation to goal — ≤ SNAP_MS, never calls onExit (tap-only).
   useEffect(() => {
-    if (dragging || cruisingRef.current || !size.w) return;
+    if (dragging || !size.w) return;
     const from = posRef.current;
     const delta = turn(from, clockOf(goal));
     if (Math.abs(delta) < 0.05) {
@@ -751,8 +752,8 @@ export function PerimeterToggle({
       animatePop(0);
       return;
     }
-    // Release snap paced by SEAT_MS (one labeled seat ≈ 420ms).
-    const dur = Math.max(140, Math.min(SEAT_MS, (Math.abs(delta) / SEAT_SPAN_DEG) * SEAT_MS));
+    // Release snap ≤220ms — no coast.
+    const dur = Math.max(80, Math.min(SNAP_MS, (Math.abs(delta) / SEAT_SPAN_DEG) * SNAP_MS));
     const t0 = performance.now();
     snappingRef.current = true;
     setSnapping(true);
@@ -775,47 +776,29 @@ export function PerimeterToggle({
       snappingRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [goal, dragging, cruising, size.w]);
+  }, [goal, dragging, size.w]);
 
   const { w, h } = size;
-  const settled = !dragging && !snapping && !cruising && Math.abs(turn(pos, clockOf(goal))) < 0.2 && pop < 0.05;
+  const settled = !dragging && !snapping && Math.abs(turn(pos, clockOf(goal))) < 0.2 && pop < 0.05;
   const here = nearest(pos);
   const towardSeat = neighbour(here, lastDir.current);
-  const cHere = clockOf(here);
-  const cToward = clockOf(towardSeat);
-  const span = Math.abs(turn(cHere, cToward)) || 45;
-  const traveled = Math.abs(turn(cHere, pos));
-  const blend = dragging || cruising || pop > 0.2 ? Math.min(1, traveled / span) : 0;
 
-  const shown: CgStation = dragging || cruising || pop > 0.5 ? here : goal;
-  const colour =
-    dragging || cruising || pop > 0.2
-      ? lerpHex(colourOf(here), colourOf(towardSeat), blend * 0.85)
-      : colourOf(shown);
-  const word = wordOf(dragging || cruising || pop > 0.5 ? (blend > 0.55 ? towardSeat : here) : shown);
+  /** Colour + word: last settled labeled seat until bead centre crosses next → hard swap. */
+  const shown: CgStation = dragging ? dragSeat : goal;
+  const colour = colourOf(shown);
+  const word = wordOf(shown);
 
-  const liveDeg = dragging || cruising || pop > 0.05 || snapping ? wrap(pos) : clockOf(nearest(pos));
+  const liveDeg = dragging || pop > 0.05 || snapping ? wrap(pos) : clockOf(nearest(pos));
   const parts = w ? organismParts(liveDeg, frame, pop) : null;
   /**
-   * When true path attach sits past the kissed camera edge (rest-6 bottom),
-   * pull the ONE piece back so stemRoot kisses camera painted INNER
-   * (edge − LAND_STROKE along +u). Then keep bead on-canvas.
+   * Keep bead mostly on-canvas but ALLOW overflow sliver so stemRoot can kiss
+   * the true painted INNER wall (may sit past the kissed camera edge).
+   * Do NOT pull back to camInner — that parked the bead on empty paper at 9:00
+   * while real red lived in the clipped overflow (white gap).
    */
   if (parts && w) {
-    const { u } = parts;
-    const edgeX = w / 2 + u.x * (w / 2 - EDGE_INSET);
-    const edgeY = h / 2 + u.y * (h / 2 - EDGE_INSET);
-    const camInner = { x: edgeX - u.x * LAND_STROKE_PX, y: edgeY - u.y * LAND_STROKE_PX };
-    const past = (parts.stemRoot.x - camInner.x) * u.x + (parts.stemRoot.y - camInner.y) * u.y;
-    if (past > 0.5) {
-      const dx = -u.x * past;
-      const dy = -u.y * past;
-      parts.bead = { x: parts.bead.x + dx, y: parts.bead.y + dy };
-      parts.attach = { x: parts.attach.x + dx, y: parts.attach.y + dy };
-      parts.stemRoot = { x: parts.stemRoot.x + dx, y: parts.stemRoot.y + dy };
-      parts.stemTip = { x: parts.stemTip.x + dx, y: parts.stemTip.y + dy };
-    }
-    const margin = TOGGLE_OUTER_R + 4;
+    // Allow bead centre into the edge sliver so contact reaches real paint.
+    const margin = 10;
     const bx = Math.min(w - margin, Math.max(margin, parts.bead.x));
     const by = Math.min(h - margin, Math.max(margin, parts.bead.y));
     if (bx !== parts.bead.x || by !== parts.bead.y) {
@@ -831,21 +814,21 @@ export function PerimeterToggle({
   const beadScale = 1 + (BEAD_GROW - 1) * pop;
   const loopScale = 1 - (1 - DRAG_SHRINK) * pop;
 
-  /** Ghost = next seat's circle+arm (same ONE piece) — only on-stroke + on-canvas. */
+  /** Ghost = next seat's circle+arm — only on-stroke + on-canvas while dragging. */
   const plugs =
-    w && (dragging || cruising || pop > 0.25)
+    w && dragging
       ? [towardSeat]
           .map((s) => {
             const p = organismParts(clockOf(s), frame, 0);
             const dist = Math.abs(turn(pos, clockOf(s)));
-            const opacity = Math.min(0.95, 0.35 + blend * 0.65);
+            const opacity = Math.min(0.7, 0.25 + Math.max(0, 1 - dist / 50) * 0.45);
             return {
               s,
               bead: p.bead,
               stemRoot: p.stemRoot,
               stemTip: p.stemTip,
               onStroke: p.onStroke,
-              opacity: s === towardSeat ? opacity : Math.max(0, 0.3 - dist / 100),
+              opacity,
               colour: colourOf(s),
             };
           })
@@ -859,8 +842,9 @@ export function PerimeterToggle({
 
   const thetaForFinger = (clientX: number, clientY: number) => {
     const r = stage.current!.getBoundingClientRect();
-    const x = clientX - r.left - centreScreen.x;
-    const y = clientY - r.top - centreScreen.y;
+    const c = freezeCentreRef.current ?? centreScreen;
+    const x = clientX - r.left - c.x;
+    const y = clientY - r.top - c.y;
     return wrap((Math.atan2(x, -y) * 180) / Math.PI);
   };
 
@@ -889,15 +873,17 @@ export function PerimeterToggle({
       data-cg-weight="eroded"
       data-cg-camera={inMotion ? "cruise" : "land"}
       data-cg-stroke-px={LAND_STROKE_PX}
-      data-cg-seat-ms={SEAT_MS}
+      data-cg-seat-ms={SNAP_MS}
+      data-cg-snap-ms={SNAP_MS}
       data-cg-stem-len={STEM_LEN}
       data-cg-detent={DETENT_SPAN_DEG}
       data-cg-toggle-d={TOGGLE_DIAM}
       data-cg-kind="living-g-path"
       data-cg-organism="1"
       data-cg-dolly={dolly.toFixed(2)}
-      data-cg-arm="inward-rect"
-      data-cg-cruise={cruising ? "1" : "0"}
+      data-cg-arm="contact-rect"
+      data-cg-cruise="0"
+      data-cg-frozen={freezeCam ? "1" : "0"}
     >
       <div
         className="absolute inset-0"
@@ -1032,7 +1018,7 @@ export function PerimeterToggle({
                   data-cg-loop-hit={s}
                   data-cg-dot-hit={s}
                   onClick={() => {
-                    if (dragging || cruisingRef.current) return;
+                    if (dragging) return;
                     if (s === "exit") {
                       // Tap my-g bead: leave only when already at/near 12. Otherwise park there.
                       const atExit =
@@ -1064,7 +1050,7 @@ export function PerimeterToggle({
               border: "none",
               boxShadow: "none",
               overflow: "visible",
-              willChange: dragging || cruising || snapping || pop > 0.02 ? "transform" : "auto",
+              willChange: dragging || snapping || pop > 0.02 ? "transform" : "auto",
             }}
             role="slider"
             tabIndex={0}
@@ -1078,59 +1064,58 @@ export function PerimeterToggle({
             onPointerDown={(e) => {
               if (snappingRef.current) return;
               e.stopPropagation();
-              clearTimeout(holdTimer.current);
-              stopCruise();
+              // FREEZE camera at press frame — no swoop/recenter/scale under thumb.
+              const pressDeg = wrap(posRef.current);
+              const pressZoom = zoomRef.current;
+              freezeCamRef.current = { deg: pressDeg, zoom: pressZoom };
+              freezeCentreRef.current = { x: centreScreen.x, y: centreScreen.y };
+              setFreezeCam({ deg: pressDeg, zoom: pressZoom });
               const rect = stage.current!.getBoundingClientRect();
               const now = performance.now();
+              const cx = freezeCentreRef.current.x;
+              const cy = freezeCentreRef.current.y;
               const angle = wrap(
-                (Math.atan2(e.clientX - rect.left - centreScreen.x, -(e.clientY - rect.top - centreScreen.y)) * 180) /
-                  Math.PI,
+                (Math.atan2(e.clientX - rect.left - cx, -(e.clientY - rect.top - cy)) * 180) / Math.PI,
               );
+              const start = nearest(posRef.current);
               drag.current = {
                 id: e.pointerId,
                 armed: false,
-                start: nearest(posRef.current),
+                start,
                 x: e.clientX,
                 y: e.clientY,
                 t: now,
                 downAt: now,
                 angle,
               };
+              followDetentRef.current = nearestDetent(posRef.current);
+              followLabeledRef.current = start;
+              setDragSeat(start);
               setDragging(true);
               animatePop(1);
               haptics.light();
               (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
-              // GATE: bead does not move for PRESS_MS. No travel / cruise / angle change.
-              holdTimer.current = window.setTimeout(() => {
-                const cur = drag.current;
-                if (!cur || cur.id !== e.pointerId) return;
-                // Elapsed check wins over timer races (device flick / jank).
-                if (performance.now() - cur.downAt < PRESS_MS) return;
-                cur.armed = true;
-                // Finger owns pos once armed — no autonomous cruise.
-                followDetentRef.current = nearestDetent(posRef.current);
-                followLabeledRef.current = nearestRef.current(posRef.current);
-                holdOriginRef.current = cur.start;
-                firstClickRef.current = false;
-              }, PRESS_MS);
             }}
             onPointerMove={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId || snappingRef.current) return;
               const finger = thetaForFinger(e.clientX, e.clientY);
               const delta = turn(d.angle, finger);
-              // Before armed: never move bead, never clear press timer, never start travel.
+              const moved = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+              // First move ≥ ARM_PX drives immediately — no travel-delay gate.
               if (!d.armed) {
-                if (Math.hypot(e.clientX - d.x, e.clientY - d.y) >= 6 || Math.abs(delta) >= 2) {
+                if (moved >= ARM_PX || Math.abs(delta) >= 1) {
+                  d.armed = true;
                   lastDir.current = delta >= 0 ? 1 : -1;
                   d.x = e.clientX;
                   d.y = e.clientY;
                   d.t = performance.now();
                   d.angle = finger;
+                  followFinger(finger);
                 }
                 return;
               }
-              // Armed: bead angle = finger angle about loop centre (1:1). No cruise.
+              // Armed: bead = finger about frozen centre. Never freeze while thumb moves.
               d.x = e.clientX;
               d.y = e.clientY;
               d.t = performance.now();
@@ -1140,20 +1125,18 @@ export function PerimeterToggle({
             onPointerUp={(e) => {
               const d = drag.current;
               if (d?.id !== e.pointerId) return;
-              clearTimeout(holdTimer.current);
-              const elapsed = performance.now() - d.downAt;
-              // Elapsed gate wins — armed flag alone can race a near-zero flick.
-              const wasHold = d.armed && elapsed >= PRESS_MS;
+              const wasArmed = d.armed;
               drag.current = null;
+              freezeCamRef.current = null;
+              freezeCentreRef.current = null;
+              setFreezeCam(null);
               setDragging(false);
-              // KILL FLICK/COAST: stop any leftover motion. No run-on.
-              stopCruise();
               animatePop(0);
-              if (wasHold) {
-                // Snap nearest LABELED seat only (SEAT_MS) — no coast/flick.
+              if (wasArmed) {
+                // Snap nearest LABELED ≤ SNAP_MS — no coast.
                 go(nearest(posRef.current), { quiet: true });
               } else {
-                // TAP / flick before gate — stay on current seat.
+                // Tap: 12 exits; elsewhere no travel.
                 if (nearest(posRef.current) === "exit" || goal === "exit") {
                   exitByTap();
                 }
@@ -1161,27 +1144,26 @@ export function PerimeterToggle({
             }}
             onPointerCancel={() => {
               const d = drag.current;
-              clearTimeout(holdTimer.current);
-              const elapsed = d ? performance.now() - d.downAt : 0;
-              const wasHold = !!d?.armed && elapsed >= PRESS_MS;
+              const wasArmed = !!d?.armed;
               drag.current = null;
+              freezeCamRef.current = null;
+              freezeCentreRef.current = null;
+              setFreezeCam(null);
               setDragging(false);
-              stopCruise();
               animatePop(0);
-              if (wasHold) go(nearest(posRef.current), { quiet: true });
+              if (wasArmed) go(nearest(posRef.current), { quiet: true });
             }}
             onLostPointerCapture={() => {
-              // Capture lost without up (device quirk) — same as cancel: no coast.
               const d = drag.current;
               if (!d) return;
-              clearTimeout(holdTimer.current);
-              const elapsed = performance.now() - d.downAt;
-              const wasHold = d.armed && elapsed >= PRESS_MS;
+              const wasArmed = d.armed;
               drag.current = null;
+              freezeCamRef.current = null;
+              freezeCentreRef.current = null;
+              setFreezeCam(null);
               setDragging(false);
-              stopCruise();
               animatePop(0);
-              if (wasHold) go(nearest(posRef.current), { quiet: true });
+              if (wasArmed) go(nearest(posRef.current), { quiet: true });
             }}
             onKeyDown={(e) => {
               const modes = STATIONS.filter((s) => s !== "exit");

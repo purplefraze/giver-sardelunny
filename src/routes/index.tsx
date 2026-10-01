@@ -1202,14 +1202,7 @@ function Index() {
                 children: myG ? (
                   <MyGRing
                     onClose={() => setMyG(false)}
-                    onMessages={() => {
-                      setMyG(false);
-                      setThreads(true);
-                    }}
-                    onAccount={() => {
-                      setMyG(false);
-                      setEditor({ kind: "about" });
-                    }}
+                    onAccount={() => setEditor({ kind: "about" })}
                   />
                 ) : null,
               },

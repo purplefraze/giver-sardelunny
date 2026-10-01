@@ -20,6 +20,9 @@ import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { GiveFlow } from "@/components/give/GiveFlow";
+import { IntentIntake } from "@/intelligence/IntentIntake";
+import { handoffOf, type FormSeed } from "@/intelligence/handoff";
+import type { ActionDraft } from "@/intelligence/action-draft";
 import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
 import { ChooseWorld } from "@/components/ChooseWorld";
 import { HelpIndex } from "@/components/HelpIndex";
@@ -273,13 +276,21 @@ function Index() {
    */
   const [editor, setEditor] = useState<
     | { kind: "about" }
-    | { kind: "category"; category: Category; side?: BorrowSide; prefillId?: string }
+    | { kind: "category"; category: Category; side?: BorrowSide; prefillId?: string; seed?: FormSeed }
     /* FUND'S SHEET — same middle-loop chamber, its own content. */
     | { kind: "fund" }
-    /* FUND'S FORM — "ask for funding", the unified form over a Wish. */
-    | { kind: "ask-fund" }
+    | { kind: "ask-fund"; seed?: FormSeed }
+    | { kind: "intent" }
     | null
   >(null);
+
+  const openDraft = (draft: ActionDraft) => {
+    const hand = handoffOf(draft);
+    if (!hand) return;
+    if (hand.kind === "give") setEditor({ kind: "category", category: "give", seed: hand.seed });
+    else if (hand.kind === "ask-fund") setEditor({ kind: "ask-fund", seed: hand.seed });
+    else setEditor({ kind: "category", category: hand.category, ...(hand.side ? { side: hand.side } : {}), seed: hand.seed });
+  };
 
   /* "POST AGAIN" on an ended give (my history) reopens the Give flow prefilled. */
   useEffect(() => {
@@ -293,7 +304,9 @@ function Index() {
       setEditor({ kind: "category", category: "give", prefillId: itemId });
     };
     window.addEventListener("giver:post-again", again);
-    return () => window.removeEventListener("giver:post-again", again);
+    const intent = () => setEditor({ kind: "intent" });
+    window.addEventListener("giver:intent", intent);
+    return () => { window.removeEventListener("giver:post-again", again); window.removeEventListener("giver:intent", intent); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1043,7 +1056,9 @@ function Index() {
                         prefill={
                           editor.prefillId
                             ? (items.items.find((i) => i.id === editor.prefillId) ?? null)
-                            : null
+                            : editor.seed
+                              ? { text: editor.seed.text, details: editor.seed.details }
+                              : null
                         }
                       />
                     </div>
@@ -1051,6 +1066,7 @@ function Index() {
                     <CategoryForm
                       category={editor.category}
                       {...(editor.side ? { side: editor.side } : {})}
+                      {...(editor.seed ? { seed: editor.seed } : {})}
                       onDone={() => setEditor(null)}
                       onSeeInCommunity={() => {
                         const type = editor.category as ItemType;
@@ -1073,7 +1089,19 @@ function Index() {
                 world: "fund",
                 children:
                   editor?.kind === "ask-fund" ? (
-                    <CategoryForm category="wish" asksFunding onDone={() => setEditor(null)} />
+                    <CategoryForm category="wish" asksFunding {...(editor.seed ? { seed: editor.seed } : {})} onDone={() => setEditor(null)} />
+                  ) : null,
+              },
+
+              {
+                id: "intent",
+                open: editor?.kind === "intent",
+                anchor: "middle",
+                bare: true,
+                world: activity ?? "profile",
+                children:
+                  editor?.kind === "intent" ? (
+                    <IntentIntake onResolved={openDraft} onBack={() => setEditor(null)} />
                   ) : null,
               },
 

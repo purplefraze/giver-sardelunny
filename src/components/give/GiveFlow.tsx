@@ -137,7 +137,7 @@ type Screen = "form" | "map" | "when" | "ready" | "size" | "condition" | "expiry
 const INFER_MS = 450;
 const FALLBACK_MS = 1100;
 
-export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: Item | null }) {
+export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: (Pick<Item, "text"> & { id?: string; details?: ItemDetails }) | null }) {
   const pre = prefill?.details;
   const preKind = pre?.extras?.["kind"] as GiveType | undefined;
   const [what, setWhat] = useState(prefill?.text ?? "");
@@ -155,7 +155,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: It
   const [whenSkipped, setWhenSkipped] = useState(false);
   const [where, setWhere] = useState<Where | null>(() => {
     if (!prefill || !pre?.where) return null;
-    const pin = pinFor(prefill.id);
+    const pin = prefill.id ? pinFor(prefill.id) : null;
     return { label: pre.where, online: pre.where === "online", pin, mode: pin ? "neighbourhood" : null };
   });
   const [size, setSize] = useState<string | null>(pre?.extras?.["size"] ?? null);

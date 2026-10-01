@@ -185,10 +185,13 @@ export function CategoryForm({
   category,
   side: decidedSide,
   asksFunding = false,
+  seed,
   onDone,
   onSeeInCommunity,
 }: {
   category: Category;
+  /** Known fields from a resolved ActionDraft. Existing validation still owns publish. */
+  seed?: { text?: string; want?: string; details?: ItemDetails };
   /**
    * THE DOOR ALREADY ASKED. When the three-intent door (or the Lend seat) has
    * settled borrowing vs lending, the form simply knows. Otherwise: borrow.
@@ -212,13 +215,13 @@ export function CategoryForm({
       return category === "borrow" && d.side !== side0 ? { ...EMPTY_DRAFT, side: side0 } : d;
     })(),
   ).current;
-  const [draft, setDraft] = useState(stored.text);
-  const [want, setWant] = useState(stored.want);
+  const [draft, setDraft] = useState(seed?.text || stored.text);
+  const [want, setWant] = useState(seed?.want || stored.want);
   /* Kept and saved as before (no field on the unified form). */
   const [note, setNote] = useState(stored.note);
   const side = side0;
   const [photos, setPhotos] = useState<string[]>(stored.photos);
-  const [details, setDetails] = useState<ItemDetails>(stored.details);
+  const [details, setDetails] = useState<ItemDetails>(seed?.details ? { ...stored.details, ...seed.details } : stored.details);
   const [problem, setProblem] = useState<string | null>(null);
   const [live, setLive] = useState<string | null>(null);
   /** The published borrow / lend's confirmation is tappable (PUBLISHED_TAP). */
@@ -231,7 +234,7 @@ export function CategoryForm({
   const [asking, setAsking] = useState(false);
   /** FUND ONLY: the amount, typed as text, stored as integer cents. */
   const [amountText, setAmountText] = useState(() => {
-    const t = validTarget(stored.details.fundTarget);
+    const t = validTarget(seed?.details?.fundTarget ?? stored.details.fundTarget);
     return t === null ? "" : (t / 100).toString();
   });
   const [amountSay, setAmountSay] = useState<string | null>(null);

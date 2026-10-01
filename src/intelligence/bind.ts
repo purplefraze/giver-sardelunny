@@ -186,3 +186,30 @@ export const bindUtterance = (raw: string): ActionDraft => {
 
   return draft(null, 0.25, entities, CLARIFY_OPEN);
 };
+
+const CHOICE: Record<string, GiverAction | "back"> = {
+  "give it away": "give",
+  "lend it for a while": "lend",
+  "trade it": "trade",
+  "borrow one": "borrow",
+  "find one to keep": "wish",
+  "something else": "back",
+  "i have something": "back",
+  "i need something": "back",
+};
+
+/** A tap resolves the draft. "Something else" returns to input. It does not invent an action. */
+export const resolveChoice = (prev: ActionDraft, say: string): ActionDraft | null => {
+  const next = CHOICE[say.trim().toLowerCase()];
+  if (!next || next === "back") return null;
+  const entities = { ...prev.entities };
+  return {
+    action: next,
+    confidence: 0.9,
+    entities,
+    missingRequired: missingOf(next, entities),
+    suggested: suggestedOf(next, entities),
+    clarification: null,
+    source: "rules",
+  };
+};

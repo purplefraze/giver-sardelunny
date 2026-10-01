@@ -25,6 +25,8 @@ const BORROW = /\b(lend me|borrow|can someone lend)\b/;
 const TRADE = /\b(trade|swap)\b/;
 const FUND = /\bfund\b/;
 const HELP = /\b(help|a hand)\b/;
+const WHEN =
+  /\b(saturday|sunday|monday|tuesday|wednesday|thursday|friday|this weekend|next weekend|tomorrow|today)\b/i;
 
 const CLARIFY_HAVE: Clarification = {
   ask: "what would you like to do with it?",
@@ -58,38 +60,48 @@ const quantityOf = (text: string): string | null => {
 };
 
 const dateOf = (text: string): string | null => {
-  const m = text.match(
-    /\b(saturday|sunday|monday|tuesday|wednesday|thursday|friday|this weekend|next weekend|tomorrow|today)\b/i,
-  );
+  const m = text.match(WHEN);
   return m ? m[0].toLowerCase() : null;
+};
+
+const stripNoun = (phrase: string): string => {
+  let s = tidy(phrase).replace(/[.?!]+$/g, "");
+  s = s.replace(/^(a|an|the|some|my)\s+/i, "");
+  s = s.replace(/\s+(i don't|i dont|that someone|to give).*$/i, "");
+  s = s.replace(/^(one|two|three|four|five|\d+)\s+(boxes|box|bags|bag)\s+of\s+/i, "");
+  s = s.replace(
+    /\s+(saturday|sunday|monday|tuesday|wednesday|thursday|friday|this weekend|next weekend|tomorrow|today)\b.*$/i,
+    "",
+  );
+  return tidy(s).toLowerCase();
 };
 
 /** Pull the noun phrase. Does not invent a category. */
 const itemOf = (text: string): string | null => {
+  const bare = text.replace(/[.?!]/g, "");
   const patterns = [
-    /(?:lend me|borrow)\s+(?:a|an|the|some)?\s*([^,.]+?)(?:\s+on|\s+for|\s+saturday|\s+sunday|\s+this|\s+next|$)/i,
-    /(?:trade|swap)\s+(?:my\s+)?([^,.]+?)\s+for\s+/i,
-    /fund\s+(?:some\s+)?([^,.]+?)(?:\s+for|$)/i,
-    /(?:have|got|need)\s+(?:a|an|the|some)?\s*([^,.]+?)(?:\s+i\b|\s+that|\s+to\b|\s+for\b|$)/i,
-    /help\s+(?:me\s+)?([^,.]+?)(?:\s+this|\s+on|$)/i,
+    /(?:lend me|borrow)\s+(?:a|an|the|some)?\s*(.+)/i,
+    /(?:trade|swap)\s+(?:my\s+)?(.+?)\s+for\s+/i,
+    /fund\s+(?:some\s+)?(.+?)(?:\s+for\b|$)/i,
+    /(?:have|got|need)\s+(?:a|an|the|some)?\s*(.+)/i,
+    /help\s+(?:me\s+)?(.+)/i,
   ];
   for (const p of patterns) {
-    const m = text.match(p);
+    const m = bare.match(p);
     if (!m) continue;
-    let phrase = tidy(m[1] ?? "");
-    phrase = phrase.replace(/^(a|an|the|some|my)\s+/i, "");
-    phrase = phrase.replace(/\s+(i don't|i dont|that someone|to give).*$/i, "");
-    if (phrase.length >= 2 && !/^\$/.test(phrase)) return phrase.toLowerCase();
+    const phrase = stripNoun(m[1] ?? "");
+    if (phrase.length >= 2 && !phrase.startsWith("$")) return phrase;
   }
   return null;
 };
 
 const tradeSides = (text: string): { offer: string | null; want: string | null } => {
-  const m = text.match(/\b(?:trade|swap)\s+(?:my\s+)?(.+?)\s+for\s+(?:a|an|my\s+)?(.+?)(?:[.?]|$)/i);
+  const bare = text.replace(/[.?!]/g, "");
+  const m = bare.match(/\b(?:trade|swap)\s+(?:my\s+)?(.+?)\s+for\s+(?:a|an|my\s+)?(.+)$/i);
   if (!m) return { offer: null, want: null };
   return {
-    offer: tidy(m[1] ?? "").replace(/^(my)\s+/i, "").toLowerCase() || null,
-    want: tidy(m[2] ?? "").replace(/^(a|an)\s+/i, "").toLowerCase() || null,
+    offer: stripNoun(m[1] ?? "") || null,
+    want: stripNoun(m[2] ?? "") || null,
   };
 };
 
@@ -135,7 +147,7 @@ export const bindUtterance = (raw: string): ActionDraft => {
   }
 
   if (FUND.test(lower) || (entities.amountCents != null && /\b(coffee|coffees|fund)\b/.test(lower))) {
-    if (!entities.item) entities.item = "coffees";
+    if (!entities.item || entities.item.startsWith("$")) entities.item = "coffees";
     entities.category = entities.category ?? "food";
     return draft("fund", 0.92, entities, null);
   }
@@ -157,7 +169,9 @@ export const bindUtterance = (raw: string): ActionDraft => {
   }
 
   if (HELP.test(lower) && NEED.test(lower)) {
-    entities.item = entities.item ? `help ${entities.item}` : "help";
+    if (!entities.item?.startsWith("help")) {
+      entities.item = entities.item ? `help ${entities.item}` : "help";
+    }
     entities.category = "a hand";
     return draft("wish", 0.9, entities, null);
   }

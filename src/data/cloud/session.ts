@@ -17,7 +17,7 @@
 import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { consumeAuthCallback } from "@/lib/auth-callback";
 import { joinGiver } from "@/lib/invites.functions";
 

@@ -8,7 +8,7 @@ import {
   LOOP_CENTRE,
   LOOP_RIM_RADIUS,
 } from "@/components/living-g/g-path";
-import { G_STROKE, GThinMask, strokeInset } from "@/components/living-g/g-weight";
+import { G_STROKE } from "@/components/living-g/g-weight";
 import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 
@@ -16,27 +16,23 @@ import { haptics } from "@/lib/haptics";
  * COMMUNI-G LOWER LOOP — CANONICAL LIVING_G_PATH (Frazer, 30 Sep 2026).
  *
  * Red track IS the locked lower loop of LIVING_G_PATH (+ LIVING_G_TRANSFORM),
- * drawn middle-weight via GThinMask (G_STROKE.middle = 28.5) — same as LivingG.
- * Not full-fill sausage. Not CIRCLE_R. Mouth stays OPEN.
+ * drawn via GThinMask-pattern erosion — same path as LivingG. Not CIRCLE_R.
+ * Mouth stays OPEN.
  *
- * TWO CAMERAS (not one compromise zoom):
- *   LAND  — settled: per-seat edge-sliver about LOOP_CENTRE.bottom. Bead + a
- *           very minimal curve at that seat's SCREEN EDGE; opposite side is open
- *           white page. Most of the bowl OFF-SCREEN. On-screen stroke ~16–18px.
- *   CRUISE — drag/hold: milder ~0.6× land zoom, centred on the moving bead so
- *           a readable arc of the real letter shows. Never the full bowl.
- *           Snap back to land crop on seat settle (SNAP_MS).
+ * ONE CAMERA, swooping in real time (not two-shot cut):
+ *   REST   (zoom=0) — settled: sFit ~1.7–2.0, LIVE seat ink pinned to screen
+ *           edge (EDGE_INSET). Overflow = sliver; opposite side open white.
+ *   MOTION (zoom=1) — finger down / cruise: sFit ~0.95–1.15, substantial lower
+ *           loop, bead-centred with mild edge bias. Edges still clip.
+ *   zoom lerps 0↔1 over SWOOP_MS (visible swoop). Never camT flip / clip swap.
  *
- * Bead + inward stem ride the thinned lower-loop rim. Seats = Communi-G clocks.
+ * Stroke decoupled from camera: painted on-screen width ~LAND_STROKE_PX at both
+ * ends via extra-erode (source_weight_vb ≈ LAND_STROKE_PX / sFit).
  *
  * Bentley: PRESS_MS 200, SEAT_MS 550, selection() every seat, no flick,
- * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts, inward stem at 6 into white.
- * Ghosts stay ON the track — skip if they fall off the land crop.
+ * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts on-stroke, inward stem.
  */
 const SNAP_MS = 220;
-/** Middle-weight half-stroke (LivingG thin). Outer rim = LOOP_RIM − inset. */
-const TRACK_HALF = G_STROKE.middle / 2;
-
 /** Bead sized so "communi-g" fits in full. */
 const TOGGLE_OUTER_R = 32;
 const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
@@ -44,18 +40,18 @@ const TOGGLE_RING = 7.2;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
 const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
 const STEM_W = 8;
-/** Clear gap: arm leaves track, bead sits in white. */
+/** Clear gap: arm leaves track, bead sits in white — screen px (camera-independent). */
 const STEM_LEN = 22;
 const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
 /** Bead grows on press — same pop breath as loop shrink. */
 const BEAD_GROW = 1.12;
 const DOLLY_MS = 560;
-/** Start slightly tighter on entry, settle to land crop. */
+/** Start slightly tighter on entry, settle to rest crop. */
 const DOLLY_START = 1.18;
 /** Press beat before any travel. Tap / flick before beat stays put. */
 const PRESS_MS = 200;
-/** One seat (~45°) — 550ms/seat (was 650; Frazer: a little too slow, prefer slow). */
+/** One seat (~45°) — 550ms/seat. */
 const SEAT_SPAN_DEG = 45;
 const SEAT_MS = 550;
 const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.082°/ms
@@ -70,17 +66,20 @@ const RED = "#E8322B";
 
 const BAND = G_REGION_BANDS.bottom;
 const C = LOOP_CENTRE.bottom;
-/** Outer rim of the MIDDLE-weight stroke (normal outer − per-side erosion). */
-const RIM = LOOP_RIM_RADIUS.bottom - strokeInset("middle");
-/** On-screen painted middle-weight width — split hairline ↔ video sausage. */
+/** Full (normal-weight) outer rim — pin/erode derive inward from this. */
+const RIM_FULL = LOOP_RIM_RADIUS.bottom;
+/** On-screen painted stroke width — both rest and motion. */
 const LAND_STROKE_PX = 17;
-/** Cruise zoom as a fraction of land zoom (milder; readable arc, not full bowl). */
-const CRUISE_ZOOM_FRAC = 0.6;
-/** Outer rim inset from the kissed screen edge when landed. */
-const EDGE_INSET = 12;
-/** How deep the land-edge band keeps track visible (hides far arc of bowl). */
-const LAND_CLIP_CARDINAL = 78;
-const LAND_CLIP_DIAG = 168;
+/** REST camera: zoomed-in edge-sliver. */
+const REST_SFIT = 1.85;
+/** MOTION camera: pulled-back substantial lower loop. */
+const MOTION_SFIT = 1.05;
+/** Outer rim inset from the kissed screen edge when at rest. */
+const EDGE_INSET = 20;
+/** Mild edge bias while in motion (not dead-centre postage stamp). */
+const CRUISE_BIAS = 0.25;
+/** Visible one-camera swoop (press/cruise ↔ rest). Not a pop. */
+const SWOOP_MS = 480;
 
 /**
  * ONE colour source: styles.css --mode-* tokens (same map CG_COLOUR / LoopLabel
@@ -167,72 +166,144 @@ type Frame = {
   svgH: number;
 };
 
-/**
- * LAND camera: pin the live-deg OUTER RIM to that seat's screen edge.
- * Scale from LAND_STROKE_PX so middle-weight paints ~16–18px (not ~40 sausage).
- * Most of the bowl hangs off the kissed edge; opposite side is open white page.
- * Clock → edge: 6 bottom, 12 top, 3 right, 9 left, diagonals to corners.
- */
-const landFrameOf = (w: number, h: number, deg: number): Frame => {
-  const sFit = LAND_STROKE_PX / G_STROKE.middle;
+/** ViewBox stroke width that paints LAND_STROKE_PX on screen at this sFit. */
+const sourceWeightVb = (sFit: number) => LAND_STROKE_PX / Math.max(0.05, sFit);
+/** Per-side erode from normal outline → source weight. */
+const erodeInsetVb = (sFit: number) => (G_STROKE.normal - sourceWeightVb(sFit)) / 2;
+/** Outer rim of the eroded stroke at this camera. */
+const rimAt = (sFit: number) => RIM_FULL - erodeInsetVb(sFit);
+const halfAt = (sFit: number) => sourceWeightVb(sFit) / 2;
+/** Potrace-space mask stroke (GThinMask pattern): 2 × per-side × 10. */
+const maskStrokePotrace = (sFit: number) => erodeInsetVb(sFit) * 2 * 10;
+
+/** Lazy LIVING_G_PATH probe (potrace space) for mouth / on-stroke tests. */
+let inkPathEl: SVGPathElement | null = null;
+const ensureInkPath = (): SVGPathElement | null => {
+  if (inkPathEl) return inkPathEl;
+  if (typeof document === "undefined") return null;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  // Potrace space must be in viewBox or isPointInFill is unreliable.
+  svg.setAttribute("viewBox", "0 0 6000 12000");
+  svg.setAttribute("width", "60");
+  svg.setAttribute("height", "120");
+  svg.style.cssText = "position:absolute;left:-99999px;top:-99999px;opacity:0;pointer-events:none";
+  const path = document.createElementNS(ns, "path");
+  path.setAttribute("d", LIVING_G_PATH);
+  path.setAttribute("fill", "#000");
+  svg.appendChild(path);
+  document.body.appendChild(svg);
+  inkPathEl = path;
+  return path;
+};
+/** viewBox → potrace (inverse of LIVING_G_TRANSFORM). */
+const toPotrace = (p: { x: number; y: number }) => ({ x: p.x * 10, y: (1133 - p.y) * 10 });
+const isInkVb = (p: { x: number; y: number }): boolean => {
+  const el = ensureInkPath();
+  if (!el) return true;
+  const pt = toPotrace(p);
+  try {
+    return el.isPointInFill(new DOMPoint(pt.x, pt.y));
+  } catch {
+    return true;
+  }
+};
+
+/** Max fill radius along clock-ray (viewBox). 0 = empty paper (mouth). */
+const rayMaxInk = (deg: number): number => {
   const u = outward(deg);
-  const rimVb = { x: C.x + RIM * u.x, y: C.y + RIM * u.y };
-  // Push rim to the edge in the outward direction (cardinals + diagonals).
-  const targetX = w / 2 + u.x * (w / 2 - EDGE_INSET);
-  const targetY = h / 2 + u.y * (h / 2 - EDGE_INSET);
-  const svgX = targetX - (rimVb.x - BAND.x) * sFit;
-  const svgY = targetY - (rimVb.y - BAND.y) * sFit;
-  return { sFit, svgX, svgY, svgW: BAND.width * sFit, svgH: BAND.height * sFit };
+  let any = false;
+  let seed = 0;
+  for (let r = 90; r <= RIM_FULL + 30; r += 12) {
+    if (isInkVb({ x: C.x + r * u.x, y: C.y + r * u.y })) {
+      any = true;
+      seed = r;
+    }
+  }
+  if (!any) return 0;
+  let lo = seed;
+  let hi = Math.max(seed + 8, RIM_FULL + 40);
+  // Expand hi until outside fill (or cap).
+  while (hi < RIM_FULL + 80 && isInkVb({ x: C.x + hi * u.x, y: C.y + hi * u.y })) hi += 12;
+  for (let i = 0; i < 22; i++) {
+    const mid = (lo + hi) / 2;
+    if (isInkVb({ x: C.x + mid * u.x, y: C.y + mid * u.y })) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+};
+
+const rayMaxCache = new Map<number, number>();
+const rayMaxInkCached = (deg: number) => {
+  const k = Math.round(wrap(deg) * 2) / 2;
+  let v = rayMaxCache.get(k);
+  if (v == null) {
+    v = rayMaxInk(k);
+    rayMaxCache.set(k, v);
+  }
+  return v;
 };
 
 /**
- * CRUISE camera: ~CRUISE_ZOOM_FRAC of land zoom, centred on the moving bead
- * so a readable arc of the real letter shows. Never the full bowl.
+ * Pin point on LIVING ink for this clock seat.
+ * Mouth seats (give ~1:30): clock-ray may miss — pin NEAREST painted outer point
+ * so mouth shows as G feature and bead stays on-canvas. Never floating bead.
  */
-const cruiseFrameOf = (w: number, h: number, deg: number): Frame => {
-  const sFit = (LAND_STROKE_PX / G_STROKE.middle) * CRUISE_ZOOM_FRAC;
+const pinInkVb = (deg: number, sFit: number): { x: number; y: number } => {
   const u = outward(deg);
-  // Bead rests inward of the thinned rim (same geometry as organismParts).
-  const attachR = Math.max(12, RIM - TRACK_HALF);
-  const inwardVb = STEM_LEN + TOGGLE_OUTER_R;
+  const rim = rimAt(sFit);
+  const hit = rayMaxInkCached(deg);
+  if (hit >= rim * 0.55) {
+    // Ray lands in stroke — pin outer painted edge (clamped near eroded rim).
+    const r = Math.min(hit, rim + 1);
+    return { x: C.x + r * u.x, y: C.y + r * u.y };
+  }
+  // Empty paper (mouth / gap): nearest painted outer sample.
+  const ideal = { x: C.x + rim * u.x, y: C.y + rim * u.y };
+  let best = ideal;
+  let bestD = Infinity;
+  for (let a = 0; a < 360; a += 2) {
+    const r = rayMaxInkCached(a);
+    if (r < 100) continue;
+    const uu = outward(a);
+    const p = { x: C.x + r * uu.x, y: C.y + r * uu.y };
+    const d = (p.x - ideal.x) ** 2 + (p.y - ideal.y) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = p;
+    }
+  }
+  return best;
+};
+
+/**
+ * ONE frame: zoom 0 = rest sliver, 1 = motion substantial.
+ * Same camera — how close it stands. No clip-window cheat.
+ */
+const frameOf = (w: number, h: number, deg: number, zoom: number): Frame => {
+  const z = Math.min(1, Math.max(0, zoom));
+  const sFit = lerp(REST_SFIT, MOTION_SFIT, z);
+  const u = outward(deg);
+  const pin = pinInkVb(deg, sFit);
+  // Rest: pin LIVE ink to kissed edge. Motion: bead-biased centre (mild edge).
+  const edgeX = w / 2 + u.x * (w / 2 - EDGE_INSET);
+  const edgeY = h / 2 + u.y * (h / 2 - EDGE_INSET);
+  // Bead rests inward of thinned rim (screen-fixed stem + bead).
+  const attachR = Math.max(12, rimAt(sFit) - halfAt(sFit));
+  const inwardVb = (STEM_LEN + TOGGLE_OUTER_R) / sFit;
   const beadR = Math.max(6, attachR - inwardVb);
   const beadVb = { x: C.x + beadR * u.x, y: C.y + beadR * u.y };
-  // Keep bead toward the kissed edge (not dead-centre) so cruise still reads as edge-run.
-  const bias = 0.38;
-  const targetX = lerp(w / 2, w / 2 + u.x * (w / 2 - EDGE_INSET), bias);
-  const targetY = lerp(h / 2, h / 2 + u.y * (h / 2 - EDGE_INSET), bias);
-  const svgX = targetX - (beadVb.x - BAND.x) * sFit;
-  const svgY = targetY - (beadVb.y - BAND.y) * sFit;
+  const bias = CRUISE_BIAS;
+  const motionX = lerp(w / 2, w / 2 + u.x * (w / 2 - EDGE_INSET), bias);
+  const motionY = lerp(h / 2, h / 2 + u.y * (h / 2 - EDGE_INSET), bias);
+  // Continuously blend pin-to-edge → bead-biased so swoop never loses bead/track.
+  const restSvgX = edgeX - (pin.x - BAND.x) * sFit;
+  const restSvgY = edgeY - (pin.y - BAND.y) * sFit;
+  const motionSvgX = motionX - (beadVb.x - BAND.x) * sFit;
+  const motionSvgY = motionY - (beadVb.y - BAND.y) * sFit;
+  const svgX = lerp(restSvgX, motionSvgX, z);
+  const svgY = lerp(restSvgY, motionSvgY, z);
   return { sFit, svgX, svgY, svgW: BAND.width * sFit, svgH: BAND.height * sFit };
-};
-
-const lerpFrame = (a: Frame, b: Frame, t: number): Frame => ({
-  sFit: lerp(a.sFit, b.sFit, t),
-  svgX: lerp(a.svgX, b.svgX, t),
-  svgY: lerp(a.svgY, b.svgY, t),
-  svgW: lerp(a.svgW, b.svgW, t),
-  svgH: lerp(a.svgH, b.svgH, t),
-});
-
-/** Screen-space band that keeps only the land-edge sliver of the track (hides far bowl). */
-const landClipRect = (w: number, h: number, deg: number) => {
-  const u = outward(deg);
-  const ax = Math.abs(u.x);
-  const ay = Math.abs(u.y);
-  const diag = ax >= 0.35 && ay >= 0.35;
-  const d = diag ? LAND_CLIP_DIAG : LAND_CLIP_CARDINAL;
-  if (ax < 0.35) {
-    return u.y > 0 ? { x: 0, y: h - d, w, h: d } : { x: 0, y: 0, w, h: d };
-  }
-  if (ay < 0.35) {
-    return u.x > 0 ? { x: w - d, y: 0, w: d, h } : { x: 0, y: 0, w: d, h };
-  }
-  return {
-    x: u.x > 0 ? w - d : 0,
-    y: u.y > 0 ? h - d : 0,
-    w: d,
-    h: d,
-  };
 };
 
 const toScreen = (f: Frame, p: { x: number; y: number }) => ({
@@ -243,19 +314,24 @@ const toScreen = (f: Frame, p: { x: number; y: number }) => ({
 /**
  * Arm on INSIDE of track → bead into content (toward centre).
  * At 6:00: attach on inside of smile, bead ABOVE in white, arm UP.
+ * Mouth seats: ride NEAREST ink (not empty paper) so bead never floats.
+ * Stem/bead lengths are screen-px — divide by sFit for viewBox.
  */
 const organismParts = (deg: number, f: Frame, pop: number) => {
   const shrink = 1 - (1 - DRAG_SHRINK) * pop;
-  const u = outward(deg);
-  const rim = RIM * shrink;
-  const half = TRACK_HALF * shrink;
+  const sFit = f.sFit || 1;
+  const half = halfAt(sFit) * shrink;
+  const pin = pinInkVb(deg, sFit);
+  const dx = pin.x - C.x;
+  const dy = pin.y - C.y;
+  const pinR = Math.hypot(dx, dy) || rimAt(sFit);
+  const u = { x: dx / pinR, y: dy / pinR };
+  const rim = pinR * shrink;
   // Inner wall of the stroke — stem roots here (inside of the red path).
   const attachR = Math.max(12, rim - half);
   const attachVb = { x: C.x + attachR * u.x, y: C.y + attachR * u.y };
-  const stemPx = STEM_LEN * (f.sFit || 1);
-  const beadPx = TOGGLE_OUTER_R * (f.sFit || 1);
-  // Bead further toward centre in viewBox units.
-  const inwardVb = (stemPx + beadPx) / (f.sFit || 1);
+  // Screen-fixed stem + bead → viewBox inward.
+  const inwardVb = (STEM_LEN + TOGGLE_OUTER_R) / sFit;
   const beadR = Math.max(6, attachR - inwardVb);
   const beadVb = { x: C.x + beadR * u.x, y: C.y + beadR * u.y };
   const attach = toScreen(f, attachVb);
@@ -266,7 +342,8 @@ const organismParts = (deg: number, f: Frame, pop: number) => {
     y: bead.y + u.y * (TOGGLE_INNER_R * 0.4),
   };
   const track = toScreen(f, { x: C.x + rim * u.x, y: C.y + rim * u.y });
-  return { bead, stemRoot: attach, stemTip, attach, track, u };
+  const onStroke = rayMaxInkCached(deg) >= rimAt(sFit) * 0.55 || isInkVb(attachVb);
+  return { bead, stemRoot: attach, stemTip, attach, track, u, onStroke };
 };
 
 export function PerimeterToggle({
@@ -298,6 +375,10 @@ export function PerimeterToggle({
   const cruiseRaf = useRef(0);
   const cruiseVel = useRef(0);
   const cruisingRef = useRef(false);
+  /** One-camera swoop 0=rest … 1=motion (eased, never flipped). */
+  const [zoom, setZoom] = useState(0);
+  const zoomRef = useRef(0);
+  const zoomRaf = useRef(0);
   const holdTimer = useRef(0);
   /** First seat this hold — brief land once; later seats tick without magnet-stop. */
   const firstClickRef = useRef(false);
@@ -362,6 +443,7 @@ export function PerimeterToggle({
     () => () => {
       clearTimeout(holdTimer.current);
       cancelAnimationFrame(cruiseRaf.current);
+      cancelAnimationFrame(zoomRaf.current);
     },
     [],
   );
@@ -384,39 +466,52 @@ export function PerimeterToggle({
     if (value !== "exit" as never) setGoal(value);
   }, [value]);
 
-  /** Live clock for cameras — follows bead while dragging/cruising/snapping. */
+  /** Live clock — follows bead while dragging/cruising/snapping. */
   const camDeg = wrap(pos);
-  /** Cruise camera only while finger is driving; snap/settle returns to land. */
-  const inCruiseCam = dragging || cruising || pop > 0.2;
-  const landF = useMemo(
-    () => landFrameOf(size.w || DW, size.h || DH, camDeg),
+  /** Motion target while finger drives; rest on release. Zoom eases — never flips. */
+  const zoomTarget = dragging || cruising || pop > 0.15 ? 1 : 0;
+  useEffect(() => {
+    cancelAnimationFrame(zoomRaf.current);
+    const from = zoomRef.current;
+    const to = zoomTarget;
+    if (Math.abs(to - from) < 0.001) {
+      zoomRef.current = to;
+      setZoom(to);
+      return;
+    }
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const u = easeInOut(Math.min(1, (now - t0) / SWOOP_MS));
+      const v = from + (to - from) * u;
+      zoomRef.current = v;
+      setZoom(v);
+      if (u < 1) zoomRaf.current = requestAnimationFrame(step);
+    };
+    zoomRaf.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(zoomRaf.current);
+  }, [zoomTarget]);
+
+  /** One camera: rest↔motion via eased zoom. No landClipRect / camT cut. */
+  const frame = useMemo(
+    () => frameOf(size.w || DW, size.h || DH, camDeg, zoom),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [size.w, size.h, camDeg],
+    [size.w, size.h, camDeg, zoom],
   );
-  const cruiseF = useMemo(
-    () => cruiseFrameOf(size.w || DW, size.h || DH, camDeg),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [size.w, size.h, camDeg],
-  );
-  /** 0 = land (settled / snapping home), 1 = cruise (drag/hold). */
-  const camT = inCruiseCam ? 1 : 0;
-  const frame = useMemo(() => lerpFrame(landF, cruiseF, camT), [landF, cruiseF, camT]);
   const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
-  const clip = useMemo(
-    () => landClipRect(size.w || DW, size.h || DH, camDeg),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [size.w, size.h, camDeg],
-  );
+  const inMotion = zoom > 0.55;
   /**
-   * White hole = working page (CG_WORD). On land: phone minus the kissed-edge
-   * sliver band so the heading sits in open white. Cruise: same, slightly tighter.
+   * White hole = working page (CG_WORD) in open paper — not on the edge sliver.
+   * Sliver depth eases with zoom (rest: deeper edge band; motion: tighter).
    */
   const hole = useMemo(() => {
     const w = size.w || DW;
     const h = size.h || DH;
     const inset = 12;
-    const band = inCruiseCam ? 72 : (Math.abs(outward(camDeg).x) >= 0.35 && Math.abs(outward(camDeg).y) >= 0.35 ? LAND_CLIP_DIAG : LAND_CLIP_CARDINAL) - 8;
     const u = outward(camDeg);
+    const diag = Math.abs(u.x) >= 0.35 && Math.abs(u.y) >= 0.35;
+    const restBand = diag ? 150 : 92;
+    const motionBand = 72;
+    const band = lerp(restBand, motionBand, zoom);
     let left = inset;
     let top = inset;
     let right = w - inset;
@@ -431,7 +526,7 @@ export function PerimeterToggle({
       width: Math.max(0, right - left),
       height: Math.max(0, bottom - top),
     };
-  }, [size.w, size.h, camDeg, inCruiseCam]);
+  }, [size.w, size.h, camDeg, zoom]);
 
   const nearest = (deg: number): CgStation => {
     let best: CgStation = "everything";
@@ -622,8 +717,8 @@ export function PerimeterToggle({
   const beadScale = 1 + (BEAD_GROW - 1) * pop;
   const loopScale = 1 - (1 - DRAG_SHRINK) * pop;
 
-  /** Ghost = next seat's FILLED coloured bead ON the track — never a hollow ring.
-   *  Skip if it would fall off the land crop (must stay visible on-screen). */
+  /** Ghost = next seat's FILLED coloured bead ON the stroke — never a hollow ring.
+   *  Hide if off-canvas OR off-path (e.g. green on lend / brown on borrow). */
   const plugs =
     w && (dragging || cruising || pop > 0.25)
       ? [towardSeat]
@@ -634,13 +729,14 @@ export function PerimeterToggle({
             return {
               s,
               track: p.track,
+              onStroke: p.onStroke,
               opacity: s === towardSeat ? opacity : Math.max(0, 0.3 - dist / 100),
               colour: colourOf(s),
             };
           })
           .filter((p) => {
             if (p.opacity <= 0.08 || p.s === shown) return false;
-            // Ghosts stay ON the track — if off the land crop, don't draw.
+            if (!p.onStroke) return false;
             const m = 8;
             return p.track.x >= -m && p.track.x <= w + m && p.track.y >= -m && p.track.y <= h + m;
           })
@@ -671,10 +767,12 @@ export function PerimeterToggle({
       data-cg-snapping={snapping ? "1" : "0"}
       data-cg-pop={pop.toFixed(2)}
       data-cg-bead-s={beadScale.toFixed(3)}
-      data-cg-r={RIM.toFixed(1)}
-      data-cg-track-w={(G_STROKE.middle * px).toFixed(2)}
-      data-cg-weight="middle"
-      data-cg-camera={inCruiseCam ? "cruise" : "land"}
+      data-cg-r={rimAt(px).toFixed(1)}
+      data-cg-track-w={LAND_STROKE_PX.toFixed(2)}
+      data-cg-sfit={px.toFixed(3)}
+      data-cg-zoom={zoom.toFixed(3)}
+      data-cg-weight="eroded"
+      data-cg-camera={inMotion ? "cruise" : "land"}
       data-cg-stroke-px={LAND_STROKE_PX}
       data-cg-seat-ms={SEAT_MS}
       data-cg-toggle-d={TOGGLE_DIAM}
@@ -694,56 +792,55 @@ export function PerimeterToggle({
       >
         {w && parts ? (
           <>
-            {/* Track only — land uses overflow band so the far bowl cannot paint. */}
-            <div
-              className="pointer-events-none absolute overflow-hidden"
-              style={
-                inCruiseCam
-                  ? { left: 0, top: 0, width: w, height: h }
-                  : { left: clip.x, top: clip.y, width: clip.w, height: clip.h }
-              }
+            {/* Track — real scale; stage overflow clips. No landClipRect cheat. */}
+            <svg
+              className="pointer-events-none absolute left-0 top-0 overflow-hidden"
+              width={w}
+              height={h}
+              aria-hidden="true"
+              data-cg-world=""
               data-cg-track-band=""
             >
               <svg
-                className="absolute overflow-hidden"
-                width={w}
-                height={h}
-                style={{ left: inCruiseCam ? 0 : -clip.x, top: inCruiseCam ? 0 : -clip.y }}
-                aria-hidden="true"
-                data-cg-world=""
+                x={frame.svgX}
+                y={frame.svgY}
+                width={frame.svgW}
+                height={frame.svgH}
+                viewBox={vb}
+                preserveAspectRatio="xMidYMid meet"
+                overflow="hidden"
+                data-cg-loop=""
+                data-cg-track-w={LAND_STROKE_PX.toFixed(2)}
+                data-cg-weight="eroded"
+                data-cg-camera={inMotion ? "cruise" : "land"}
+                data-cg-cx={centreScreen.x.toFixed(1)}
+                data-cg-cy={centreScreen.y.toFixed(1)}
               >
-                <svg
-                  x={frame.svgX}
-                  y={frame.svgY}
-                  width={frame.svgW}
-                  height={frame.svgH}
-                  viewBox={vb}
-                  preserveAspectRatio="xMidYMid meet"
-                  overflow="hidden"
-                  data-cg-loop=""
-                  data-cg-track-w={(G_STROKE.middle * px).toFixed(2)}
-                  data-cg-weight="middle"
-                  data-cg-camera={inCruiseCam ? "cruise" : "land"}
-                  data-cg-cx={centreScreen.x.toFixed(1)}
-                  data-cg-cy={centreScreen.y.toFixed(1)}
+                <defs>
+                  <clipPath id="cg-bottom-band">
+                    <rect x={BAND.x} y={BAND.y} width={BAND.width} height={BAND.height} />
+                  </clipPath>
+                  {/* GThinMask pattern: luminance erode — source_weight_vb ≈ LAND_STROKE_PX / sFit */}
+                  <mask id={thinId} maskUnits="userSpaceOnUse" x={-4000} y={-4000} width={16000} height={20000}>
+                    <path
+                      d={LIVING_G_PATH}
+                      fill="#fff"
+                      stroke="#000"
+                      strokeWidth={maskStrokePotrace(px)}
+                      strokeLinejoin="round"
+                    />
+                  </mask>
+                </defs>
+                <g
+                  clipPath="url(#cg-bottom-band)"
+                  transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
                 >
-                  <defs>
-                    <clipPath id="cg-bottom-band">
-                      <rect x={BAND.x} y={BAND.y} width={BAND.width} height={BAND.height} />
-                    </clipPath>
-                    <GThinMask id={thinId} weight="middle" />
-                  </defs>
-                  <g
-                    clipPath="url(#cg-bottom-band)"
-                    transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
-                  >
-                    <g transform={LIVING_G_TRANSFORM} fill={RED}>
-                      <path d={LIVING_G_PATH} mask={`url(#${thinId})`} />
-                    </g>
+                  <g transform={LIVING_G_TRANSFORM} fill={RED}>
+                    <path d={LIVING_G_PATH} mask={`url(#${thinId})`} />
                   </g>
-                </svg>
+                </g>
               </svg>
-            </div>
+            </svg>
 
             <svg
               className="pointer-events-none absolute left-0 top-0 overflow-visible"

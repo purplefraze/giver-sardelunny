@@ -22,7 +22,7 @@ import { haptics } from "@/lib/haptics";
  * ONE CAMERA, scale-around-pin (not two-shot cut, not recenter):
  *   REST   (zoom=0) — settled: sFit ~1.85, LIVE seat ink pinned to screen
  *           edge (EDGE_INSET). Overflow = continuous sliver; far side off-canvas.
- *   MOTION (zoom=1) — finger down / cruise: sFit ~1.32–1.42, scale DOWN around
+ *   MOTION (zoom=1) — finger down / follow: sFit ~1.32–1.42, scale DOWN around
  *           the SAME edge pin — loop shrinks toward press, ±1 neighbor seats.
  *           Never lerp look-at toward centre. Pin rides with camDeg (local wall).
  *   zoom lerps 0↔1 over SWOOP_MS (visible swoop). Never camT flip / clip swap.
@@ -30,13 +30,14 @@ import { haptics } from "@/lib/haptics";
  * Stroke decoupled from camera: painted on-screen width ~LAND_STROKE_PX at both
  * ends via extra-erode (source_weight_vb ≈ LAND_STROKE_PX / sFit).
  *
- * Bentley: PRESS_MS 200, SEAT_MS 420, selection() every detent (~11.25°),
+ * PRESS_MS 200 gate, SEAT_MS 420 release snap, selection() every detent (~11.25°),
  * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts on-stroke.
  * Toggle = circle bead + rectangular arm (STEM_LEN 14), ONE piece. Arm along +u;
  * track-facing end square-cut flush on painted INNER wall (attachR).
- * Finger-down: light magnet + selection on detent cross; finger-up: labeled seat only.
+ * Armed finger-down: bead angle = finger angle about loop centre (1:1). No cruise.
+ * Invisible detents bias ≤±2.5° + selection on cross; must not pull off finger.
+ * Finger-up: snap nearest LABELED seat only (SEAT_MS). No coast/flick.
  */
-const SNAP_MS = 220;
 /** Bead sized so "communi-g" fits in full. */
 const TOGGLE_OUTER_R = 32;
 const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
@@ -61,9 +62,8 @@ const SEAT_SPAN_DEG = 45;
 const SEAT_MS = 420;
 /** 3 invisible detents between labeled seats → ~11.25° each. */
 const DETENT_SPAN_DEG = SEAT_SPAN_DEG / 4;
-const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.107°/ms
-/** Hard cap = cruise pace — never feed flick speed into roll. */
-const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
+/** Invisible detent bias while finger drives — must stay under thumb (±2–3°). */
+const FOLLOW_BIAS_DEG = 2.5;
 
 const DW = 390;
 const DH = 844;
@@ -456,9 +456,12 @@ export function PerimeterToggle({
   /** First seat this hold — brief land once; later seats tick without magnet-stop. */
   const firstClickRef = useRef(false);
   const holdOriginRef = useRef<CgStation>("everything");
+  /** Last detent / labeled seat that already fired this hold (finger-follow). */
+  const followDetentRef = useRef(0);
+  const followLabeledRef = useRef<CgStation>("everything");
   const drag = useRef<{
     id: number;
-    /** True after PRESS_MS — travel may start. Tap before armed stays put. */
+    /** True after PRESS_MS — finger may drive bead. Tap before armed stays put. */
     armed: boolean;
     start: CgStation;
     x: number;
@@ -698,77 +701,44 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Hold cruise (only after PRESS_MS gate): continuous roll at ~SEAT_MS/seat.
-   * Invisible detents every ~11.25°: light magnet + selection() on cross.
-   * Labeled seat cross also settles word/colour via go(). Smooth — no jump.
-   * Finger-up snap is nearest LABELED seat only (see pointerup).
+   * Armed finger-follow: bead angle = finger angle about loop centre (1:1).
+   * Invisible detents bias ≤ FOLLOW_BIAS_DEG + selection() on cross.
+   * No fixed-speed cruise — finger owns pos. Labeled seat settle via go().
    */
-  const startCruise = (dir: 1 | -1) => {
-    cancelAnimationFrame(cruiseRaf.current);
-    lastDir.current = dir;
-    firstClickRef.current = false;
-    holdOriginRef.current = drag.current?.start ?? nearestRef.current(posRef.current);
-    /** Last labeled seat already settled this hold. */
-    let lastTicked: CgStation = holdOriginRef.current;
-    /** Last detent angle that already fired selection this hold. */
-    let lastDetent = nearestDetent(posRef.current);
-    cruiseVel.current = dir * CRUISE_DEG_MS;
-    cruisingRef.current = true;
-    setCruising(true);
-    let last = performance.now();
-    const step = (now: number) => {
-      const dt = Math.min(32, Math.max(0, now - last));
-      last = now;
-      // Finger gone: no coast — vel already zeroed on up; snap nearest labeled only.
-      if (!drag.current) {
-        stopCruise();
-        goRef.current(nearestRef.current(posRef.current), { quiet: true });
-        return;
-      }
-      // Fixed Bentley pace — hard cap, no flick speed, no psycho ramp.
-      cruiseVel.current = lastDir.current * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
-      let next = posRef.current + cruiseVel.current * dt;
+  const followFinger = (fingerDeg: number) => {
+    // Light detent bias ±FOLLOW_BIAS_DEG — never yank off thumb.
+    const magnetTarget = nearestDetent(fingerDeg);
+    const mDiff = turn(fingerDeg, magnetTarget);
+    const bias = Math.max(-FOLLOW_BIAS_DEG, Math.min(FOLLOW_BIAS_DEG, mDiff * 0.4));
+    const next = wrap(fingerDeg + bias);
 
-      // Light magnet toward nearest invisible detent — bias only, never jump.
-      const magnetTarget = nearestDetent(next);
-      const mDiff = turn(next, magnetTarget);
-      const pull = Math.max(0, 1 - Math.abs(mDiff) / (DETENT_SPAN_DEG * 0.55)) * 0.22;
-      next = next + mDiff * pull;
+    const dirTurn = turn(posRef.current, next);
+    if (Math.abs(dirTurn) >= 0.4) lastDir.current = dirTurn >= 0 ? 1 : -1;
 
-      // Detent cross → selection tick (labeled + invisible). Smooth, no jump.
-      const dTarget = nearestDetent(next);
-      const dBefore = turn(posRef.current, dTarget);
-      const dAfter = turn(next, dTarget);
-      const dCrossed =
-        Math.abs(turn(lastDetent, dTarget)) > 0.5 &&
-        (Math.abs(dAfter) <= 1.2 ||
-          (lastDir.current > 0 && dBefore > 0 && dAfter <= 0) ||
-          (lastDir.current < 0 && dBefore < 0 && dAfter >= 0));
-      if (dCrossed) {
-        haptics.selection();
-        lastDetent = dTarget;
-      }
+    // Detent cross → selection tick (labeled + invisible).
+    const dTarget = nearestDetent(next);
+    const dBefore = turn(posRef.current, dTarget);
+    const dAfter = turn(next, dTarget);
+    const dCrossed =
+      Math.abs(turn(followDetentRef.current, dTarget)) > 0.5 &&
+      (Math.abs(dAfter) <= 1.2 ||
+        (lastDir.current > 0 && dBefore > 0 && dAfter <= 0) ||
+        (lastDir.current < 0 && dBefore < 0 && dAfter >= 0));
+    if (dCrossed) {
+      haptics.selection();
+      followDetentRef.current = dTarget;
+    }
 
-      // Labeled seat cross → settle word/colour (selection already fired if detent).
-      const target = neighbourRef.current(lastTicked, lastDir.current);
-      const tDeg = clockOf(target);
-      const before = turn(posRef.current, tDeg);
-      const after = turn(next, tDeg);
-      const crossed =
-        Math.abs(after) <= 1.5 ||
-        (lastDir.current > 0 && before > 0 && after <= 0) ||
-        (lastDir.current < 0 && before < 0 && after >= 0);
-      if (crossed) {
-        if (!dCrossed) haptics.selection();
-        goRef.current(target, { quiet: true });
-        lastTicked = target;
-        firstClickRef.current = true;
-      }
+    // Labeled seat change → settle word/colour (no snap while dragging).
+    const labeled = nearestRef.current(next);
+    if (labeled !== followLabeledRef.current) {
+      if (!dCrossed) haptics.selection();
+      goRef.current(labeled, { quiet: true });
+      followLabeledRef.current = labeled;
+      firstClickRef.current = true;
+    }
 
-      put(next);
-      cruiseRaf.current = requestAnimationFrame(step);
-    };
-    cruiseRaf.current = requestAnimationFrame(step);
+    put(next);
   };
 
   // Snap animation to goal — never calls onExit (tap-only).
@@ -781,8 +751,8 @@ export function PerimeterToggle({
       animatePop(0);
       return;
     }
-    const steps = Math.max(1, Math.round(Math.abs(delta) / 45));
-    const dur = Math.min(SNAP_MS * steps, 580);
+    // Release snap paced by SEAT_MS (one labeled seat ≈ 420ms).
+    const dur = Math.max(140, Math.min(SEAT_MS, (Math.abs(delta) / SEAT_SPAN_DEG) * SEAT_MS));
     const t0 = performance.now();
     snappingRef.current = true;
     setSnapping(true);
@@ -1130,14 +1100,18 @@ export function PerimeterToggle({
               animatePop(1);
               haptics.light();
               (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
-              // GATE: bead does not move for PRESS_MS. No travel / inertia / angle change.
+              // GATE: bead does not move for PRESS_MS. No travel / cruise / angle change.
               holdTimer.current = window.setTimeout(() => {
                 const cur = drag.current;
                 if (!cur || cur.id !== e.pointerId) return;
                 // Elapsed check wins over timer races (device flick / jank).
                 if (performance.now() - cur.downAt < PRESS_MS) return;
                 cur.armed = true;
-                startCruise(lastDir.current);
+                // Finger owns pos once armed — no autonomous cruise.
+                followDetentRef.current = nearestDetent(posRef.current);
+                followLabeledRef.current = nearestRef.current(posRef.current);
+                holdOriginRef.current = cur.start;
+                firstClickRef.current = false;
               }, PRESS_MS);
             }}
             onPointerMove={(e) => {
@@ -1145,20 +1119,23 @@ export function PerimeterToggle({
               if (d?.id !== e.pointerId || snappingRef.current) return;
               const finger = thetaForFinger(e.clientX, e.clientY);
               const delta = turn(d.angle, finger);
-              // Ignore micro-jitter; real nudge updates hold direction only.
               // Before armed: never move bead, never clear press timer, never start travel.
-              if (Math.hypot(e.clientX - d.x, e.clientY - d.y) >= 6 || Math.abs(delta) >= 2) {
-                const dir: 1 | -1 = delta >= 0 ? 1 : -1;
-                lastDir.current = dir;
-                d.x = e.clientX;
-                d.y = e.clientY;
-                d.t = performance.now();
-                d.angle = finger;
-                // After armed: flip cruise dir only — never raise speed from flick.
-                if (d.armed && cruisingRef.current) {
-                  cruiseVel.current = dir * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
+              if (!d.armed) {
+                if (Math.hypot(e.clientX - d.x, e.clientY - d.y) >= 6 || Math.abs(delta) >= 2) {
+                  lastDir.current = delta >= 0 ? 1 : -1;
+                  d.x = e.clientX;
+                  d.y = e.clientY;
+                  d.t = performance.now();
+                  d.angle = finger;
                 }
+                return;
               }
+              // Armed: bead angle = finger angle about loop centre (1:1). No cruise.
+              d.x = e.clientX;
+              d.y = e.clientY;
+              d.t = performance.now();
+              d.angle = finger;
+              followFinger(finger);
             }}
             onPointerUp={(e) => {
               const d = drag.current;
@@ -1169,11 +1146,11 @@ export function PerimeterToggle({
               const wasHold = d.armed && elapsed >= PRESS_MS;
               drag.current = null;
               setDragging(false);
-              // KILL FLICK/COAST: finger-up velocity = 0. No leftover speed into cruise.
+              // KILL FLICK/COAST: stop any leftover motion. No run-on.
               stopCruise();
               animatePop(0);
               if (wasHold) {
-                // Short snap nearest seat only — no coast past seats, no run-on.
+                // Snap nearest LABELED seat only (SEAT_MS) — no coast/flick.
                 go(nearest(posRef.current), { quiet: true });
               } else {
                 // TAP / flick before gate — stay on current seat.

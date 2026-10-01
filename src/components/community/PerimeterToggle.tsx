@@ -2,7 +2,6 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type Reac
 
 import { SEAT_ANGLE, SEAT_TITLE, type Seat } from "@/components/living-g/EarSelector";
 import {
-  BOTTOM_LOOP_INTERIOR,
   G_REGION_BANDS,
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
@@ -20,15 +19,19 @@ import { haptics } from "@/lib/haptics";
  * drawn middle-weight via GThinMask (G_STROKE.middle = 28.5) — same as LivingG.
  * Not full-fill sausage. Not CIRCLE_R. Mouth stays OPEN.
  *
- * CAMERA: we are INSIDE the loop. Zoom on BOTTOM_LOOP_INTERIOR so the hole is
- * the working page; red track frames the edges and overflows. Never park the
- * whole bowl at the bottom (no xMidYMax / svgY = h − svgH).
+ * TWO CAMERAS (not one compromise zoom):
+ *   LAND  — settled: per-seat edge-sliver about LOOP_CENTRE.bottom. Bead + a
+ *           very minimal curve at that seat's SCREEN EDGE; opposite side is open
+ *           white page. Most of the bowl OFF-SCREEN. On-screen stroke ~16–18px.
+ *   CRUISE — drag/hold: milder ~0.6× land zoom, centred on the moving bead so
+ *           a readable arc of the real letter shows. Never the full bowl.
+ *           Snap back to land crop on seat settle (SNAP_MS).
  *
  * Bead + inward stem ride the thinned lower-loop rim. Seats = Communi-G clocks.
  *
- * Bentley: PRESS_MS 200, SEAT_MS 650, selection() every seat, no flick,
+ * Bentley: PRESS_MS 200, SEAT_MS 550, selection() every seat, no flick,
  * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts, inward stem at 6 into white.
- * Entry dolly: zoomed on 6:00 underside → settle to interior crop.
+ * Ghosts stay ON the track — skip if they fall off the land crop.
  */
 const SNAP_MS = 220;
 /** Middle-weight half-stroke (LivingG thin). Outer rim = LOOP_RIM − inset. */
@@ -48,14 +51,14 @@ const DRAG_SHRINK = 0.94;
 /** Bead grows on press — same pop breath as loop shrink. */
 const BEAD_GROW = 1.12;
 const DOLLY_MS = 560;
-/** Start zoomed on 6:00 underside, settle to readable letter. */
-const DOLLY_START = 1.38;
+/** Start slightly tighter on entry, settle to land crop. */
+const DOLLY_START = 1.18;
 /** Press beat before any travel. Tap / flick before beat stays put. */
 const PRESS_MS = 200;
-/** One seat (~45°) — 650ms/seat (was 900; Frazer: toggle too slow). No ramp, no flick. */
+/** One seat (~45°) — 550ms/seat (was 650; Frazer: a little too slow, prefer slow). */
 const SEAT_SPAN_DEG = 45;
-const SEAT_MS = 650;
-const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.05°/ms
+const SEAT_MS = 550;
+const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.082°/ms
 /** Hard cap = cruise pace — never feed flick speed into roll. */
 const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
 
@@ -69,9 +72,15 @@ const BAND = G_REGION_BANDS.bottom;
 const C = LOOP_CENTRE.bottom;
 /** Outer rim of the MIDDLE-weight stroke (normal outer − per-side erosion). */
 const RIM = LOOP_RIM_RADIUS.bottom - strokeInset("middle");
-const INTERIOR = BOTTOM_LOOP_INTERIOR;
-/** Modest phone margin — interior width ≈ phone − this (Frazer: ~24–40px). */
-const INTERIOR_MARGIN = 32;
+/** On-screen painted middle-weight width — split hairline ↔ video sausage. */
+const LAND_STROKE_PX = 17;
+/** Cruise zoom as a fraction of land zoom (milder; readable arc, not full bowl). */
+const CRUISE_ZOOM_FRAC = 0.6;
+/** Outer rim inset from the kissed screen edge when landed. */
+const EDGE_INSET = 12;
+/** How deep the land-edge band keeps track visible (hides far arc of bowl). */
+const LAND_CLIP_CARDINAL = 78;
+const LAND_CLIP_DIAG = 168;
 
 /**
  * ONE colour source: styles.css --mode-* tokens (same map CG_COLOUR / LoopLabel
@@ -159,23 +168,71 @@ type Frame = {
 };
 
 /**
- * Map bottom-band viewBox → screen: CENTER BOTTOM_LOOP_INTERIOR on the phone.
- * Floor = interior width ≈ phone − margin. Push zoom up so the hole owns the
- * screen, but keep 3/9 beads + 6:00 stem on canvas (no seat lost off-edge).
- * Track overflows where the geometry demands — we never see the whole G.
+ * LAND camera: pin the live-deg OUTER RIM to that seat's screen edge.
+ * Scale from LAND_STROKE_PX so middle-weight paints ~16–18px (not ~40 sausage).
+ * Most of the bowl hangs off the kissed edge; opposite side is open white page.
+ * Clock → edge: 6 bottom, 12 top, 3 right, 9 left, diagonals to corners.
  */
-const frameOf = (w: number, h: number): Frame => {
-  const sByW = (w - 2 * INTERIOR_MARGIN) / (INTERIOR.rx * 2);
-  /** Bead sits inward of the thinned rim by stem + outerR (viewBox units). */
-  const beadR = Math.max(24, RIM - TRACK_HALF - (STEM_LEN + TOGGLE_OUTER_R));
-  const sBead = (w / 2 - 6) / beadR; // 3/9 toggle stays on canvas
-  const sRim = (h / 2 - 12) / RIM; // 6:00 outer kiss on canvas
-  const sFit = Math.min(Math.max(sByW, sByW * 1.3), sBead, sRim);
-  const svgW = BAND.width * sFit;
-  const svgH = BAND.height * sFit;
-  const svgX = w / 2 - (INTERIOR.cx - BAND.x) * sFit;
-  const svgY = h / 2 - (INTERIOR.cy - BAND.y) * sFit;
-  return { sFit, svgX, svgY, svgW, svgH };
+const landFrameOf = (w: number, h: number, deg: number): Frame => {
+  const sFit = LAND_STROKE_PX / G_STROKE.middle;
+  const u = outward(deg);
+  const rimVb = { x: C.x + RIM * u.x, y: C.y + RIM * u.y };
+  // Push rim to the edge in the outward direction (cardinals + diagonals).
+  const targetX = w / 2 + u.x * (w / 2 - EDGE_INSET);
+  const targetY = h / 2 + u.y * (h / 2 - EDGE_INSET);
+  const svgX = targetX - (rimVb.x - BAND.x) * sFit;
+  const svgY = targetY - (rimVb.y - BAND.y) * sFit;
+  return { sFit, svgX, svgY, svgW: BAND.width * sFit, svgH: BAND.height * sFit };
+};
+
+/**
+ * CRUISE camera: ~CRUISE_ZOOM_FRAC of land zoom, centred on the moving bead
+ * so a readable arc of the real letter shows. Never the full bowl.
+ */
+const cruiseFrameOf = (w: number, h: number, deg: number): Frame => {
+  const sFit = (LAND_STROKE_PX / G_STROKE.middle) * CRUISE_ZOOM_FRAC;
+  const u = outward(deg);
+  // Bead rests inward of the thinned rim (same geometry as organismParts).
+  const attachR = Math.max(12, RIM - TRACK_HALF);
+  const inwardVb = STEM_LEN + TOGGLE_OUTER_R;
+  const beadR = Math.max(6, attachR - inwardVb);
+  const beadVb = { x: C.x + beadR * u.x, y: C.y + beadR * u.y };
+  // Keep bead toward the kissed edge (not dead-centre) so cruise still reads as edge-run.
+  const bias = 0.38;
+  const targetX = lerp(w / 2, w / 2 + u.x * (w / 2 - EDGE_INSET), bias);
+  const targetY = lerp(h / 2, h / 2 + u.y * (h / 2 - EDGE_INSET), bias);
+  const svgX = targetX - (beadVb.x - BAND.x) * sFit;
+  const svgY = targetY - (beadVb.y - BAND.y) * sFit;
+  return { sFit, svgX, svgY, svgW: BAND.width * sFit, svgH: BAND.height * sFit };
+};
+
+const lerpFrame = (a: Frame, b: Frame, t: number): Frame => ({
+  sFit: lerp(a.sFit, b.sFit, t),
+  svgX: lerp(a.svgX, b.svgX, t),
+  svgY: lerp(a.svgY, b.svgY, t),
+  svgW: lerp(a.svgW, b.svgW, t),
+  svgH: lerp(a.svgH, b.svgH, t),
+});
+
+/** Screen-space band that keeps only the land-edge sliver of the track (hides far bowl). */
+const landClipRect = (w: number, h: number, deg: number) => {
+  const u = outward(deg);
+  const ax = Math.abs(u.x);
+  const ay = Math.abs(u.y);
+  const diag = ax >= 0.35 && ay >= 0.35;
+  const d = diag ? LAND_CLIP_DIAG : LAND_CLIP_CARDINAL;
+  if (ax < 0.35) {
+    return u.y > 0 ? { x: 0, y: h - d, w, h: d } : { x: 0, y: 0, w, h: d };
+  }
+  if (ay < 0.35) {
+    return u.x > 0 ? { x: w - d, y: 0, w: d, h } : { x: 0, y: 0, w: d, h };
+  }
+  return {
+    x: u.x > 0 ? w - d : 0,
+    y: u.y > 0 ? h - d : 0,
+    w: d,
+    h: d,
+  };
 };
 
 const toScreen = (f: Frame, p: { x: number; y: number }) => ({
@@ -327,32 +384,54 @@ export function PerimeterToggle({
     if (value !== "exit" as never) setGoal(value);
   }, [value]);
 
-  const frame = useMemo(() => frameOf(size.w || DW, size.h || DH), [size.w, size.h]);
+  /** Live clock for cameras — follows bead while dragging/cruising/snapping. */
+  const camDeg = wrap(pos);
+  /** Cruise camera only while finger is driving; snap/settle returns to land. */
+  const inCruiseCam = dragging || cruising || pop > 0.2;
+  const landF = useMemo(
+    () => landFrameOf(size.w || DW, size.h || DH, camDeg),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [size.w, size.h, camDeg],
+  );
+  const cruiseF = useMemo(
+    () => cruiseFrameOf(size.w || DW, size.h || DH, camDeg),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [size.w, size.h, camDeg],
+  );
+  /** 0 = land (settled / snapping home), 1 = cruise (drag/hold). */
+  const camT = inCruiseCam ? 1 : 0;
+  const frame = useMemo(() => lerpFrame(landF, cruiseF, camT), [landF, cruiseF, camT]);
   const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
-    /** White hole = working page; inset from the stroke. Clamped to the phone
-   *  so when the ellipse overflows, the slot still fills the visible paper. */
+  const clip = useMemo(
+    () => landClipRect(size.w || DW, size.h || DH, camDeg),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [size.w, size.h, camDeg],
+  );
+  /**
+   * White hole = working page (CG_WORD). On land: phone minus the kissed-edge
+   * sliver band so the heading sits in open white. Cruise: same, slightly tighter.
+   */
   const hole = useMemo(() => {
-    const pad = INTERIOR.inset;
-    const tl = toScreen(frame, {
-      x: INTERIOR.cx - INTERIOR.rx + pad,
-      y: INTERIOR.cy - INTERIOR.ry + pad,
-    });
-    const br = toScreen(frame, {
-      x: INTERIOR.cx + INTERIOR.rx - pad,
-      y: INTERIOR.cy + INTERIOR.ry - pad,
-    });
-    const inset = 10;
-    const left = Math.max(inset, tl.x);
-    const top = Math.max(inset, tl.y);
-    const right = Math.min((size.w || DW) - inset, br.x);
-    const bottom = Math.min((size.h || DH) - inset, br.y);
+    const w = size.w || DW;
+    const h = size.h || DH;
+    const inset = 12;
+    const band = inCruiseCam ? 72 : (Math.abs(outward(camDeg).x) >= 0.35 && Math.abs(outward(camDeg).y) >= 0.35 ? LAND_CLIP_DIAG : LAND_CLIP_CARDINAL) - 8;
+    const u = outward(camDeg);
+    let left = inset;
+    let top = inset;
+    let right = w - inset;
+    let bottom = h - inset;
+    if (u.y > 0.35) bottom = Math.min(bottom, h - band);
+    if (u.y < -0.35) top = Math.max(top, band);
+    if (u.x > 0.35) right = Math.min(right, w - band);
+    if (u.x < -0.35) left = Math.max(left, band);
     return {
       left,
       top,
       width: Math.max(0, right - left),
       height: Math.max(0, bottom - top),
     };
-  }, [frame, size.w, size.h]);
+  }, [size.w, size.h, camDeg, inCruiseCam]);
 
   const nearest = (deg: number): CgStation => {
     let best: CgStation = "everything";
@@ -543,7 +622,8 @@ export function PerimeterToggle({
   const beadScale = 1 + (BEAD_GROW - 1) * pop;
   const loopScale = 1 - (1 - DRAG_SHRINK) * pop;
 
-  /** Ghost = next seat's FILLED coloured bead ON the track — never a hollow ring. */
+  /** Ghost = next seat's FILLED coloured bead ON the track — never a hollow ring.
+   *  Skip if it would fall off the land crop (must stay visible on-screen). */
   const plugs =
     w && (dragging || cruising || pop > 0.25)
       ? [towardSeat]
@@ -558,7 +638,12 @@ export function PerimeterToggle({
               colour: colourOf(s),
             };
           })
-          .filter((p) => p.opacity > 0.08 && p.s !== shown)
+          .filter((p) => {
+            if (p.opacity <= 0.08 || p.s === shown) return false;
+            // Ghosts stay ON the track — if off the land crop, don't draw.
+            const m = 8;
+            return p.track.x >= -m && p.track.x <= w + m && p.track.y >= -m && p.track.y <= h + m;
+          })
       : [];
 
   const thetaForFinger = (clientX: number, clientY: number) => {
@@ -589,7 +674,9 @@ export function PerimeterToggle({
       data-cg-r={RIM.toFixed(1)}
       data-cg-track-w={(G_STROKE.middle * px).toFixed(2)}
       data-cg-weight="middle"
-      data-cg-camera="interior"
+      data-cg-camera={inCruiseCam ? "cruise" : "land"}
+      data-cg-stroke-px={LAND_STROKE_PX}
+      data-cg-seat-ms={SEAT_MS}
       data-cg-toggle-d={TOGGLE_DIAM}
       data-cg-kind="living-g-path"
       data-cg-organism="1"
@@ -606,65 +693,82 @@ export function PerimeterToggle({
         }}
       >
         {w && parts ? (
-          <svg
-            className="pointer-events-none absolute left-0 top-0 overflow-hidden"
-            width={w}
-            height={h}
-            aria-hidden="true"
-            data-cg-world=""
-          >
-            {/* Canonical lower loop — LIVING_G_PATH framed on bottom band. Mouth OPEN. */}
-            <svg
-              x={frame.svgX}
-              y={frame.svgY}
-              width={frame.svgW}
-              height={frame.svgH}
-              viewBox={vb}
-              preserveAspectRatio="xMidYMid meet"
-              overflow="hidden"
-              data-cg-loop=""
-              data-cg-track-w={(G_STROKE.middle * px).toFixed(2)}
-              data-cg-weight="middle"
-              data-cg-camera="interior"
-              data-cg-cx={centreScreen.x.toFixed(1)}
-              data-cg-cy={centreScreen.y.toFixed(1)}
-              data-cg-hole-cx={toScreen(frame, { x: INTERIOR.cx, y: INTERIOR.cy }).x.toFixed(1)}
-              data-cg-hole-cy={toScreen(frame, { x: INTERIOR.cx, y: INTERIOR.cy }).y.toFixed(1)}
+          <>
+            {/* Track only — land uses overflow band so the far bowl cannot paint. */}
+            <div
+              className="pointer-events-none absolute overflow-hidden"
+              style={
+                inCruiseCam
+                  ? { left: 0, top: 0, width: w, height: h }
+                  : { left: clip.x, top: clip.y, width: clip.w, height: clip.h }
+              }
+              data-cg-track-band=""
             >
-              <defs>
-                <clipPath id="cg-bottom-band">
-                  <rect x={BAND.x} y={BAND.y} width={BAND.width} height={BAND.height} />
-                </clipPath>
-                <GThinMask id={thinId} weight="middle" />
-              </defs>
-              <g
-                clipPath="url(#cg-bottom-band)"
-                transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
+              <svg
+                className="absolute overflow-hidden"
+                width={w}
+                height={h}
+                style={{ left: inCruiseCam ? 0 : -clip.x, top: inCruiseCam ? 0 : -clip.y }}
+                aria-hidden="true"
+                data-cg-world=""
               >
-                <g transform={LIVING_G_TRANSFORM} fill={RED}>
-                  <path d={LIVING_G_PATH} mask={`url(#${thinId})`} />
+                <svg
+                  x={frame.svgX}
+                  y={frame.svgY}
+                  width={frame.svgW}
+                  height={frame.svgH}
+                  viewBox={vb}
+                  preserveAspectRatio="xMidYMid meet"
+                  overflow="hidden"
+                  data-cg-loop=""
+                  data-cg-track-w={(G_STROKE.middle * px).toFixed(2)}
+                  data-cg-weight="middle"
+                  data-cg-camera={inCruiseCam ? "cruise" : "land"}
+                  data-cg-cx={centreScreen.x.toFixed(1)}
+                  data-cg-cy={centreScreen.y.toFixed(1)}
+                >
+                  <defs>
+                    <clipPath id="cg-bottom-band">
+                      <rect x={BAND.x} y={BAND.y} width={BAND.width} height={BAND.height} />
+                    </clipPath>
+                    <GThinMask id={thinId} weight="middle" />
+                  </defs>
+                  <g
+                    clipPath="url(#cg-bottom-band)"
+                    transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
+                  >
+                    <g transform={LIVING_G_TRANSFORM} fill={RED}>
+                      <path d={LIVING_G_PATH} mask={`url(#${thinId})`} />
+                    </g>
+                  </g>
+                </svg>
+              </svg>
+            </div>
+
+            <svg
+              className="pointer-events-none absolute left-0 top-0 overflow-visible"
+              width={w}
+              height={h}
+              aria-hidden="true"
+              data-cg-chrome=""
+            >
+              {plugs.map((p) => (
+                <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
+                  <circle cx={p.track.x} cy={p.track.y} r={TOGGLE_STROKE_R} fill={p.colour} data-cg-ghost-fill="" />
                 </g>
-              </g>
+              ))}
+              <line
+                x1={parts.stemRoot.x}
+                y1={parts.stemRoot.y}
+                x2={parts.stemTip.x}
+                y2={parts.stemTip.y}
+                stroke={colour}
+                strokeWidth={STEM_W}
+                strokeLinecap="round"
+                data-cg-stem-arm=""
+              />
             </svg>
-
-            {plugs.map((p) => (
-              <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
-                {/* Next seat's FILLED bead ON the track — no hollow rings. */}
-                <circle cx={p.track.x} cy={p.track.y} r={TOGGLE_STROKE_R} fill={p.colour} data-cg-ghost-fill="" />
-              </g>
-            ))}
-
-            <line
-              x1={parts.stemRoot.x}
-              y1={parts.stemRoot.y}
-              x2={parts.stemTip.x}
-              y2={parts.stemTip.y}
-              stroke={colour}
-              strokeWidth={STEM_W}
-              strokeLinecap="round"
-              data-cg-stem-arm=""
-            />
-          </svg>
+          </>
         ) : null}
 
         {/* White hole = the page. Absolute, inset from the stroke. */}

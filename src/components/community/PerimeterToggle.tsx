@@ -30,9 +30,11 @@ import { haptics } from "@/lib/haptics";
  * Stroke decoupled from camera: painted on-screen width ~LAND_STROKE_PX at both
  * ends via extra-erode (source_weight_vb ≈ LAND_STROKE_PX / sFit).
  *
- * Bentley: PRESS_MS 200, SEAT_MS 550, selection() every seat, no flick,
+ * Bentley: PRESS_MS 200, SEAT_MS 420, selection() every detent (~11.25°),
  * tap-only 12 exit, TOGGLE_OUTER_R 32, filled ghosts on-stroke.
- * Bead = toggle: STEM_LEN 0, flush square chord on inner wall (no stem arm).
+ * Toggle = circle bead + rectangular arm (STEM_LEN 14), ONE piece. Arm along +u;
+ * track-facing end square-cut flush on painted INNER wall (attachR).
+ * Finger-down: light magnet + selection on detent cross; finger-up: labeled seat only.
  */
 const SNAP_MS = 220;
 /** Bead sized so "communi-g" fits in full. */
@@ -41,11 +43,10 @@ const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
 const TOGGLE_RING = 7.2;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
 const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
-/** ~90° track-facing cut: chord distance from bead centre (screen px). */
-const CUT_HALF = Math.PI / 4;
-const CHORD_D = TOGGLE_OUTER_R * Math.cos(CUT_HALF);
-/** Flush: no stem arm — chord sits on inner wall of red stroke. */
-const STEM_LEN = 0;
+/** Rectangular arm width (screen px) — square-cut ends, not round caps. */
+const STEM_W = 10;
+/** Visible stem from painted inner wall to bead outer edge (screen px). */
+const STEM_LEN = 14;
 const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
 /** Bead grows on press — same pop breath as loop shrink. */
@@ -55,10 +56,12 @@ const DOLLY_MS = 560;
 const DOLLY_START = 1.18;
 /** Press beat before any travel. Tap / flick before beat stays put. */
 const PRESS_MS = 200;
-/** One seat (~45°) — 550ms/seat. */
+/** One labeled seat (~45°) — 420ms/seat. */
 const SEAT_SPAN_DEG = 45;
-const SEAT_MS = 550;
-const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.082°/ms
+const SEAT_MS = 420;
+/** 3 invisible detents between labeled seats → ~11.25° each. */
+const DETENT_SPAN_DEG = SEAT_SPAN_DEG / 4;
+const CRUISE_DEG_MS = SEAT_SPAN_DEG / SEAT_MS; // ≈ 0.107°/ms
 /** Hard cap = cruise pace — never feed flick speed into roll. */
 const CRUISE_MAX_DEG_MS = CRUISE_DEG_MS;
 
@@ -336,29 +339,38 @@ const toScreen = (f: Frame, p: { x: number; y: number }) => ({
 });
 
 /**
- * D-shape: full circle cut by straight chord perpendicular to radial u.
- * Track-facing flat at distance `d` from centre toward u; white side stays circular.
- * ~90° cut when d = R·cos(45°). large-arc keeps the inward body.
+ * Rectangular arm path in screen space: square ends (90° cut), centreline tip→root.
+ * Root = track-facing flush face on painted inner wall; tip buried in bead ring.
  */
-const dShapePath = (R: number, d: number, ux: number, uy: number): string => {
-  const ang = Math.atan2(uy, ux);
-  const half = Math.acos(Math.min(1, Math.max(-1, d / Math.max(1e-6, R))));
-  const a1 = ang - half;
-  const a2 = ang + half;
-  const x1 = R * Math.cos(a1);
-  const y1 = R * Math.sin(a1);
-  const x2 = R * Math.cos(a2);
-  const y2 = R * Math.sin(a2);
-  // Chord x1→x2, then large arc x2→x1 on the keep (inward / −u) side.
-  // sweep=1 picks the 270° body away from +u (track); verified vs give/6 shots.
-  return `M ${x1.toFixed(3)} ${y1.toFixed(3)} L ${x2.toFixed(3)} ${y2.toFixed(3)} A ${R} ${R} 0 1 1 ${x1.toFixed(3)} ${y1.toFixed(3)} Z`;
+const armPath = (
+  tip: { x: number; y: number },
+  root: { x: number; y: number },
+  w: number,
+): string => {
+  const dx = root.x - tip.x;
+  const dy = root.y - tip.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const px = -uy;
+  const py = ux;
+  const hw = w / 2;
+  const x0 = tip.x + px * hw;
+  const y0 = tip.y + py * hw;
+  const x1 = tip.x - px * hw;
+  const y1 = tip.y - py * hw;
+  const x2 = root.x - px * hw;
+  const y2 = root.y - py * hw;
+  const x3 = root.x + px * hw;
+  const y3 = root.y + py * hw;
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} L ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
 };
 
 /**
- * Bead flush on INNER wall of red stroke (attachR). STEM_LEN=0 — no gap, no arm.
- * Track-facing edge = straight chord on attach; bead body in white (inward).
+ * Circle bead + rectangular arm, ONE piece. Arm along +u toward track.
+ * Track-facing end = square cut flush on painted INNER wall (attachR).
+ * STEM_LEN / STEM_W are screen-px — divide by sFit for viewBox placement.
  * Mouth seats: ride NEAREST ink so bead never floats.
- * Chord depth CHORD_D is screen-px — divide by sFit for viewBox.
  */
 const organismParts = (deg: number, f: Frame, pop: number) => {
   const shrink = 1 - (1 - DRAG_SHRINK) * pop;
@@ -369,7 +381,7 @@ const organismParts = (deg: number, f: Frame, pop: number) => {
   const pinR = Math.hypot(dx, dy) || rimAt(sFit);
   const u = { x: dx / pinR, y: dy / pinR };
   /**
-   * Flush target = PAINTED (eroded) INNER wall of the real path along this ray.
+   * Attach = PAINTED (eroded) INNER wall of the real path along this ray.
    * Full-path inner = rayMinInk; erosion pushes that edge outward by erodeInset.
    * Mouth / empty ray: fall back to nearest-ink pin inset by painted width.
    * Camera pin stays (d29a04b) — bead may sit in the overflow sliver past pin.
@@ -380,22 +392,31 @@ const organismParts = (deg: number, f: Frame, pop: number) => {
   const paintedW = sourceWeightVb(sFit);
   let attachR: number;
   if (hitMin >= 40 && hitMax > hitMin + paintedW * 0.5) {
+    // Path-accurate painted INNER (full inner + erode).
     attachR = (hitMin + erode) * shrink;
   } else {
-    // Empty paper (mouth): inner = nearest outer pin − painted width.
+    // Empty paper (mouth): nearest outer pin − painted width.
     attachR = Math.max(12, (pinR - paintedW) * shrink);
   }
   const attachVb = { x: C.x + attachR * u.x, y: C.y + attachR * u.y };
-  // STEM_LEN 0 + CHORD_D: centre is CHORD_D inward so flat face = attach (inner wall).
-  const inwardVb = (STEM_LEN + CHORD_D) / sFit;
+  // Screen-fixed stem + bead radius → viewBox inward from attach.
+  const inwardVb = (STEM_LEN + TOGGLE_OUTER_R) / sFit;
   const beadR = Math.max(6, attachR - inwardVb);
   const beadVb = { x: C.x + beadR * u.x, y: C.y + beadR * u.y };
   const attach = toScreen(f, attachVb);
   const bead = toScreen(f, beadVb);
+  // Tuck root ~1px into stroke — kill air hairline, no visible red bleed.
+  const tuck = 1;
+  const stemRoot = { x: attach.x + u.x * tuck, y: attach.y + u.y * tuck };
+  // Tip buried in the ring stroke so arm + circle read as one piece.
+  const stemTip = {
+    x: bead.x + u.x * (TOGGLE_INNER_R * 0.4),
+    y: bead.y + u.y * (TOGGLE_INNER_R * 0.4),
+  };
   const erodedOuterR = hitMax > hitMin ? hitMax - erode : rimAt(sFit);
   const track = toScreen(f, { x: C.x + erodedOuterR * u.x, y: C.y + erodedOuterR * u.y });
   const onStroke = hitMax >= rimAt(sFit) * 0.55 || isInkVb(attachVb);
-  return { bead, attach, track, u, onStroke };
+  return { bead, stemRoot, stemTip, attach, track, u, onStroke };
 };
 
 export function PerimeterToggle({
@@ -598,6 +619,32 @@ export function PerimeterToggle({
     return STATIONS[(i + dir + STATIONS.length) % STATIONS.length]!;
   };
 
+  /** Labeled seats + 3 invisible detents between each pair (~11.25°). No visible ticks. */
+  const detentAngles = useMemo(() => {
+    const out: number[] = [];
+    for (let i = 0; i < STATIONS.length; i++) {
+      const a = clockOf(STATIONS[i]!);
+      const b = clockOf(STATIONS[(i + 1) % STATIONS.length]!);
+      const span = wrap(b - a) || 360;
+      out.push(a);
+      for (let k = 1; k <= 3; k++) out.push(wrap(a + (span * k) / 4));
+    }
+    return out;
+  }, []);
+
+  const nearestDetent = (deg: number): number => {
+    let best = detentAngles[0] ?? 0;
+    let bestD = Infinity;
+    for (const a of detentAngles) {
+      const d = Math.abs(turn(deg, a));
+      if (d < bestD) {
+        bestD = d;
+        best = a;
+      }
+    }
+    return best;
+  };
+
   const animatePop = (to: number) => {
     cancelAnimationFrame(popRaf.current);
     const from = popRef.current;
@@ -651,18 +698,20 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Hold cruise (only after PRESS_MS gate): clock-tick selection() on every
-   * seat-clock cross; go() settles word/colour. First seat may land briefly;
-   * no magnet-stop after first. No tick before gate / on quiet finger-up snap.
-   * Continuous roll at ~SEAT_MS/seat while finger is down.
+   * Hold cruise (only after PRESS_MS gate): continuous roll at ~SEAT_MS/seat.
+   * Invisible detents every ~11.25°: light magnet + selection() on cross.
+   * Labeled seat cross also settles word/colour via go(). Smooth — no jump.
+   * Finger-up snap is nearest LABELED seat only (see pointerup).
    */
   const startCruise = (dir: 1 | -1) => {
     cancelAnimationFrame(cruiseRaf.current);
     lastDir.current = dir;
     firstClickRef.current = false;
     holdOriginRef.current = drag.current?.start ?? nearestRef.current(posRef.current);
-    /** Last seat already ticked this hold — next cross is its neighbour. */
+    /** Last labeled seat already settled this hold. */
     let lastTicked: CgStation = holdOriginRef.current;
+    /** Last detent angle that already fired selection this hold. */
+    let lastDetent = nearestDetent(posRef.current);
     cruiseVel.current = dir * CRUISE_DEG_MS;
     cruisingRef.current = true;
     setCruising(true);
@@ -670,7 +719,7 @@ export function PerimeterToggle({
     const step = (now: number) => {
       const dt = Math.min(32, Math.max(0, now - last));
       last = now;
-      // Finger gone: no coast — vel already zeroed on up; snap nearest only.
+      // Finger gone: no coast — vel already zeroed on up; snap nearest labeled only.
       if (!drag.current) {
         stopCruise();
         goRef.current(nearestRef.current(posRef.current), { quiet: true });
@@ -678,9 +727,29 @@ export function PerimeterToggle({
       }
       // Fixed Bentley pace — hard cap, no flick speed, no psycho ramp.
       cruiseVel.current = lastDir.current * Math.min(CRUISE_MAX_DEG_MS, CRUISE_DEG_MS);
-      const next = posRef.current + cruiseVel.current * dt;
+      let next = posRef.current + cruiseVel.current * dt;
 
-      // Every seat-clock cross while cruising: selection tick + go settle.
+      // Light magnet toward nearest invisible detent — bias only, never jump.
+      const magnetTarget = nearestDetent(next);
+      const mDiff = turn(next, magnetTarget);
+      const pull = Math.max(0, 1 - Math.abs(mDiff) / (DETENT_SPAN_DEG * 0.55)) * 0.22;
+      next = next + mDiff * pull;
+
+      // Detent cross → selection tick (labeled + invisible). Smooth, no jump.
+      const dTarget = nearestDetent(next);
+      const dBefore = turn(posRef.current, dTarget);
+      const dAfter = turn(next, dTarget);
+      const dCrossed =
+        Math.abs(turn(lastDetent, dTarget)) > 0.5 &&
+        (Math.abs(dAfter) <= 1.2 ||
+          (lastDir.current > 0 && dBefore > 0 && dAfter <= 0) ||
+          (lastDir.current < 0 && dBefore < 0 && dAfter >= 0));
+      if (dCrossed) {
+        haptics.selection();
+        lastDetent = dTarget;
+      }
+
+      // Labeled seat cross → settle word/colour (selection already fired if detent).
       const target = neighbourRef.current(lastTicked, lastDir.current);
       const tDeg = clockOf(target);
       const before = turn(posRef.current, tDeg);
@@ -690,18 +759,10 @@ export function PerimeterToggle({
         (lastDir.current > 0 && before > 0 && after <= 0) ||
         (lastDir.current < 0 && before < 0 && after >= 0);
       if (crossed) {
-        haptics.selection();
-        goRef.current(target, { quiet: true }); // word/colour settle; selection was the tick
+        if (!dCrossed) haptics.selection();
+        goRef.current(target, { quiet: true });
         lastTicked = target;
-        if (!firstClickRef.current) {
-          put(tDeg);
-          firstClickRef.current = true;
-          // Keep rolling past — no magnet-stop on following seats.
-          put(tDeg + cruiseVel.current * Math.min(dt, 8));
-          cruiseRaf.current = requestAnimationFrame(step);
-          return;
-        }
-        // After first: no magnet — fall through and continue at next.
+        firstClickRef.current = true;
       }
 
       put(next);
@@ -765,9 +826,26 @@ export function PerimeterToggle({
 
   const liveDeg = dragging || cruising || pop > 0.05 || snapping ? wrap(pos) : clockOf(nearest(pos));
   const parts = w ? organismParts(liveDeg, frame, pop) : null;
-  // Keep bead on-canvas when true eroded inner sits past the kissed edge (rest-6).
+  /**
+   * When true path attach sits past the kissed camera edge (rest-6 bottom),
+   * pull the ONE piece back so stemRoot kisses camera painted INNER
+   * (edge − LAND_STROKE along +u). Then keep bead on-canvas.
+   */
   if (parts && w) {
-    const margin = CHORD_D + 4;
+    const { u } = parts;
+    const edgeX = w / 2 + u.x * (w / 2 - EDGE_INSET);
+    const edgeY = h / 2 + u.y * (h / 2 - EDGE_INSET);
+    const camInner = { x: edgeX - u.x * LAND_STROKE_PX, y: edgeY - u.y * LAND_STROKE_PX };
+    const past = (parts.stemRoot.x - camInner.x) * u.x + (parts.stemRoot.y - camInner.y) * u.y;
+    if (past > 0.5) {
+      const dx = -u.x * past;
+      const dy = -u.y * past;
+      parts.bead = { x: parts.bead.x + dx, y: parts.bead.y + dy };
+      parts.attach = { x: parts.attach.x + dx, y: parts.attach.y + dy };
+      parts.stemRoot = { x: parts.stemRoot.x + dx, y: parts.stemRoot.y + dy };
+      parts.stemTip = { x: parts.stemTip.x + dx, y: parts.stemTip.y + dy };
+    }
+    const margin = TOGGLE_OUTER_R + 4;
     const bx = Math.min(w - margin, Math.max(margin, parts.bead.x));
     const by = Math.min(h - margin, Math.max(margin, parts.bead.y));
     if (bx !== parts.bead.x || by !== parts.bead.y) {
@@ -775,13 +853,15 @@ export function PerimeterToggle({
       const dy = by - parts.bead.y;
       parts.bead = { x: bx, y: by };
       parts.attach = { x: parts.attach.x + dx, y: parts.attach.y + dy };
+      parts.stemRoot = { x: parts.stemRoot.x + dx, y: parts.stemRoot.y + dy };
+      parts.stemTip = { x: parts.stemTip.x + dx, y: parts.stemTip.y + dy };
     }
   }
   /** Same pop / POP_MS / easeOut as loop shrink — one breath both ways. */
   const beadScale = 1 + (BEAD_GROW - 1) * pop;
   const loopScale = 1 - (1 - DRAG_SHRINK) * pop;
 
-  /** Ghost = next seat's flush square-cut bead (same D-shape) — only on-stroke + on-canvas. */
+  /** Ghost = next seat's circle+arm (same ONE piece) — only on-stroke + on-canvas. */
   const plugs =
     w && (dragging || cruising || pop > 0.25)
       ? [towardSeat]
@@ -792,7 +872,8 @@ export function PerimeterToggle({
             return {
               s,
               bead: p.bead,
-              u: p.u,
+              stemRoot: p.stemRoot,
+              stemTip: p.stemTip,
               onStroke: p.onStroke,
               opacity: s === towardSeat ? opacity : Math.max(0, 0.3 - dist / 100),
               colour: colourOf(s),
@@ -839,18 +920,22 @@ export function PerimeterToggle({
       data-cg-camera={inMotion ? "cruise" : "land"}
       data-cg-stroke-px={LAND_STROKE_PX}
       data-cg-seat-ms={SEAT_MS}
+      data-cg-stem-len={STEM_LEN}
+      data-cg-detent={DETENT_SPAN_DEG}
       data-cg-toggle-d={TOGGLE_DIAM}
       data-cg-kind="living-g-path"
       data-cg-organism="1"
       data-cg-dolly={dolly.toFixed(2)}
-      data-cg-arm="flush-square"
+      data-cg-arm="inward-rect"
       data-cg-cruise={cruising ? "1" : "0"}
     >
       <div
         className="absolute inset-0"
         style={{
-          transform: `scale(${dollyScale})`,
-          transformOrigin: `${originX}% ${originY}%`,
+          // Idle: transform none — scale(1)+edge origin was shifting getBoundingClientRect −34px
+          // and lifting the 6:00 kiss off the painted inner wall.
+          transform: dolly < 1 ? `scale(${dollyScale})` : undefined,
+          transformOrigin: dolly < 1 ? `${originX}% ${originY}%` : undefined,
           willChange: dolly < 1 ? "transform" : "auto",
         }}
       >
@@ -862,6 +947,7 @@ export function PerimeterToggle({
               width={w}
               height={h}
               aria-hidden="true"
+              shapeRendering="geometricPrecision"
               data-cg-world=""
               data-cg-track-band=""
             >
@@ -889,6 +975,7 @@ export function PerimeterToggle({
                       stroke="#000"
                       strokeWidth={maskStrokePotrace(px)}
                       strokeLinejoin="round"
+                      shapeRendering="geometricPrecision"
                     />
                   </mask>
                 </defs>
@@ -896,7 +983,11 @@ export function PerimeterToggle({
                   transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
                 >
                   <g transform={LIVING_G_TRANSFORM} fill={RED}>
-                    <path d={LIVING_G_PATH} mask={`url(#${thinId})`} />
+                    <path
+                      d={LIVING_G_PATH}
+                      mask={`url(#${thinId})`}
+                      shapeRendering="geometricPrecision"
+                    />
                   </g>
                 </g>
               </svg>
@@ -910,19 +1001,26 @@ export function PerimeterToggle({
               data-cg-chrome=""
             >
               {plugs.map((p) => (
-                <g
-                  key={p.s}
-                  opacity={p.opacity}
-                  data-cg-plug={p.s}
-                  transform={`translate(${p.bead.x.toFixed(2)} ${p.bead.y.toFixed(2)})`}
-                >
+                <g key={p.s} opacity={p.opacity} data-cg-plug={p.s}>
                   <path
-                    d={dShapePath(TOGGLE_OUTER_R, CHORD_D, p.u.x, p.u.y)}
+                    d={armPath(p.stemTip, p.stemRoot, STEM_W)}
+                    fill={p.colour}
+                    data-cg-ghost-arm=""
+                  />
+                  <circle
+                    cx={p.bead.x}
+                    cy={p.bead.y}
+                    r={TOGGLE_OUTER_R}
                     fill={p.colour}
                     data-cg-ghost-fill=""
                   />
                 </g>
               ))}
+              <path
+                d={armPath(parts.stemTip, parts.stemRoot, STEM_W)}
+                fill={colour}
+                data-cg-stem-arm=""
+              />
             </svg>
           </>
         ) : null}
@@ -1127,17 +1225,10 @@ export function PerimeterToggle({
               viewBox={`${-TOGGLE_OUTER_R} ${-TOGGLE_OUTER_R} ${TOGGLE_DIAM} ${TOGGLE_DIAM}`}
               aria-hidden="true"
               style={{ overflow: "visible" }}
-              data-cg-bead-shape="flush-square"
+              data-cg-bead-shape="circle-arm"
             >
-              <defs>
-                <clipPath id={`${thinId}-bead`}>
-                  <path d={dShapePath(TOGGLE_OUTER_R, CHORD_D, parts.u.x, parts.u.y)} />
-                </clipPath>
-              </defs>
-              <g clipPath={`url(#${thinId}-bead)`}>
-                <circle r={TOGGLE_INNER_R - 0.3} fill="var(--world-bg)" />
-                <circle r={TOGGLE_STROKE_R} fill="none" stroke={colour} strokeWidth={TOGGLE_RING} data-cg-ring="" />
-              </g>
+              <circle r={TOGGLE_INNER_R - 0.3} fill="var(--world-bg)" />
+              <circle r={TOGGLE_STROKE_R} fill="none" stroke={colour} strokeWidth={TOGGLE_RING} data-cg-ring="" />
               <text
                 textAnchor="middle"
                 dominantBaseline="central"

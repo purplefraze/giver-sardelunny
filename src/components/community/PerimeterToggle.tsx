@@ -20,15 +20,14 @@ import { haptics } from "@/lib/haptics";
  * Mouth stays OPEN.
  *
  * ONE CLOCK (direct manipulation — finger = toggle):
- *   Pointer down → capture + FREEZE camera at press frame. No pop/swoop/dolly RAF.
- *   Bead screen angle = finger projected onto track THIS FRAME (frozen centre).
- *   No easeInOut / spring / catch-up while held. Scale changes (if any) same frame
- *   then reproject bead onto finger AFTER scale — never a second timer.
+ *   Pointer down → capture. Every move writes ONE angle immediately.
+ *   Bead and camera frame are pure functions of that same angle in the same paint.
+ *   No freeze, easeInOut, spring, catch-up, dolly or second camera timer.
  *   Colour + bead word hard-swap ONLY when bead centre crosses next labeled seat.
  *   Detent haptic on cross only — never magnet off finger.
- *   Pointer up ONLY eased: damped settle nearest labeled ≤ SNAP_MS (180) easeOut
- *   (no overshoot). Camera eases with that settle on the SAME clock — not a
- *   second 480ms swoop. Tap 12 exits; tap elsewhere no travel.
+ *   Pointer up ONLY eased: settle nearest labeled ≤ SNAP_MS (180) easeOut
+ *   (no overshoot). Camera is sampled from that settling angle every frame.
+ *   Tap 12 exits; tap elsewhere no travel.
  *
  * No off-track ghost blobs (no filled circle not on the stroke).
  * Toggle = circle bead + rectangular arm (STEM_LEN 12), ONE piece every seat.
@@ -46,12 +45,6 @@ const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
 const STEM_W = 10;
 /** Visible square neck from painted inner wall to bead outer edge (screen px). */
 const STEM_LEN = 12;
-/** Press scale disabled — finger owns position; no pop RAF. */
-const DRAG_SHRINK = 1;
-const BEAD_GROW = 1;
-const DOLLY_MS = 560;
-/** Start slightly tighter on entry, settle to rest crop. */
-const DOLLY_START = 1.18;
 /** First pointer move ≥ ARM_PX drives immediately (no travel-delay gate). */
 const ARM_PX = 2;
 /** Release settle to nearest labeled — ≤180ms easeOut only, no coast/overshoot. */
@@ -73,10 +66,8 @@ const C = LOOP_CENTRE.bottom;
 const RIM_FULL = LOOP_RIM_RADIUS.bottom;
 /** On-screen painted stroke width — both rest and motion. */
 const LAND_STROKE_PX = 17;
-/** REST camera: zoomed-in edge-sliver. */
-const REST_SFIT = 1.85;
-/** MOTION camera: scale-out around pin — enough for ±1 neighbour, far side off. */
-const MOTION_SFIT = 1.40;
+/** One camera scale at rest, under the finger, and through release. */
+const FRAME_SFIT = 1.85;
 /** Outer rim inset from the kissed screen edge (6 bottom / 12 top / give TR). */
 const EDGE_INSET = 20;
 /** No separate swoop clock — camera eases only with release settle (SNAP_MS). */
@@ -133,10 +124,6 @@ const turn = (a: number, b: number) => {
   return d;
 };
 const easeOut = (u: number) => 1 - (1 - u) ** 3;
-const easeInOut = (u: number) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
 /** Clock deg → unit outward from LOOP_CENTRE.bottom (0 = 12:00, CW). */
 const outward = (deg: number) => {
   const a = deg * RAD;
@@ -295,14 +282,11 @@ const pinInkVb = (deg: number, sFit: number): { x: number; y: number } => {
 };
 
 /**
- * ONE frame: zoom 0 = rest sliver, 1 = motion (±1 neighbour).
- * Look-at = LIVE seat pin FIXED on rest screen edge (edgeX/edgeY).
- * Press only SCALES around that pin — never lerp look-at toward centre.
- * Pin rides with camDeg so the wall you are on stays (give→TR, 6→bottom…).
+ * ONE frame from ONE angle. The live lower-loop point stays kissed to the
+ * matching screen edge while the phone-sized viewport rides the arc.
  */
-const frameOf = (w: number, h: number, deg: number, zoom: number): Frame => {
-  const z = Math.min(1, Math.max(0, zoom));
-  const sFit = lerp(REST_SFIT, MOTION_SFIT, z);
+const frameOf = (w: number, h: number, deg: number): Frame => {
+  const sFit = FRAME_SFIT;
   const u = outward(deg);
   const pin = pinInkVb(deg, sFit);
   // Always pin LIVE outer ink to kissed edge — scale around this screen point only.
@@ -352,8 +336,7 @@ const armPath = (
  * STEM_LEN 12 + STEM_W: visible square neck; square end on INNER wall.
  * Mouth seats: ride NEAREST ink so bead never floats.
  */
-const organismParts = (deg: number, f: Frame, pop: number) => {
-  const shrink = 1 - (1 - DRAG_SHRINK) * pop;
+const organismParts = (deg: number, f: Frame) => {
   const sFit = f.sFit || 1;
   const pin = pinInkVb(deg, sFit);
   const dx = pin.x - C.x;
@@ -373,10 +356,10 @@ const organismParts = (deg: number, f: Frame, pop: number) => {
   let attachR: number;
   if (hitMin >= 40 && hitMax > hitMin + paintedW * 0.5) {
     // Path-accurate painted INNER (full inner + erode).
-    attachR = (hitMin + erode) * shrink;
+    attachR = hitMin + erode;
   } else {
     // Empty paper (mouth): nearest outer pin − painted width.
-    attachR = Math.max(12, (pinR - paintedW) * shrink);
+    attachR = Math.max(12, pinR - paintedW);
   }
   const attachVb = { x: C.x + attachR * u.x, y: C.y + attachR * u.y };
   // Screen-fixed stem + bead radius → viewBox inward from attach.
@@ -419,23 +402,8 @@ export function PerimeterToggle({
   const [snapping, setSnapping] = useState(false);
   const snappingRef = useRef(false);
   const [goal, setGoal] = useState<CgStation>(value);
-  /** Pop scale held at 0 — no press RAF (finger owns position). */
-  const [pop, setPop] = useState(0);
-  const popRef = useRef(0);
   const lastDir = useRef<1 | -1>(1);
-  const [dolly, setDolly] = useState(0);
-  /** Camera zoom 0=rest … 1=motion. Changes ONLY on release settle (same clock as pos). */
-  const [zoom, setZoom] = useState(0);
-  const zoomRef = useRef(0);
-  /** Frozen press-frame camera — set on pointerdown, held while dragging. */
-  const [freezeCam, setFreezeCam] = useState<{ deg: number; zoom: number } | null>(null);
-  const freezeCamRef = useRef<{ deg: number; zoom: number } | null>(null);
-  /** During settle: camera deg driven on SAME RAF as pos (not freeze, not live wrap). */
-  const [settleCam, setSettleCam] = useState<number | null>(null);
-  const settleCamRef = useRef<number | null>(null);
   const settleRaf = useRef(0);
-  /** Frozen on-screen loop centre for finger→angle projection. */
-  const freezeCentreRef = useRef<{ x: number; y: number } | null>(null);
   /** Last detent / labeled seat that already fired this hold (finger-follow). */
   const followDetentRef = useRef(0);
   const followLabeledRef = useRef<CgStation>("everything");
@@ -476,37 +444,12 @@ export function PerimeterToggle({
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => {
-    const t0 = performance.now();
-    let raf = 0;
-    const step = (now: number) => {
-      const u = easeInOut(Math.min(1, (now - t0) / DOLLY_MS));
-      setDolly(u);
-      if (u < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
   useEffect(
     () => () => {
       cancelAnimationFrame(settleRaf.current);
     },
     [],
   );
-
-  /** Shot/debug only: press scale disabled (one-clock — no pop RAF). */
-  useEffect(() => {
-    const w = window as Window & { __cgForcePress?: (on: boolean) => void };
-    w.__cgForcePress = (on) => {
-      popRef.current = 0;
-      setPop(0);
-      void on;
-    };
-    return () => {
-      delete w.__cgForcePress;
-    };
-  }, []);
 
   useEffect(() => {
     // External mode changes (not exit — exit is tap-only).
@@ -519,36 +462,21 @@ export function PerimeterToggle({
     }
   }, [value]);
 
-  /**
-   * Camera clock:
-   *   dragging → frozen press frame (world stays put under thumb)
-   *   settling → settleCam / zoom driven on SAME RAF as bead pos
-   *   idle → live pos, zoom 0
-   */
-  const camDeg = freezeCam ? freezeCam.deg : settleCam != null ? settleCam : wrap(pos);
-  const frameZoom = freezeCam ? freezeCam.zoom : zoom;
-
-  /** One camera frame from camDeg + frameZoom — no separate swoop RAF. */
+  /** Bead and camera consume the exact same angle in the same render. */
+  const liveAngle = wrap(pos);
   const frame = useMemo(
-    () => frameOf(size.w || DW, size.h || DH, camDeg, frameZoom),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [size.w, size.h, camDeg, frameZoom],
+    () => frameOf(size.w || DW, size.h || DH, liveAngle),
+    [size.w, size.h, liveAngle],
   );
   const centreScreen = useMemo(() => toScreen(frame, C), [frame]);
-  const inMotion = frameZoom > 0.55;
-  /**
-   * White hole = working page in open paper — empty of seat words; word lives in bead.
-   * Sliver depth eases with zoom (rest: deeper edge band; motion: tighter).
-   */
+  /** White hole = working page in open paper; the seat word lives in the bead. */
   const hole = useMemo(() => {
     const w = size.w || DW;
     const h = size.h || DH;
     const inset = 12;
-    const u = outward(camDeg);
-    const diag = Math.abs(u.x) >= 0.35 && Math.abs(u.y) >= 0.35;
-    const restBand = diag ? 150 : 92;
+    const u = outward(liveAngle);
     const motionBand = 72;
-    const band = lerp(restBand, motionBand, frameZoom);
+    const band = motionBand;
     let left = inset;
     let top = inset;
     let right = w - inset;
@@ -563,7 +491,7 @@ export function PerimeterToggle({
       width: Math.max(0, right - left),
       height: Math.max(0, bottom - top),
     };
-  }, [size.w, size.h, camDeg, frameZoom]);
+  }, [size.w, size.h, liveAngle]);
 
   const nearest = (deg: number): CgStation => {
     let best: CgStation = "everything";
@@ -614,12 +542,6 @@ export function PerimeterToggle({
     setPos(next);
   };
 
-  /** Clear any press scale — always 0 (no pop RAF). */
-  const clearPop = () => {
-    popRef.current = 0;
-    setPop(0);
-  };
-
   /**
    * Park at a seat. Exit is parkable — does NOT leave Communi-G.
    * Leaving is only via exitByTap().
@@ -641,12 +563,6 @@ export function PerimeterToggle({
     drag.current = null;
     setDragging(false);
     cancelAnimationFrame(settleRaf.current);
-    freezeCamRef.current = null;
-    freezeCentreRef.current = null;
-    setFreezeCam(null);
-    settleCamRef.current = null;
-    setSettleCam(null);
-    clearPop();
     onExitRef.current();
   };
 
@@ -655,7 +571,7 @@ export function PerimeterToggle({
   neighbourRef.current = neighbour;
 
   /**
-   * Direct finger-follow: bead angle = finger angle about FROZEN loop centre (1:1).
+   * Direct finger-follow: bead angle = finger angle about the live loop centre (1:1).
    * No magnet / cruise / spring. Detent haptic on cross only.
    * Colour + word hard-swap ONLY when bead centre crosses next labeled seat.
    */
@@ -701,35 +617,18 @@ export function PerimeterToggle({
   };
 
   /**
-   * ONE settle clock on release / seat change: pos + camera deg + zoom → rest
-   * on the SAME easeOut ≤ SNAP_MS. No second swoop RAF. Never calls onExit.
+   * ONE settle clock on release / seat change. Only angle is animated; frameOf
+   * samples it in the same paint. No second camera movement. Never calls onExit.
    */
   useEffect(() => {
     if (dragging || !size.w) return;
     cancelAnimationFrame(settleRaf.current);
-    clearPop();
-
     const toDeg = clockOf(goal);
     const fromPos = posRef.current;
     const delta = turn(fromPos, toDeg);
-    // Camera starts from freeze (if just released) or current settle/live.
-    const fromCam =
-      freezeCamRef.current?.deg ?? settleCamRef.current ?? wrap(posRef.current);
-    const camDelta = turn(fromCam, toDeg);
-    const fromZoom = freezeCamRef.current?.zoom ?? zoomRef.current;
-    const toZoom = 0;
 
-    // Drop freeze — settle drives camera on this clock.
-    freezeCamRef.current = null;
-    freezeCentreRef.current = null;
-    setFreezeCam(null);
-
-    if (Math.abs(delta) < 0.05 && Math.abs(fromZoom - toZoom) < 0.001 && Math.abs(camDelta) < 0.05) {
+    if (Math.abs(delta) < 0.05) {
       put(toDeg);
-      zoomRef.current = 0;
-      setZoom(0);
-      settleCamRef.current = null;
-      setSettleCam(null);
       snappingRef.current = false;
       setSnapping(false);
       return;
@@ -739,24 +638,15 @@ export function PerimeterToggle({
     const t0 = performance.now();
     snappingRef.current = true;
     setSnapping(true);
-    settleCamRef.current = fromCam;
-    setSettleCam(fromCam);
 
     const step = (now: number) => {
       const u = easeOut(Math.min(1, (now - t0) / dur));
-      put(fromPos + delta * u);
-      const cam = fromCam + camDelta * u;
-      settleCamRef.current = cam;
-      setSettleCam(cam);
-      const z = fromZoom + (toZoom - fromZoom) * u;
-      zoomRef.current = z;
-      setZoom(z);
+      const next = fromPos + delta * u;
+      followFinger(next);
       if (u >= 1) {
         put(toDeg);
-        zoomRef.current = 0;
-        setZoom(0);
-        settleCamRef.current = null;
-        setSettleCam(null);
+        followLabeledRef.current = goal;
+        setDragSeat(goal);
         snappingRef.current = false;
         setSnapping(false);
         return;
@@ -772,14 +662,14 @@ export function PerimeterToggle({
   }, [goal, dragging, size.w]);
 
   const { w, h } = size;
-  const settled = !dragging && !snapping && Math.abs(turn(pos, clockOf(goal))) < 0.2 && pop < 0.05;
+  const settled = !dragging && !snapping && Math.abs(turn(pos, clockOf(goal))) < 0.2;
   /** Colour + word: last settled labeled seat until bead centre crosses next → hard swap. */
-  const shown: CgStation = dragging ? dragSeat : goal;
+  const shown: CgStation = dragSeat;
   const colour = colourOf(shown);
   const word = wordOf(shown);
 
-  const liveDeg = dragging || pop > 0.05 || snapping ? wrap(pos) : clockOf(nearest(pos));
-  const parts = w ? organismParts(liveDeg, frame, pop) : null;
+  const liveDeg = dragging || snapping ? wrap(pos) : clockOf(nearest(pos));
+  const parts = w ? organismParts(liveDeg, frame) : null;
   /**
    * Keep bead mostly on-canvas but ALLOW overflow sliver so stemRoot can kiss
    * the true painted INNER wall (may sit past the kissed camera edge).
@@ -800,7 +690,7 @@ export function PerimeterToggle({
       parts.stemTip = { x: parts.stemTip.x + dx, y: parts.stemTip.y + dy };
     }
   }
-  /** Scale locked at 1 — no pop RAF fighting the finger. */
+  /** Scale locked at 1 — no second animated value fights the shared angle. */
   const beadScale = 1;
   const loopScale = 1;
 
@@ -817,15 +707,11 @@ export function PerimeterToggle({
 
   const thetaForFinger = (clientX: number, clientY: number) => {
     const r = stage.current!.getBoundingClientRect();
-    const c = freezeCentreRef.current ?? centreScreen;
+    const c = centreScreen;
     const x = clientX - r.left - c.x;
     const y = clientY - r.top - c.y;
     return wrap((Math.atan2(x, -y) * 180) / Math.PI);
   };
-
-  const dollyScale = lerp(DOLLY_START, 1, dolly);
-  const originX = parts ? (parts.bead.x / (w || 1)) * 100 : 50;
-  const originY = parts ? (parts.bead.y / (h || 1)) * 100 : 50;
 
   const titleSize = word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11;
   const vb = `${BAND.x} ${BAND.y} ${BAND.width} ${BAND.height}`;
@@ -839,14 +725,12 @@ export function PerimeterToggle({
       data-cg-stage=""
       data-cg-clock={wrap(pos).toFixed(1)}
       data-cg-snapping={snapping ? "1" : "0"}
-      data-cg-pop={pop.toFixed(2)}
       data-cg-bead-s={beadScale.toFixed(3)}
       data-cg-r={rimAt(px).toFixed(1)}
       data-cg-track-w={LAND_STROKE_PX.toFixed(2)}
       data-cg-sfit={px.toFixed(3)}
-      data-cg-zoom={zoom.toFixed(3)}
       data-cg-weight="eroded"
-      data-cg-camera={inMotion ? "cruise" : "land"}
+      data-cg-camera="angle"
       data-cg-stroke-px={LAND_STROKE_PX}
       data-cg-seat-ms={SNAP_MS}
       data-cg-snap-ms={SNAP_MS}
@@ -855,21 +739,11 @@ export function PerimeterToggle({
       data-cg-toggle-d={TOGGLE_DIAM}
       data-cg-kind="living-g-path"
       data-cg-organism="1"
-      data-cg-dolly={dolly.toFixed(2)}
       data-cg-arm="inward-rect"
       data-cg-cruise="0"
-      data-cg-frozen={freezeCam ? "1" : "0"}
+      data-cg-frozen="0"
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          // Idle: transform none — scale(1)+edge origin was shifting getBoundingClientRect −34px
-          // and lifting the 6:00 kiss off the painted inner wall.
-          transform: dolly < 1 ? `scale(${dollyScale})` : undefined,
-          transformOrigin: dolly < 1 ? `${originX}% ${originY}%` : undefined,
-          willChange: dolly < 1 ? "transform" : "auto",
-        }}
-      >
+      <div className="absolute inset-0">
         {w && parts ? (
           <>
             {/* Track — real scale; stage overflow clips. No landClipRect cheat. */}
@@ -893,7 +767,7 @@ export function PerimeterToggle({
                 data-cg-loop=""
                 data-cg-track-w={LAND_STROKE_PX.toFixed(2)}
                 data-cg-weight="eroded"
-                data-cg-camera={inMotion ? "cruise" : "land"}
+                data-cg-camera="angle"
                 data-cg-cx={centreScreen.x.toFixed(1)}
                 data-cg-cy={centreScreen.y.toFixed(1)}
               >
@@ -976,7 +850,7 @@ export function PerimeterToggle({
 
         {w
           ? STATIONS.map((s) => {
-              const pt = organismParts(clockOf(s), frame, 0).bead;
+               const pt = organismParts(clockOf(s), frame).bead;
               return (
                 <button
                   key={s}
@@ -1025,7 +899,7 @@ export function PerimeterToggle({
               border: "none",
               boxShadow: "none",
               overflow: "visible",
-              willChange: dragging || snapping || pop > 0.02 ? "transform" : "auto",
+              willChange: dragging || snapping ? "transform" : "auto",
             }}
             role="slider"
             tabIndex={0}
@@ -1035,27 +909,18 @@ export function PerimeterToggle({
             data-cg-seat={shown}
             data-cg-settled={settled ? "1" : "0"}
             data-cg-bead-s={beadScale.toFixed(3)}
-            data-cg-pressed={pop > 0.5 ? "1" : "0"}
+            data-cg-pressed={dragging ? "1" : "0"}
             onPointerDown={(e) => {
               if (snappingRef.current) return;
               e.stopPropagation();
               // Cancel in-flight settle — finger takes over NOW.
               cancelAnimationFrame(settleRaf.current);
-              settleCamRef.current = null;
-              setSettleCam(null);
               snappingRef.current = false;
               setSnapping(false);
-              clearPop();
-              // FREEZE camera at press frame — no swoop/pop/scale RAF under thumb.
-              const pressDeg = wrap(posRef.current);
-              const pressZoom = zoomRef.current;
-              freezeCamRef.current = { deg: pressDeg, zoom: pressZoom };
-              freezeCentreRef.current = { x: centreScreen.x, y: centreScreen.y };
-              setFreezeCam({ deg: pressDeg, zoom: pressZoom });
               const rect = stage.current!.getBoundingClientRect();
               const now = performance.now();
-              const cx = freezeCentreRef.current.x;
-              const cy = freezeCentreRef.current.y;
+              const cx = centreScreen.x;
+              const cy = centreScreen.y;
               const angle = wrap(
                 (Math.atan2(e.clientX - rect.left - cx, -(e.clientY - rect.top - cy)) * 180) / Math.PI,
               );
@@ -1108,8 +973,6 @@ export function PerimeterToggle({
               if (d?.id !== e.pointerId) return;
               const wasArmed = d.armed;
               drag.current = null;
-              clearPop();
-              // Leave freezeCam for settle effect (dragging dep) — SAME clock as pos.
               setDragging(false);
               if (wasArmed) {
                 // Settle nearest LABELED ≤ SNAP_MS easeOut — one clock with camera.
@@ -1118,13 +981,12 @@ export function PerimeterToggle({
                 // Tap 12 exits; settle effect skipped after exitByTap clears freeze.
                 exitByTap();
               }
-              // else: tap elsewhere — dragging→false runs settle (clears freeze, no travel)
+               // else: tap elsewhere — dragging→false leaves the angle at its seat.
             }}
             onPointerCancel={() => {
               const d = drag.current;
               const wasArmed = !!d?.armed;
               drag.current = null;
-              clearPop();
               setDragging(false);
               if (wasArmed) go(nearest(posRef.current), { quiet: true });
             }}
@@ -1133,7 +995,6 @@ export function PerimeterToggle({
               if (!d) return;
               const wasArmed = d.armed;
               drag.current = null;
-              clearPop();
               setDragging(false);
               if (wasArmed) go(nearest(posRef.current), { quiet: true });
             }}

@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Communi-g perimeter motion uses one shared angle for both toggle and camera; direct drag updates it immediately and release alone may ease to a seat, so movement cannot sequence or catch up.

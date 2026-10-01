@@ -17,11 +17,17 @@
 import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { consumeAuthCallback } from "@/lib/auth-callback";
 import { joinGiver } from "@/lib/invites.functions";
 
-export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type GeneratedProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+/** Currency columns are live in Cloud but may lag the generated schema snapshot. */
+export type ProfileRow = GeneratedProfileRow & {
+  reserved?: Json;
+  sparks_seeded?: boolean;
+  rewarded?: Json;
+};
 
 export type SessionState = {
   status: "loading" | "signed-out" | "ready";
@@ -304,7 +310,7 @@ export const sessionStore = {
     if (profile) {
       const { data, error } = await supabase
         .from("profiles")
-        .update(fields)
+        .update(fields as Partial<GeneratedProfileRow>)
         .eq("id", profile.id)
         .select("*")
         .maybeSingle();
@@ -314,7 +320,7 @@ export const sessionStore = {
     }
     const { data, error } = await supabase
       .from("profiles")
-      .insert({ ...fields, user_id: userId })
+      .insert({ ...fields, user_id: userId } as Database["public"]["Tables"]["profiles"]["Insert"])
       .select("*")
       .maybeSingle();
     if (error) throw error;

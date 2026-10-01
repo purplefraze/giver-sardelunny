@@ -1,0 +1,174 @@
+import { inferGiveType } from "@/data/give-lexicon";
+import {
+  type ActionDraft,
+  type ActionEntities,
+  type Clarification,
+  type GiverAction,
+  emptyEntities,
+  missingOf,
+  suggestedOf,
+} from "@/intelligence/action-draft";
+
+/**
+ * OFFLINE INTERPRETER.
+ *
+ * Runs when the gateway is quiet, and is the floor the model is not allowed
+ * to undercut. Product rules stay here: no invented category, no publish.
+ * "I have a couch" stays ambiguous. The taxonomy is Giver's job.
+ */
+
+const HAVE = /\b(i have|i've got|i’ve got|got a|got an)\b/;
+const NEED = /\b(i need|need a|need an|looking for|can someone)\b/;
+const GIVE = /\b(give away|to give|giving away|don't need|dont need|do not need|not using|anymore|no longer)\b/;
+const LEND = /\b(someone can borrow|you can borrow|can be borrowed|to lend|for loan)\b/;
+const BORROW = /\b(lend me|borrow|can someone lend)\b/;
+const TRADE = /\b(trade|swap)\b/;
+const FUND = /\bfund\b/;
+const HELP = /\b(help|a hand)\b/;
+
+const CLARIFY_HAVE: Clarification = {
+  ask: "what would you like to do with it?",
+  choices: ["give it away", "lend it for a while", "trade it"],
+};
+
+const CLARIFY_NEED: Clarification = {
+  ask: "what are you looking to do?",
+  choices: ["borrow one", "find one to keep", "something else"],
+};
+
+const CLARIFY_OPEN: Clarification = {
+  ask: "what would you like to do?",
+  choices: ["i have something", "i need something", "i want to trade"],
+};
+
+const tidy = (s: string) => s.replace(/\s+/g, " ").trim();
+
+const moneyCents = (text: string): number | null => {
+  const m = text.match(/\$\s*([0-9]{1,6})(?:\.([0-9]{2}))?/);
+  if (!m) return null;
+  const dollars = Number(m[1]);
+  const cents = m[2] ? Number(m[2]) : 0;
+  if (!Number.isFinite(dollars)) return null;
+  return dollars * 100 + cents;
+};
+
+const quantityOf = (text: string): string | null => {
+  const m = text.match(/\b(one|two|three|four|five|\d+)\s+(boxes|box|bags|bag)\b/i);
+  return m ? m[0].toLowerCase() : null;
+};
+
+const dateOf = (text: string): string | null => {
+  const m = text.match(
+    /\b(saturday|sunday|monday|tuesday|wednesday|thursday|friday|this weekend|next weekend|tomorrow|today)\b/i,
+  );
+  return m ? m[0].toLowerCase() : null;
+};
+
+/** Pull the noun phrase. Does not invent a category. */
+const itemOf = (text: string): string | null => {
+  const patterns = [
+    /(?:lend me|borrow)\s+(?:a|an|the|some)?\s*([^,.]+?)(?:\s+on|\s+for|\s+saturday|\s+sunday|\s+this|\s+next|$)/i,
+    /(?:trade|swap)\s+(?:my\s+)?([^,.]+?)\s+for\s+/i,
+    /fund\s+(?:some\s+)?([^,.]+?)(?:\s+for|$)/i,
+    /(?:have|got|need)\s+(?:a|an|the|some)?\s*([^,.]+?)(?:\s+i\b|\s+that|\s+to\b|\s+for\b|$)/i,
+    /help\s+(?:me\s+)?([^,.]+?)(?:\s+this|\s+on|$)/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (!m) continue;
+    let phrase = tidy(m[1] ?? "");
+    phrase = phrase.replace(/^(a|an|the|some|my)\s+/i, "");
+    phrase = phrase.replace(/\s+(i don't|i dont|that someone|to give).*$/i, "");
+    if (phrase.length >= 2 && !/^\$/.test(phrase)) return phrase.toLowerCase();
+  }
+  return null;
+};
+
+const tradeSides = (text: string): { offer: string | null; want: string | null } => {
+  const m = text.match(/\b(?:trade|swap)\s+(?:my\s+)?(.+?)\s+for\s+(?:a|an|my\s+)?(.+?)(?:[.?]|$)/i);
+  if (!m) return { offer: null, want: null };
+  return {
+    offer: tidy(m[1] ?? "").replace(/^(my)\s+/i, "").toLowerCase() || null,
+    want: tidy(m[2] ?? "").replace(/^(a|an)\s+/i, "").toLowerCase() || null,
+  };
+};
+
+const draft = (
+  action: GiverAction | null,
+  confidence: number,
+  entities: ActionEntities,
+  clarification: Clarification | null,
+): ActionDraft => ({
+  action,
+  confidence,
+  entities,
+  missingRequired: action ? missingOf(action, entities) : [],
+  suggested: action ? suggestedOf(action, entities) : [],
+  clarification,
+  source: "rules",
+});
+
+/**
+ * Understand one utterance. Pure. No network. No write.
+ * Spoken dates stay spoken — a picker still owns the real date.
+ */
+export const bindUtterance = (raw: string): ActionDraft => {
+  const text = tidy(raw);
+  const lower = text.toLowerCase();
+  const entities = emptyEntities();
+  entities.amountCents = moneyCents(lower);
+  entities.quantity = quantityOf(lower);
+  entities.date = dateOf(lower);
+  entities.item = itemOf(lower);
+  const sides = tradeSides(lower);
+  entities.offer = sides.offer;
+  entities.want = sides.want;
+  if (entities.item) {
+    entities.category = inferGiveType(entities.item) ?? inferGiveType(lower);
+  }
+
+  if (!text || /don't know what category|dont know what category|what category/i.test(lower)) {
+    return draft(null, 0.2, entities, {
+      ask: "tell me what you have, or what you need. the category can wait.",
+      choices: ["i have something", "i need something"],
+    });
+  }
+
+  if (FUND.test(lower) || (entities.amountCents != null && /\b(coffee|coffees|fund)\b/.test(lower))) {
+    if (!entities.item) entities.item = "coffees";
+    entities.category = entities.category ?? "food";
+    return draft("fund", 0.92, entities, null);
+  }
+
+  if (TRADE.test(lower) && (entities.offer || entities.want)) {
+    return draft("trade", entities.offer && entities.want ? 0.94 : 0.6, entities, null);
+  }
+
+  if (BORROW.test(lower)) {
+    return draft("borrow", 0.93, entities, null);
+  }
+
+  if (LEND.test(lower)) {
+    return draft("lend", 0.93, entities, null);
+  }
+
+  if (GIVE.test(lower) && HAVE.test(lower)) {
+    return draft("give", 0.92, entities, null);
+  }
+
+  if (HELP.test(lower) && NEED.test(lower)) {
+    entities.item = entities.item ? `help ${entities.item}` : "help";
+    entities.category = "a hand";
+    return draft("wish", 0.9, entities, null);
+  }
+
+  if (HAVE.test(lower) && entities.item && !GIVE.test(lower) && !LEND.test(lower)) {
+    return draft(null, 0.34, entities, CLARIFY_HAVE);
+  }
+
+  if (NEED.test(lower) && entities.item && !BORROW.test(lower)) {
+    return draft("wish", 0.62, entities, CLARIFY_NEED);
+  }
+
+  return draft(null, 0.25, entities, CLARIFY_OPEN);
+};

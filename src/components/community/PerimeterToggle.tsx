@@ -19,11 +19,12 @@ import { haptics } from "@/lib/haptics";
  * drawn via GThinMask-pattern erosion — same path as LivingG. Not CIRCLE_R.
  * Mouth stays OPEN.
  *
- * ONE CAMERA, swooping in real time (not two-shot cut):
- *   REST   (zoom=0) — settled: sFit ~1.7–2.0, LIVE seat ink pinned to screen
- *           edge (EDGE_INSET). Overflow = sliver; opposite side open white.
- *   MOTION (zoom=1) — finger down / cruise: sFit ~0.95–1.15, substantial lower
- *           loop, bead-centred with mild edge bias. Edges still clip.
+ * ONE CAMERA, scale-around-pin (not two-shot cut, not recenter):
+ *   REST   (zoom=0) — settled: sFit ~1.85, LIVE seat ink pinned to screen
+ *           edge (EDGE_INSET). Overflow = continuous sliver; far side off-canvas.
+ *   MOTION (zoom=1) — finger down / cruise: sFit ~1.32–1.42, scale DOWN around
+ *           the SAME edge pin — loop shrinks toward press, ±1 neighbor seats.
+ *           Never lerp look-at toward centre. Pin rides with camDeg (local wall).
  *   zoom lerps 0↔1 over SWOOP_MS (visible swoop). Never camT flip / clip swap.
  *
  * Stroke decoupled from camera: painted on-screen width ~LAND_STROKE_PX at both
@@ -72,12 +73,10 @@ const RIM_FULL = LOOP_RIM_RADIUS.bottom;
 const LAND_STROKE_PX = 17;
 /** REST camera: zoomed-in edge-sliver. */
 const REST_SFIT = 1.85;
-/** MOTION camera: pulled-back substantial lower loop. */
-const MOTION_SFIT = 1.05;
-/** Outer rim inset from the kissed screen edge when at rest. */
+/** MOTION camera: scale-out around pin — enough for ±1 neighbour, far side off. */
+const MOTION_SFIT = 1.40;
+/** Outer rim inset from the kissed screen edge (6 bottom / 12 top / give TR). */
 const EDGE_INSET = 20;
-/** Mild edge bias while in motion (not dead-centre postage stamp). */
-const CRUISE_BIAS = 0.25;
 /** Visible one-camera swoop (press/cruise ↔ rest). Not a pop. */
 const SWOOP_MS = 480;
 
@@ -277,32 +276,21 @@ const pinInkVb = (deg: number, sFit: number): { x: number; y: number } => {
 };
 
 /**
- * ONE frame: zoom 0 = rest sliver, 1 = motion substantial.
- * Same camera — how close it stands. No clip-window cheat.
+ * ONE frame: zoom 0 = rest sliver, 1 = motion (±1 neighbour).
+ * Look-at = LIVE seat pin FIXED on rest screen edge (edgeX/edgeY).
+ * Press only SCALES around that pin — never lerp look-at toward centre.
+ * Pin rides with camDeg so the wall you are on stays (give→TR, 6→bottom…).
  */
 const frameOf = (w: number, h: number, deg: number, zoom: number): Frame => {
   const z = Math.min(1, Math.max(0, zoom));
   const sFit = lerp(REST_SFIT, MOTION_SFIT, z);
   const u = outward(deg);
   const pin = pinInkVb(deg, sFit);
-  // Rest: pin LIVE ink to kissed edge. Motion: bead-biased centre (mild edge).
+  // Always pin LIVE outer ink to kissed edge — scale around this screen point only.
   const edgeX = w / 2 + u.x * (w / 2 - EDGE_INSET);
   const edgeY = h / 2 + u.y * (h / 2 - EDGE_INSET);
-  // Bead rests inward of thinned rim (screen-fixed stem + bead).
-  const attachR = Math.max(12, rimAt(sFit) - halfAt(sFit));
-  const inwardVb = (STEM_LEN + TOGGLE_OUTER_R) / sFit;
-  const beadR = Math.max(6, attachR - inwardVb);
-  const beadVb = { x: C.x + beadR * u.x, y: C.y + beadR * u.y };
-  const bias = CRUISE_BIAS;
-  const motionX = lerp(w / 2, w / 2 + u.x * (w / 2 - EDGE_INSET), bias);
-  const motionY = lerp(h / 2, h / 2 + u.y * (h / 2 - EDGE_INSET), bias);
-  // Continuously blend pin-to-edge → bead-biased so swoop never loses bead/track.
-  const restSvgX = edgeX - (pin.x - BAND.x) * sFit;
-  const restSvgY = edgeY - (pin.y - BAND.y) * sFit;
-  const motionSvgX = motionX - (beadVb.x - BAND.x) * sFit;
-  const motionSvgY = motionY - (beadVb.y - BAND.y) * sFit;
-  const svgX = lerp(restSvgX, motionSvgX, z);
-  const svgY = lerp(restSvgY, motionSvgY, z);
+  const svgX = edgeX - (pin.x - BAND.x) * sFit;
+  const svgY = edgeY - (pin.y - BAND.y) * sFit;
   return { sFit, svgX, svgY, svgW: BAND.width * sFit, svgH: BAND.height * sFit };
 };
 
@@ -817,9 +805,6 @@ export function PerimeterToggle({
                 data-cg-cy={centreScreen.y.toFixed(1)}
               >
                 <defs>
-                  <clipPath id="cg-bottom-band">
-                    <rect x={BAND.x} y={BAND.y} width={BAND.width} height={BAND.height} />
-                  </clipPath>
                   {/* GThinMask pattern: luminance erode — source_weight_vb ≈ LAND_STROKE_PX / sFit */}
                   <mask id={thinId} maskUnits="userSpaceOnUse" x={-4000} y={-4000} width={16000} height={20000}>
                     <path
@@ -832,7 +817,6 @@ export function PerimeterToggle({
                   </mask>
                 </defs>
                 <g
-                  clipPath="url(#cg-bottom-band)"
                   transform={`translate(${C.x} ${C.y}) scale(${loopScale}) translate(${-C.x} ${-C.y})`}
                 >
                   <g transform={LIVING_G_TRANSFORM} fill={RED}>

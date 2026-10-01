@@ -19,6 +19,7 @@ const SEATS = [
   { id: "notes", label: "notes", ask: "appreciation, a recommendation" },
   { id: "neighborhood", label: "around", ask: "what you like to do nearby" },
   { id: "messages", label: "messages", ask: "people waiting" },
+  { id: "account", label: "sign in", ask: "name, birthday, the account" },
 ] as const;
 
 type SeatId = (typeof SEATS)[number]["id"];
@@ -40,9 +41,11 @@ const readNotes = (): Notes => {
 export function MyGRing({
   onClose,
   onMessages,
+  onAccount,
 }: {
   onClose: () => void;
   onMessages: () => void;
+  onAccount: () => void;
 }) {
   const me = useMyProfile();
   const [seat, setSeat] = useState<SeatId>("me");
@@ -164,9 +167,16 @@ export function MyGRing({
         />
       );
     }
+    if (seat === "messages") {
+      return (
+        <button type="button" onClick={onMessages} className="text-sm underline" style={{ color: BLUE }}>
+          open messages
+        </button>
+      );
+    }
     return (
-      <button type="button" onClick={onMessages} className="text-sm underline" style={{ color: BLUE }}>
-        open messages
+      <button type="button" onClick={onAccount} className="text-sm underline" style={{ color: BLUE }}>
+        name, birthday, sign in
       </button>
     );
   };

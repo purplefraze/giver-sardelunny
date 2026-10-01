@@ -667,7 +667,7 @@ function Index() {
   const setup = () => {
     /* DISCOVERY UNLOCKS MY G — the moment profile setup opens, and forever. */
     lifecycleStore.discoverProfile();
-    setEditor({ kind: "about" });
+    setMyG(true);
   };
 
   /**
@@ -1206,6 +1206,10 @@ function Index() {
                       setMyG(false);
                       setThreads(true);
                     }}
+                    onAccount={() => {
+                      setMyG(false);
+                      setEditor({ kind: "about" });
+                    }}
                   />
                 ) : null,
               },
@@ -1286,7 +1290,7 @@ function Index() {
                             ? {
                                 onEdit: () => {
                                   setPerson(null);
-                                  setEditor({ kind: "about" });
+                                  setMyG(true);
                                 },
                               }
                             : {})}

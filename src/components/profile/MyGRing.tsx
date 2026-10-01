@@ -1,13 +1,15 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ageFrom } from "@/data/account";
 import { myProfileStore } from "@/data/my-profile";
 import { useMyProfile } from "@/hooks/use-my-profile";
 
 /**
- * MY G — a blue world, not a form.
- * One circle. The bead sits on the track. The word lives only in the bead.
- * The hole stays empty until that place already has something.
- * Pinching changes the scale of this same place. Living G path is not used.
+ * MY G — a closed blue ring, not the Communi-G loop.
+ * Communi-G is the open red track and keeps its gap. This ring has no gap.
+ * About 12% smaller than the lower-loop rim, and a perfect circle.
+ * The toggle grows into the ring. The bead sits on the track.
+ * The word lives only in the bead. The hole stays empty until that place
+ * already has something. Living G path is not used.
  */
 
 const BLUE = "#2F6FED";
@@ -28,7 +30,8 @@ type PlaceId = (typeof PLACES)[number]["id"];
 
 const CX = 195;
 const CY = 390;
-const TRACK_R = 148;
+/** Lower-loop rim is 246. This ring is 12% smaller, and closed. */
+const TRACK_R = Math.round(246 * 0.88);
 const STROKE = 17;
 const INNER = TRACK_R - STROKE / 2;
 const BEAD_R = 28;
@@ -63,12 +66,18 @@ export function MyGRing({
   const me = useMyProfile();
   const [index, setIndex] = useState(0);
   const [scale, setScale] = useState(1);
+  const [born, setBorn] = useState(0.18);
   const [editing, setEditing] = useState(false);
   const [extra, setExtra] = useState<Extra>(readExtra);
   const drag = useRef<number | null>(null);
   const pinch = useRef<number | null>(null);
   const place = PLACES[index];
   const wide = scale < 0.78;
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setBorn(1), 30);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const save = (next: Extra) => {
     setExtra(next);
@@ -164,12 +173,12 @@ export function MyGRing({
       <svg
         viewBox="0 0 390 780"
         className="h-full w-full"
-        style={{ transform: `scale(${scale})`, transformOrigin: "50% 46%" }}
+        style={{ transform: `scale(${scale})`, transformOrigin: "50% 42%", transition: "transform 180ms ease-out" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={() => { drag.current = null; }}
       >
-        <circle cx={CX} cy={CY} r={TRACK_R} fill="none" stroke={BLUE} strokeWidth={STROKE} />
+        <circle cx={CX} cy={CY} r={TRACK_R * born} fill="none" stroke={BLUE} strokeWidth={STROKE} strokeDasharray="none" />
         {PLACES.map((p, i) => {
           const a = ang(i);
           const tick = INNER - 1;

@@ -31,8 +31,9 @@ import { haptics } from "@/lib/haptics";
  * CAMERA: REST/MOTION swoop ONLY when NOT dragging. Finger-down freezes press frame
  * so frameOf cannot swoop under the thumb.
  *
- * Toggle = circle bead + short contact arm (STEM_LEN 0). Square 90° end kisses
- * painted INNER wall — no white air between toggle and red. No bleed.
+ * Toggle = circle bead + rectangular arm (STEM_LEN 12), ONE piece every seat.
+ * Visible ~12px square neck; track-facing 90° end kisses painted INNER wall
+ * (gap arm-end→red = 0, no bleed). Bead in white; tip buried in bead ring.
  * Stroke: LAND_STROKE_PX 17, geometricPrecision, open mouth, empty hole.
  */
 /** Bead sized so "communi-g" fits in full. */
@@ -41,14 +42,10 @@ const TOGGLE_DIAM = TOGGLE_OUTER_R * 2;
 const TOGGLE_RING = 7.2;
 const TOGGLE_INNER_R = TOGGLE_OUTER_R - TOGGLE_RING;
 const TOGGLE_STROKE_R = TOGGLE_INNER_R + TOGGLE_RING / 2;
-/** Rectangular contact-arm width (screen px) — square-cut 90° ends. */
+/** Rectangular arm width (screen px) — square-cut 90° ends. */
 const STEM_W = 10;
-/**
- * STEM_LEN 0: bead outer edge + square arm end kiss painted INNER wall.
- * No air gap (STEM_LEN 14 was air). Arm is contact piece only — no white between
- * toggle and red.
- */
-const STEM_LEN = 0;
+/** Visible square neck from painted inner wall to bead outer edge (screen px). */
+const STEM_LEN = 12;
 const POP_MS = 150;
 const DRAG_SHRINK = 0.94;
 /** Bead grows on press — press feedback only; does NOT drive camera. */
@@ -354,7 +351,7 @@ const armPath = (
 /**
  * Circle bead + rectangular arm, ONE piece. Arm along +u toward track.
  * Track-facing end = square cut flush on painted INNER wall (attachR).
- * STEM_LEN 0 + STEM_W: short contact arm, square end on INNER wall.
+ * STEM_LEN 12 + STEM_W: visible square neck; square end on INNER wall.
  * Mouth seats: ride NEAREST ink so bead never floats.
  */
 const organismParts = (deg: number, f: Frame, pop: number) => {
@@ -881,7 +878,7 @@ export function PerimeterToggle({
       data-cg-kind="living-g-path"
       data-cg-organism="1"
       data-cg-dolly={dolly.toFixed(2)}
-      data-cg-arm="contact-rect"
+      data-cg-arm="inward-rect"
       data-cg-cruise="0"
       data-cg-frozen={freezeCam ? "1" : "0"}
     >

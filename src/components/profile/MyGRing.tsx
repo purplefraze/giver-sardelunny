@@ -4,32 +4,38 @@ import { myProfileStore } from "@/data/my-profile";
 import { useMyProfile } from "@/hooks/use-my-profile";
 
 /**
- * MY PROFILE — the closed blue loop. Not My G.
- * My G is the three-loop space. On this loop it sits at 6 o'clock, and
- * landing there is the only exit. Eight seats, 45 degrees apart.
- * The bead stays on the rail. No gap. No back button. No debug marks.
+ * MY PROFILE — closed blue ring. Not My G.
+ * My G is the three-loop space and sits at 6 o'clock. That seat is the exit.
+ * Eight seats, 45 degrees. The bead stays on the rail.
+ * The hole stays empty until that seat already has an object.
+ * Help and account are not stations. Living G path is not used.
  */
 
 const BLUE = "#2F6FED";
 const PAPER = "#F7F4EF";
 const INK = "#1C1A17";
+const GIVE = "#4ECB4A";
+const WISH = "#7A5AF8";
+const TRADE = "#E07A3D";
+const FUND = "#8A5A3A";
+const LEND = "#C6D64A";
+const BORROW = "#C45AD4";
 
 const SEATS = [
-  { id: "profile", word: "profile", at: 0 },
-  { id: "activity", word: "activity", at: 45 },
-  { id: "thanks", word: "thanks", at: 90 },
-  { id: "messages", word: "messages", at: 135 },
+  { id: "me", word: "me", at: 0 },
+  { id: "who", word: "who", at: 45 },
+  { id: "around", word: "around", at: 90 },
+  { id: "footprint", word: "footprint", at: 135 },
   { id: "myg", word: "my g", at: 180 },
-  { id: "settings", word: "settings", at: 225 },
-  { id: "account", word: "account", at: 270 },
-  { id: "help", word: "help", at: 315 },
+  { id: "thanks", word: "thanks", at: 225 },
+  { id: "standing", word: "standing", at: 270 },
+  { id: "messages", word: "messages", at: 315 },
 ] as const;
 
 type SeatId = (typeof SEATS)[number]["id"];
 
 const CX = 195;
 const CY = 390;
-/** Large enough that the ring has presence and may leave the viewport. */
 const TRACK_R = 250;
 const STROKE = 16;
 const INNER = TRACK_R - STROKE / 2;
@@ -37,15 +43,15 @@ const BEAD_R = 26;
 
 const KEY = "giver-myg-world";
 
-type Extra = { who: string; thanks: string };
+type Extra = { who: string; around: string; thanks: string };
 
 const readExtra = (): Extra => {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return { who: "", thanks: "" };
-    return { who: "", thanks: "", ...JSON.parse(raw) };
+    if (!raw) return { who: "", around: "", thanks: "" };
+    return { who: "", around: "", thanks: "", ...JSON.parse(raw) };
   } catch {
-    return { who: "", thanks: "" };
+    return { who: "", around: "", thanks: "" };
   }
 };
 
@@ -59,15 +65,14 @@ const turn = (a: number, b: number) => {
 
 export function MyGRing({
   onClose,
-  onAccount,
 }: {
   onClose: () => void;
   onMessages?: () => void;
-  onAccount: () => void;
+  onAccount?: () => void;
 }) {
   const me = useMyProfile();
   const [deg, setDeg] = useState(0);
-  const [live, setLive] = useState<SeatId>("profile");
+  const [live, setLive] = useState<SeatId>("me");
   const [held, setHeld] = useState(false);
   const [extra, setExtra] = useState<Extra>(readExtra);
   const [writing, setWriting] = useState(false);
@@ -126,22 +131,12 @@ export function MyGRing({
   };
 
   const age = ageFrom(me.birthday);
-  const lines = (() => {
-    if (live === "profile") return [me.username ? `@${me.username}` : "", age != null ? String(age) : "", me.aboutMe, extra.who].filter(Boolean);
-    if (live === "activity") {
-      return [
-        me.sparks ? `${me.sparks} sparks` : "",
-        me.records.give.length ? `${me.records.give.length} gives` : "",
-        me.records.wish.length ? `${me.records.wish.length} wishes` : "",
-        me.records.trade.length ? `${me.records.trade.length} trades` : "",
-        me.records.borrow.length ? `${me.records.borrow.length} borrows` : "",
-      ].filter(Boolean);
-    }
-    if (live === "thanks") return extra.thanks ? [extra.thanks] : [];
-    if (live === "messages") return [];
-    if (live === "account") return [me.username ? `@${me.username}` : "", age != null ? String(age) : ""].filter(Boolean);
-    return [];
-  })();
+  const marks = [
+    ...me.records.give.map((item) => ({ id: item, color: GIVE, word: item })),
+    ...me.records.wish.map((item) => ({ id: item, color: WISH, word: item })),
+    ...me.records.trade.map((item) => ({ id: item, color: TRADE, word: item })),
+    ...me.records.borrow.map((item) => ({ id: item, color: BORROW, word: item })),
+  ].slice(0, 3);
 
   const theta = rad(held ? deg : nearest(deg).at);
   const ux = Math.cos(theta);
@@ -170,44 +165,61 @@ export function MyGRing({
           </text>
         </g>
       </svg>
-      {live !== "myg" && lines.length > 0 ? (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <div className="w-40 text-center text-sm">
-            {live === "profile" && me.photo ? <img src={me.photo} alt="" className="mx-auto mb-2 h-16 w-16 rounded-full object-cover" /> : null}
-            {lines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
+      {live === "me" && (me.photo || me.username) ? (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-sm">
+          <div>
+            {me.photo ? <img src={me.photo} alt="" className="mx-auto mb-2 h-16 w-16 rounded-full object-cover" /> : null}
+            {me.username ? <p>@{me.username}</p> : null}
+            {age != null ? <p>{age}</p> : null}
           </div>
         </div>
+      ) : null}
+      {live === "me" ? (
+        <label className="absolute inset-0 grid place-items-center">
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && photo(e.target.files[0])} />
+          <span className="h-28 w-28" />
+        </label>
+      ) : null}
+      {live === "who" && extra.who ? (
+        <p className="pointer-events-none absolute inset-0 grid place-items-center px-16 text-center text-sm">{extra.who}</p>
+      ) : null}
+      {live === "around" && extra.around ? (
+        <p className="pointer-events-none absolute inset-0 grid place-items-center px-16 text-center text-sm">{extra.around}</p>
+      ) : null}
+      {live === "thanks" && extra.thanks ? (
+        <p className="pointer-events-none absolute inset-0 grid place-items-center px-16 text-center text-sm">{extra.thanks}</p>
+      ) : null}
+      {(live === "who" || live === "around" || live === "thanks") && !writing ? (
+        <button type="button" className="absolute inset-0" aria-label={live} onClick={() => setWriting(true)} />
+      ) : null}
+      {writing && (live === "who" || live === "around" || live === "thanks") ? (
+        <textarea
+          autoFocus
+          value={extra[live]}
+          onChange={(e) => save({ ...extra, [live]: e.target.value })}
+          onBlur={() => setWriting(false)}
+          className="absolute inset-x-16 top-1/2 -translate-y-1/2 bg-transparent text-center text-sm outline-none"
+          rows={3}
+        />
+      ) : null}
+      {live === "footprint" && marks.length > 0 ? (
+        <ul className="pointer-events-none absolute inset-0 grid place-items-center text-sm">
+          <li className="space-y-2 text-center">
+            {marks.map((mark) => (
+              <p key={mark.id} style={{ color: mark.color }}>{mark.word}</p>
+            ))}
+          </li>
+        </ul>
+      ) : null}
+      {live === "standing" && me.sparks > 0 ? (
+        <p className="pointer-events-none absolute inset-0 grid place-items-center text-sm">{me.sparks} sparks</p>
       ) : null}
       {live === "messages" ? (
         <p className="pointer-events-none absolute inset-0 grid place-items-center text-sm" style={{ color: BLUE }}>
           nothing in motion right now
         </p>
       ) : null}
-      {live === "profile" ? (
-        <label className="absolute inset-x-0 top-[58%] grid place-items-center">
-          <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && photo(e.target.files[0])} />
-          <button type="button" className="text-xs" style={{ color: BLUE }} onClick={() => setWriting(true)}>
-            {extra.who ? "" : ""}
-          </button>
-        </label>
-      ) : null}
-      {writing && (live === "profile" || live === "thanks") ? (
-        <textarea
-          autoFocus
-          value={live === "thanks" ? extra.thanks : extra.who}
-          onChange={(e) => save(live === "thanks" ? { ...extra, thanks: e.target.value } : { ...extra, who: e.target.value })}
-          onBlur={() => setWriting(false)}
-          className="absolute inset-x-16 top-1/2 -translate-y-1/2 bg-transparent text-center text-sm outline-none"
-          rows={3}
-        />
-      ) : null}
-      {live === "account" ? (
-        <button type="button" onClick={onAccount} className="absolute bottom-8 left-0 right-0 text-center text-[10px]" style={{ color: BLUE }}>
-          account
-        </button>
-      ) : null}
+      <span className="hidden" style={{ color: LEND }} />
     </div>
   );
 }

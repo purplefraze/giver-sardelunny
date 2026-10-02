@@ -4,36 +4,43 @@ import { myProfileStore } from "@/data/my-profile";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { buzz } from "@/lib/haptics";
 import {
+  EAR_GEOMETRY,
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
+  LIVING_G_VIEWBOX,
   LOOP_CENTRE,
   LOOP_RIM_RADIUS,
 } from "@/components/living-g/g-path";
 
 /**
- * MY G PROFILE LOOP — internal clock only.
- * Full Living G mode wheel is untouched: My G stays 12, Communi-g stays 6.
- * This view is a camera into the locked middle-loop geometry, not a new circle.
- * g-path.ts is not edited. Stroke weight is the path's own fill.
+ * MY G PROFILE LOOP — a camera inside the existing Living G, not a new page.
  *
- * Profile clock, clockwise from 6: my g, help, aura, past, me, now, notes, account.
- * Bead starts at 6 (my g). Arrival on my g does not exit.
- * Exit only: bead already docked on my g, then an intentional tap on that bead.
+ * The mode wheel is not this component. Out there, My G stays at 12 and
+ * Communi-g stays at 6. This clock exists only after that 12 o'clock tap.
+ *
+ * Inside: bead starts at 6 o'clock, labelled my g. 12 o'clock is me.
+ * The artwork is the locked path. Nothing here edits g-path.ts.
+ * Arrival on my g does not exit. A later tap on the already-docked bead does.
  */
 
-const BLUE = "#2F6FED";
+const BLUE = "#1E7BFF";
 const PAPER = "#F7F4EF";
 const INK = "#1C1A17";
 
+const C = LOOP_CENTRE.middle;
+const RIM = LOOP_RIM_RADIUS.middle;
+const ORBIT = RIM + EAR_GEOMETRY.gap + EAR_GEOMETRY.outerR;
+
+/** Profile-loop clock. 0 is 12 o'clock. 180 is 6 o'clock. Not the mode wheel. */
 const SEATS = [
   { id: "myg", word: "my g", at: 180 },
   { id: "help", word: "help", at: 225 },
-  { id: "standing", word: "aura", at: 270 },
-  { id: "history", word: "past", at: 315 },
+  { id: "aura", word: "aura", at: 270 },
+  { id: "past", word: "past", at: 315 },
   { id: "me", word: "me", at: 0 },
-  { id: "activity", word: "now", at: 45 },
-  { id: "messages", word: "notes", at: 90 },
-  { id: "settings", word: "account", at: 135 },
+  { id: "now", word: "now", at: 45 },
+  { id: "notes", word: "notes", at: 90 },
+  { id: "account", word: "account", at: 135 },
 ] as const;
 
 type SeatId = (typeof SEATS)[number]["id"];
@@ -50,25 +57,28 @@ const seatOf = (angle: number) =>
   );
 const rad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 
-const MID = LOOP_CENTRE.middle;
-const RIM = LOOP_RIM_RADIUS.middle;
-
-export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => void; onAccount?: () => void }) {
+export function MyGRing({
+  onClose,
+}: {
+  onClose: () => void;
+  onMessages?: () => void;
+  onAccount?: () => void;
+}) {
   const me = useMyProfile();
   const root = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const [deg, setDeg] = useState(180);
   const [live, setLive] = useState<SeatId>("myg");
   const [held, setHeld] = useState(false);
-  const [scale, setScale] = useState(1.85);
-  const [edit, setEdit] = useState<"name" | "about" | "email" | null>(null);
-  const [draft, setDraft] = useState("");
+  const [overview, setOverview] = useState(false);
+  const [edit, setEdit] = useState<SeatId | null>(null);
+  const [locked, setLocked] = useState<Partial<Record<SeatId, boolean>>>({});
+  const [draft, setDraft] = useState<Record<string, string>>({});
   const lastTick = useRef(180);
   const dragging = useRef(false);
   const moved = useRef(0);
-  const pinch = useRef(0);
   const dockedOnMyg = useRef(true);
-  const onBead = useRef(false);
+  const pinch = useRef(0);
 
   useEffect(() => {
     const node = root.current;
@@ -83,44 +93,42 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
     return () => obs.disconnect();
   }, []);
 
-  const cx = box.w / 2;
-  const cy = box.h / 2;
-  const orbit = Math.min(box.w, box.h) * 0.42;
+  const show = held ? deg : seatOf(deg).at;
+  const seat = seatOf(show);
+  const theta = rad(show);
+  const bead = {
+    x: C.x + Math.cos(theta) * ORBIT,
+    y: C.y + Math.sin(theta) * ORBIT,
+  };
+
+  const focus = overview ? 0.72 : 1.85;
+  const ox = box.w / 2 - bead.x * focus;
+  const oy = box.h / 2 - bead.y * focus;
 
   const pointerDeg = (e: { clientX: number; clientY: number }) => {
     const rect = root.current?.getBoundingClientRect();
     if (!rect) return deg;
-    return wrap((Math.atan2(e.clientY - rect.top - cy, e.clientX - rect.left - cx) * 180) / Math.PI + 90);
+    const x = (e.clientX - rect.left - ox) / focus;
+    const y = (e.clientY - rect.top - oy) / focus;
+    return wrap((Math.atan2(y - C.y, x - C.x) * 180) / Math.PI + 90);
   };
 
-  const finishEdit = () => {
-    if (edit === "name") {
-      const next = draft.trim().replace(/^@/, "");
-      if (next) myProfileStore.patch({ username: `@${next}` });
+  const commit = (id: SeatId) => {
+    if (id === "myg" || id === "me") {
+      const username = (draft.username ?? "").trim().replace(/^@/, "");
+      if (username) myProfileStore.patch({ username: `@${username}` });
+      if (draft.bio !== undefined) myProfileStore.patch({ aboutMe: draft.bio.trim() });
     }
-    if (edit === "about") myProfileStore.patch({ aboutMe: draft.trim() });
     setEdit(null);
-  };
-
-  const toggleEdit = (field: "name" | "about" | "email", value: string) => {
-    if (edit === field) {
-      finishEdit();
-      return;
-    }
-    setDraft(value);
-    setEdit(field);
+    setLocked((prev) => ({ ...prev, [id]: true }));
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (edit) return;
+    if ((e.target as HTMLElement).closest("[data-interior]")) return;
     if (e.pointerType === "touch" && pinch.current) return;
-    const target = e.target as HTMLElement;
-    if (target.closest("[data-seat-content]")) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     dragging.current = true;
     moved.current = 0;
-    onBead.current = Boolean(target.closest("[data-bead]"));
-    dockedOnMyg.current = live === "myg";
     setHeld(true);
     const next = pointerDeg(e);
     setDeg(next);
@@ -131,27 +139,30 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
     if (!dragging.current) return;
     moved.current += Math.abs(e.movementX) + Math.abs(e.movementY);
     const next = pointerDeg(e);
-    const seat = seatOf(next);
-    if (seat.at !== lastTick.current) {
-      lastTick.current = seat.at;
+    const nextSeat = seatOf(next);
+    if (nextSeat.at !== lastTick.current) {
+      lastTick.current = nextSeat.at;
+      dockedOnMyg.current = false;
       buzz(8);
     }
     setDeg(next);
-    setLive(seat.id);
+    setLive(nextSeat.id);
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging.current) return;
     dragging.current = false;
     setHeld(false);
-    const seat = seatOf(pointerDeg(e));
-    setDeg(seat.at);
-    setLive(seat.id);
+    const next = seatOf(pointerDeg(e));
+    setDeg(next.at);
+    setLive(next.id);
     buzz(16);
     const tap = moved.current < 12;
-    if (dockedOnMyg.current && onBead.current && tap && seat.id === "myg") onClose();
-    dockedOnMyg.current = seat.id === "myg";
-    onBead.current = false;
+    if (tap && next.id === "myg" && dockedOnMyg.current) {
+      onClose();
+      return;
+    }
+    dockedOnMyg.current = next.id === "myg";
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -170,61 +181,66 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
     const b = e.touches[1];
     const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
     const ratio = dist / pinch.current;
-    setScale((s) => Math.min(2.4, Math.max(0.72, s * ratio)));
+    if (ratio > 1.12) setOverview(true);
+    if (ratio < 0.88) setOverview(false);
     pinch.current = dist;
   };
 
-  const onTouchEnd = () => {
-    pinch.current = 0;
+  const onInterior = (id: SeatId) => {
+    if (overview) return;
+    if (edit === id) {
+      commit(id);
+      return;
+    }
+    setDraft({
+      username: (me.username ?? "").replace(/^@/, ""),
+      bio: me.aboutMe ?? "",
+      age: ageFrom(me.birthday)?.toString() ?? "",
+    });
+    setEdit(id);
+    setLocked((prev) => ({ ...prev, [id]: false }));
   };
 
-  const show = held ? deg : seatOf(deg).at;
-  const theta = rad(show);
-  const seat = seatOf(show);
   const name = (me.username ?? "").replace(/^@/, "");
   const age = ageFrom(me.birthday);
-  const overview = scale < 1.05;
-  const camX = cx - Math.cos(theta) * orbit * 0.55 * Math.min(scale, 1.6);
-  const camY = cy - Math.sin(theta) * orbit * 0.55 * Math.min(scale, 1.6);
 
-  const content = () => {
-    if (edit) {
+  const interior = (id: SeatId) => {
+    if (edit === id && !overview) {
+      if (id === "myg") {
+        return (
+          <div data-interior="" className="grid gap-1 text-center" onPointerDown={(e) => e.stopPropagation()}>
+            <input className="bg-transparent text-center text-base outline-none" value={draft.username ?? ""} placeholder="username" onChange={(e) => setDraft((d) => ({ ...d, username: e.target.value }))} />
+            <textarea className="bg-transparent text-center text-sm outline-none" rows={2} value={draft.bio ?? ""} placeholder="bio" onChange={(e) => setDraft((d) => ({ ...d, bio: e.target.value }))} />
+            <input className="bg-transparent text-center text-sm outline-none" value={draft.age ?? ""} placeholder="age" onChange={(e) => setDraft((d) => ({ ...d, age: e.target.value }))} />
+            <span className="text-[10px] tracking-widest" style={{ color: BLUE }}>tap again to lock</span>
+          </div>
+        );
+      }
       return (
-        <input
-          autoFocus
-          data-seat-content
-          value={draft}
-          onChange={(ev) => setDraft(ev.target.value)}
-          onPointerDown={(ev) => ev.stopPropagation()}
-          onClick={(ev) => {
-            ev.stopPropagation();
-            finishEdit();
-          }}
-          className="bg-transparent text-center text-base outline-none"
-          style={{ color: INK, width: "70%" }}
-        />
+        <div data-interior="" className="text-center text-sm" onPointerDown={(e) => e.stopPropagation()}>
+          <span className="text-[10px] tracking-widest" style={{ color: BLUE }}>tap again to lock</span>
+        </div>
       );
     }
-    if (seat.id === "myg") {
+    if (id === "myg") {
       return (
-        <button type="button" data-seat-content className="text-center" onPointerDown={(ev) => ev.stopPropagation()} onClick={(ev) => { ev.stopPropagation(); toggleEdit("name", name); }}>
+        <div>
           {me.photo ? <img src={me.photo} alt="" className="mx-auto mb-2 h-16 w-16 rounded-full object-cover" /> : null}
-          <p className="text-lg">@{name || "you"}</p>
+          <p>@{name || "you"}</p>
           {me.aboutMe ? <p className="mt-1 text-sm opacity-70">{me.aboutMe}</p> : <p className="mt-1 text-sm opacity-40">bio</p>}
           {age != null ? <p className="mt-1 text-sm opacity-60">{age}</p> : null}
-        </button>
+        </div>
       );
     }
-    if (seat.id === "me") return <p data-seat-content>{name ? `@${name}` : "me"}</p>;
-    if (seat.id === "settings") {
-      return (
-        <button type="button" data-seat-content className="text-sm" onPointerDown={(ev) => ev.stopPropagation()} onClick={(ev) => { ev.stopPropagation(); toggleEdit("email", ""); }}>
-          <p>account</p>
-          <p className="mt-1 opacity-60">email · privacy · password</p>
-        </button>
-      );
-    }
-    return <p data-seat-content className="text-sm opacity-70">{seat.word}</p>;
+    if (id === "me") return <p>@{name || "you"}</p>;
+    if (id === "aura") return <p>{me.sparks > 0 ? `${me.sparks} sparks` : "aura"}</p>;
+    if (id === "account") return <p className="text-sm opacity-70">email · privacy · password</p>;
+    return <p className="text-sm opacity-60">{SEATS.find((s) => s.id === id)?.word}</p>;
+  };
+
+  const place = (at: number, radius: number) => {
+    const t = rad(at);
+    return { left: C.x + Math.cos(t) * radius, top: C.y + Math.sin(t) * radius };
   };
 
   return (
@@ -238,10 +254,9 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
       onPointerCancel={onPointerUp}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
       onWheel={(e) => {
-        e.preventDefault();
-        setScale((s) => Math.min(2.4, Math.max(0.72, s + (e.deltaY > 0 ? -0.08 : 0.08))));
+        if (e.deltaY > 8) setOverview(true);
+        if (e.deltaY < -8) setOverview(false);
       }}
       role="slider"
       aria-label="my g profile loop"
@@ -249,60 +264,56 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
     >
       {box.w > 0 ? (
         <div
-          className="absolute"
+          className="absolute left-0 top-0"
           style={{
-            left: overview ? cx : camX,
-            top: overview ? cy : camY,
-            width: orbit * 2,
-            height: orbit * 2,
-            transform: `translate(-50%, -50%) scale(${scale})`,
-            transformOrigin: "50% 50%",
-            transition: held ? "none" : "transform 280ms cubic-bezier(.2,.8,.2,1), left 280ms cubic-bezier(.2,.8,.2,1), top 280ms cubic-bezier(.2,.8,.2,1)",
+            width: box.w,
+            height: box.h,
+            transform: `translate(${ox}px, ${oy}px) scale(${focus})`,
+            transformOrigin: "0 0",
+            transition: held ? "none" : "transform 380ms cubic-bezier(.2,.8,.2,1)",
           }}
         >
-          <svg viewBox={`${MID.x - RIM - 80} ${MID.y - RIM - 120} ${RIM * 2 + 160} ${RIM * 2 + 200}`} className="absolute inset-0 h-full w-full overflow-visible">
-            <g transform={LIVING_G_TRANSFORM} fill={BLUE}>
-              <path d={LIVING_G_PATH} />
+          <svg viewBox={LIVING_G_VIEWBOX} width={778} height={1228} className="absolute overflow-visible" aria-hidden>
+            <g transform={LIVING_G_TRANSFORM}>
+              <path d={LIVING_G_PATH} fill={BLUE} />
             </g>
           </svg>
-          {SEATS.map((s) => {
-            const t = rad(s.at);
+          {(overview ? SEATS : [seat]).map((item) => {
+            const p = place(item.at, overview ? RIM * 0.55 : 0);
             return (
-              <div
-                key={s.id}
-                className="absolute text-center"
-                style={{
-                  left: orbit + Math.cos(t) * orbit * 0.62,
-                  top: orbit + Math.sin(t) * orbit * 0.62,
-                  transform: "translate(-50%, -50%)",
-                  color: BLUE,
-                  fontSize: overview ? 11 : 13,
-                  opacity: s.id === seat.id || overview ? 1 : 0.35,
+              <button
+                key={item.id}
+                type="button"
+                data-interior=""
+                className="absolute -translate-x-1/2 -translate-y-1/2 bg-transparent text-center"
+                style={{ left: overview ? p.left : C.x, top: overview ? p.top : C.y, width: overview ? 120 : 200, color: INK }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInterior(item.id);
                 }}
               >
-                {s.word}
-              </div>
+                <div className="lowercase" style={{ color: BLUE, fontSize: overview ? 11 : 13 }}>{item.word}</div>
+                {interior(item.id)}
+                {locked[item.id] ? <div className="text-[10px] tracking-widest" style={{ color: BLUE }}>locked</div> : null}
+              </button>
             );
           })}
           <div
-            data-bead
             className="absolute grid place-items-center rounded-full"
             style={{
               width: 64,
               height: 64,
-              left: orbit + Math.cos(theta) * orbit - 32,
-              top: orbit + Math.sin(theta) * orbit - 32,
+              left: bead.x - 32,
+              top: bead.y - 32,
               background: PAPER,
               border: `5px solid ${BLUE}`,
+              color: BLUE,
+              fontSize: 11,
             }}
           >
-            <span style={{ color: BLUE, fontSize: 12 }}>{seat.word}</span>
+            {seat.word}
           </div>
-          {!overview ? (
-            <div className="absolute inset-0 grid place-items-center px-16 text-center" data-seat-content>
-              {content()}
-            </div>
-          ) : null}
         </div>
       ) : null}
     </div>

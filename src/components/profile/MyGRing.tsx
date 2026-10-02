@@ -1,13 +1,12 @@
 import { useRef, useState } from "react";
 import { ageFrom } from "@/data/account";
-import { myProfileStore } from "@/data/my-profile";
 import { useMyProfile } from "@/hooks/use-my-profile";
 import { buzz } from "@/lib/haptics";
 
 /**
- * MY PROFILE — closed blue rail. The bead is the navigation.
- * Touch the bead, it follows the thumb. Snap only on release.
- * My G is 6 o'clock and the only exit. Nothing covers the bead.
+ * MY PROFILE. Closed blue rail. The bead is the control.
+ * It follows the thumb in screen space. The ring does not scale or pan.
+ * Snap only on release. My G at 6 o'clock is the exit.
  */
 
 const BLUE = "#2F6FED";
@@ -27,14 +26,6 @@ const SEATS = [
 
 type SeatId = (typeof SEATS)[number]["id"];
 
-const CX = 195;
-const CY = 340;
-const TRACK_R = 280;
-const STROKE = 16;
-const INNER = TRACK_R - STROKE / 2;
-const BEAD_R = 28;
-
-const rad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 const wrap = (d: number) => ((d % 360) + 360) % 360;
 const turn = (a: number, b: number) => {
   let d = wrap(b - a);
@@ -48,43 +39,48 @@ const seatOf = (angle: number) =>
 
 export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => void; onAccount?: () => void }) {
   const me = useMyProfile();
+  const root = useRef<HTMLDivElement | null>(null);
   const [deg, setDeg] = useState(0);
   const [live, setLive] = useState<SeatId>("me");
   const [held, setHeld] = useState(false);
-  const svg = useRef<SVGSVGElement | null>(null);
   const lastTick = useRef(0);
+  const dragging = useRef(false);
 
   const pointerDeg = (e: React.PointerEvent) => {
-    const box = svg.current?.getBoundingClientRect();
+    const box = root.current?.getBoundingClientRect();
     if (!box) return deg;
-    const x = ((e.clientX - box.left) / box.width) * 390 - CX;
-    const y = ((e.clientY - box.top) / box.height) * 780 - CY;
-    return wrap((Math.atan2(y, x) * 180) / Math.PI + 90);
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height * 0.46;
+    return wrap((Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI + 90);
   };
 
-  const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
+    dragging.current = true;
     setHeld(true);
     const next = pointerDeg(e);
     setDeg(next);
+    setLive(seatOf(next).id);
     lastTick.current = seatOf(next).at;
   };
 
-  const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!held) return;
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
     const next = pointerDeg(e);
-    const crossed = seatOf(next).at;
-    if (crossed !== lastTick.current) {
-      lastTick.current = crossed;
+    const seat = seatOf(next);
+    if (seat.at !== lastTick.current) {
+      lastTick.current = seat.at;
       buzz(8);
     }
     setDeg(next);
+    setLive(seat.id);
   };
 
-  const onPointerUp = () => {
-    if (!held) return;
-    const seat = seatOf(deg);
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    dragging.current = false;
     setHeld(false);
+    const seat = seatOf(pointerDeg(e));
     setDeg(seat.at);
     setLive(seat.id);
     buzz(16);
@@ -92,52 +88,56 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
   };
 
   const show = held ? deg : seatOf(deg).at;
-  const theta = rad(show);
-  const beadAt = INNER - BEAD_R - 1;
-  const word = (held ? seatOf(deg) : SEATS.find((s) => s.id === live) ?? SEATS[0]).word;
+  const theta = ((show - 90) * Math.PI) / 180;
+  const word = seatOf(show).word;
   const name = (me.username ?? "").replace(/^@/, "");
   const age = ageFrom(me.birthday);
-  const scale = held ? 0.9 : 1;
 
   return (
-    <div className="relative h-full overflow-hidden" style={{ background: PAPER, color: INK }}>
-      <svg
-        ref={svg}
-        viewBox="0 0 390 780"
-        className="absolute inset-0 h-full w-full touch-none"
-        style={{ transform: `scale(${scale})`, transformOrigin: "50% 42%", transition: held ? "none" : "transform 180ms ease-out" }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        role="slider"
-        aria-label="my profile"
-        aria-valuetext={word}
+    <div
+      ref={root}
+      className="fixed inset-0 z-[80] touch-none"
+      style={{ background: PAPER, color: INK }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      role="slider"
+      aria-label="my profile"
+      aria-valuetext={word}
+    >
+      <div
+        className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2"
+        style={{ width: "86vw", height: "86vw", maxWidth: 520, maxHeight: 520 }}
       >
-        <circle cx={CX} cy={CY} r={TRACK_R} fill="none" stroke={BLUE} strokeWidth={STROKE} />
-        <circle cx={CX} cy={CY} r={TRACK_R} fill="none" stroke="transparent" strokeWidth={64} />
-        <g transform={`translate(${CX + Math.cos(theta) * beadAt} ${CY + Math.sin(theta) * beadAt})`}>
-          <circle r={44} fill="transparent" />
-          <circle r={BEAD_R} fill={PAPER} stroke={BLUE} strokeWidth={6} />
-          <text textAnchor="middle" y={4} fill={BLUE} fontSize={word.length > 8 ? 8 : 11} fontFamily="Helvetica, sans-serif">
-            {word}
-          </text>
-        </g>
-      </svg>
-      <div className="pointer-events-none absolute inset-0 grid place-items-center px-16 text-center text-sm">
-        {live === "me" ? (
-          <div>
-            {me.photo ? <img src={me.photo} alt="" className="mx-auto mb-2 h-16 w-16 rounded-full object-cover" /> : null}
-            {name ? <p>@{name}</p> : null}
-            {age != null ? <p>{age}</p> : null}
-          </div>
-        ) : null}
-        {live === "activity" ? <p style={{ color: BLUE }}>nothing in motion right now</p> : null}
-        {live === "messages" ? <p style={{ color: BLUE }}>nothing in motion right now</p> : null}
-        {live === "settings" ? <p style={{ color: BLUE }}>account stays quiet</p> : null}
-        {live === "help" ? <p style={{ color: BLUE }}>giver</p> : null}
-        {live === "standing" && me.sparks > 0 ? <p>{me.sparks} sparks</p> : null}
-        {live === "history" ? <p style={{ color: BLUE }}>{me.records.give.length + me.records.wish.length + me.records.trade.length + me.records.borrow.length || ""}</p> : null}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{ border: `14px solid ${BLUE}` }}
+        />
+        <div
+          className="absolute grid place-items-center rounded-full"
+          style={{
+            width: 64,
+            height: 64,
+            left: `calc(50% + ${Math.cos(theta) * 50}% - 32px)`,
+            top: `calc(50% + ${Math.sin(theta) * 50}% - 32px)`,
+            background: PAPER,
+            border: `5px solid ${BLUE}`,
+          }}
+        >
+          <span style={{ color: BLUE, fontSize: word.length > 7 ? 9 : 12, lineHeight: 1 }}>{word}</span>
+        </div>
+        <div className="pointer-events-none absolute inset-0 grid place-items-center px-10 text-center text-sm">
+          {live === "me" ? (
+            <div>
+              {me.photo ? <img src={me.photo} alt="" className="mx-auto mb-2 h-16 w-16 rounded-full object-cover" /> : null}
+              {name ? <p>@{name}</p> : null}
+              {age != null ? <p>{age}</p> : null}
+            </div>
+          ) : null}
+          {live === "messages" ? <p style={{ color: BLUE }}>nothing in motion right now</p> : null}
+          {live === "standing" && me.sparks > 0 ? <p>{me.sparks} sparks</p> : null}
+        </div>
       </div>
     </div>
   );

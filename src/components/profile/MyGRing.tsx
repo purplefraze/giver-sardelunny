@@ -6,9 +6,8 @@ import { buzz } from "@/lib/haptics";
 
 /**
  * MY PROFILE is the top loop, closer. Not a page.
- * Camera zooms in. Arm points down. Bead rides the rail.
- * Arriving at 6 o'clock does not leave. A tap there does.
- * Pinch out morphs the circle into the screen edge.
+ * The circle is sized from THIS box, never from the browser viewport.
+ * Arm points down. Bead rides the rail. 6 o'clock is a seat until tapped.
  */
 
 const BLUE = "#2F6FED";
@@ -17,13 +16,13 @@ const INK = "#1C1A17";
 
 const SEATS = [
   { id: "me", word: "me", at: 0 },
-  { id: "activity", word: "activity", at: 45 },
-  { id: "messages", word: "messages", at: 90 },
-  { id: "settings", word: "settings", at: 135 },
+  { id: "activity", word: "now", at: 45 },
+  { id: "messages", word: "notes", at: 90 },
+  { id: "settings", word: "account", at: 135 },
   { id: "myg", word: "my g", at: 180 },
   { id: "help", word: "help", at: 225 },
-  { id: "standing", word: "standing", at: 270 },
-  { id: "history", word: "history", at: 315 },
+  { id: "standing", word: "aura", at: 270 },
+  { id: "history", word: "past", at: 315 },
 ] as const;
 
 type SeatId = (typeof SEATS)[number]["id"];
@@ -43,6 +42,7 @@ const rad = (deg: number) => ((deg - 90) * Math.PI) / 180;
 export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => void; onAccount?: () => void }) {
   const me = useMyProfile();
   const root = useRef<HTMLDivElement | null>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
   const [deg, setDeg] = useState(0);
   const [live, setLive] = useState<SeatId>("me");
   const [held, setHeld] = useState(false);
@@ -56,16 +56,30 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
   const pinch = useRef(0);
 
   useEffect(() => {
+    const node = root.current;
+    if (!node) return;
+    const read = () => {
+      const r = node.getBoundingClientRect();
+      setBox({ w: r.width, h: r.height });
+    };
+    read();
+    const obs = new ResizeObserver(read);
+    obs.observe(node);
     const id = requestAnimationFrame(() => setNear(true));
-    return () => cancelAnimationFrame(id);
+    return () => {
+      obs.disconnect();
+      cancelAnimationFrame(id);
+    };
   }, []);
 
-  const pointerDeg = (e: React.PointerEvent) => {
-    const box = root.current?.getBoundingClientRect();
-    if (!box) return deg;
-    const cx = box.left + box.width / 2;
-    const cy = box.top + box.height * 0.42;
-    return wrap((Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI + 90);
+  const size = Math.max(0, Math.min(box.w, box.h) - 36);
+  const cx = box.w / 2;
+  const cy = Math.min(box.h * 0.46, box.h - size / 2 - 28);
+
+  const pointerDeg = (e: { clientX: number; clientY: number }) => {
+    const rect = root.current?.getBoundingClientRect();
+    if (!rect) return deg;
+    return wrap((Math.atan2(e.clientY - rect.top - cy, e.clientX - rect.left - cx) * 180) / Math.PI + 90);
   };
 
   const finishEdit = () => {
@@ -78,7 +92,8 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (open || e.pointerType === "touch" && pinch.current) return;
+    if (open) return;
+    if (e.pointerType === "touch" && pinch.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     dragging.current = true;
     moved.current = 0;
@@ -109,7 +124,7 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
     setDeg(seat.at);
     setLive(seat.id);
     buzz(16);
-    if (moved.current < 10 && seat.id === "myg") onClose();
+    if (moved.current < 12 && seat.id === "myg") onClose();
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -139,17 +154,19 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
   const word = seatOf(show).word;
   const name = (me.username ?? "").replace(/^@/, "");
   const age = ageFrom(me.birthday);
-  const zoom = open ? 1.35 : near ? 1 : 0.22;
+  const r = size / 2;
+  const bead = 64;
+  const zoom = open ? 1 : near ? 1 : 0.28;
 
   return (
     <div
       ref={root}
-      className="fixed inset-0 z-[80] touch-none"
+      className="fixed inset-0 z-[80] touch-none overflow-hidden"
       style={{
         background: PAPER,
         color: INK,
-        boxShadow: open ? `inset 0 0 0 10px ${BLUE}` : "none",
-        transition: "box-shadow 280ms ease",
+        boxShadow: open ? `inset 0 0 0 12px ${BLUE}` : "none",
+        transition: "box-shadow 320ms ease",
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -157,77 +174,101 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
       onPointerCancel={onPointerUp}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
-      onClick={() => { if (open && edit) finishEdit(); }}
+      onClick={() => {
+        if (open && edit) finishEdit();
+      }}
       role="slider"
       aria-label="my profile"
       aria-valuetext={word}
     >
-      <div
-        className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2"
-        style={{
-          width: open ? "140vw" : "118vw",
-          height: open ? "140vw" : "118vw",
-          transform: `translate(-50%, -50%) scale(${zoom})`,
-          transition: held ? "none" : "transform 320ms ease, width 320ms ease, height 320ms ease",
-          opacity: open ? 0.15 : 1,
-        }}
-      >
-        <div className="absolute inset-0 rounded-full" style={{ border: `16px solid ${BLUE}` }} />
-        {SEATS.map((seat) => {
-          const t = rad(seat.at);
-          return (
-            <div
-              key={seat.id}
-              className="absolute rounded-full"
-              style={{
-                width: 8,
-                height: 8,
-                left: `calc(50% + ${Math.cos(t) * 46}% - 4px)`,
-                top: `calc(50% + ${Math.sin(t) * 46}% - 4px)`,
-                background: BLUE,
-                opacity: 0.45,
-              }}
-            />
-          );
-        })}
+      {size > 0 && !open ? (
         <div
           className="absolute"
           style={{
-            width: 8,
-            height: 72,
-            left: "calc(50% - 4px)",
-            top: "100%",
-            background: BLUE,
-            borderRadius: 4,
-          }}
-        />
-        <div
-          className="absolute grid place-items-center rounded-full"
-          style={{
-            width: 72,
-            height: 72,
-            left: `calc(50% + ${Math.cos(theta) * 46}% - 36px)`,
-            top: `calc(50% + ${Math.sin(theta) * 46}% - 36px)`,
-            background: PAPER,
-            border: `5px solid ${BLUE}`,
+            left: cx,
+            top: cy,
+            width: size,
+            height: size,
+            transform: `translate(-50%, -50%) scale(${zoom})`,
+            transformOrigin: "50% 50%",
+            transition: held ? "none" : "transform 380ms cubic-bezier(.2,.8,.2,1)",
           }}
         >
-          <span style={{ color: BLUE, fontSize: word.length > 7 ? 10 : 13 }}>{word}</span>
+          <div className="absolute inset-0 rounded-full" style={{ border: `14px solid ${BLUE}` }} />
+          {SEATS.map((seat) => {
+            const t = rad(seat.at);
+            return (
+              <div
+                key={seat.id}
+                className="absolute rounded-full"
+                style={{
+                  width: 7,
+                  height: 7,
+                  left: r + Math.cos(t) * (r - 10) - 3.5,
+                  top: r + Math.sin(t) * (r - 10) - 3.5,
+                  background: BLUE,
+                  opacity: 0.55,
+                }}
+              />
+            );
+          })}
+          <div
+            className="absolute"
+            style={{
+              left: r - 4,
+              top: size - 2,
+              width: 8,
+              height: 54,
+              background: BLUE,
+              borderRadius: 4,
+            }}
+          />
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: r - size * 0.42,
+              top: size + 36,
+              width: size * 0.84,
+              height: size * 0.84,
+              border: `10px solid ${BLUE}`,
+              opacity: 0.35,
+            }}
+          />
+          <div
+            className="absolute grid place-items-center rounded-full"
+            style={{
+              width: bead,
+              height: bead,
+              left: r + Math.cos(theta) * r - bead / 2,
+              top: r + Math.sin(theta) * r - bead / 2,
+              background: PAPER,
+              border: `5px solid ${BLUE}`,
+            }}
+          >
+            <span style={{ color: BLUE, fontSize: 12, letterSpacing: "-0.02em" }}>{word}</span>
+          </div>
+          <div className="absolute inset-0 grid place-items-center px-16 text-center">
+            {live === "me" && (me.photo || name) ? (
+              <div>
+                {me.photo ? (
+                  <img src={me.photo} alt="" className="mx-auto mb-3 h-20 w-20 rounded-full object-cover" />
+                ) : null}
+                {name ? <p className="text-lg">@{name}</p> : null}
+                {age != null ? <p className="mt-1 text-sm opacity-60">{age}</p> : null}
+              </div>
+            ) : null}
+            {live === "standing" && me.sparks > 0 ? <p>{me.sparks} sparks</p> : null}
+            {live === "messages" ? <p className="text-sm opacity-60">notes</p> : null}
+            {live === "history" ? <p className="text-sm opacity-60">past</p> : null}
+            {live === "activity" ? <p className="text-sm opacity-60">now</p> : null}
+            {live === "help" ? <p className="text-sm opacity-60">help</p> : null}
+            {live === "settings" ? <p className="text-sm opacity-60">account</p> : null}
+            {live === "myg" ? <p className="text-sm opacity-60">tap to return</p> : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      {!open ? (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center px-16 text-center">
-          {live === "me" && (me.photo || name) ? (
-            <div>
-              {me.photo ? <img src={me.photo} alt="" className="mx-auto mb-3 h-20 w-20 rounded-full object-cover" /> : null}
-              {name ? <p className="text-lg">@{name}</p> : null}
-              {age != null ? <p className="mt-1 text-sm opacity-60">{age}</p> : null}
-            </div>
-          ) : null}
-          {live === "standing" && me.sparks > 0 ? <p>{me.sparks} sparks</p> : null}
-        </div>
-      ) : (
+      {open ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center px-10 text-center">
           {me.photo ? <img src={me.photo} alt="" className="mb-6 h-24 w-24 rounded-full object-cover" /> : null}
           {edit === "name" ? (
@@ -276,7 +317,7 @@ export function MyGRing({ onClose }: { onClose: () => void; onMessages?: () => v
             </button>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

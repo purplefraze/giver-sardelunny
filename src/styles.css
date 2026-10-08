@@ -4,6 +4,26 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Isolated middle-loop study; normal Living G and lower perimeter are unchanged. */
+.middle-spatial {
+  --spatial-mask-on: #fff;
+  --spatial-mask-off: #000;
+  --world-bg: var(--seat-bg);
+  --world-g: var(--mode-wish);
+  background: var(--world-bg);
+  color: var(--giver-ink);
+  font-family: var(--giver-font);
+}
+.middle-spatial[data-middle-seat="giver"] { --world-g: var(--mode-giver); }
+.middle-spatial[data-middle-seat="give"] { --world-g: var(--mode-give); }
+.middle-spatial[data-middle-seat="lend"] { --world-g: var(--mode-lend); }
+.middle-spatial[data-middle-seat="trade"] { --world-g: var(--mode-trade); }
+.middle-spatial[data-middle-seat="map"] { --world-g: var(--mode-communigy); }
+.middle-spatial[data-middle-seat="fund"] { --world-g: var(--mode-fund); }
+.middle-spatial[data-middle-seat="borrow"] { --world-g: var(--mode-borrow); }
+.middle-spatial-title { font: 700 17.22px var(--giver-font); letter-spacing: 0; }
+.middle-spatial-close path { stroke-width: 16px; vector-effect: non-scaling-stroke; }
+
 /*
  * Design system definition.
  *

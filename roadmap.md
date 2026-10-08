@@ -26,5 +26,5 @@
 - Existing global typecheck errors remain outside the authorized correction scope; reviewable Vite preview runs without runtime errors. No production-build success or publish is claimed.
 ## Voice (Oct 8)
 - [x] Seat-coloured record control in S-curve (--world-g), listening halo + stop square
-- [ ] Universal voice intent router: SEARCH routes to existing Communi-G search; GIVE drafts; others via existing flows/clarify
-- [ ] Plan only: voice-mode G unfold/reform choreography (contract → toggle swings orbit → expand); no geometry changes
+- [x] Universal voice intent router: search reads existing listings; give drafts; other actions open existing forms; clarify otherwise
+- [x] Plan only: voice-mode choreography written to docs/spec/voice-motion.md (build awaits approval)

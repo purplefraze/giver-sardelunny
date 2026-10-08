@@ -74,7 +74,9 @@ export function nextAsk(s: VoiceSession): VoiceSession {
 /** One recognised segment (or typed line) → the next state. */
 export function hear(s: VoiceSession, raw: string): VoiceSession {
   const text = raw.trim();
-  if (!text || s.stage === "review" || s.stage === "live") return s;
+  if (!text || s.stage === "live") return s;
+  /* Follow-up voice in the preview fills only what is still empty. */
+  if (s.stage === "review") return s.action ? { ...s, heard: text, fields: mergeFollowUp(s.action, s.fields, text) } : s;
   const lower = text.toLowerCase();
   let next: VoiceSession = { ...s, heard: text };
 

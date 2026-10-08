@@ -844,8 +844,9 @@ function Index() {
                 />
               )}
               {/* THE MIC in the open S-curve: speak to create. Listening starts on this tap. */}
-              {ceremony || firstLand ? null : (
+              {ceremony ? null : (
                 <VoiceMic
+                  seat={seat}
                   listening={voice.state === "listening"}
                   onPress={() => {
                     if (voice.state === "listening") {

@@ -23,6 +23,15 @@
 .middle-spatial[data-middle-seat="borrow"] { --world-g: var(--mode-borrow); }
 .middle-spatial-title { font: 700 17.22px var(--giver-font); letter-spacing: 0; }
 .middle-spatial-close path { stroke-width: 16px; vector-effect: non-scaling-stroke; }
+.g-record { --record-ink: var(--mode-give); }
+.g-record[data-record-seat="giver"] { --record-ink: var(--mode-giver); }
+.g-record[data-record-seat="give"] { --record-ink: var(--mode-give); }
+.g-record[data-record-seat="lend"] { --record-ink: var(--mode-lend); }
+.g-record[data-record-seat="trade"] { --record-ink: var(--mode-trade); }
+.g-record[data-record-seat="map"] { --record-ink: var(--mode-communigy); }
+.g-record[data-record-seat="fund"] { --record-ink: var(--mode-fund); }
+.g-record[data-record-seat="borrow"] { --record-ink: var(--mode-borrow); }
+.g-record[data-record-seat="wish"] { --record-ink: var(--mode-wish); }
 
 /*
  * Design system definition.

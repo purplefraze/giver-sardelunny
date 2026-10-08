@@ -9,7 +9,7 @@
  * start() must be called synchronously from the tap (Safari user activation).
  */
 
-export type VoiceState = "idle" | "listening" | "processing" | "error" | "unsupported";
+export type VoiceState = "idle" | "listening" | "processing" | "speaking" | "error" | "unsupported";
 
 export type VoiceSnapshot = {
   state: VoiceState;
@@ -53,6 +53,7 @@ let rec: Recognition | null = null;
 let finalText = "";
 let cancelled = false;
 const subs = new Set<() => void>();
+const finals = new Set<(words: string) => void>();
 
 const set = (next: Partial<VoiceSnapshot>) => {
   snap = { ...snap, ...next };
@@ -100,7 +101,10 @@ export const voiceCapture = {
         const res = e.results[i];
         if (!res) continue;
         const words = res[0]?.transcript ?? "";
-        if (res.isFinal) finalText = `${finalText} ${words}`.trim();
+        if (res.isFinal) {
+          finalText = `${finalText} ${words}`.trim();
+          if (words.trim()) finals.forEach((f) => f(words.trim()));
+        }
         else interim += words;
       }
       set({ transcript: `${finalText} ${interim}`.replace(/\s+/g, " ").trim() });
@@ -138,9 +142,59 @@ export const voiceCapture = {
     }
   },
 
+  /** Each finished recognition segment, as it lands. */
+  onFinal(f: (words: string) => void) {
+    finals.add(f);
+    return () => finals.delete(f);
+  },
+
+  /**
+   * GIVER SPEAKS ITS QUESTION. Listening pauses first so Giver never records
+   * itself; `after` runs when speech ends (or at once without speech output).
+   */
+  speak(text: string, after: () => void) {
+    const r = rec;
+    rec = null;
+    try {
+      r?.abort();
+    } catch {
+      /* fine */
+    }
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : undefined;
+    if (!synth || typeof SpeechSynthesisUtterance === "undefined") {
+      set({ state: "idle" });
+      after();
+      return;
+    }
+    set({ state: "speaking" });
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (snap.state === "speaking") set({ state: "idle" });
+      after();
+    };
+    try {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.05;
+      u.onend = finish;
+      u.onerror = finish;
+      synth.speak(u);
+      window.setTimeout(finish, 1200 + text.length * 90);
+    } catch {
+      finish();
+    }
+  },
+
   /** Throw the listening away. */
   cancel() {
     cancelled = true;
+    try {
+      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+    } catch {
+      /* fine */
+    }
     const r = rec;
     rec = null;
     try {

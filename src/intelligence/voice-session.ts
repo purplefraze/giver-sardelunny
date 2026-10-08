@@ -123,10 +123,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
   }
 
   if (s.stage === "anything") {
-    const merged = mergeFollowUp(next.action, s.fields, text);
-    const f = merged === s.fields ? s.fields : merged;
-    const note = f.note === s.fields.note && f === s.fields ? (s.fields.note ? `${s.fields.note} ${text}` : text) : f.note;
-    return { ...next, fields: { ...f, note }, prompt: "anything else?", stage: "anything" };
+    return { ...next, fields: mergeFollowUp(next.action, s.fields, text), prompt: "anything else?", stage: "anything" };
   }
 
   return nextAsk({ ...next, fields: mergeFollowUp(next.action, s.fields, text) });

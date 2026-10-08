@@ -56,6 +56,7 @@ export function VoiceIntake({
       <FormQuestion
         heading={asking.clarification.ask}
         options={asking.clarification.choices}
+        selected={undefined}
         onPick={(say) => {
           const resolved = resolveChoice(asking, say);
           if (!resolved) {

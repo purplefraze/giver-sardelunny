@@ -89,6 +89,7 @@ export const voiceCapture = {
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
+        if (!res) continue;
         const words = res[0]?.transcript ?? "";
         if (res.isFinal) finalText = `${finalText} ${words}`.trim();
         else interim += words;

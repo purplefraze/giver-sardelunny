@@ -1131,7 +1131,7 @@ function Index() {
                 world: activity ?? "profile",
                 children:
                   editor?.kind === "voice" ? (
-                    <VoiceIntake onResolved={openDraft} onBack={() => setEditor(null)} />
+                    <VoiceIntake onResolved={openDraft} onBack={() => setEditor(null)} onOpen={(id) => { setEditor(null); setDetail(id); }} />
                   ) : null,
               },
 

@@ -4,6 +4,9 @@ import { type ActionDraft } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { handoffOf } from "@/intelligence/handoff";
 import { voiceCapture } from "@/intelligence/voice-capture";
+import { routeVoice, type SearchSpec } from "@/intelligence/voice-router";
+import { ME_ID, communityItems, detailBits, itemLine, ACTIVITY_FILL } from "@/data/items";
+import { useItems } from "@/hooks/use-items";
 import { haptics } from "@/lib/haptics";
 
 /**
@@ -23,14 +26,19 @@ const LABEL: Record<string, string> = {
 export function VoiceIntake({
   onResolved,
   onBack,
+  onOpen,
 }: {
   onResolved: (draft: ActionDraft) => void;
+  /** Open one existing community listing (the same detail view browse uses). */
+  onOpen: (itemId: string) => void;
   onBack: () => void;
 }) {
   const v = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const [text, setText] = useState("");
   const [edited, setEdited] = useState(false);
   const [asking, setAsking] = useState<ActionDraft | null>(null);
+  const [search, setSearch] = useState<SearchSpec | null>(null);
+  const items = useItems();
 
   /* Live transcript flows into the box until the person edits it. */
   useEffect(() => {
@@ -40,16 +48,76 @@ export function VoiceIntake({
   useEffect(() => () => voiceCapture.cancel(), []);
 
   const reading = text.trim().length >= 2 ? bindUtterance(text) : null;
+  const preview = text.trim().length >= 2 ? routeVoice(text) : null;
   const listening = v.state === "listening";
 
   const go = () => {
     if (!reading) return;
     voiceCapture.cancel();
+    const route = routeVoice(text);
+    if (route.intent === "search") {
+      haptics.light();
+      setSearch(route.search);
+      return;
+    }
     if (reading.action && handoffOf(reading)) {
       haptics.light();
       onResolved(reading);
     } else if (reading.clarification) setAsking(reading);
   };
+
+  if (search) {
+    const words = search.term.split(" ");
+    const hits = communityItems(items, { excludeOwnerId: ME_ID })
+      .filter((i) => (search.types.length ? search.types.includes(i.type) : true))
+      .filter((i) => (i.type === "borrow" && search.side ? (i.side ?? "borrow") === search.side : true))
+      .filter((i) => {
+        const hay = `${itemLine(i)} ${i.text} ${detailBits(i).join(" ")}`.toLowerCase();
+        return words.every((w) => hay.includes(w));
+      })
+      .sort((a, b) => (search.nearby ? (a.distanceKm ?? 1e9) - (b.distanceKm ?? 1e9) : b.createdAt - a.createdAt));
+    const alt = search.fallback.action === "borrow" ? "ask to borrow one" : "post a wish for one";
+    return (
+      <div className="g-page flex h-full flex-col gap-4 pt-16" data-voice-search={search.term}>
+        <p className="g-meta" role="status" aria-live="polite">
+          {hits.length
+            ? `${hits.length} ${hits.length === 1 ? "match" : "matches"} for “${search.term}”${search.nearby ? ", nearest first" : ""}`
+            : `nothing matches “${search.term}” yet`}
+        </p>
+        <ul className="flex-1 overflow-y-auto">
+          {hits.map((i) => (
+            <li key={i.id} className="g-rule py-3">
+              <button
+                type="button"
+                className="g-heading block w-full text-left"
+                style={{ color: ACTIVITY_FILL[i.type] }}
+                onClick={() => {
+                  haptics.selection();
+                  onOpen(i.id);
+                }}
+              >
+                {itemLine(i)}
+              </button>
+              <p className="g-meta opacity-60">
+                {[i.distanceKm === undefined ? null : `${i.distanceKm} km`, ...detailBits(i)].filter(Boolean).join(" · ")}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-wrap gap-6 pb-8">
+          <button type="button" className="g-heading" onClick={() => onResolved(search.fallback)}>
+            {alt}
+          </button>
+          <button type="button" className="g-meta" onClick={() => setSearch(null)}>
+            change words
+          </button>
+          <button type="button" className="g-meta" onClick={onBack}>
+            cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (asking?.clarification) {
     return (
@@ -109,7 +177,11 @@ export function VoiceIntake({
           autoFocus={v.state === "unsupported" || v.state === "error"}
         />
       </label>
-      {reading?.action ? (
+      {preview?.intent === "search" ? (
+        <p className="g-body" data-voice-reading="search">
+          search · {preview.search.term}
+        </p>
+      ) : reading?.action ? (
         <p className="g-body" data-voice-reading={reading.action}>
           {LABEL[reading.action]}
           {reading.entities.item ? ` · ${reading.entities.item}` : ""}

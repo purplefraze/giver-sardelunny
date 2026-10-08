@@ -12,7 +12,7 @@ import { useRef, useState } from "react";
 import { LOCK_AT, LOCK_TRAVEL, releaseOutcome } from "@/intelligence/voice-flow";
 import type { Seat } from "./EarSelector";
 
-export const MIC_CENTRE = { x: 252, y: 536 } as const;
+export const MIC_CENTRE = { x: 262, y: 536 } as const;
 const HIT = { x: 182, y: 510, width: 150, height: 52 } as const;
 
 export type MicState = "idle" | "hold" | "locked";

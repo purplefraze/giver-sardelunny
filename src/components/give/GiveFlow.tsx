@@ -65,7 +65,7 @@ import { WhenPicker } from "./WhenPicker";
  * the person to the G sign-in (session.ts ensureLiveSession).
  */
 
-const TOPIC_OF: Record<GiveType, Topic> = {
+export const TOPIC_OF: Record<GiveType, Topic> = {
   "a thing": "items / household",
   clothes: "items / household",
   food: "food",

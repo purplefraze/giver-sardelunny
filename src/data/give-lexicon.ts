@@ -57,6 +57,7 @@ export const GIVE_LEXICON: Record<GiveType, string[]> = {
     "denim", "size",
   ],
   "a thing": [
+    "fridge*", "freezer*", "microwave*", "oven*", "washer*", "dryer*", "kettle*", "toaster*", "ladder*",
     "chair*", "table*", "desk*", "sofa*", "couch*", "bed", "beds", "crib*", "mattress*",
     "lamp*", "shelf", "shelves", "dresser*", "tv", "television", "laptop*", "phone*",
     "monitor*", "printer*", "book*", "toy*", "game*", "puzzle*", "bike*", "bicycle*",

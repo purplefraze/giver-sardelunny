@@ -53,12 +53,14 @@ function restoreCurrencyFromCloud() {
   if (!s.userId || !s.profile) return;
   if (currencyRestoredForUser === s.userId) return;
   currencyRestoredForUser = s.userId;
+  // Older generated profile types omit these optional companion columns.
+  const companion = s.profile as typeof s.profile & { reserved?: Json; sparks_seeded?: boolean; rewarded?: Json };
   myProfileStore.patch({
     sparks: s.profile.sparks,
     sparkles: s.profile.sparkles,
-    reserved: asReserved(s.profile.reserved),
-    sparksSeeded: Boolean(s.profile.sparks_seeded) || s.profile.sparks > 0,
-    rewarded: asRewarded(s.profile.rewarded),
+    reserved: asReserved(companion.reserved),
+    sparksSeeded: Boolean(companion.sparks_seeded) || s.profile.sparks > 0,
+    rewarded: asRewarded(companion.rewarded),
   });
 }
 

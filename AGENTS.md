@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Communi-G perimeter
+- Keep the opt-in middle spatial study at `/dev/middle-loop` isolated from app navigation and stores, importing the live seat/geometry tables; this permits review without risking the established full G or lower-loop engine.
 - Derive paint, attachment normals, and camera from the smooth measured lower-loop curve in `perimeter-geometry.ts`; this prevents erosion seams and quantized ray-cache movement without altering the full Living G artwork.
 - Keep one unwrapped angle as the only motion state and freeze only gesture input coordinates, never the camera; this avoids input feedback and preserves immediate reversal/stop behavior.
 - Derive bounded spatial lens scale directly from the shared angle and normalize gesture input by the fixed screen ellipse; this preserves coordinated expansion/contraction without zoom timers or tall-phone angular gain distortion.

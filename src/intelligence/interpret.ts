@@ -18,12 +18,12 @@ export type InterpretInput = {
 const sanitise = (raw: unknown, fallback: ActionDraft): ActionDraft => {
   if (!raw || typeof raw !== "object") return fallback;
   const row = raw as Record<string, unknown>;
-  const action = isAction(row.action) ? row.action : null;
+  const action = isAction(row["action"]) ? row["action"] : null;
   const confidence =
-    typeof row.confidence === "number" && row.confidence >= 0 && row.confidence <= 1
-      ? row.confidence
+    typeof row["confidence"] === "number" && row["confidence"] >= 0 && row["confidence"] <= 1
+      ? row["confidence"]
       : fallback.confidence;
-  const src = (row.entities ?? {}) as Record<string, unknown>;
+  const src = (row["entities"] ?? {}) as Record<string, unknown>;
   const entities = emptyEntities();
   const str = (k: keyof typeof entities) =>
     typeof src[k] === "string" && (src[k] as string).trim() ? (src[k] as string).trim() : null;
@@ -38,17 +38,17 @@ const sanitise = (raw: unknown, fallback: ActionDraft): ActionDraft => {
   entities.want = str("want");
   entities.quantity = str("quantity");
   entities.amountCents =
-    typeof src.amountCents === "number" && Number.isInteger(src.amountCents)
-      ? src.amountCents
+    typeof src["amountCents"] === "number" && Number.isInteger(src["amountCents"])
+      ? src["amountCents"]
       : null;
   const clarification =
-    row.clarification &&
-    typeof row.clarification === "object" &&
-    typeof (row.clarification as { ask?: unknown }).ask === "string"
+    row["clarification"] &&
+    typeof row["clarification"] === "object" &&
+    typeof (row["clarification"] as { ask?: unknown }).ask === "string"
       ? {
-          ask: (row.clarification as { ask: string }).ask,
-          choices: Array.isArray((row.clarification as { choices?: unknown }).choices)
-            ? ((row.clarification as { choices: unknown[] }).choices.filter(
+          ask: (row["clarification"] as { ask: string }).ask,
+          choices: Array.isArray((row["clarification"] as { choices?: unknown }).choices)
+            ? ((row["clarification"] as { choices: unknown[] }).choices.filter(
                 (c) => typeof c === "string",
               ) as string[])
             : [],

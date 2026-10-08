@@ -10,7 +10,9 @@
 export const MIC_CENTRE = { x: 262, y: 536 } as const;
 const HIT = { x: 182, y: 510, width: 150, height: 52 } as const;
 
-export function VoiceMic({ onPress, listening = false }: { onPress: () => void; listening?: boolean }) {
+import type { Seat } from "./EarSelector";
+
+export function VoiceMic({ onPress, listening = false, seat = "give" }: { onPress: () => void; listening?: boolean; seat?: Seat }) {
   const { x, y } = MIC_CENTRE;
   const ease = { transition: "fill 320ms ease-out, stroke 320ms ease-out" };
   return (
@@ -20,6 +22,7 @@ export function VoiceMic({ onPress, listening = false }: { onPress: () => void; 
       aria-label={listening ? "recording — tap to stop" : "record your words"}
       aria-pressed={listening}
       data-voice-mic=""
+      data-record-seat={seat}
       data-listening={listening ? "" : undefined}
       className="g-record"
       style={{ cursor: "pointer", outline: "none" }}
@@ -38,14 +41,14 @@ export function VoiceMic({ onPress, listening = false }: { onPress: () => void; 
       <rect {...HIT} fill="transparent" />
       {/* Listening halo: a soft ring that breathes outward, still inside the pocket. */}
       {listening ? (
-        <circle className="g-record-halo" cx={x} cy={y} r={19} fill="none" stroke="var(--world-g)" strokeWidth={2} style={ease} />
+        <circle className="g-record-halo" cx={x} cy={y} r={19} fill="none" stroke="var(--record-ink)" strokeWidth={2} style={ease} />
       ) : null}
-      <circle cx={x} cy={y} r={19} fill="var(--world-bg)" stroke="var(--world-g)" strokeWidth={3} style={ease} />
+      <circle cx={x} cy={y} r={19} fill="var(--world-bg)" stroke="var(--record-ink)" strokeWidth={3} style={ease} />
       {listening ? (
         /* STOP: a rounded square replaces the dot. */
-        <rect x={x - 7} y={y - 7} width={14} height={14} rx={2.5} fill="var(--world-g)" style={ease} />
+        <rect x={x - 7} y={y - 7} width={14} height={14} rx={2.5} fill="var(--record-ink)" style={ease} />
       ) : (
-        <circle cx={x} cy={y} r={10} fill="var(--world-g)" style={ease} />
+        <circle cx={x} cy={y} r={10} fill="var(--record-ink)" style={ease} />
       )}
     </g>
   );

@@ -45,7 +45,11 @@ export function VoiceIntake({
     if (!edited) setText(v.transcript);
   }, [v.transcript, edited]);
 
-  useEffect(() => () => voiceCapture.cancel(), []);
+  useEffect(() => {
+    // Also restores capability state after React's development cleanup replay.
+    voiceCapture.prepare();
+    return () => voiceCapture.cancel();
+  }, []);
 
   const reading = text.trim().length >= 2 ? bindUtterance(text) : null;
   const preview = text.trim().length >= 2 ? routeVoice(text) : null;
@@ -60,10 +64,11 @@ export function VoiceIntake({
       setSearch(route.search);
       return;
     }
-    if (reading.action && handoffOf(reading)) {
+    const draft = route.draft;
+    if (route.intent !== "clarify" && draft.action && handoffOf(draft)) {
       haptics.light();
-      onResolved(reading);
-    } else if (reading.clarification) setAsking(reading);
+      onResolved(draft);
+    } else if (draft.clarification) setAsking(draft);
   };
 
   if (search) {
@@ -201,7 +206,7 @@ export function VoiceIntake({
               voiceCapture.start();
             }}
           >
-            speak again
+            {text ? "speak again" : "start listening"}
           </button>
         ) : null}
         <button type="submit" className="g-heading" disabled={!reading}>
@@ -219,7 +224,7 @@ export function VoiceIntake({
         </button>
       </div>
       <p className="g-meta opacity-60">
-        your browser's own speech service turns your voice into words. giver doesn't record or keep audio.
+        start listening allows your browser's speech service to process audio, possibly on its provider's servers. giver doesn't store audio. typing stays on this device.
       </p>
     </form>
   );

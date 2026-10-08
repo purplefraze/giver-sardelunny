@@ -6,7 +6,7 @@ Status: PROPOSAL. No geometry, GStage, EarSelector or PerimeterToggle code chang
 Every voice DESTINATION CHANGE runs, in order, with no overlap:
 1. CONTRACT — the open destination perimeter reforms into the full canonical Living G.
 2. SWING — the existing toggle travels along its real middle-loop orbit to the target seat
-   (Give 1:30, Lend 3:00, My G 4:25, Trade 6:00, Borrow 9:00, Wish 10:30). Never a snap or teleport.
+   (My G 12:00, Give 1:30, Lend 3:00, Trade 4:30, Communi-G 6:00, Fund 7:30, Borrow 9:00, Wish 10:30). Never a snap or teleport.
    Light haptic on settle.
 3. EXPAND — only then the G unfolds into the perimeter framing the new destination.
 A refinement inside the SAME destination gets a gentle ripple only, with no return to the full G.

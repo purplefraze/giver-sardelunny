@@ -1,4 +1,7 @@
 # Communi-G track repair
+- [x] Urgent record visibility and voice entry verified on both phone sizes; see docs/voice-preview-verification.md for tested behavior and remaining touch-target/device limitations.
+- [ ] Build an isolated Wish-first middle-loop spatial prototype using the live eight-seat map, canonical artwork and toggle proportions.
+- [ ] Verify phone/tall-phone framing, upright editable content, drag/hold/reversal, snapping, all seats and reduced motion; keep normal navigation untouched.
 - [x] Tune expanded red-loop Bentley-mode zoom from shared progress, preserving entry and all seats.
 - [x] Verify dynamic zoom, contact, hold/reversal, joint settle and prior gesture regressions on both phone sizes.
 - [x] Compare working source with HEAD and inspect current mobile rendering.

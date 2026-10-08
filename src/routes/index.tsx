@@ -25,6 +25,7 @@ import { IntentIntake } from "@/intelligence/IntentIntake";
 import { VoiceIntake } from "@/intelligence/VoiceIntake";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { VoiceMic } from "@/components/living-g/VoiceMic";
+import { recordAvailable } from "@/intelligence/record-availability";
 import { handoffOf, type FormSeed } from "@/intelligence/handoff";
 import type { ActionDraft } from "@/intelligence/action-draft";
 import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
@@ -844,8 +845,9 @@ function Index() {
                 />
               )}
               {/* THE MIC in the open S-curve: speak to create. Listening starts on this tap. */}
-              {ceremony || firstLand ? null : (
+              {recordAvailable(firstLand?.phase ?? null) ? (
                 <VoiceMic
+                  seat={seat}
                   listening={voice.state === "listening"}
                   onPress={() => {
                     if (voice.state === "listening") {
@@ -853,11 +855,11 @@ function Index() {
                       return;
                     }
                     haptics.light();
-                    voiceCapture.start();
+                    voiceCapture.prepare();
                     setEditor({ kind: "voice" });
                   }}
                 />
-              )}
+              ) : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}

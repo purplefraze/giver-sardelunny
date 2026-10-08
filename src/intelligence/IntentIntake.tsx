@@ -40,6 +40,7 @@ export function IntentIntake({
       <FormQuestion
         heading={draft.clarification.ask}
         options={draft.clarification.choices}
+        selected={undefined}
         onPick={(say) => {
           const resolved = resolveChoice(draft, say);
           if (!resolved) {

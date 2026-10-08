@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { GStage } from "@/components/living-g/GStage";
 import { GThinMask } from "@/components/living-g/g-weight";

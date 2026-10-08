@@ -8,7 +8,7 @@
  * pocket's paper, so it never covers the stroke or the loops' hit bands.
  */
 export const MIC_CENTRE = { x: 262, y: 536 } as const;
-const HIT = { x: 172, y: 510, width: 180, height: 52 } as const;
+const HIT = { x: 182, y: 510, width: 150, height: 52 } as const;
 
 export function VoiceMic({ onPress, listening = false }: { onPress: () => void; listening?: boolean }) {
   const { x, y } = MIC_CENTRE;

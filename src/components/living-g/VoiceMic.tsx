@@ -1,19 +1,27 @@
 /**
- * THE MICROPHONE IN THE S-CURVE — drawn inside the Living G's own viewBox, in
- * the open pocket between the middle and lower loops (measured: x 125–355,
- * y 505–565). It never moves or reshapes the G; the touch target is an
- * invisible 88-unit circle (≈44 css px at phone size).
+ * THE RECORD CONTROL IN THE S-CURVE — drawn inside the Living G's own viewBox,
+ * in the open pocket between the middle and lower loops (measured paper:
+ * x 125–355, y ≈505–565 at the centre line). It never moves or reshapes the G.
+ *
+ * Colour is the live seat token --world-g, so it follows the toggle and eases
+ * between seats. The touch target is an invisible rectangle kept INSIDE the
+ * pocket's paper, so it never covers the stroke or the loops' hit bands.
  */
 export const MIC_CENTRE = { x: 262, y: 536 } as const;
+const HIT = { x: 182, y: 510, width: 150, height: 52 } as const;
 
 export function VoiceMic({ onPress, listening = false }: { onPress: () => void; listening?: boolean }) {
   const { x, y } = MIC_CENTRE;
+  const ease = { transition: "fill 320ms ease-out, stroke 320ms ease-out" };
   return (
     <g
       role="button"
       tabIndex={0}
-      aria-label={listening ? "listening — tap to stop" : "speak to create"}
+      aria-label={listening ? "recording — tap to stop" : "record your words"}
+      aria-pressed={listening}
       data-voice-mic=""
+      data-listening={listening ? "" : undefined}
+      className="g-record"
       style={{ cursor: "pointer", outline: "none" }}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => {
@@ -27,27 +35,18 @@ export function VoiceMic({ onPress, listening = false }: { onPress: () => void; 
         }
       }}
     >
-      <circle cx={x} cy={y} r={44} fill="transparent" />
-      <circle
-        cx={x}
-        cy={y}
-        r={22}
-        fill={listening ? "var(--world-g, currentColor)" : "none"}
-        stroke="var(--world-g, currentColor)"
-        strokeWidth={3}
-        opacity={listening ? 0.9 : 0.55}
-      />
-      <g
-        stroke={listening ? "var(--world-bg)" : "var(--world-g, currentColor)"}
-        strokeWidth={3}
-        strokeLinecap="round"
-        fill="none"
-        opacity={listening ? 1 : 0.8}
-      >
-        <rect x={x - 5} y={y - 13} width={10} height={17} rx={5} />
-        <path d={`M ${x - 10} ${y - 2} a 10 10 0 0 0 20 0`} />
-        <line x1={x} y1={y + 8} x2={x} y2={y + 12} />
-      </g>
+      <rect {...HIT} fill="transparent" />
+      {/* Listening halo: a soft ring that breathes outward, still inside the pocket. */}
+      {listening ? (
+        <circle className="g-record-halo" cx={x} cy={y} r={19} fill="none" stroke="var(--world-g)" strokeWidth={2} style={ease} />
+      ) : null}
+      <circle cx={x} cy={y} r={19} fill="var(--world-bg)" stroke="var(--world-g)" strokeWidth={3} style={ease} />
+      {listening ? (
+        /* STOP: a rounded square replaces the dot. */
+        <rect x={x - 7} y={y - 7} width={14} height={14} rx={2.5} fill="var(--world-g)" style={ease} />
+      ) : (
+        <circle cx={x} cy={y} r={10} fill="var(--world-g)" style={ease} />
+      )}
     </g>
   );
 }

@@ -802,7 +802,7 @@ function Index() {
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
       {entered && !chromeQuiet ? <DevControls /> : null}
       {reviewing ? (
-        <div className="gv-frame" data-voice-frame="">
+        <div className="gv-frame" data-voice-frame="" data-seat={seat}>
           <VoiceReview
             onDone={() => conversation.close()}
             onSeeInCommunity={() => {

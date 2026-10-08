@@ -79,7 +79,7 @@ export function LoopLabels({
    * Loops whose label steps aside (opacity only, LOOP_LABEL.fadeMs) while
    * something else speaks there — the first land's lines. Taps are untouched.
    */
-  quiet?: readonly ("top" | "bottom")[];
+  quiet?: readonly ("top" | "middle" | "bottom")[];
 }) {
   const root = useRef<SVGGElement | null>(null);
   const upp = useUnitsPerPx(root);

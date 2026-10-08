@@ -45,7 +45,11 @@ export function VoiceIntake({
     if (!edited) setText(v.transcript);
   }, [v.transcript, edited]);
 
-  useEffect(() => () => voiceCapture.cancel(), []);
+  useEffect(() => {
+    // Also restores capability state after React's development cleanup replay.
+    voiceCapture.prepare();
+    return () => voiceCapture.cancel();
+  }, []);
 
   const reading = text.trim().length >= 2 ? bindUtterance(text) : null;
   const preview = text.trim().length >= 2 ? routeVoice(text) : null;

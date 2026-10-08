@@ -24,3 +24,7 @@
 - Actual authenticated app-entry tests at 390×844 and 390×932 passed two normalized-ellipse revolutions with continuous expansion/contraction (sampled range 1.4500–1.8495), no first-touch jump, stationary hold including zoom, immediate reversal, joint settle and no post-settle motion, plus all eight stations. No runtime page errors. Borrow/lend/fund/wish screenshots inspected at phone proportions: smooth red curve and flush square arm, no visible joins/spikes.
 - Prior actual-component browser regression suite also passed slow/fast drag, hold, reverse, seam/two revolutions, mid-snap re-grab, background ownership, cancellation, reduced motion and deliberate-only My G exit on both sizes. Seven geometry tests passed, 12,634 assertions. Haptic request behavior was preserved, not proof of physical vibration; native second-pointer hardware delivery remains untested.
 - Existing global typecheck errors remain outside the authorized correction scope; reviewable Vite preview runs without runtime errors. No production-build success or publish is claimed.
+## Voice (Oct 8)
+- [x] Seat-coloured record control in S-curve (--world-g), listening halo + stop square
+- [ ] Universal voice intent router: SEARCH routes to existing Communi-G search; GIVE drafts; others via existing flows/clarify
+- [ ] Plan only: voice-mode G unfold/reform choreography (contract → toggle swings orbit → expand); no geometry changes

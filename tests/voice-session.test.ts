@@ -7,12 +7,12 @@ test("fridge conversation asks where, then when, then anything else — never tw
   let s = say("I'm giving away a fridge");
   expect(s.action).toBe("give");
   expect(s.fields.what).toBe("fridge");
-  expect(s.prompt).toBe("when can someone collect it?");
-  s = hear(s, "Tuesday");
-  expect(s.fields.when).toBe("tuesday");
-  expect(s.prompt).toBe("where is it?");
+  expect(s.prompt).toBe("where can someone collect it?");
   s = hear(s, "in Leith");
   expect(s.fields.where).toBe("leith");
+  expect(s.prompt).toBe("when?");
+  s = hear(s, "Tuesday");
+  expect(s.fields.when).toBe("tuesday");
   expect(s.prompt).toBe("anything else you'd like to add?");
 });
 

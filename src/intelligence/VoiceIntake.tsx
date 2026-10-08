@@ -8,7 +8,6 @@ import { routeVoice, type SearchSpec } from "@/intelligence/voice-router";
 import { ME_ID, communityItems, detailBits, itemLine, ACTIVITY_FILL } from "@/data/items";
 import { useItems } from "@/hooks/use-items";
 import { haptics } from "@/lib/haptics";
-import { Button } from "@/components/ui/button";
 
 /**
  * VOICE → DRAFT. Listening was started by the mic tap itself. The words stay
@@ -203,7 +202,7 @@ export function VoiceIntake({
               voiceCapture.start();
             }}
           >
-            speak again
+            {text ? "speak again" : "start listening"}
           </button>
         ) : null}
         <button type="submit" className="g-heading" disabled={!reading}>
@@ -221,7 +220,7 @@ export function VoiceIntake({
         </button>
       </div>
       <p className="g-meta opacity-60">
-        your browser's own speech service turns your voice into words. giver doesn't record or keep audio.
+        start listening allows your browser's speech service to process audio, possibly on its provider's servers. giver doesn't store audio. typing stays on this device.
       </p>
     </form>
   );

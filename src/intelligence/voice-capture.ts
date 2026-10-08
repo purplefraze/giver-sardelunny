@@ -67,6 +67,12 @@ export const voiceCapture = {
   get: () => snap,
   getServer: () => snap,
 
+  /** Opening intake is not consent to transmit audio to a browser service. */
+  prepare() {
+    voiceCapture.cancel();
+    set({ state: voiceSupported() ? "idle" : "unsupported" });
+  },
+
   /** Call directly from the tap handler. */
   start() {
     const C = ctor();

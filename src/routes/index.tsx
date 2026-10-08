@@ -855,7 +855,7 @@ function Index() {
                       return;
                     }
                     haptics.light();
-                    voiceCapture.start();
+                    voiceCapture.prepare();
                     setEditor({ kind: "voice" });
                   }}
                 />

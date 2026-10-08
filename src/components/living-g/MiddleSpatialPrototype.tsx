@@ -79,9 +79,9 @@ export function MiddleSpatialPrototype() {
       </g>
     </svg>
     <div className="absolute overflow-auto" style={frame.content} data-middle-content="">
-      <div className="flex min-h-full flex-col justify-center gap-6">
-        <h1 className="g-display-sm break-words">{title}</h1>
-        <textarea aria-label={`your ${title} words`} value={words[seat] ?? ""} onChange={e => setWords(previous => ({ ...previous, [seat]: e.target.value }))} placeholder={seat === "wish" ? "what do you wish for?" : "your words"} className="g-body min-h-32 w-full resize-none border-0 bg-transparent outline-none" />
+      <div className="flex min-h-full flex-col gap-4">
+        <h1 className="g-name break-words">{title}</h1>
+        <textarea aria-label={`your ${title} words`} value={words[seat] ?? ""} onChange={e => setWords(previous => ({ ...previous, [seat]: e.target.value }))} placeholder={seat === "wish" ? "what do you wish for?" : "your words"} className="g-body min-h-20 w-full resize-none border-0 bg-transparent outline-none" />
       </div>
     </div>
     <Button variant="ghost" className="absolute rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-2" style={{ left: frame.bead.x - frame.radius - 6, top: frame.bead.y - frame.radius - 6, width: (frame.radius + 6) * 2, height: (frame.radius + 6) * 2, touchAction: "none" }} role="slider" aria-label="middle loop seat" aria-valuemin={-270} aria-valuemax={60} aria-valuenow={angle} aria-valuetext={title} data-middle-grip=""

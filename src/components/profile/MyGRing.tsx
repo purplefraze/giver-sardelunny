@@ -47,7 +47,7 @@ const seatOf = (angle: number) =>
     Math.abs(turn(angle, seat.at)) < Math.abs(turn(angle, best.at)) ? seat : best,
   );
 const rad = (deg: number) => ((deg - 90) * Math.PI) / 180;
-const onRim = (deg: number, radius = RIM) => {
+const onRim = (deg: number, radius: number = RIM) => {
   const t = rad(deg);
   return { x: C.x + Math.cos(t) * radius, y: C.y + Math.sin(t) * radius };
 };
@@ -104,9 +104,9 @@ export function MyGRing({
 
   const commit = (id: SeatId) => {
     if (id === "myg" || id === "me") {
-      const username = (draft.username ?? "").trim().replace(/^@/, "");
+      const username = (draft["username"] ?? "").trim().replace(/^@/, "");
       if (username) myProfileStore.patch({ username: `@${username}` });
-      if (draft.bio !== undefined) myProfileStore.patch({ aboutMe: draft.bio.trim() });
+      if (draft["bio"] !== undefined) myProfileStore.patch({ aboutMe: draft["bio"].trim() });
     }
     setEdit(null);
   };
@@ -169,6 +169,7 @@ export function MyGRing({
           setHeld(false);
           const a = e.touches[0];
           const b = e.touches[1];
+          if (!a || !b) return;
           pinch.current = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
         }
       }}
@@ -176,6 +177,7 @@ export function MyGRing({
         if (e.touches.length !== 2 || !pinch.current) return;
         const a = e.touches[0];
         const b = e.touches[1];
+        if (!a || !b) return;
         const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
         const ratio = dist / pinch.current;
         setSpan((s) => Math.min(820, Math.max(280, s / ratio)));
@@ -223,8 +225,8 @@ export function MyGRing({
           >
             {edit === seat.id && seat.id === "myg" ? (
               <>
-                <input value={draft.username ?? ""} placeholder="username" onChange={(e) => setDraft((d) => ({ ...d, username: e.target.value }))} style={{ width: "100%", textAlign: "center", background: "transparent" }} />
-                <input value={draft.bio ?? ""} placeholder="bio" onChange={(e) => setDraft((d) => ({ ...d, bio: e.target.value }))} style={{ width: "100%", textAlign: "center", background: "transparent" }} />
+                <input value={draft["username"] ?? ""} placeholder="username" onChange={(e) => setDraft((d) => ({ ...d, username: e.target.value }))} style={{ width: "100%", textAlign: "center", background: "transparent" }} />
+                <input value={draft["bio"] ?? ""} placeholder="bio" onChange={(e) => setDraft((d) => ({ ...d, bio: e.target.value }))} style={{ width: "100%", textAlign: "center", background: "transparent" }} />
               </>
             ) : seat.id === "myg" ? (
               <>

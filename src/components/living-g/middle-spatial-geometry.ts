@@ -20,13 +20,14 @@ export function middleFrame(width: number, height: number, angle: number) {
   const bead = { x: width / 2 + Math.cos(a) * Math.max(0, width / 2 - margin), y: height / 2 + Math.sin(a) * Math.max(0, height / 2 - margin) };
   const pose = togglePath("middle").poseDeg(angle);
   const x = bead.x - pose.x * scale, y = bead.y - pose.y * scale;
-  const side = Math.abs(Math.cos(a)) ** 8;
-  const lower = Math.max(0, -Math.sin(a)), upper = Math.max(0, Math.sin(a));
+  const centre = { x: x + middleGeometry.centre.x * scale, y: y + middleGeometry.centre.y * scale };
+  // Upright content lives INSIDE the original loop's paper, opposite the bead.
+  // An inscribed rectangle avoids both the curved stroke and the authentic spine.
   const content = {
-    left: 24 + Math.max(0, -Math.cos(a)) * side * (width * .43),
-    right: 24 + Math.max(0, Math.cos(a)) * side * (width * .43),
-    top: 24 + lower * (radius * 2 + 110),
-    bottom: 24 + upper * (radius * 2 + 110),
+    left: Math.max(24, centre.x - 108 * scale),
+    right: Math.max(24, width - centre.x - 108 * scale),
+    top: Math.max(24, centre.y - 98 * scale),
+    bottom: Math.max(24, height - centre.y - 98 * scale),
   };
   return { x, y, scale, bead, radius, pose, content };
 }

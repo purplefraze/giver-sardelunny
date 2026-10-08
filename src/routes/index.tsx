@@ -22,6 +22,9 @@ import { MyGRing } from "@/components/profile/MyGRing";
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { GiveFlow } from "@/components/give/GiveFlow";
 import { IntentIntake } from "@/intelligence/IntentIntake";
+import { VoiceIntake } from "@/intelligence/VoiceIntake";
+import { voiceCapture } from "@/intelligence/voice-capture";
+import { VoiceMic } from "@/components/living-g/VoiceMic";
 import { handoffOf, type FormSeed } from "@/intelligence/handoff";
 import type { ActionDraft } from "@/intelligence/action-draft";
 import { WorldIntro, type IntroTopic } from "@/components/WorldIntro";
@@ -282,6 +285,7 @@ function Index() {
     | { kind: "fund" }
     | { kind: "ask-fund"; seed?: FormSeed }
     | { kind: "intent" }
+    | { kind: "voice" }
     | null
   >(null);
 
@@ -838,6 +842,16 @@ function Index() {
                   onTap={tapToggle}
                 />
               )}
+              {/* THE MIC in the open S-curve: speak to create. Listening starts on this tap. */}
+              {ceremony || firstLand ? null : (
+                <VoiceMic
+                  onPress={() => {
+                    haptics.light();
+                    voiceCapture.start();
+                    setEditor({ kind: "voice" });
+                  }}
+                />
+              )}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}
@@ -1100,6 +1114,18 @@ function Index() {
                 children:
                   editor?.kind === "ask-fund" ? (
                     <CategoryForm category="wish" asksFunding {...(editor.seed ? { seed: editor.seed } : {})} onDone={() => setEditor(null)} />
+                  ) : null,
+              },
+
+              {
+                id: "voice",
+                open: editor?.kind === "voice",
+                anchor: "middle",
+                bare: true,
+                world: activity ?? "profile",
+                children:
+                  editor?.kind === "voice" ? (
+                    <VoiceIntake onResolved={openDraft} onBack={() => setEditor(null)} />
                   ) : null,
               },
 

@@ -156,6 +156,19 @@ export const bindUtterance = (raw: string): ActionDraft => {
     return draft("trade", entities.offer && entities.want ? 0.94 : 0.6, entities, null);
   }
 
+  /* "I'm getting rid of a fridge": an explicit giving-away phrase names the item. */
+  const rid = lower
+    .replace(/[.?!]/g, "")
+    .match(/\b(?:getting rid of|get rid of|giving away|give away)\s+(.+)/);
+  if (rid) {
+    const item = stripNoun(rid[1] ?? "");
+    if (item.length >= 2) {
+      entities.item = item;
+      entities.category = inferGiveType(item) ?? entities.category;
+      return draft("give", 0.92, entities, null);
+    }
+  }
+
   if (BORROW.test(lower)) {
     return draft("borrow", 0.93, entities, null);
   }

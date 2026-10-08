@@ -75,7 +75,9 @@ export const voiceCapture = {
       return;
     }
     try {
-      rec?.abort();
+      const previous = rec;
+      rec = null;
+      previous?.abort();
     } catch {
       /* already stopped */
     }
@@ -86,6 +88,7 @@ export const voiceCapture = {
     r.continuous = true;
     r.interimResults = true;
     r.onresult = (e) => {
+      if (rec !== r || cancelled) return;
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
@@ -97,7 +100,7 @@ export const voiceCapture = {
       set({ transcript: `${finalText} ${interim}`.replace(/\s+/g, " ").trim() });
     };
     r.onerror = (e) => {
-      if (cancelled || e.error === "aborted") return;
+      if (rec !== r || cancelled || e.error === "aborted") return;
       set({ state: "error", error: ERRORS[e.error] ?? "listening stopped. type instead, or try again." });
     };
     r.onend = () => {

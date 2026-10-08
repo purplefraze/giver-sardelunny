@@ -8,6 +8,7 @@ import { routeVoice, type SearchSpec } from "@/intelligence/voice-router";
 import { ME_ID, communityItems, detailBits, itemLine, ACTIVITY_FILL } from "@/data/items";
 import { useItems } from "@/hooks/use-items";
 import { haptics } from "@/lib/haptics";
+import { Button } from "@/components/ui/button";
 
 /**
  * VOICE → DRAFT. Listening was started by the mic tap itself. The words stay
@@ -60,10 +61,11 @@ export function VoiceIntake({
       setSearch(route.search);
       return;
     }
-    if (reading.action && handoffOf(reading)) {
+    const draft = route.draft;
+    if (route.intent !== "clarify" && draft.action && handoffOf(draft)) {
       haptics.light();
-      onResolved(reading);
-    } else if (reading.clarification) setAsking(reading);
+      onResolved(draft);
+    } else if (draft.clarification) setAsking(draft);
   };
 
   if (search) {

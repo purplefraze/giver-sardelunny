@@ -13,10 +13,10 @@ const LABELED = STATIONS.map(value => ({ value, angle: clockOf(value) }));
 const DETENTS = Array.from({ length: 32 }, (_, i) => ({ angle: i * 11.25, value: i }));
 const nearest = (angle: number) => STATIONS.reduce((a, b) => Math.abs(signedTurn(angle, clockOf(a))) <= Math.abs(signedTurn(angle, clockOf(b))) ? a : b, "everything");
 const ink = (s: CgStation) => `var(--mode-${s === "exit" ? "giver" : s === "everything" ? "communigy" : s})`;
-type Gesture = { id: number; centre: Point; raw: number | null; down: Point; moved: boolean; target: HTMLButtonElement };
+type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; down: Point; moved: boolean; target: HTMLButtonElement };
 
 /** ONE angle → one paint. Only release owns an animation; no camera timer.
- * A stable gesture-space centre is INPUT only, never a frozen camera. */
+ * A stable gesture-space ellipse is INPUT only, never a frozen camera/lens. */
 export function PerimeterToggle({ value, onChange, onExit, children }: { value: CgMode; onChange: (next: CgMode) => void; onExit: () => void; children?: ReactNode }) {
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 390, h: 844 });
@@ -104,12 +104,13 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
         const rect = stage.current?.getBoundingClientRect(); if (!rect) return;
         e.preventDefault(); e.stopPropagation(); stop();
         const centre = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        gesture.current = { id: e.pointerId, centre, raw: inputAngle({ x: e.clientX, y: e.clientY }, centre), down: { x: e.clientX, y: e.clientY }, moved: false, target: e.currentTarget };
+        const radii = { x: Math.max(1, rect.width / 2 - 54), y: Math.max(1, rect.height / 2 - 54) };
+        gesture.current = { id: e.pointerId, centre, radii, raw: inputAngle({ x: e.clientX, y: e.clientY }, centre, radii), down: { x: e.clientX, y: e.clientY }, moved: false, target: e.currentTarget };
         setHeld(true); e.currentTarget.setPointerCapture(e.pointerId);
       }}
       onPointerMove={e => {
         const g = gesture.current; if (!g || g.id !== e.pointerId) return;
-        const raw = inputAngle({ x: e.clientX, y: e.clientY }, g.centre);
+        const raw = inputAngle({ x: e.clientX, y: e.clientY }, g.centre, g.radii);
         if (raw === null) { g.raw = null; return; }
         if (g.raw !== null) {
           const delta = signedTurn(g.raw, raw);

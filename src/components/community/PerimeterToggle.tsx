@@ -3,7 +3,7 @@ import { SEAT_ANGLE, SEAT_TITLE, type Seat } from "@/components/living-g/EarSele
 import { Button } from "@/components/ui/button";
 import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
-import { ARM_LENGTH, BEAD_RADIUS, SNAP_MS, TRACK_PATH, TRACK_WIDTH, armPath, crossings, easeOut, frameOf, inputAngle, settleDuration, signedTurn, wrap, type Point } from "./perimeter-geometry";
+import { ARM_LENGTH, SNAP_MS, TRACK_PATH, TRACK_WIDTH, armPath, crossings, easeOut, frameOf, inputAngle, settleDuration, signedTurn, wrap, type Point } from "./perimeter-geometry";
 
 export type CgStation = CgMode | "exit";
 const STATION_SEAT: Record<CgStation, Seat> = { exit: "giver", give: "give", lend: "lend", trade: "trade", everything: "map", fund: "fund", borrow: "borrow", wish: "wish" };
@@ -89,7 +89,7 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
   // Smooth interior clearance; no threshold-based page jumps as the camera rides.
   const a = angle * Math.PI / 180;
   const left = 16 + Math.max(0, -Math.sin(a)) * 98, right = 16 + Math.max(0, Math.sin(a)) * 98;
-  const top = 16 + Math.max(0, -Math.cos(a)) * 98, bottom = 16 + Math.max(0, Math.cos(a)) * 98;
+  const top = 16 + Math.max(0, Math.cos(a)) * 290, bottom = 16 + Math.max(0, -Math.cos(a)) * 98;
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">

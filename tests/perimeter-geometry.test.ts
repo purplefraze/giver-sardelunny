@@ -1,7 +1,33 @@
 import { describe, expect, test } from "bun:test";
-import { crossings, frameOf, inputAngle, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "../src/components/community/perimeter-geometry";
+import { crossings, frameOf, inputAngle, scaleOf, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "../src/components/community/perimeter-geometry";
 
 describe("Communi-G single-angle geometry", () => {
+  test("Bentley lens expands and contracts only with progress, continuously across the seam", () => {
+    expect(scaleOf(0)).toBeCloseTo(1.45, 8);
+    expect(scaleOf(90)).toBeCloseTo(1.85, 8);
+    expect(scaleOf(180)).toBeCloseTo(1.45, 8);
+    for (let a = -720; a <= 720; a += 1) {
+      expect(scaleOf(a)).toBeGreaterThanOrEqual(1.45);
+      expect(scaleOf(a)).toBeLessThanOrEqual(1.85);
+      expect(scaleOf(a + 360)).toBeCloseTo(scaleOf(a), 8);
+      expect(frameOf(390, 844, a).scale).toBe(scaleOf(a));
+      expect(Math.abs(scaleOf(a + .01) - scaleOf(a))).toBeLessThan(.0001);
+    }
+    expect(scaleOf(-.001)).toBeCloseTo(scaleOf(.001), 10);
+  });
+  test("tall-phone normalized input follows equal spatial angle steps and keeps stationary grab offset", () => {
+    for (const h of [844, 932]) {
+      const centre = { x: 195, y: h / 2 }, radii = { x: 141, y: h / 2 - 54 };
+      for (let a = 0; a < 360; a += 5) {
+        const bead = frameOf(390, h, a).bead, next = frameOf(390, h, a + 5).bead;
+        const raw = inputAngle(bead, centre, radii), after = inputAngle(next, centre, radii);
+        if (raw === null || after === null) throw new Error("accessible grip must have input angle");
+        expect(signedTurn(raw, after)).toBeCloseTo(5, 8);
+        expect(signedTurn(after, raw)).toBeCloseTo(-5, 8);
+        expect(signedTurn(raw, inputAngle(bead, centre, radii) ?? 999)).toBe(0);
+      }
+    }
+  });
   test("release never exceeds the requested 180ms and reduced motion is immediate", () => {
     expect(SNAP_MS).toBe(180);
     expect(settleDuration(180, false)).toBe(180);

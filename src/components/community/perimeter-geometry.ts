@@ -6,7 +6,13 @@ export type Point = { x: number; y: number };
 const RAD = Math.PI / 180;
 const COEFFICIENTS = [248.6643094065, -6.1074666129, .6760043650, 7.2934463149, -.4864824929, -.5014184058, -.1502362108, .4579759233, -.0198162384];
 export const TRACK_WIDTH = 17;
-export const FRAME_SCALE = 1.85;
+// A restrained spatial lens: contract toward the ends, expand along the sides.
+// No velocity, held flag, clock, or independently animated zoom enters this map.
+export const FRAME_MIN_SCALE = 1.45;
+export const FRAME_MAX_SCALE = 1.85;
+export function scaleOf(angle: number) {
+  return FRAME_MIN_SCALE + (FRAME_MAX_SCALE - FRAME_MIN_SCALE) * Math.sin(angle * RAD) ** 2;
+}
 export const BEAD_RADIUS = 32;
 export const ARM_LENGTH = 12;
 export const SNAP_MS = 180;
@@ -42,15 +48,16 @@ export const TRACK_PATH = (() => {
 export function frameOf(width: number, height: number, angle: number) {
   const pose = trackPose(angle);
   const a = angle * RAD;
+  const scale = scaleOf(angle);
   // Entire 88px local grip remains on screen; no after-the-fact bead clamping.
   const bead = { x: width / 2 + Math.sin(a) * Math.max(0, width / 2 - 54), y: height / 2 - Math.cos(a) * Math.max(0, height / 2 - 54) };
   const reach = TRACK_WIDTH / 2 + ARM_LENGTH + BEAD_RADIUS;
   const point = { x: bead.x + pose.normal.x * reach, y: bead.y + pose.normal.y * reach };
-  const x = point.x - pose.point.x * FRAME_SCALE;
-  const y = point.y - pose.point.y * FRAME_SCALE;
+  const x = point.x - pose.point.x * scale;
+  const y = point.y - pose.point.y * scale;
   const root = { x: point.x - pose.normal.x * (TRACK_WIDTH / 2 - .6), y: point.y - pose.normal.y * (TRACK_WIDTH / 2 - .6) };
   const tip = { x: bead.x + pose.normal.x * 24, y: bead.y + pose.normal.y * 24 };
-  return { x, y, scale: FRAME_SCALE, bead, root, tip, normal: pose.normal };
+  return { x, y, scale, bead, root, tip, normal: pose.normal };
 }
 export function armPath(tip: Point, root: Point, normal: Point) {
   const x = -normal.y * 5, y = normal.x * 5;
@@ -70,11 +77,12 @@ export function crossings<T>(from: number, to: number, stations: readonly { angl
   }
   return events.sort((a, b) => to > from ? a.at - b.at : b.at - a.at).map(e => e.value);
 }
-/** Stable INPUT centre, never the camera's moving centre; retain grab offset by
- * integrating signed raw-angle deltas rather than assigning the raw angle. */
-export function inputAngle(point: Point, centre: Point): number | null {
+/** Stable INPUT ellipse, never the camera's moving centre or scale. Normalizing
+ * its axes removes tall-phone atan2 gain changes. Signed deltas retain the grab
+ * offset without a first-touch jump; identical coordinates always give zero. */
+export function inputAngle(point: Point, centre: Point, radii: Point = { x: 1, y: 1 }): number | null {
   const x = point.x - centre.x, y = point.y - centre.y;
   if (Math.hypot(x, y) < 16) return null;
-  return Math.atan2(x, -y) / RAD;
+  return Math.atan2(x / Math.max(1, radii.x), -y / Math.max(1, radii.y)) / RAD;
 }
 export const settleDuration = (delta: number, reduced: boolean) => reduced ? 0 : Math.min(SNAP_MS, Math.max(60, Math.abs(delta) * 4));

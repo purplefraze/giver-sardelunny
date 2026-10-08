@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { crossings, frameOf, inputAngle, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "./perimeter-geometry";
+import { crossings, frameOf, inputAngle, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "../src/components/community/perimeter-geometry";
 
 describe("Communi-G single-angle geometry", () => {
   test("release never exceeds the requested 180ms and reduced motion is immediate", () => {

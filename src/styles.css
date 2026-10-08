@@ -1928,3 +1928,17 @@
   padding: 0;
   min-height: 32px;
 }
+
+/* S-curve record control: listening halo breathes outward (reduced motion: still). */
+@keyframes g-record-halo {
+  from { transform: scale(1); opacity: 0.7; }
+  to { transform: scale(1.45); opacity: 0; }
+}
+.g-record-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: g-record-halo 1.2s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-record-halo { animation: none; opacity: 0.5; }
+}

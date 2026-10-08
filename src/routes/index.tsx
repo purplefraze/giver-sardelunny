@@ -289,6 +289,7 @@ function Index() {
     | null
   >(null);
 
+  const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const openDraft = (draft: ActionDraft) => {
     const hand = handoffOf(draft);
     if (!hand) return;
@@ -845,7 +846,12 @@ function Index() {
               {/* THE MIC in the open S-curve: speak to create. Listening starts on this tap. */}
               {ceremony || firstLand ? null : (
                 <VoiceMic
+                  listening={voice.state === "listening"}
                   onPress={() => {
+                    if (voice.state === "listening") {
+                      voiceCapture.stop();
+                      return;
+                    }
                     haptics.light();
                     voiceCapture.start();
                     setEditor({ kind: "voice" });

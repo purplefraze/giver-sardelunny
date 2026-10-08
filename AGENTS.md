@@ -16,3 +16,4 @@
 - Derive bounded spatial lens scale directly from the shared angle and normalize gesture input by the fixed screen ellipse; this preserves coordinated expansion/contraction without zoom timers or tall-phone angular gain distortion.
 - Animate only release settling, interrupt it on fresh grip, and send haptic requests from gesture handlers through the shared service; this avoids catch-up movement and delayed activation-dependent pulses.
 - Voice creation uses only the browser speech-recognition API via src/intelligence/voice-capture.ts, started synchronously from the S-curve mic tap, and reads words with the local binder; this keeps Safari user-activation working, transmits no audio from Giver, and never auto-publishes.
+- The in-G voice conversation is one store (src/intelligence/voice-conversation.ts) over pure rules (voice-session.ts / voice-flow.ts); only VoiceReview's explicit share posts, so recording or reviewing can never publish.

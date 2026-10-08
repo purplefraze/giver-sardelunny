@@ -27,7 +27,7 @@ test("'I'm getting rid of a fridge' fills a give for a fridge, a thing, nothing 
   expect(f.kind).toBe("a thing");
   expect(f.when).toBe("");
   expect(f.where).toBe("");
-  expect(missingAsks("give", f)[0]?.ask).toBe("when can someone collect it?");
+  expect(missingAsks("give", f)[0]?.ask).toBe("where can someone collect it?");
 });
 
 test("a follow-up answer merges without overwriting edits", () => {

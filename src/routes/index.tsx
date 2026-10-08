@@ -25,6 +25,11 @@ import { IntentIntake } from "@/intelligence/IntentIntake";
 import { VoiceIntake } from "@/intelligence/VoiceIntake";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { VoiceMic } from "@/components/living-g/VoiceMic";
+import { VoiceLoops } from "@/intelligence/VoiceLoops";
+import { VoiceReview } from "@/intelligence/VoiceReview";
+import { conversation } from "@/intelligence/voice-conversation";
+import { SEAT_OF_ACTION } from "@/intelligence/voice-flow";
+import { reviewBeep } from "@/lib/beep";
 import { recordAvailable } from "@/intelligence/record-availability";
 import { handoffOf, type FormSeed } from "@/intelligence/handoff";
 import type { ActionDraft } from "@/intelligence/action-draft";
@@ -291,6 +296,25 @@ function Index() {
   >(null);
 
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
+  const talk = useSyncExternalStore(conversation.subscribe, conversation.get, conversation.getServer);
+  const talking_ = talk.session !== null && talk.session.stage !== "review" && talk.session.stage !== "live";
+  const reviewing = talk.session?.stage === "review" || talk.session?.stage === "live";
+  /* A spoken search leaves the conversation for communi-g's own listings. */
+  useEffect(() => {
+    if (!talk.session?.search) return;
+    conversation.close();
+    setBrowse({ type: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [talk.session?.search]);
+  /** ONLY choosing review: toggle glides to the real seat, then the G unfolds. */
+  const enterReview = () => {
+    const a = talk.session?.action;
+    if (!a) return;
+    moveToggle(SEAT_OF_ACTION[a]);
+    reviewBeep();
+    haptics.light();
+    conversation.review();
+  };
   const openDraft = (draft: ActionDraft) => {
     const hand = handoffOf(draft);
     if (!hand) return;
@@ -777,6 +801,19 @@ function Index() {
          (DevControls is also DEV-build-only; its "replay onboarding" now
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
       {entered && !chromeQuiet ? <DevControls /> : null}
+      {reviewing ? (
+        <div className="gv-frame" data-voice-frame="" data-seat={seat}>
+          <VoiceReview
+            onDone={() => conversation.close()}
+            onSeeInCommunity={() => {
+              const a = talk.session?.action;
+              conversation.close();
+              const type = a === "give" || a === "trade" ? a : a === "borrow" || a === "lend" ? "borrow" : "wish";
+              setBrowse({ type, mine: true, ...(a === "borrow" || a === "lend" ? { side: a } : {}) });
+            }}
+          />
+        </div>
+      ) : null}
       {entered && !chromeQuiet ? <DevSeal /> : null}
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
@@ -825,7 +862,7 @@ function Index() {
               <LoopLabels
                 seat={seat}
                 quiet={
-                  firstLand ? ["top", "bottom"] : []
+                  talking_ ? ["top", "middle", "bottom"] : firstLand ? ["top", "bottom"] : []
                 }
               />
               {/* ONE TOGGLE: while the ceremony runs, it draws the only bead. */}
@@ -848,18 +885,19 @@ function Index() {
               {recordAvailable(firstLand?.phase ?? null) ? (
                 <VoiceMic
                   seat={seat}
-                  listening={voice.state === "listening"}
-                  onPress={() => {
-                    if (voice.state === "listening") {
-                      voiceCapture.stop();
-                      return;
-                    }
+                  state={talk.mode === "off" ? "idle" : talk.mode}
+                  onDown={() => {
                     haptics.light();
-                    voiceCapture.prepare();
-                    setEditor({ kind: "voice" });
+                    conversation.press();
+                  }}
+                  onRelease={(out) => conversation.release(out)}
+                  onStop={() => {
+                    haptics.selection();
+                    conversation.stopLocked();
                   }}
                 />
               ) : null}
+              {talking_ ? <VoiceLoops onReview={enterReview} /> : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}

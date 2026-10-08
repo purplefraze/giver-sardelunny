@@ -1,4 +1,6 @@
 # Communi-G track repair
+- [ ] Tune expanded red-loop Bentley-mode zoom from shared progress, preserving entry and all seats.
+- [ ] Verify dynamic zoom, contact, hold/reversal, joint settle and prior gesture regressions on both phone sizes.
 - [x] Compare working source with HEAD and inspect current mobile rendering.
 - [x] Replace erosion/ray caches with a coherent smooth asymmetric track and attachment geometry.
 - [x] Implement one-angle direct manipulation, interruptible release settle, detents, and safe pointer ownership.

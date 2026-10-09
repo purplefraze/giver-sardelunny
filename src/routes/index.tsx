@@ -920,7 +920,7 @@ function Index() {
                   }}
                 />
               ) : null}
-              {talking_ ? <VoiceLoops onReview={enterReview} /> : null}
+              {talking_ ? <VoiceLoops onReview={enterReview} seatDeg={(SEAT_ANGLE[seat] * 180) / Math.PI + 90} /> : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}

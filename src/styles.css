@@ -1976,7 +1976,7 @@
 .gv-loop { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; font-family: var(--giver-font); color: var(--world-ink, currentColor); text-transform: lowercase; }
 .gv-ask { font-weight: 900; font-size: 32px; line-height: 1.04; letter-spacing: -0.03em; }
 .gv-status { font-weight: 700; font-size: 17px; letter-spacing: 0.08em; opacity: 0.6; }
-.gv-heard { font-weight: 450; font-size: 28px; line-height: 1.22; letter-spacing: -0.01em; max-height: 110px; overflow: hidden; }
+.gv-heard { font-weight: 450; font-size: 28px; line-height: 1.22; letter-spacing: -0.01em; max-height: 110px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
 .gv-taps { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; align-items: center; }
 .gv-taps-row { justify-content: flex-start; }
 .gv-tap { font-family: var(--giver-font); font-weight: 700; font-size: 12px; letter-spacing: 0.04em; text-transform: lowercase; background: none; border: 0; padding: 6px 2px; min-height: 32px; color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: pointer; }
@@ -2018,3 +2018,13 @@
 .gv-frame[data-seat="wish"] { --gv-ink: var(--mode-wish); }
 .gv-frame[data-seat="giver"] { --gv-ink: var(--mode-giver); }
 .gv-frame[data-seat="map"] { --gv-ink: var(--mode-communigy); }
+
+/* SEAT-DEPENDENT PLACEMENT (Oct 9) — set from src/intelligence/seat-placement.ts.
+   Only text-align moves; English always reads left-to-right. */
+.gv-loop[data-align="left"] { align-items: flex-start; text-align: left; padding-left: 18px; }
+.gv-loop[data-align="right"] { align-items: flex-end; text-align: right; padding-right: 18px; }
+.gv-loop[data-align="left"] .gv-taps { justify-content: flex-start; }
+.gv-loop[data-align="right"] .gv-taps { justify-content: flex-end; }
+.gv-loop[data-align="left"] .gv-type input, .gv-loop[data-align="right"] .gv-type input { text-align: inherit; }
+.gv-loop[data-place-y="-1"] { justify-content: flex-start; padding-top: 14%; }
+.gv-loop[data-place-y="1"] { justify-content: flex-end; padding-bottom: 14%; }

@@ -27,12 +27,17 @@ import {
   LIVING_G_PATH,
   LIVING_G_TRANSFORM,
   LOOP_CENTRE,
-  LOOP_RIM_RADIUS,
+  EAR_CUT,
+  RIM_PATCH,
+  arcPath,
+  wedgePath,
 } from "@/components/living-g/g-path";
+import { seatCentre, toggleGeometry } from "@/components/living-g/EarSelector";
 
 /**
- * MY G PROFILE LOOP. The locked artwork, drawn once; the camera follows the
- * bead around the middle-loop rim and each seat's area opens inward from it.
+ * MY G PROFILE LOOP. Tapping My G zooms into the ACTUAL toggle circle at 12;
+ * the bead rides its track, the middle loop's curve stays visible below, and
+ * each seat's area opens beneath the circle in the community loop's type.
  * Seats: bio 12 · photo 1:30 · reputation 3 · chats 4:30 · my g 6 (exit) ·
  * sparks 7:30 · activity 9 · settings 10:30.
  *
@@ -46,8 +51,17 @@ type Bio = { username: string; about: string; byDay: string; byNight: string; we
 const BLUE = "#1E7BFF";
 const PAPER = "#F7F4EF";
 const INK = "#1C1A17";
-const C = LOOP_CENTRE.middle;
-const RIM = LOOP_RIM_RADIUS.middle;
+/* THE ACTUAL TOGGLE CIRCLE (Oct 9): the ring the main toggle wears when it
+   sits on My G at 12:00. The bead rides THAT ring's track; the middle loop's
+   upper curve stays in view below it so the origin is never lost. */
+const MID = LOOP_CENTRE.middle;
+const RING = toggleGeometry();
+const C = seatCentre("giver");
+const RIM = RING.RING_MID;
+const OUTER = RING.EAR.outerR;
+/* Camera: ring outer diameter fills ~80% of the width, a little air above. */
+const FIT_W = (OUTER * 2) / 0.8;
+const ENTRY_MS = 420;
 const HOLD_MS = 450;
 const SETTLE_MS = 200;
 
@@ -90,7 +104,8 @@ export function MyGRing({
   const [box, setBox] = useState({ w: 390, h: 700 });
   const [deg, setDeg] = useState<number>(start);
   const [opened, setOpened] = useState<ProfileAreaId | null>(area && area.id !== "myg" ? area.id : null);
-  const [span, setSpan] = useState(340);
+  const [span, setSpan] = useState(FIT_W);
+  const [intro, setIntro] = useState(() => (reduced() ? 1 : 0));
   const [recMode, setRecMode] = useState(false);
   const [typed, setTyped] = useState("");
   const [tense, setTense] = useState<"current" | "past">("current");
@@ -116,6 +131,20 @@ export function MyGRing({
     obs.observe(node);
     node.focus({ preventScroll: true });
     return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (intro >= 1) return;
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ENTRY_MS);
+      setIntro(k);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const put = (d: number) => {
@@ -193,21 +222,28 @@ export function MyGRing({
 
   /* ---- camera: the bead sits toward the screen edge, the area opens inward. */
   const bead = onRim(deg);
-  const focus = onRim(deg, RIM * 0.35);
   const aspect = box.h / Math.max(box.w, 1);
-  const viewW = span;
-  const viewH = span * aspect;
-  const vx = focus.x - viewW / 2;
-  const vy = focus.y - viewH / 2;
+  /* Entry: one easeOut from the whole G into the toggle circle. */
+  const e = 1 - Math.pow(1 - intro, 3);
+  const viewW = 778 + (span - 778) * e;
+  const viewH = viewW * aspect;
+  const settledTop = C.y - OUTER - span * 0.12;
+  const targetCy = settledTop + viewH / 2;
+  const cx = 272 + (C.x - 272) * e;
+  const cy = 520 + (targetCy - 520) * e;
+  const vx = cx - viewW / 2;
+  const vy = cy - viewH / 2;
   const toScreen = (p: { x: number; y: number }) => ({
     x: ((p.x - vx) / viewW) * box.w,
     y: ((p.y - vy) / viewH) * box.h,
   });
-  const panelAt = toScreen(onRim(deg, -RIM * 0.12));
-  const panelW = Math.min(320, box.w * 0.82);
-  const panelMaxH = Math.min(box.h * 0.5, 420);
-  const panelLeft = Math.min(Math.max(panelAt.x - panelW / 2, 12), box.w - panelW - 12);
-  const panelTop = Math.min(Math.max(panelAt.y - panelMaxH / 2, 12), box.h - panelMaxH - 12);
+  /* The area opens just below the circle, through its stem, inside the middle
+     loop's own hollow — the same column the community loop reads in. */
+  const ringFoot = toScreen({ x: C.x, y: C.y + OUTER + 10 });
+  const panelW = Math.min(340, box.w - 40);
+  const panelTop = Math.max(ringFoot.y, 12);
+  const panelMaxH = Math.max(box.h - panelTop - 20, 160);
+  const panelLeft = (box.w - panelW) / 2;
 
   const pointerDeg = (e: { clientX: number; clientY: number }) => {
     const rect = root.current?.getBoundingClientRect();
@@ -349,51 +385,79 @@ export function MyGRing({
         const b = e.touches[1];
         if (!a || !b) return;
         const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-        setSpan((s) => Math.min(820, Math.max(280, s / (dist / pinch.current))));
+        setSpan((s) => Math.min(FIT_W * 2.2, Math.max(FIT_W * 0.85, s / (dist / pinch.current))));
         pinch.current = dist;
       }}
       onWheel={(e) => {
         if ((e.target as HTMLElement).closest("[data-interior]")) return;
-        setSpan((s) => Math.min(820, Math.max(280, s + e.deltaY * 0.4)));
+        setSpan((s) => Math.min(FIT_W * 2.2, Math.max(FIT_W * 0.85, s + e.deltaY * 0.1)));
       }}
     >
       <svg viewBox={`${vx} ${vy} ${viewW} ${viewH}`} className="h-full w-full overflow-visible" aria-hidden>
-        <g transform={LIVING_G_TRANSFORM}>
-          <path d={LIVING_G_PATH} fill={BLUE} />
+        <defs>
+          <mask id="myg-earless" maskUnits="userSpaceOnUse">
+            <rect x="-400" y="-400" width="1400" height="2000" fill="#fff" />
+            <path d={wedgePath(MID, EAR_CUT.a0, EAR_CUT.a1, EAR_CUT.r0, EAR_CUT.r1)} fill="#000" />
+          </mask>
+        </defs>
+        {/* The same G, ear lifted off; the toggle circle sits at 12 on its stem. */}
+        <g mask="url(#myg-earless)">
+          <g transform={LIVING_G_TRANSFORM}>
+            <path d={LIVING_G_PATH} fill={BLUE} />
+          </g>
         </g>
+        <path d={arcPath(MID, RIM_PATCH.a0, RIM_PATCH.a1, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={RIM_PATCH.width} />
+        <rect
+          x={C.x - RING.STEM_HALF}
+          y={C.y + OUTER - 4}
+          width={RING.STEM_HALF * 2}
+          height={MID.y - 196.5 + 12 - (C.y + OUTER - 4)}
+          fill={BLUE}
+        />
+        <circle cx={C.x} cy={C.y} r={RING.RING_MID} fill="none" stroke={BLUE} strokeWidth={RING.RING_W} />
         {PROFILE_AREAS.map((item) => {
-          const p = onRim(item.at, RIM * 0.8);
           const on = item.id === seat.id;
+          const p = onRim(item.at, OUTER + 11);
           return (
-            <text key={item.id} x={p.x} y={p.y} textAnchor="middle" fill={BLUE} fontSize={on ? 13 : 11} fontWeight={700} opacity={on ? 0 : 0.55}>
+            <text
+              key={item.id}
+              x={p.x}
+              y={p.y + 2.4}
+              textAnchor="middle"
+              fill={BLUE}
+              fontSize={on ? 7.4 : 6}
+              fontWeight={on ? 900 : 700}
+              opacity={on ? 1 : 0.5}
+              style={{ letterSpacing: "0.02em" }}
+            >
               {item.word}
             </text>
           );
         })}
         <g data-bead="" style={{ cursor: "pointer" }}>
-          <circle cx={bead.x} cy={bead.y} r={30} fill={PAPER} stroke={BLUE} strokeWidth={5} />
+          <circle cx={bead.x} cy={bead.y} r={RING.RING_W / 2 + 3} fill={PAPER} stroke={BLUE} strokeWidth={3} />
           {recMode ? (
-            <circle cx={bead.x} cy={bead.y} r={voice.state === "listening" ? 9 : 11} fill={BLUE} opacity={voice.state === "listening" ? 1 : 0.8}>
+            <circle cx={bead.x} cy={bead.y} r={voice.state === "listening" ? 5 : 6.5} fill={BLUE} opacity={voice.state === "listening" ? 1 : 0.85}>
               {voice.state === "listening" && !reduced() ? (
                 <animate attributeName="opacity" values="1;0.4;1" dur="1.2s" repeatCount="indefinite" />
               ) : null}
             </circle>
           ) : (
-            <text x={bead.x} y={bead.y + 4} textAnchor="middle" fill={BLUE} fontSize={11} fontWeight={700}>
-              {seat.word}
-            </text>
+            <circle cx={bead.x} cy={bead.y} r={3} fill={BLUE} />
           )}
         </g>
+        {/* Bigger invisible grip so the small bead is easy to catch. */}
+        <circle data-bead="" cx={bead.x} cy={bead.y} r={RING.RING_W} fill="transparent" />
       </svg>
 
       {showPanel && (opened || recMode) ? (
         <div
           data-interior=""
-          className="absolute overflow-y-auto overscroll-contain touch-auto rounded-sm p-3"
+          className="absolute overflow-y-auto overscroll-contain touch-auto px-1 pb-3 transition-opacity duration-200"
           style={{ background: PAPER, left: panelLeft, top: panelTop, width: panelW, maxHeight: panelMaxH, color: INK }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {settledSeat.ask ? <p className="g-heading mb-3 text-[17px] leading-snug" style={{ letterSpacing: 0 }}>{settledSeat.ask}</p> : null}
+          {settledSeat.ask ? <p className="g-name mb-3 text-[14px]" style={{ color: BLUE }}>{settledSeat.ask}</p> : null}
           {recMode ? (
             <form
               className="mb-3 flex gap-2"
@@ -523,7 +587,7 @@ function Area({
   if (id === "photo") {
     return (
       <div className="flex flex-col items-start gap-3">
-        {me.photo ? <img src={me.photo} alt="your profile photo" className="h-28 w-28 rounded-full object-cover" /> : <p className="g-body">no photo yet.</p>}
+        {me.photo ? <img src={me.photo} alt="your profile photo" className="h-16 w-16 rounded-full object-cover" /> : <p className="g-body">no photo yet.</p>}
         <div className="flex gap-4">
           <button type="button" className={btn} style={{ color: BLUE }} onClick={() => void photo.choose()}>
             {photo.loading ? "opening…" : me.photo ? "change photo" : "add a photo"}

@@ -40,6 +40,8 @@ export type VoiceFields = {
   note: string;
   condition: string;
   amount: string;
+  /** Borrow/lend: how long ("for a week", "back by friday"). */
+  duration: string;
   /** Request-specific details (a ride's pickup/drop-off/day/time…). */
   context: ContextKind | null;
   ctx: Ctx;
@@ -54,14 +56,19 @@ export const EMPTY_FIELDS: VoiceFields = {
   note: "",
   condition: "",
   amount: "",
+  duration: "",
   context: null,
   ctx: {},
 };
 
-const WHERE = /\b(?:in|at|near|around|on)\s+((?:the\s+)?[a-z0-9'][a-z0-9' -]{1,40}?)(?=[.,!?]|\s+(?:on|at|from|after|before|by|this|next|tomorrow|today|tonight)\b|$)/;
+const WHERE = /\b(?:in|at|near|around|on)\s+((?:the\s+)?[a-z0-9'][a-z0-9' -]{1,40}?)(?=[.,!?]|\s+(?:on|at|from|after|before|by|this|next|tomorrow|today|tonight|(?:mon|tues|wednes|thurs|fri|satur|sun)day|weekend)\b|$)/;
 const WHEN =
   /\b(today|tonight|tomorrow(?: (?:morning|afternoon|evening|night))?|this (?:morning|afternoon|evening|weekend|week)|next (?:week|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:on )?(?:mon|tues|wednes|thurs|fri|satur|sun)day(?: (?:morning|afternoon|evening))?|(?:after|before|by|from|at) \d{1,2}(?::\d{2})?\s?(?:am|pm)?|\d{1,2}(?::\d{2})?\s?(?:am|pm)|any ?time|whenever|weekends?|evenings?|mornings?)\b/;
 const TIME_WORD = /\b(today|tonight|tomorrow|week|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening)\b/;
+
+const DURATION =
+  /\b(for (?:a|an|one|two|three|four|five|six|\d+|the|a few|a couple of) ?(?:hours?|days?|nights?|weeks?|weekends?|months?|afternoon|morning|evening)|for the (?:day|weekend|week|night|afternoon)|(?:until|till|back by|return(?:ed)? by) (?:next )?[a-z0-9]+)\b/;
+const durationOf = (lower: string) => lower.match(DURATION)?.[1] ?? "";
 
 const money = (cents: number | null) => (cents == null ? "" : String(Math.round(cents / 100)));
 
@@ -84,6 +91,7 @@ export function fieldsFromDraft(draft: ActionDraft, raw: string): VoiceFields {
     where: whereText,
     condition: e.condition ?? "",
     amount: draft.action === "fund" ? money(e.amountCents) : "",
+    duration: draft.action === "borrow" || draft.action === "lend" ? durationOf(lower) : "",
   };
 }
 
@@ -94,11 +102,13 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
   if (!f.what.trim()) out.push({ field: "what", ask: action === "give" ? "what are you giving?" : "what is it?" });
   if (action === "trade" && !f.want.trim()) out.push({ field: "want", ask: "what would you like for it?" });
   if (action === "fund" && !f.amount.trim()) out.push({ field: "amount", ask: "how much are you raising?" });
-  if ((action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? "where can someone collect it?" : "where is it?" });
+  if ((action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? (tangible ? "where can someone collect it?" : "where are you based? an area is fine.") : "where is it?" });
   if (action === "give" && !f.when.trim())
     out.push({ field: "when", ask: tangible ? "when?" : "when are you free?" });
   if ((action === "borrow" || action === "lend") && !f.when.trim())
     out.push({ field: "when", ask: action === "borrow" ? "when do you need it?" : "when is it free to borrow?" });
+  if ((action === "borrow" || action === "lend") && !f.context && !f.duration.trim())
+    out.push({ field: "duration", ask: action === "borrow" ? "how long do you need it for?" : "how long can they keep it?" });
   return out;
 }
 
@@ -121,7 +131,12 @@ export function mergeFollowUp(action: GiverAction, f: VoiceFields, raw: string):
   const lower = text.toLowerCase();
   const next = { ...f };
   let used = false;
-  const whenM = lower.match(WHEN);
+  const dur = action === "borrow" || action === "lend" ? durationOf(lower) : "";
+  if (dur && !next.duration.trim()) {
+    next.duration = dur;
+    used = true;
+  }
+  const whenM = lower.replace(DURATION, " ").match(WHEN);
   if (whenM && !next.when.trim()) {
     next.when = whenM[1] ?? "";
     used = true;

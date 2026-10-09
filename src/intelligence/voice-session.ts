@@ -2,6 +2,7 @@ import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { EMPTY_FIELDS, fieldsFromDraft, mergeFollowUp, missingAsks, type VoiceFields } from "@/intelligence/voice-flow";
 import { routeVoice } from "@/intelligence/voice-router";
+import { leadIntent } from "@/intelligence/lead-intent";
 import { contextOf, extractCtx, nextNeed } from "@/intelligence/contextual-needs";
 import { communityFilterOf, type CgSelection } from "@/intelligence/community-filter";
 import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas";
@@ -73,6 +74,17 @@ const DONE = /^(?:no|nope|nah|nothing(?: else)?|that'?s (?:it|all)|done|all good
 const YES = /^(?:yes|yeah|yep|sure|ok(?:ay)?|review|let'?s review|go ahead|ready)\b/;
 const NOT_YET = /^(?:not yet|wait|hold on|one more)\b/;
 
+const CANCEL = /^(?:cancel|never ?mind|forget (?:it|that)|start (?:again|over)|scrap (?:it|that)|clear (?:it|that))\b/;
+
+const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+/** The recogniser picked up Giver's own spoken question — ignore it. */
+export function isEcho(heard: string, spoken: string): boolean {
+  const h = norm(heard);
+  const p = norm(spoken);
+  if (!h || !p) return false;
+  return h === p || (h.length >= 12 && p.includes(h));
+}
+
 export const readyAsk = (a: GiverAction) => `ready to review your ${NOUN[a]}?`;
 
 /** After any change: the next open question, else "anything else?". */
@@ -98,6 +110,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     return s.action ? { ...s, said, heard: text, fields: withCtx(mergeFollowUp(s.action, s.fields, text), null) } : s;
   const lower = text.toLowerCase();
   let next: VoiceSession = { ...s, said, heard: text };
+  if (CANCEL.test(lower)) return { ...startSession(), said, heard: text, prompt: `ok, cleared. ${OPENING}` };
 
   if (PHOTO.test(lower)) {
     next.wantsPhoto = true;
@@ -108,7 +121,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
 
   if (s.stage === "ready") {
     if (YES.test(lower)) return { ...next, stage: "review" };
-    if (NOT_YET.test(lower) || DONE.test(lower)) return { ...next, stage: "anything", prompt: "what would you like to add?" };
+    if (NOT_YET.test(lower) || (DONE.test(lower) && lower.split(/\s+/).length <= 3)) return { ...next, stage: "anything", prompt: "what would you like to add?" };
   }
 
   if (!next.action) {
@@ -119,6 +132,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
         return nextAsk({ ...next, action: resolved.action, fields: fieldsFromDraft(resolved, s.heard || text), pending: null });
       }
     }
+    const lead = contextOf(text) ? null : leadIntent(text);
+    if (lead?.action) return nextAsk({ ...next, action: lead.action, fields: fieldsFromDraft(lead, text), pending: null });
     const area = profileAreaOf(text);
     if (area) return { ...next, profile: area };
     const cg = communityFilterOf(text);
@@ -144,7 +159,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     };
   }
 
-  if (s.stage === "anything" && DONE.test(lower)) {
+  /* "no" alone is done; "no, make it 10am" is a correction. */
+  if (s.stage === "anything" && DONE.test(lower) && lower.split(/\s+/).length <= 3 && !/\d|day\b/.test(lower)) {
     return { ...next, stage: "ready", prompt: readyAsk(next.action), asking: null };
   }
 

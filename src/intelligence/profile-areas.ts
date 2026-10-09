@@ -32,6 +32,7 @@ const NAV = /\b(?:show|open|see|check|change|update|edit|go to|take me to|view|m
 
 export function profileAreaOf(raw: string): ProfileAreaId | null {
   const t = raw.toLowerCase().replace(/[’]/g, "'");
+  if (/^(?:sign|log) (?:me )?out\b/.test(t)) return "settings";
   if (!NAV.test(t)) return null;
   for (const [re, id] of RULES) if (re.test(t)) return id;
   return null;

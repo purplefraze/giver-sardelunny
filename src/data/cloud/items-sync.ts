@@ -143,6 +143,43 @@ export async function pushItems() {
   }
 }
 
+/**
+ * SHARE CONFIRMATION — writes ONE of my items and reads it back. Returns the
+ * server id only when the database really holds it, so "live" is never said
+ * on hope. Keyed by (owner, local_id): retrying can never duplicate a post.
+ */
+export async function confirmItemSaved(localId: string): Promise<string | null> {
+  const profileId = sessionStore.get().profile?.id;
+  const i = itemsStore.get().items.find((x) => x.id === localId && x.ownerId === ME_ID);
+  if (!profileId || !i) return null;
+  const row = {
+    owner_id: profileId,
+    local_id: i.id,
+    type: i.type,
+    side: i.side ?? null,
+    text: i.text,
+    offer: i.offer ?? null,
+    want: i.want ?? null,
+    note: i.note ?? null,
+    status: i.status,
+    priority: i.priority,
+    published: i.published,
+    photos: i.photos ?? [],
+    details: i.details ?? {},
+    boost_count: i.boostCount ?? 0,
+  };
+  const write = () =>
+    supabase.from("items").upsert(row, { onConflict: "owner_id,local_id" }).select("id").maybeSingle();
+  let { data, error, status } = await write();
+  if (error && isAuthFailure(error, status)) {
+    if ((await ensureLiveSession(true)) !== "live") return null;
+    ({ data, error, status } = await write());
+  }
+  if (error || !data?.id) return null;
+  itemsStore.patch(localId, { cloudId: data.id });
+  return data.id;
+}
+
 /** The cloud id behind an item, when it has one. */
 export async function cloudItemId(localItemId: string): Promise<string | null> {
   if (localItemId.startsWith(CLOUD)) return localItemId.slice(CLOUD.length);

@@ -2,6 +2,7 @@ import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { EMPTY_FIELDS, fieldsFromDraft, mergeFollowUp, missingAsks, type VoiceFields } from "@/intelligence/voice-flow";
 import { routeVoice } from "@/intelligence/voice-router";
+import { communityFilterOf, type CgSelection } from "@/intelligence/community-filter";
 import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas";
 
 /**
@@ -31,6 +32,8 @@ export type VoiceSession = {
   search: string | null;
   /** "show my chats" — go to a My G area, not a draft. */
   profile: ProfileAreaId | null;
+  /** "show community borrows" — the lower loop on that filter. */
+  community: CgSelection | null;
 };
 
 export const NOUN: Record<GiverAction, string> = {
@@ -57,6 +60,7 @@ export const startSession = (): VoiceSession => ({
   wantsLocation: false,
   search: null,
   profile: null,
+  community: null,
 });
 
 const PHOTO = /\b(just a photo|add (?:a )?(?:photo|picture|pic)|take (?:a )?(?:photo|picture)|(?:a |with a )?photo of it)\b/;
@@ -106,6 +110,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     }
     const area = profileAreaOf(text);
     if (area) return { ...next, profile: area };
+    const cg = communityFilterOf(text);
+    if (cg) return { ...next, community: cg };
     const route = routeVoice(text);
     if (route.intent === "search") return { ...next, search: route.search.term };
     const draft = route.draft;

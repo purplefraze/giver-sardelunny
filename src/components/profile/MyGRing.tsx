@@ -60,7 +60,7 @@ const C = seatCentre("giver");
 const RIM = RING.RING_MID;
 const OUTER = RING.EAR.outerR;
 /* Camera: ring outer diameter fills ~80% of the width, a little air above. */
-const FIT_W = (OUTER * 2) / 0.8;
+const FIT_W = (OUTER * 2) / 0.72;
 const ENTRY_MS = 420;
 const HOLD_MS = 450;
 const SETTLE_MS = 200;
@@ -239,9 +239,9 @@ export function MyGRing({
   });
   /* The area opens just below the circle, through its stem, inside the middle
      loop's own hollow — the same column the community loop reads in. */
-  const ringFoot = toScreen({ x: C.x, y: C.y + OUTER + 10 });
+  const hollow = toScreen({ x: MID.x, y: MID.y - 143 + 40 });
   const panelW = Math.min(340, box.w - 40);
-  const panelTop = Math.max(ringFoot.y, 12);
+  const panelTop = Math.max(hollow.y, 12);
   const panelMaxH = Math.max(box.h - panelTop - 20, 160);
   const panelLeft = (box.w - panelW) / 2;
 
@@ -406,7 +406,7 @@ export function MyGRing({
             <path d={LIVING_G_PATH} fill={BLUE} />
           </g>
         </g>
-        <path d={arcPath(MID, RIM_PATCH.a0, RIM_PATCH.a1, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={RIM_PATCH.width} />
+        <path d={arcPath(MID, -128, RIM_PATCH.a1, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={RIM_PATCH.width} />
         <rect
           x={C.x - RING.STEM_HALF}
           y={C.y + OUTER - 4}

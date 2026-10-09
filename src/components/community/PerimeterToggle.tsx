@@ -17,7 +17,8 @@ type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; do
 
 /** ONE angle → one paint. Only release owns an animation; no camera timer.
  * A stable gesture-space ellipse is INPUT only, never a frozen camera/lens. */
-export function PerimeterToggle({ value, onChange, onExit, children }: { value: CgMode; onChange: (next: CgMode) => void; onExit: () => void; children?: ReactNode }) {
+/** Tap = onTap (never exits) · stationary hold = onHold (record mode toggle). */
+export function PerimeterToggle({ value, onChange, onTap, onHold, record = false, listening = false, children }: { value: CgStation; onChange: (next: CgStation) => void; onTap?: () => void; onHold?: () => void; record?: boolean; listening?: boolean; children?: ReactNode }) {
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 390, h: 844 });
   const [angle, setAngle] = useState(() => clockOf(value));
@@ -29,8 +30,11 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
   const gesture = useRef<Gesture | null>(null);
   const raf = useRef(0);
   const previousValue = useRef(value);
-  const callbacks = useRef({ onChange, onExit });
-  callbacks.current = { onChange, onExit };
+  const callbacks = useRef({ onChange, onTap, onHold });
+  callbacks.current = { onChange, onTap, onHold };
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heldLong = useRef(false);
+  const clearHold = () => { if (holdTimer.current) clearTimeout(holdTimer.current); holdTimer.current = null; };
   useLayoutEffect(() => {
     const el = stage.current;
     if (!el) return;
@@ -42,8 +46,8 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
   const show = (station: CgStation) => {
     if (station === shownRef.current) return;
     shownRef.current = station; setShown(station);
-    // Passing my g never navigates out. Content changes at real station crossings.
-    if (station !== "exit") { previousValue.current = station; callbacks.current.onChange(station); }
+    // Content changes at real station crossings; 12:00 is "my g" (mine), never an exit.
+    previousValue.current = station; callbacks.current.onChange(station);
   };
   const put = (next: number, tactile = false) => {
     const before = angleRef.current;
@@ -77,11 +81,10 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
   const finish = (e: PointerEvent<HTMLButtonElement>, cancel = false) => {
     const g = gesture.current;
     if (!g || g.id !== e.pointerId) return;
-    gesture.current = null; setHeld(false);
+    gesture.current = null; setHeld(false); clearHold();
     if (g.target.hasPointerCapture(g.id)) g.target.releasePointerCapture(g.id);
-    if (!cancel && !g.moved && shownRef.current === "exit" && Math.abs(signedTurn(angleRef.current, clockOf("exit"))) < .2) {
-      stop(); haptics.light(); callbacks.current.onExit(); return;
-    }
+    if (heldLong.current) { heldLong.current = false; return; }
+    if (!cancel && !g.moved) { haptics.light(); callbacks.current.onTap?.(); }
     settle(nearest(angleRef.current), !cancel && g.moved);
   };
   const frame = frameOf(size.w, size.h, angle);
@@ -98,7 +101,7 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
       <path d={armPath(frame.tip, frame.root, frame.normal)} fill={colour} data-cg-stem-arm="" />
     </svg>
     {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left, right, top, bottom }} data-cg-interior=""><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
-    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label="communi-g mode" aria-valuemin={0} aria-valuemax={360} aria-valuenow={wrap(angle)} aria-valuetext={shown === "exit" ? "my g" : shown} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
+    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={0} aria-valuemax={360} aria-valuenow={wrap(angle)} aria-valuetext={shown === "exit" ? "my g" : shown} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
         const rect = stage.current?.getBoundingClientRect(); if (!rect) return;
@@ -107,6 +110,11 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
         const radii = { x: Math.max(1, rect.width / 2 - 54), y: Math.max(1, rect.height / 2 - 54) };
         gesture.current = { id: e.pointerId, centre, radii, raw: inputAngle({ x: e.clientX, y: e.clientY }, centre, radii), down: { x: e.clientX, y: e.clientY }, moved: false, target: e.currentTarget };
         setHeld(true); e.currentTarget.setPointerCapture(e.pointerId);
+        heldLong.current = false; clearHold();
+        holdTimer.current = setTimeout(() => {
+          const live = gesture.current; if (!live || live.moved) return;
+          heldLong.current = true; haptics.medium?.(); callbacks.current.onHold?.();
+        }, 450);
       }}
       onPointerMove={e => {
         const g = gesture.current; if (!g || g.id !== e.pointerId) return;
@@ -114,7 +122,8 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
         if (raw === null) { g.raw = null; return; }
         if (g.raw !== null) {
           const delta = signedTurn(g.raw, raw);
-          if (Math.hypot(e.clientX - g.down.x, e.clientY - g.down.y) > 2) g.moved = true;
+          if (heldLong.current) return;
+          if (Math.hypot(e.clientX - g.down.x, e.clientY - g.down.y) > 6) { g.moved = true; clearHold(); }
           if (delta !== 0) put(angleRef.current + delta, true);
         }
         g.raw = raw;
@@ -126,12 +135,13 @@ export function PerimeterToggle({ value, onChange, onExit, children }: { value: 
         if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) {
           e.preventDefault(); const dir = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
           const next = STATIONS[(index + dir + STATIONS.length) % STATIONS.length]; if (next) settle(next, true);
-        } else if ((e.key === "Enter" || e.key === " ") && shownRef.current === "exit") { e.preventDefault(); callbacks.current.onExit(); }
+        } else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); callbacks.current.onTap?.(); }
+        else if (e.key === "r" || e.key === "R") { e.preventDefault(); callbacks.current.onHold?.(); }
       }}>
       <svg width={64} height={64} viewBox="-32 -32 64 64" aria-hidden="true" data-cg-bead-shape="circle-arm">
         <circle r={24.5} fill="var(--world-bg)" />
         <circle r={28.4} fill="none" stroke={colour} strokeWidth={7.2} data-cg-ring="" />
-        <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} style={{ fontFamily: "var(--giver-font)", fontSize: word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>
+        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} style={{ fontFamily: "var(--giver-font)", fontSize: word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
       </svg>
     </Button>
   </div>;

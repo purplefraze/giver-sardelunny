@@ -36,3 +36,4 @@
 - [x] Communi-G: one selection drives inside toggle + filter row + feed; 12:00 = my active posts; hold-for-voice on toggle (review at /dev/communi-g)
 - [ ] Main middle toggle: hold/release record mode on the toggle itself, then remove the nook mic (not started)
 - [ ] Tapping My G zooms into the actual toggle circle with the profile bead inside (not started; profile loop still rides the middle-loop rim)
+- Contextual follow-up: rule engine + AI second read (openai/gpt-6-astra) via src/lib/followup.functions.ts — done; device speech test open

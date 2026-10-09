@@ -1,6 +1,7 @@
 import type { GiveType } from "@/data/give-lexicon";
 import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance } from "@/intelligence/bind";
+import { contextOf, extractCtx, type ContextKind, type Ctx } from "@/intelligence/contextual-needs";
 
 /**
  * THE IN-G VOICE SEQUENCE — pure rules only (no DOM, no network, no write).
@@ -39,6 +40,9 @@ export type VoiceFields = {
   note: string;
   condition: string;
   amount: string;
+  /** Request-specific details (a ride's pickup/drop-off/day/time…). */
+  context: ContextKind | null;
+  ctx: Ctx;
 };
 
 export const EMPTY_FIELDS: VoiceFields = {
@@ -50,6 +54,8 @@ export const EMPTY_FIELDS: VoiceFields = {
   note: "",
   condition: "",
   amount: "",
+  context: null,
+  ctx: {},
 };
 
 const WHERE = /\b(?:in|at|near|around|on)\s+((?:the\s+)?[a-z0-9'][a-z0-9' -]{1,40}?)(?=[.,!?]|\s+(?:on|at|from|after|before|by|this|next|tomorrow|today|tonight)\b|$)/;
@@ -66,9 +72,12 @@ export function fieldsFromDraft(draft: ActionDraft, raw: string): VoiceFields {
   const whereM = lower.match(WHERE);
   const whereText = e.location ?? (whereM && !TIME_WORD.test(whereM[1] ?? "") ? (whereM[1] ?? "").trim() : "");
   const whenM = lower.match(WHEN);
+  const context = draft.action === "wish" || draft.action === "borrow" ? contextOf(raw) : null;
   return {
     ...EMPTY_FIELDS,
-    what: draft.action === "trade" ? (e.offer ?? e.item ?? "") : (e.item ?? ""),
+    context,
+    ctx: context ? extractCtx(context, raw, {}) : {},
+    what: draft.action === "trade" ? (e.offer ?? e.item ?? "") : (e.item ?? (context === "ride" ? "a ride" : context === "groceries" ? "help with groceries" : "")),
     want: draft.action === "trade" ? (e.want ?? "") : "",
     kind: (e.category as GiveType | null) ?? null,
     when: e.availability ?? e.date ?? (whenM ? whenM[1] ?? "" : ""),

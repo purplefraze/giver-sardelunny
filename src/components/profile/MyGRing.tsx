@@ -389,8 +389,8 @@ export function MyGRing({
       {showPanel && (opened || recMode) ? (
         <div
           data-interior=""
-          className="absolute overflow-y-auto overscroll-contain touch-auto"
-          style={{ left: panelLeft, top: panelTop, width: panelW, maxHeight: panelMaxH, color: INK }}
+          className="absolute overflow-y-auto overscroll-contain touch-auto rounded-sm p-3"
+          style={{ background: PAPER, left: panelLeft, top: panelTop, width: panelW, maxHeight: panelMaxH, color: INK }}
           onPointerDown={(e) => e.stopPropagation()}
         >
           {settledSeat.ask ? <p className="g-heading mb-3 text-[17px] leading-snug" style={{ letterSpacing: 0 }}>{settledSeat.ask}</p> : null}

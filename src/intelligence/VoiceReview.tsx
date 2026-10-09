@@ -5,7 +5,7 @@ import { savePin } from "@/data/give-pins";
 import { itemsStore, type ItemDetails } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
 import { ensureLiveSession } from "@/data/cloud/session";
-import { pullItems, pushItems } from "@/data/cloud/items-sync";
+import { confirmItemSaved, pullItems } from "@/data/cloud/items-sync";
 import { prepareGivePhoto, uploadGivePhoto } from "@/lib/give-photo";
 import { haptics } from "@/lib/haptics";
 import { TOPIC_OF } from "@/components/give/GiveFlow";
@@ -19,12 +19,15 @@ import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras } from "@/intelligenc
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
  * bottom. Edits win over later voice. Only "Share with the community" posts.
  */
-export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; onSeeInCommunity: () => void }) {
+export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; onSeeInCommunity: (itemId: string | null) => void }) {
   const c = useSyncExternalStore(conversation.subscribe, conversation.get, conversation.getServer);
   const v = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const [problem, setProblem] = useState<string | null>(null);
   const [remind, setRemind] = useState(false);
   const [busy, setBusy] = useState(false);
+  /* One local record per draft: a retry re-confirms it, never re-creates it. */
+  const created = useRef<string | null>(null);
+  const [liveId, setLiveId] = useState<string | null>(null);
   const s = c.session;
   if (!s?.action || (s.stage !== "review" && s.stage !== "live")) return null;
   const action = s.action;
@@ -36,7 +39,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       <div className="gv-sheet" data-voice-live="">
         <p className="gv-title">your {noun} is live</p>
         <div className="gv-taps gv-taps-row">
-          <button type="button" className="gv-tap gv-tap-strong" onClick={onSeeInCommunity}>see it in communi-g</button>
+          <button type="button" className="gv-tap gv-tap-strong" onClick={() => onSeeInCommunity(liveId)}>see it in communi-g</button>
           <button type="button" className="gv-tap" onClick={onDone}>done</button>
         </div>
       </div>
@@ -85,45 +88,60 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       ...(Object.keys(extras).length ? { extras } : {}),
     };
     const note = f.note.trim() || undefined;
-    let result: ReturnType<typeof myProfileStore.addItem>;
-    if (action === "give") {
-      const kind = f.kind as GiveType;
-      details.topic = TOPIC_OF[kind];
-      details.expiresAt = expiresAt(defaultExpiry(kind), null).toISOString();
-      result = myProfileStore.addItem("give", f.what.trim(), undefined, note, { details });
-    } else if (action === "trade") {
-      result = myProfileStore.addItem("trade", f.what.trim(), { offer: f.what.trim(), want: f.want.trim() }, note, { details });
-    } else if (action === "borrow" || action === "lend") {
-      result = myProfileStore.addItem("borrow", f.what.trim(), undefined, note, { side: action, details });
-    } else {
-      const cents = Math.round(Number(f.amount.replace(/[^0-9.]/g, "")) * 100);
-      if (action === "fund" && cents > 0) details.fundTarget = cents;
-      result = myProfileStore.addItem("wish", f.what.trim(), undefined, note, { details });
-    }
-    if (!result.ok || !result.id) {
+    let id = created.current;
+    if (!id) {
+      let result: ReturnType<typeof myProfileStore.addItem>;
+      if (action === "give") {
+        const kind = f.kind as GiveType;
+        details.topic = TOPIC_OF[kind];
+        details.expiresAt = expiresAt(defaultExpiry(kind), null).toISOString();
+        result = myProfileStore.addItem("give", f.what.trim(), undefined, note, { details });
+      } else if (action === "trade") {
+        result = myProfileStore.addItem("trade", f.what.trim(), { offer: f.what.trim(), want: f.want.trim() }, note, { details });
+      } else if (action === "borrow" || action === "lend") {
+        result = myProfileStore.addItem("borrow", f.what.trim(), undefined, note, { side: action, details });
+      } else {
+        const cents = Math.round(Number(f.amount.replace(/[^0-9.]/g, "")) * 100);
+        if (action === "fund" && cents > 0) details.fundTarget = cents;
+        result = myProfileStore.addItem("wish", f.what.trim(), undefined, note, { details });
+      }
+      if (!result.ok || !result.id) {
+        setBusy(false);
+        haptics.warning();
+        setProblem(result.reason === "account" ? (result.say ?? "finish your account in my g to share this.") : (result.say ?? "this couldn't be shared right now."));
+        return;
+      }
+      const id = result.id;
+      if (c.pin) savePin(id, c.pin);
+      const exact = privatePlaces(f.ctx);
+      if (Object.keys(exact).length) {
+        try {
+          localStorage.setItem(`giver.private-places.${id}`, JSON.stringify(exact));
+        } catch {
+          /* storage unavailable — the public post already hides the address */
+        }
+      }
+      if (c.photo) {
+        if (action === "give") {
+          const prep = await prepareGivePhoto(c.photo.file);
+          const up = prep.ok ? await uploadGivePhoto(id, prep.photo) : null;
+          if (up) itemsStore.patch(id, { photos: [up.url], details: { ...details, photoPath: up.path } });
+        } else itemsStore.addPhoto(id, c.photo.url);
+      }
+      created.current = id;
+    } else itemsStore.patch(id, { published: true });
+    /* LIVE ONLY AFTER THE SERVER HAS IT. A failed save keeps the draft here,
+       hides the local copy, and offers the same button again. */
+    const saved = await confirmItemSaved(id);
+    if (!saved) {
+      itemsStore.patch(id, { published: false });
       setBusy(false);
       haptics.warning();
-      setProblem(result.reason === "account" ? (result.say ?? "finish your account in my g to share this.") : (result.say ?? "this couldn't be shared right now."));
+      setProblem("couldn't save just now. your draft is kept — tap share to try again.");
       return;
     }
-    const id = result.id;
-    if (c.pin) savePin(id, c.pin);
-    const exact = privatePlaces(f.ctx);
-    if (Object.keys(exact).length) {
-      try {
-        localStorage.setItem(`giver.private-places.${id}`, JSON.stringify(exact));
-      } catch {
-        /* storage unavailable — the public post already hides the address */
-      }
-    }
-    if (c.photo) {
-      if (action === "give") {
-        const prep = await prepareGivePhoto(c.photo.file);
-        const up = prep.ok ? await uploadGivePhoto(id, prep.photo) : null;
-        if (up) itemsStore.patch(id, { photos: [up.url], details: { ...details, photoPath: up.path } });
-      } else itemsStore.addPhoto(id, c.photo.url);
-    }
-    void pushItems().then(pullItems).catch(() => {});
+    void pullItems().catch(() => {});
+    setLiveId(id);
     setBusy(false);
     haptics.light();
     conversation.live();

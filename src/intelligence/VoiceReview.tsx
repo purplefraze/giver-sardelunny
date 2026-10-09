@@ -13,6 +13,7 @@ import { conversation } from "@/intelligence/voice-conversation";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { canGoLive, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
 import { NOUN } from "@/intelligence/voice-session";
+import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras } from "@/intelligence/contextual-needs";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -75,7 +76,9 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     const extras: Record<string, string> = {};
     if (f.kind) extras["kind"] = f.kind;
     if (f.condition.trim()) extras["condition"] = f.condition.trim();
-    if (f.when.trim()) extras["when"] = f.when.trim();
+    if (f.when.trim() && !f.context) extras["when"] = f.when.trim();
+    /* Request-specific details travel with the post; precise addresses never do. */
+    if (f.context) Object.assign(extras, publicExtras(f.ctx));
     const details: ItemDetails = {
       ...(f.where.trim() ? { where: f.where.trim() } : {}),
       ...(Object.keys(extras).length ? { extras } : {}),
@@ -104,6 +107,14 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     }
     const id = result.id;
     if (c.pin) savePin(id, c.pin);
+    const exact = privatePlaces(f.ctx);
+    if (Object.keys(exact).length) {
+      try {
+        localStorage.setItem(`giver.private-places.${id}`, JSON.stringify(exact));
+      } catch {
+        /* storage unavailable — the public post already hides the address */
+      }
+    }
     if (c.photo) {
       if (action === "give") {
         const prep = await prepareGivePhoto(c.photo.file);
@@ -137,7 +148,23 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           </div>
         ) : null}
         {action !== "wish" && action !== "fund" ? field("where", "where", "area or street") : null}
-        {action !== "trade" ? field("when", "when", action === "give" ? "e.g. tuesday" : "") : null}
+        {f.context
+          ? FIELDS_OF[f.context]
+              .filter((k) => k !== "flexible")
+              .map((k) => (
+                <label key={k} className="gv-field">
+                  <span>{CTX_LABEL[k]}</span>
+                  <input
+                    value={(f.ctx as Record<string, string | undefined>)[k] ?? ""}
+                    maxLength={80}
+                    placeholder={k === "pickup" || k === "dropoff" || k === "deliveryArea" ? "an area is fine" : ""}
+                    onChange={(e) => conversation.editCtx(k, e.target.value)}
+                  />
+                </label>
+              ))
+          : action !== "trade"
+            ? field("when", "when", action === "give" ? "e.g. tuesday" : "")
+            : null}
         {action === "give" || action === "lend" || action === "trade" ? field("condition", "condition") : null}
         {field("note", "anything else")}
         <div className="gv-field">

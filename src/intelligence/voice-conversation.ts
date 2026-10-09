@@ -2,7 +2,8 @@ import { askLocation } from "@/data/my-location";
 import type { Pin } from "@/data/give-pins";
 import { pickImages, readImage, shrinkImage } from "@/lib/pick-image";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { editField, hear, startSession, type VoiceSession } from "@/intelligence/voice-session";
+import { editField, hear, nextAsk, startSession, type VoiceSession } from "@/intelligence/voice-session";
+import { followUp } from "@/lib/followup.functions";
 import type { VoiceFields } from "@/intelligence/voice-flow";
 
 /**
@@ -45,8 +46,39 @@ const advance = (words: string) => {
   if (!snap.session) return;
   set({ session: hear(snap.session, words) });
   void locate();
+  void refine();
   if (snap.mode === "locked") speakIfNew();
 };
+
+/**
+ * THE MODEL'S SECOND READ. The rule question is already on screen; the model
+ * (whole conversation + draft) may fill details the rules missed, and may
+ * phrase the next question. Its answer only applies if nothing new was said
+ * meanwhile, only fills EMPTY details, and never saves or shares anything.
+ * Any failure leaves the rule question standing.
+ */
+async function refine() {
+  const s = snap.session;
+  const kind = s?.fields.context;
+  if (!s || !kind || (s.stage !== "talk" && s.stage !== "anything")) return;
+  const turn = s.said.length;
+  let r: Awaited<ReturnType<typeof followUp>>;
+  try {
+    r = await followUp({ data: { kind, ctx: s.fields.ctx as Record<string, string>, said: s.said } });
+  } catch {
+    return;
+  }
+  const cur = snap.session;
+  if (!cur || cur.said.length !== turn || cur.fields.context !== kind || r.source !== "model") return;
+  const ctx = { ...cur.fields.ctx } as Record<string, string | undefined>;
+  for (const [k, v] of Object.entries(r.ctx)) if (v && !ctx[k]) ctx[k] = v;
+  let next = nextAsk({ ...cur, fields: { ...cur.fields, ctx } });
+  const unspoken = cur.prompt !== spokenPrompt;
+  if (r.ask && r.field && next.asking === `ctx:${r.field}` && (unspoken || next.asking !== cur.asking)) next = { ...next, prompt: r.ask };
+  if (next.asking === cur.asking && next.prompt === cur.prompt && JSON.stringify(ctx) === JSON.stringify(cur.fields.ctx)) return;
+  set({ session: next });
+  if (snap.mode === "locked") speakIfNew();
+}
 
 async function locate() {
   const s = snap.session;
@@ -122,6 +154,11 @@ export const conversation = {
   },
   choose(words: string) {
     conversation.type(words);
+  },
+  /** Editing a contextual detail in the preview (the person's edit wins). */
+  editCtx(field: string, value: string) {
+    const s = snap.session;
+    if (s) set({ session: { ...s, fields: { ...s.fields, ctx: { ...s.fields.ctx, [field]: value } } } });
   },
   edit(field: keyof VoiceFields, value: string) {
     if (snap.session) set({ session: editField(snap.session, field, value) });

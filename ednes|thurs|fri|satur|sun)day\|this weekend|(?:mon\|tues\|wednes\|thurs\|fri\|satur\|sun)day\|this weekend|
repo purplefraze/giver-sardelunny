@@ -1,0 +1,1 @@
+  /\b(today|tonight|tomorrow(?: (?:morning|afternoon|evening|night))?|(?:this|next) (?:mon|tues|wednes|thurs|fri|satur|sun)day|tues|tues|wednes|thurs|fri|satur|sun)day|this weekend|next weekend|next week|(?:the )?\d{1,2}(?:st|nd|rd|th)(?: of [a-z]+)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]* \d{1,2}(?:st|nd|rd|th)?)\b/;

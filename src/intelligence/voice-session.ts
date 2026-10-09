@@ -2,6 +2,7 @@ import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { EMPTY_FIELDS, fieldsFromDraft, mergeFollowUp, missingAsks, type VoiceFields } from "@/intelligence/voice-flow";
 import { routeVoice } from "@/intelligence/voice-router";
+import { contextOf, extractCtx, nextNeed } from "@/intelligence/contextual-needs";
 import { communityFilterOf, type CgSelection } from "@/intelligence/community-filter";
 import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas";
 
@@ -20,7 +21,9 @@ export type VoiceSession = {
   /** The one question currently in the middle loop. */
   prompt: string;
   /** Which field the question is waiting on (so "here" → location). */
-  asking: keyof VoiceFields | "intent" | null;
+  asking: keyof VoiceFields | "intent" | `ctx:${string}` | null;
+  /** Everything said this session, in order (the model reads the whole talk). */
+  said: string[];
   choices: readonly string[];
   pending: ActionDraft | null;
   /** Last words heard (shown in the bottom loop between segments). */
@@ -53,6 +56,7 @@ export const startSession = (): VoiceSession => ({
   fields: { ...EMPTY_FIELDS },
   prompt: OPENING,
   asking: "intent",
+  said: [],
   choices: [],
   pending: null,
   heard: "",
@@ -74,6 +78,9 @@ export const readyAsk = (a: GiverAction) => `ready to review your ${NOUN[a]}?`;
 /** After any change: the next open question, else "anything else?". */
 export function nextAsk(s: VoiceSession): VoiceSession {
   if (!s.action) return s;
+  const kind = s.fields.context;
+  const need = kind ? nextNeed(kind, s.fields.ctx) : null;
+  if (need) return { ...s, stage: "talk", prompt: need.ask, asking: `ctx:${need.field}`, choices: [] };
   const open = missingAsks(s.action, s.fields).find((q) => !(q.field === "where" && s.wantsLocation));
   if (open) return { ...s, stage: "talk", prompt: open.ask, asking: open.field, choices: [] };
   return { ...s, stage: "anything", prompt: "anything else you'd like to add?", asking: null, choices: [] };
@@ -83,10 +90,14 @@ export function nextAsk(s: VoiceSession): VoiceSession {
 export function hear(s: VoiceSession, raw: string): VoiceSession {
   const text = raw.trim();
   if (!text || s.stage === "live") return s;
-  /* Follow-up voice in the preview fills only what is still empty. */
-  if (s.stage === "review") return s.action ? { ...s, heard: text, fields: mergeFollowUp(s.action, s.fields, text) } : s;
+  const said = [...s.said, text];
+  const withCtx = (f: VoiceFields, asking: string | null) =>
+    f.context ? { ...f, ctx: extractCtx(f.context, text, f.ctx, asking) } : f;
+  /* Follow-up voice in the preview fills only what is still empty (corrections overwrite context). */
+  if (s.stage === "review")
+    return s.action ? { ...s, said, heard: text, fields: withCtx(mergeFollowUp(s.action, s.fields, text), null) } : s;
   const lower = text.toLowerCase();
-  let next: VoiceSession = { ...s, heard: text };
+  let next: VoiceSession = { ...s, said, heard: text };
 
   if (PHOTO.test(lower)) {
     next.wantsPhoto = true;
@@ -115,6 +126,11 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     const route = routeVoice(text);
     if (route.intent === "search") return { ...next, search: route.search.term };
     const draft = route.draft;
+    /* A ride or groceries request is a Wish — no "wish or borrow?" detour. */
+    if (contextOf(text) && (draft.action === "wish" || draft.action === "borrow" || !draft.action)) {
+      const asWish = { ...draft, action: "wish" as const, clarification: null };
+      return nextAsk({ ...next, action: "wish", fields: fieldsFromDraft(asWish, text), pending: null });
+    }
     if (route.intent !== "clarify" && draft.action) {
       return nextAsk({ ...next, action: draft.action, fields: fieldsFromDraft(draft, text), pending: null });
     }
@@ -132,15 +148,22 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     return { ...next, stage: "ready", prompt: readyAsk(next.action), asking: null };
   }
 
+  /* A contextual answer lands in its field; it never spills into the note. */
+  if (next.fields.context && typeof s.asking === "string" && s.asking.startsWith("ctx:")) {
+    return nextAsk({ ...next, fields: withCtx(s.fields, s.asking) });
+  }
+
   if (s.asking === "where" && HERE.test(lower)) {
     return nextAsk({ ...next, wantsLocation: true });
   }
 
   if (s.stage === "anything") {
-    return { ...next, fields: mergeFollowUp(next.action, s.fields, text), prompt: "anything else?", stage: "anything" };
+    const fields = withCtx(mergeFollowUp(next.action, s.fields, text), null);
+    if (fields.context && nextNeed(fields.context, fields.ctx)) return nextAsk({ ...next, fields });
+    return { ...next, fields, prompt: "anything else?", stage: "anything" };
   }
 
-  return nextAsk({ ...next, fields: mergeFollowUp(next.action, s.fields, text) });
+  return nextAsk({ ...next, fields: withCtx(mergeFollowUp(next.action, s.fields, text), null) });
 }
 
 /** The person's own edit in the preview always wins. */

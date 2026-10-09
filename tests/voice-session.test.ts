@@ -3,7 +3,7 @@ import { hear, startSession } from "../src/intelligence/voice-session";
 
 const say = (...lines: string[]) => lines.reduce(hear, startSession());
 
-test("fridge conversation asks where, then when, then anything else — never twice", () => {
+test("fridge conversation asks where, then when, then stops at review — no 'anything else' loop", () => {
   let s = say("I'm giving away a fridge");
   expect(s.action).toBe("give");
   expect(s.fields.what).toBe("fridge");
@@ -13,7 +13,8 @@ test("fridge conversation asks where, then when, then anything else — never tw
   expect(s.prompt).toBe("when?");
   s = hear(s, "Tuesday");
   expect(s.fields.when).toBe("tuesday");
-  expect(s.prompt).toBe("anything else you'd like to add?");
+  expect(s.stage).toBe("review");
+  expect(s.prompt).not.toMatch(/anything else/);
 });
 
 test("details already said are not asked again", () => {
@@ -27,13 +28,23 @@ test("current location defers to the permission ask instead of inventing a place
   expect(s.fields.where).toBe("");
 });
 
-test("finishing asks to review, and only yes enters review — nothing goes live", () => {
-  let s = say("I'm giving away a fridge tomorrow in Leith", "no that's it");
-  expect(s.prompt).toBe("ready to review your Give?");
-  expect(s.stage).toBe("ready");
-  s = hear(s, "yes");
+test("enough info opens review; spoken 'share it' never goes live", () => {
+  const s = say("I'm giving away a fridge tomorrow in Leith", "no that's it");
   expect(s.stage).toBe("review");
   expect(hear(s, "share it").stage).toBe("review");
+  expect(hear(s, "post it now").stage).toBe("review");
+});
+
+test("extra words in review join the draft without restarting questions", () => {
+  const s = say("I'm giving away a fridge tomorrow in Leith", "it's in good condition");
+  expect(s.stage).toBe("review");
+  expect(s.fields.where).toBe("leith");
+});
+
+test("a service give stops once subject, area and availability are known", () => {
+  const s = say("I can teach guitar lessons", "in leith", "weekday evenings");
+  expect(s.action).toBe("give");
+  expect(s.stage).toBe("review");
 });
 
 test("'just a photo' asks for the plus", () => {

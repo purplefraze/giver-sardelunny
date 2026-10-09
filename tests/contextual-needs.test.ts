@@ -105,7 +105,7 @@ describe("model output is validated", () => {
 describe("no accidental publish, private places", () => {
   test("finishing the questions never makes anything live", () => {
     const s = talk("i need a ride from leith to the station on friday at 9am", "that's it");
-    expect(s.stage).toBe("ready");
+    expect(s.stage).toBe("review");
     expect(s.stage).not.toBe("live");
   });
   test("a precise address never reaches the public extras", () => {

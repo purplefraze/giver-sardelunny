@@ -49,8 +49,7 @@ export function leadIntent(raw: string): ActionDraft | null {
       const n = amt ? Number((amt[1] ?? amt[2] ?? "").replace(/,/g, "")) : NaN;
       if (Number.isFinite(n) && n > 0) e.amountCents = n * 100;
       const cause = lower.match(/\bfor\s+(.+?)(?=[.,!?]|$)/)?.[1] ?? "";
-      e.item = cause.replace(/^(?:the |a |an )/, "the ").trim() || e.item;
-      if (/^the /.test(e.item ?? "") && !/\bfor the\b/.test(lower)) e.item = (e.item ?? "").replace(/^the /, "");
+      e.item = cause.trim() || e.item;
       return { ...base, action, confidence: 0.95, entities: e, clarification: null };
     }
     if (action === "trade") {

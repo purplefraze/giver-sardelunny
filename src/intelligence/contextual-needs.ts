@@ -311,8 +311,9 @@ export function validateModel(
   kind: ContextKind,
   ctx: Ctx,
   transcript: string,
-  out: { question?: unknown; field?: unknown; updates?: unknown },
+  out: { question?: unknown; field?: unknown; updates?: unknown } | null,
 ): { ctx: Ctx; need: Need | null } | null {
+  if (!out || typeof out !== "object") return null;
   const allowed = FIELDS_OF[kind];
   const said = transcript.toLowerCase();
   const next: Ctx = { ...ctx };

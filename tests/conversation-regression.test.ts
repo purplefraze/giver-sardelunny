@@ -174,7 +174,8 @@ describe("rides — every order and wording", () => {
           const s = talk(line);
           expect(s.action).toBe("wish");
           expect(s.fields.ctx).toMatchObject({ pickup: p, dropoff: d, date: day, pickupTime: t });
-          expect(s.asking).toBeNull();
+          /* Only an airport trip still needs one more thing: luggage. */
+          expect(s.asking).toBe(d === "the airport" ? "ctx:luggage" : null);
         });
       }
 

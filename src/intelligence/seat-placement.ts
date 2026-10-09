@@ -6,6 +6,8 @@
  * Only CSS text-align changes — English stays left-to-right, never reversed.
  * Pure: every loop (main, My G, communi-g) reads this one table.
  */
+import type { CSSProperties } from "react";
+
 export type SeatAlign = "left" | "center" | "right";
 export type SeatPlacement = {
   align: SeatAlign;
@@ -32,7 +34,7 @@ export function seatPlacement(clockDeg: number): SeatPlacement {
 }
 
 /** Flex/padding classes for a block inside a safe area. */
-export function placementStyle(p: SeatPlacement): React.CSSProperties {
+export function placementStyle(p: SeatPlacement): CSSProperties {
   return {
     textAlign: p.align,
     display: "flex",

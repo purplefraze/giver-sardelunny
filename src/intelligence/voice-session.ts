@@ -2,6 +2,7 @@ import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { EMPTY_FIELDS, fieldsFromDraft, mergeFollowUp, missingAsks, type VoiceFields } from "@/intelligence/voice-flow";
 import { routeVoice } from "@/intelligence/voice-router";
+import { leadIntent } from "@/intelligence/lead-intent";
 import { contextOf, extractCtx, nextNeed } from "@/intelligence/contextual-needs";
 import { communityFilterOf, type CgSelection } from "@/intelligence/community-filter";
 import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas";
@@ -135,6 +136,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     if (area) return { ...next, profile: area };
     const cg = communityFilterOf(text);
     if (cg) return { ...next, community: cg };
+    const lead = contextOf(text) ? null : leadIntent(text);
+    if (lead?.action) return nextAsk({ ...next, action: lead.action, fields: fieldsFromDraft(lead, text), pending: null });
     const route = routeVoice(text);
     if (route.intent === "search") return { ...next, search: route.search.term };
     const draft = route.draft;

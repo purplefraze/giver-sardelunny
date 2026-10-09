@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as DevCommuniGRouteImport } from './routes/dev.communi-g'
 import { Route as DevMiddleLoopRouteImport } from './routes/dev.middle-loop'
 import { Route as DevMyGRouteImport } from './routes/dev.my-g'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
@@ -37,6 +38,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevCommuniGRoute = DevCommuniGRouteImport.update({
+  id: '/dev/communi-g',
+  path: '/dev/communi-g',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevMiddleLoopRoute = DevMiddleLoopRouteImport.update({
   id: '/dev/middle-loop',
   path: '/dev/middle-loop',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dev/communi-g': typeof DevCommuniGRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
   '/dev/my-g': typeof DevMyGRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dev/communi-g': typeof DevCommuniGRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
   '/dev/my-g': typeof DevMyGRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/dev/communi-g': typeof DevCommuniGRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
   '/dev/my-g': typeof DevMyGRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/reset-password'
+    | '/dev/communi-g'
     | '/dev/middle-loop'
     | '/dev/my-g'
     | '/invite/$token'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/reset-password'
+    | '/dev/communi-g'
     | '/dev/middle-loop'
     | '/dev/my-g'
     | '/invite/$token'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/reset-password'
+    | '/dev/communi-g'
     | '/dev/middle-loop'
     | '/dev/my-g'
     | '/invite/$token'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  DevCommuniGRoute: typeof DevCommuniGRoute
   DevMiddleLoopRoute: typeof DevMiddleLoopRoute
   DevMyGRoute: typeof DevMyGRoute
   InviteTokenRoute: typeof InviteTokenRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/communi-g': {
+      id: '/dev/communi-g'
+      path: '/dev/communi-g'
+      fullPath: '/dev/communi-g'
+      preLoaderRoute: typeof DevCommuniGRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/middle-loop': {
       id: '/dev/middle-loop'
       path: '/dev/middle-loop'
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  DevCommuniGRoute: DevCommuniGRoute,
   DevMiddleLoopRoute: DevMiddleLoopRoute,
   DevMyGRoute: DevMyGRoute,
   InviteTokenRoute: InviteTokenRoute,

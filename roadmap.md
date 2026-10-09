@@ -33,3 +33,6 @@
 - [x] Plan only: voice-mode choreography written to docs/spec/voice-motion.md (build awaits approval)
 - [x] In-G voice conversation (Oct 8): hold/slide-lock record, live words in the bottom loop, one question at a time in the middle loop, photo plus, review-only glide + unfold, editable preview, explicit "Share with the community"
 - [x] My G eight-area profile loop with voice navigation (review at /dev/my-g)
+- [x] Communi-G: one selection drives inside toggle + filter row + feed; 12:00 = my active posts; hold-for-voice on toggle (review at /dev/communi-g)
+- [ ] Main middle toggle: hold/release record mode on the toggle itself, then remove the nook mic (not started)
+- [ ] Tapping My G zooms into the actual toggle circle with the profile bead inside (not started; profile loop still rides the middle-loop rim)

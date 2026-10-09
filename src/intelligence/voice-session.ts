@@ -87,7 +87,10 @@ export function isEcho(heard: string, spoken: string): boolean {
 
 export const readyAsk = (a: GiverAction) => `ready to review your ${NOUN[a]}?`;
 
-/** After any change: the next open question, else "anything else?". */
+/**
+ * After any change: the next NECESSARY question. Once someone could act on
+ * it, stop asking — straight to the editable review (no "anything else?" loop).
+ */
 export function nextAsk(s: VoiceSession): VoiceSession {
   if (!s.action) return s;
   const kind = s.fields.context;
@@ -95,7 +98,7 @@ export function nextAsk(s: VoiceSession): VoiceSession {
   if (need) return { ...s, stage: "talk", prompt: need.ask, asking: `ctx:${need.field}`, choices: [] };
   const open = missingAsks(s.action, s.fields).find((q) => !(q.field === "where" && s.wantsLocation));
   if (open) return { ...s, stage: "talk", prompt: open.ask, asking: open.field, choices: [] };
-  return { ...s, stage: "anything", prompt: "anything else you'd like to add?", asking: null, choices: [] };
+  return { ...s, stage: "review", prompt: `here's your ${NOUN[s.action]}. edit anything, then share.`, asking: null, choices: [] };
 }
 
 /** One recognised segment (or typed line) → the next state. */

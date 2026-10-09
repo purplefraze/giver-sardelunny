@@ -636,6 +636,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      my_profile: {
+        Args: never
+        Returns: {
+          about: string
+          answers: Json
+          birthday: string | null
+          by_day: string
+          by_night: string
+          created_at: string
+          gender: string
+          handle: string | null
+          id: string
+          is_sample: boolean
+          name: string
+          photo_url: string | null
+          pronouns: string | null
+          sample_key: string | null
+          sparkles: number
+          sparks: number
+          updated_at: string
+          user_id: string | null
+          weekend: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       update_my_connection_state: {
         Args: { _action: string; _connection_id: string; _value?: boolean }
         Returns: {

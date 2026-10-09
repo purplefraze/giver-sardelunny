@@ -79,6 +79,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     if (f.when.trim() && !f.context) extras["when"] = f.when.trim();
     /* Request-specific details travel with the post; precise addresses never do. */
     if (f.context) Object.assign(extras, publicExtras(f.ctx));
+    if (f.duration.trim()) extras["how long"] = f.duration.trim();
     const details: ItemDetails = {
       ...(f.where.trim() ? { where: f.where.trim() } : {}),
       ...(Object.keys(extras).length ? { extras } : {}),
@@ -165,6 +166,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           : action !== "trade"
             ? field("when", "when", action === "give" ? "e.g. tuesday" : "")
             : null}
+        {(action === "borrow" || action === "lend") && !f.context ? field("duration", "how long", "e.g. a week") : null}
         {action === "give" || action === "lend" || action === "trade" ? field("condition", "condition") : null}
         {field("note", "anything else")}
         <div className="gv-field">

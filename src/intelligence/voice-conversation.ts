@@ -2,7 +2,7 @@ import { askLocation } from "@/data/my-location";
 import type { Pin } from "@/data/give-pins";
 import { pickImages, readImage, shrinkImage } from "@/lib/pick-image";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { editField, hear, nextAsk, startSession, type VoiceSession } from "@/intelligence/voice-session";
+import { editField, hear, isEcho, nextAsk, startSession, type VoiceSession } from "@/intelligence/voice-session";
 import { followUp } from "@/lib/followup.functions";
 import type { VoiceFields } from "@/intelligence/voice-flow";
 
@@ -44,6 +44,7 @@ const speakIfNew = () => {
 
 const advance = (words: string) => {
   if (!snap.session) return;
+  if (isEcho(words, spokenPrompt)) return;
   set({ session: hear(snap.session, words) });
   void locate();
   void refine();

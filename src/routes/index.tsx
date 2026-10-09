@@ -28,6 +28,7 @@ import { VoiceMic } from "@/components/living-g/VoiceMic";
 import { VoiceLoops } from "@/intelligence/VoiceLoops";
 import { VoiceReview } from "@/intelligence/VoiceReview";
 import { conversation } from "@/intelligence/voice-conversation";
+import type { ProfileAreaId } from "@/intelligence/profile-areas";
 import { SEAT_OF_ACTION } from "@/intelligence/voice-flow";
 import { reviewBeep } from "@/lib/beep";
 import { recordAvailable } from "@/intelligence/record-availability";
@@ -306,6 +307,16 @@ function Index() {
     setBrowse({ type: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [talk.session?.search]);
+  /* "show my chats" from any seat: the same My G area touch reaches. */
+  useEffect(() => {
+    const area = talk.session?.profile;
+    if (!area) return;
+    conversation.close();
+    lifecycleStore.discoverProfile();
+    setMyGArea({ id: area, n: Date.now() });
+    setMyG(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [talk.session?.profile]);
   /** ONLY choosing review: toggle glides to the real seat, then the G unfolds. */
   const enterReview = () => {
     const a = talk.session?.action;
@@ -403,6 +414,7 @@ function Index() {
   /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
   const [choose, setChoose] = useState(false);
   const [myG, setMyG] = useState(false);
+  const [myGArea, setMyGArea] = useState<{ id: ProfileAreaId; n: number } | null>(null);
   const lastToggleTap = useRef(0);
   /** The voluntary help area — every explanation, on demand. */
   const [help, setHelp] = useState(false);
@@ -1273,8 +1285,17 @@ function Index() {
                 world: "me",
                 children: myG ? (
                   <MyGRing
-                    onClose={() => setMyG(false)}
-                    onAccount={() => setEditor({ kind: "about" })}
+                    {...(myGArea ? { area: myGArea } : {})}
+                    onClose={() => {
+                      setMyG(false);
+                      setMyGArea(null);
+                    }}
+                    onAccount={() => {
+                      setMyG(false);
+                      setEditor({ kind: "about" });
+                    }}
+                    onTalk={(id) => setTalking(id)}
+                    onDetail={(id) => setDetail(id)}
                   />
                 ) : null,
               },

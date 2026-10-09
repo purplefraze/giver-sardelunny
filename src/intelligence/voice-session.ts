@@ -2,6 +2,7 @@ import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { EMPTY_FIELDS, fieldsFromDraft, mergeFollowUp, missingAsks, type VoiceFields } from "@/intelligence/voice-flow";
 import { routeVoice } from "@/intelligence/voice-router";
+import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas";
 
 /**
  * THE CONVERSATION INSIDE THE G — pure rules (no DOM, no network, no write).
@@ -28,6 +29,8 @@ export type VoiceSession = {
   wantsLocation: boolean;
   /** "show me ladders" — a search, not a draft. */
   search: string | null;
+  /** "show my chats" — go to a My G area, not a draft. */
+  profile: ProfileAreaId | null;
 };
 
 export const NOUN: Record<GiverAction, string> = {
@@ -53,6 +56,7 @@ export const startSession = (): VoiceSession => ({
   wantsPhoto: false,
   wantsLocation: false,
   search: null,
+  profile: null,
 });
 
 const PHOTO = /\b(just a photo|add (?:a )?(?:photo|picture|pic)|take (?:a )?(?:photo|picture)|(?:a |with a )?photo of it)\b/;
@@ -100,6 +104,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
         return nextAsk({ ...next, action: resolved.action, fields: fieldsFromDraft(resolved, s.heard || text), pending: null });
       }
     }
+    const area = profileAreaOf(text);
+    if (area) return { ...next, profile: area };
     const route = routeVoice(text);
     if (route.intent === "search") return { ...next, search: route.search.term };
     const draft = route.draft;

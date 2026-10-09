@@ -1,3 +1,4 @@
+import { seatPlacement } from "@/intelligence/seat-placement";
 import { useState, useSyncExternalStore } from "react";
 import { LOOP_CENTRE } from "@/components/living-g/g-path";
 import { conversation } from "@/intelligence/voice-conversation";
@@ -11,7 +12,8 @@ import { haptics } from "@/lib/haptics";
  */
 const stop = (e: React.SyntheticEvent) => e.stopPropagation();
 
-export function VoiceLoops({ onReview }: { onReview: () => void }) {
+export function VoiceLoops({ onReview, seatDeg = 0 }: { onReview: () => void; seatDeg?: number }) {
+  const place = seatPlacement(seatDeg);
   const c = useSyncExternalStore(conversation.subscribe, conversation.get, conversation.getServer);
   const v = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const [typing, setTyping] = useState("");
@@ -36,7 +38,7 @@ export function VoiceLoops({ onReview }: { onReview: () => void }) {
   return (
     <g data-voice-loops="" onPointerDown={stop} onClick={stop}>
       <foreignObject x={m.x - 108} y={m.y - 104} width={216} height={208}>
-        <div className="gv-loop" data-voice-ask={s.asking ?? s.stage}>
+        <div className="gv-loop" data-voice-ask={s.asking ?? s.stage} data-align={place.align} data-place-y={place.y}>
           <p className="gv-ask" aria-live="polite">{s.prompt}</p>
           {s.stage === "ready" ? (
             <div className="gv-taps">

@@ -67,7 +67,7 @@ import type { Category } from "@/data/my-profile";
 import { myAsMember, myProfileStore } from "@/data/my-profile";
 import { SparkFlash } from "@/components/SparkFlash";
 
-import { EarSelector, MODES, type Mode, type Seat } from "@/components/living-g/EarSelector";
+import { EarSelector, MODES, SEAT_ANGLE, type Mode, type Seat } from "@/components/living-g/EarSelector";
 
 /**
  * THE TOGGLE ANSWERS "WHAT?" — wish / give / trade / borrow, and nothing else.
@@ -920,7 +920,7 @@ function Index() {
                   }}
                 />
               ) : null}
-              {talking_ ? <VoiceLoops onReview={enterReview} /> : null}
+              {talking_ ? <VoiceLoops onReview={enterReview} seatDeg={(SEAT_ANGLE[seat] * 180) / Math.PI + 90} /> : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}

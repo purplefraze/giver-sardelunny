@@ -16,6 +16,7 @@ import { useWall } from "@/hooks/use-wall";
 import { useProfilePhoto } from "@/components/profile/ProfilePhotoPicker";
 import { buzz } from "@/lib/haptics";
 import { voiceCapture } from "@/intelligence/voice-capture";
+import { seatPlacement } from "@/intelligence/seat-placement";
 import {
   PROFILE_AREAS,
   activityTenseOf,
@@ -60,7 +61,7 @@ const C = seatCentre("giver");
 const RIM = RING.RING_MID;
 const OUTER = RING.EAR.outerR;
 /* Camera: ring outer diameter fills ~80% of the width, a little air above. */
-const FIT_W = (OUTER * 2) / 0.72;
+const FIT_W = (OUTER * 2) / 0.6;
 const ENTRY_MS = 420;
 const HOLD_MS = 450;
 const SETTLE_MS = 200;
@@ -239,11 +240,13 @@ export function MyGRing({
   });
   /* The area opens just below the circle, through its stem, inside the middle
      loop's own hollow — the same column the community loop reads in. */
-  const hollow = toScreen({ x: MID.x, y: MID.y - 143 + 40 });
-  const panelW = Math.min(340, box.w - 40);
+  const hollow = toScreen({ x: MID.x, y: MID.y - 143 + 30 });
+  const place = seatPlacement(settledSeat.at);
+  const panelW = Math.min(310, box.w - 48);
   const panelTop = Math.max(hollow.y, 12);
   const panelMaxH = Math.max(box.h - panelTop - 20, 160);
-  const panelLeft = (box.w - panelW) / 2;
+  /* Shift toward the seat's side; text-align follows (LTR words, never reversed). */
+  const panelLeft = (box.w - panelW) / 2 + place.x * Math.min(24, (box.w - panelW) / 2 - 20);
 
   const pointerDeg = (e: { clientX: number; clientY: number }) => {
     const rect = root.current?.getBoundingClientRect();
@@ -454,7 +457,7 @@ export function MyGRing({
         <div
           data-interior=""
           className="absolute overflow-y-auto overscroll-contain touch-auto px-1 pb-3 transition-opacity duration-200"
-          style={{ background: PAPER, left: panelLeft, top: panelTop, width: panelW, maxHeight: panelMaxH, color: INK }}
+          style={{ background: PAPER, left: panelLeft, top: place.y < 0 ? panelTop : place.y > 0 ? undefined : panelTop + panelMaxH * 0.12, bottom: place.y > 0 ? 20 : undefined, width: panelW, maxHeight: place.y === 0 ? panelMaxH * 0.88 : panelMaxH, color: INK, textAlign: place.align }}
           onPointerDown={(e) => e.stopPropagation()}
         >
           {settledSeat.ask ? <p className="g-name mb-3 text-[14px]" style={{ color: BLUE }}>{settledSeat.ask}</p> : null}

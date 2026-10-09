@@ -134,7 +134,7 @@ describe("borrowing and lending ask how long", () => {
     expect(asked(s)).toBe("duration");
     s = hear(s, "just for the day");
     expect(s.fields.duration).toContain("day");
-    expect(s.stage).toBe("anything");
+    expect(s.stage).toBe("review");
   });
   for (const d of ["for a week", "for two days", "until sunday", "back by friday", "for the weekend"])
     test(`borrow with "${d}" doesn't ask duration`, () => {
@@ -249,7 +249,7 @@ describe("groceries", () => {
       let s = talk("can someone do my shopping");
       s = hear(s, "milk and bread");
       s = hear(s, `deliver to leith, ${flex}`);
-      expect(s.stage).toBe("anything");
+      expect(s.stage).toBe("review");
       expect(s.fields.ctx.window).toBeUndefined();
     });
   test("shopping answers out of order land in the right fields", () => {

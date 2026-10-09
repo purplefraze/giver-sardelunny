@@ -18,7 +18,7 @@ test("fridge conversation asks where, then when, then anything else — never tw
 
 test("details already said are not asked again", () => {
   const s = say("I'm giving away a fridge tomorrow in Leith");
-  expect(s.stage).toBe("anything");
+  expect(s.stage).toBe("review");
 });
 
 test("current location defers to the permission ask instead of inventing a place", () => {

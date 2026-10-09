@@ -41,6 +41,8 @@ import {
  * tap = start/stop listening. Nothing saves without its own button.
  */
 
+type Bio = { username: string; about: string; byDay: string; byNight: string; weekend: string };
+
 const BLUE = "#1E7BFF";
 const PAPER = "#F7F4EF";
 const INK = "#1C1A17";
@@ -84,21 +86,21 @@ export function MyGRing({
 }) {
   const me = useMyProfile();
   const root = useRef<HTMLDivElement | null>(null);
-  const start = area ? areaById(area.id).at : 180;
+  const start: number = area ? areaById(area.id).at : 180;
   const [box, setBox] = useState({ w: 390, h: 700 });
-  const [deg, setDeg] = useState(start);
+  const [deg, setDeg] = useState<number>(start);
   const [opened, setOpened] = useState<ProfileAreaId | null>(area && area.id !== "myg" ? area.id : null);
   const [span, setSpan] = useState(340);
   const [recMode, setRecMode] = useState(false);
   const [typed, setTyped] = useState("");
   const [tense, setTense] = useState<"current" | "past">("current");
-  const [bioDraft, setBioDraft] = useState<Record<string, string> | null>(null);
+  const [bioDraft, setBioDraft] = useState<Bio | null>(null);
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const degRef = useRef(start);
   const anim = useRef(0);
   const drag = useRef<{ id: number; onBead: boolean; moved: number; t: number; held: boolean } | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastTick = useRef(seatOf(start).at);
+  const lastTick = useRef<number>(seatOf(start).at);
   const dockedOnMyg = useRef(start === 180);
   const pinch = useRef(0);
 
@@ -175,7 +177,10 @@ export function MyGRing({
   heardRef.current = heard;
   useEffect(() => {
     if (!recMode) return;
-    return voiceCapture.onFinal((w) => heardRef.current(w));
+    const off = voiceCapture.onFinal((w) => heardRef.current(w));
+    return () => {
+      off();
+    };
   }, [recMode]);
 
   const bioFrom = () => ({
@@ -449,12 +454,12 @@ function Area({
   id: ProfileAreaId;
   tense: "current" | "past";
   setTense: (t: "current" | "past") => void;
-  bioDraft: Record<string, string> | null;
-  setBioDraft: (d: Record<string, string> | null) => void;
-  bioFrom: () => Record<string, string>;
-  onTalk?: (id: string) => void;
-  onDetail?: (id: string) => void;
-  onAccount?: () => void;
+  bioDraft: Bio | null;
+  setBioDraft: (d: Bio | null) => void;
+  bioFrom: () => Bio;
+  onTalk?: ((id: string) => void) | undefined;
+  onDetail?: ((id: string) => void) | undefined;
+  onAccount?: (() => void) | undefined;
 }): ReactNode {
   const me = useMyProfile();
   const items = useItems();
@@ -467,10 +472,10 @@ function Area({
 
   if (id === "bio") {
     const d = bioDraft ?? bioFrom();
-    const set = (k: string, v: string) => setBioDraft({ ...d, [k]: v });
+    const set = (k: keyof Bio, v: string) => setBioDraft({ ...d, [k]: v });
     const dirty = bioDraft !== null && JSON.stringify(bioDraft) !== JSON.stringify(bioFrom());
     const age = ageFrom(me.birthday);
-    const row = (k: string, label: string, multi = false) => (
+    const row = (k: keyof Bio, label: string, multi = false) => (
       <label className="mb-3 block">
         <span className="g-meta block opacity-60">{label}</span>
         {multi ? (

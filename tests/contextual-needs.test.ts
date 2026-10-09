@@ -18,14 +18,14 @@ describe("ride wish", () => {
     expect(s.asking).toBe("ctx:pickupTime");
     s = hear(s, "9am");
     expect(s.fields.ctx).toMatchObject({ pickup: "leith", dropoff: "the train station", date: "friday", pickupTime: "9am" });
-    expect(s.stage).toBe("anything");
+    expect(s.stage).toBe("review");
   });
 
   test("a fully specified ride is not re-asked", () => {
     const s = talk("i need a ride from leith to the station on friday at 9am");
     expect(s.fields.ctx).toMatchObject({ pickup: "leith", dropoff: "the station", date: "friday", pickupTime: "9am" });
     expect(s.asking).toBeNull();
-    expect(s.stage).toBe("anything");
+    expect(s.stage).toBe("review");
   });
 
   test("day and time said separately are both kept", () => {
@@ -62,7 +62,7 @@ describe("groceries wish", () => {
     expect(s.asking).toBe("ctx:deliveryArea");
     s = hear(s, "deliver to morningside, any time is fine");
     expect(s.fields.ctx.flexible).toBe("yes");
-    expect(s.stage).toBe("anything");
+    expect(s.stage).toBe("review");
   });
   test("collection asks for the shop, not a list", () => {
     let s = talk("can someone help with my groceries");
@@ -105,7 +105,7 @@ describe("model output is validated", () => {
 describe("no accidental publish, private places", () => {
   test("finishing the questions never makes anything live", () => {
     const s = talk("i need a ride from leith to the station on friday at 9am", "that's it");
-    expect(s.stage).toBe("ready");
+    expect(s.stage).toBe("review");
     expect(s.stage).not.toBe("live");
   });
   test("a precise address never reaches the public extras", () => {

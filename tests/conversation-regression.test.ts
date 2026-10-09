@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { hear, startSession, type VoiceSession } from "../src/intelligence/voice-session";
-import { canGoLive } from "../src/intelligence/voice-flow";
+import { canGoLive, missingAsks } from "../src/intelligence/voice-flow";
 import { nextNeed, publicExtras, validateModel, type Ctx } from "../src/intelligence/contextual-needs";
 import { communityFilterOf, CG_FILTERS } from "../src/intelligence/community-filter";
 import { profileAreaOf } from "../src/intelligence/profile-areas";
@@ -134,7 +134,7 @@ describe("borrowing and lending ask how long", () => {
     expect(asked(s)).toBe("duration");
     s = hear(s, "just for the day");
     expect(s.fields.duration).toContain("day");
-    expect(s.stage).toBe("anything");
+    expect(s.stage).toBe("review");
   });
   for (const d of ["for a week", "for two days", "until sunday", "back by friday", "for the weekend"])
     test(`borrow with "${d}" doesn't ask duration`, () => {
@@ -249,7 +249,7 @@ describe("groceries", () => {
       let s = talk("can someone do my shopping");
       s = hear(s, "milk and bread");
       s = hear(s, `deliver to leith, ${flex}`);
-      expect(s.stage).toBe("anything");
+      expect(s.stage).toBe("review");
       expect(s.fields.ctx.window).toBeUndefined();
     });
   test("shopping answers out of order land in the right fields", () => {
@@ -343,13 +343,17 @@ describe("conversation safety", () => {
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
   for (let i = 0; i < 60; i++) {
     const lines = [STARTS[i % STARTS.length]!, ...Array.from({ length: 6 }, () => BITS[Math.floor(rnd() * BITS.length)]!)];
-    test(`sequence ${i}: never live, review only after asking`, () => {
+    test(`sequence ${i}: never live, review only once enough is known`, () => {
       let s = startSession();
       for (const l of lines) {
         const before = s.stage;
         s = hear(s, l);
         expect(s.stage).not.toBe("live");
-        if (s.stage === "review") expect(["ready", "review"]).toContain(before);
+        /* Review opens only once nothing necessary is still missing. */
+        if (s.stage === "review" && before !== "review" && s.action) {
+          expect(missingAsks(s.action, s.fields).filter((q) => !(q.field === "where" && s.wantsLocation))).toEqual([]);
+          if (s.fields.context) expect(nextNeed(s.fields.context, s.fields.ctx)).toBeNull();
+        }
       }
     });
   }

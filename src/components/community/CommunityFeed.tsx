@@ -27,11 +27,11 @@ const toStation = (s: CgSelection): CgStation => (s === "mine" ? "exit" : s);
 const fromStation = (s: CgStation): CgSelection => (s === "exit" ? "mine" : s);
 
 /** Pure: what the feed lists for one selection. Only active, published posts. */
-export function feedFor(items: Item[], sel: CgSelection, term = ""): Item[] {
+export function feedFor(items: Item[], sel: CgSelection, term = "", keep?: string): Item[] {
   const t = term.trim().toLowerCase();
   return items
     .filter((i) => i.status === "active" && i.published)
-    .filter((i) => (sel === "mine" ? i.ownerId === ME_ID : i.ownerId !== ME_ID && inMode(i, sel)))
+    .filter((i) => (sel === "mine" ? i.ownerId === ME_ID : (i.ownerId !== ME_ID || i.id === keep) && inMode(i, sel)))
     .filter((i) => !t || itemLine(i).toLowerCase().includes(t) || (i.note ?? "").toLowerCase().includes(t))
     .sort((a, b) => b.createdAt - a.createdAt);
 }
@@ -41,6 +41,7 @@ export function CommunityFeed({
   initialSide,
   initialScope,
   initialSelection,
+  highlightId,
   onOpen,
   onClose,
   onExit,
@@ -50,6 +51,7 @@ export function CommunityFeed({
   initialView?: View;
   initialSide?: BorrowSide;
   initialSelection?: CgSelection;
+  highlightId?: string;
   onOpen: (itemId: string) => void;
   onOpenProfile?: (ownerId: string) => void;
   onEditMine?: (itemId: string) => void;
@@ -67,7 +69,7 @@ export function CommunityFeed({
   const items = useItems();
   const listening = voice.state === "listening";
   const ink = CG_INK[sel === "mine" ? "everything" : sel];
-  const list = feedFor(items.items, sel, term);
+  const list = feedFor(items.items, sel, term, highlightId);
 
   useEffect(() => {
     if (initialSelection) setSel(initialSelection);
@@ -177,7 +179,13 @@ export function CommunityFeed({
           <div className="flex min-h-0 flex-1 flex-col" style={{ justifyContent: place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center" }}>
           <ul className="min-h-0 overflow-y-auto overscroll-contain touch-pan-y" data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
-              <li key={i.id} className="border-b py-2" style={{ borderColor: "var(--border)" }}>
+              <li
+                key={i.id}
+                className="border-b py-2"
+                style={{ borderColor: "var(--border)", ...(i.id === highlightId ? { color: ink } : {}) }}
+                {...(i.id === highlightId ? { "data-cg-new": "", "aria-current": "true" as const } : {})}
+                ref={i.id === highlightId ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
+              >
                 <button type="button" className="w-full" style={{ textAlign: place.align }} onClick={() => onOpen(i.id)} data-cg-item={i.type}>
                   <span className="g-body block text-[15px]">{itemLine(i)}</span>
                   <span className="g-meta block opacity-60">

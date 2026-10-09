@@ -444,6 +444,8 @@ function Index() {
     side?: BorrowSide;
     /** Voice/filter arrival: the exact lower-loop selection. */
     selection?: CgSelection;
+    /** A post just shared: marked and scrolled to on arrival. */
+    highlight?: string;
   } | null>(null);
 
   /**
@@ -828,11 +830,13 @@ function Index() {
         <div className="gv-frame" data-voice-frame="" data-seat={seat}>
           <VoiceReview
             onDone={() => conversation.close()}
-            onSeeInCommunity={() => {
+            onSeeInCommunity={(itemId) => {
               const a = talk.session?.action;
               conversation.close();
               const type = a === "give" || a === "trade" ? a : a === "borrow" || a === "lend" ? "borrow" : "wish";
-              setBrowse({ type, mine: true, ...(a === "borrow" || a === "lend" ? { side: a } : {}) });
+              /* Arrive on the post's own category, with the new post marked. */
+              const selection: CgSelection = a ?? "everything";
+              setBrowse({ type, selection, ...(itemId ? { highlight: itemId } : {}), ...(a === "borrow" || a === "lend" ? { side: a } : {}) });
             }}
           />
         </div>
@@ -1328,6 +1332,7 @@ function Index() {
                     {...(browse.view ? { initialView: browse.view } : {})}
                     {...(browse.side ? { initialSide: browse.side } : {})}
                     {...(browse.selection ? { initialSelection: browse.selection } : {})}
+                    {...(browse.highlight ? { highlightId: browse.highlight } : {})}
 
                     onOpen={(itemId) => setDetail(itemId)}
                     onOpenProfile={(ownerId) => {

@@ -54,7 +54,7 @@ export const followUp = createServerFn({ method: "POST" })
       const n = nextNeed(kind, ctx);
       return { ctx, field: n?.field ?? null, ask: n?.ask ?? null, source: "rules", reason };
     };
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env["LOVABLE_API_KEY"];
     if (!key) return rules("not configured");
     const rule = nextNeed(kind, ctx);
     const known = Object.fromEntries(Object.entries(ctx).filter(([k]) => !k.startsWith("__")));

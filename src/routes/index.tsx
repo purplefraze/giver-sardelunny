@@ -29,6 +29,7 @@ import { VoiceLoops } from "@/intelligence/VoiceLoops";
 import { VoiceReview } from "@/intelligence/VoiceReview";
 import { conversation } from "@/intelligence/voice-conversation";
 import type { ProfileAreaId } from "@/intelligence/profile-areas";
+import type { CgSelection } from "@/intelligence/community-filter";
 import { SEAT_OF_ACTION } from "@/intelligence/voice-flow";
 import { reviewBeep } from "@/lib/beep";
 import { recordAvailable } from "@/intelligence/record-availability";
@@ -307,6 +308,14 @@ function Index() {
     setBrowse({ type: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [talk.session?.search]);
+  /* "show community borrows" from any seat: the lower loop on that filter. */
+  useEffect(() => {
+    const cg = talk.session?.community;
+    if (!cg) return;
+    conversation.close();
+    setBrowse({ type: null, selection: cg });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [talk.session?.community]);
   /* "show my chats" from any seat: the same My G area touch reaches. */
   useEffect(() => {
     const area = talk.session?.profile;
@@ -433,6 +442,8 @@ function Index() {
     view?: "list" | "map";
     /** The lending side of borrow (lend is a borrow record with side lend). */
     side?: BorrowSide;
+    /** Voice/filter arrival: the exact lower-loop selection. */
+    selection?: CgSelection;
   } | null>(null);
 
   /**
@@ -1316,6 +1327,7 @@ function Index() {
                     initialScope={browse.mine ? "mine" : "everyone"}
                     {...(browse.view ? { initialView: browse.view } : {})}
                     {...(browse.side ? { initialSide: browse.side } : {})}
+                    {...(browse.selection ? { initialSelection: browse.selection } : {})}
 
                     onOpen={(itemId) => setDetail(itemId)}
                     onOpenProfile={(ownerId) => {

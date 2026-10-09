@@ -122,7 +122,7 @@ export function CommunityFeed({
         }}
       >
         <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="">
-          <div className="flex items-center gap-2">
+          <div className="relative h-12 shrink-0">
             <BackArrow onClick={onExit ?? onClose} label="back to the living g" />
           </div>
           <div role="tablist" aria-label="community filter" className="flex flex-wrap gap-x-3 gap-y-1 py-2">

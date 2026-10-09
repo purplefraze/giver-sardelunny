@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { seatPlacement } from "@/intelligence/seat-placement";
+const CG_CLOCK: Record<string, number> = { mine: 0, give: 45, lend: 90, trade: 135, everything: 180, fund: 225, borrow: 270, wish: 315 };
 
 import { BackArrow } from "@/components/BackArrow";
 import { PerimeterToggle, type CgStation } from "@/components/community/PerimeterToggle";
@@ -96,6 +98,9 @@ export function CommunityFeed({
     haptics.selection();
     setSel(v);
   };
+  /* Seat-dependent placement: content sits away from the inside toggle. */
+  const place = seatPlacement(CG_CLOCK[sel] ?? 180);
+  const rowJustify = place.align === "left" ? "justify-start" : place.align === "right" ? "justify-end" : "justify-center";
   const where = CG_FILTERS.find((f) => f.value === sel)?.word ?? "all";
 
   return (
@@ -121,11 +126,11 @@ export function CommunityFeed({
           else voiceCapture.start();
         }}
       >
-        <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="">
+        <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-align={place.align} style={{ textAlign: place.align }}>
           <div className="relative h-12 shrink-0">
             <BackArrow onClick={onExit ?? onClose} label="back to the living g" />
           </div>
-          <div role="tablist" aria-label="community filter" className="flex flex-wrap gap-x-3 gap-y-1 py-2">
+          <div role="tablist" aria-label="community filter" className={`flex flex-wrap gap-x-3 gap-y-1 py-2 ${rowJustify}`}>
             {CG_FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -157,6 +162,7 @@ export function CommunityFeed({
                 aria-label="or type here"
                 placeholder="or type here"
                 className="w-full border-b bg-transparent py-1 text-[15px] outline-none"
+                style={{ textAlign: place.align }}
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
               />
@@ -164,14 +170,15 @@ export function CommunityFeed({
             </form>
           ) : null}
           {term ? (
-            <button type="button" className="g-meta mb-2 self-start underline" onClick={() => setTerm("")}>
+            <button type="button" className={`g-meta mb-2 underline ${place.align === "left" ? "self-start" : place.align === "right" ? "self-end" : "self-center"}`} onClick={() => setTerm("")}>
               “{term}” · clear
             </button>
           ) : null}
-          <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain" data-cg-feed={sel}>
+          <div className="flex min-h-0 flex-1 flex-col" style={{ justifyContent: place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center" }}>
+          <ul className="min-h-0 overflow-y-auto overscroll-contain touch-pan-y" data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li key={i.id} className="border-b py-2" style={{ borderColor: "var(--border)" }}>
-                <button type="button" className="w-full text-left" onClick={() => onOpen(i.id)} data-cg-item={i.type}>
+                <button type="button" className="w-full" style={{ textAlign: place.align }} onClick={() => onOpen(i.id)} data-cg-item={i.type}>
                   <span className="g-body block text-[15px]">{itemLine(i)}</span>
                   <span className="g-meta block opacity-60">
                     {sel === "mine" ? (i.type === "borrow" && i.side === "lend" ? "lend" : i.type) : (memberById(i.ownerId)?.username ?? "")}
@@ -186,6 +193,7 @@ export function CommunityFeed({
             ) : null}
             {sel === "wish" ? <li className="pt-4"><WishMatch onOpen={onOpen} /></li> : null}
           </ul>
+          </div>
         </div>
       </PerimeterToggle>
     </div>

@@ -2,7 +2,7 @@ import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { EMPTY_FIELDS, fieldsFromDraft, mergeFollowUp, missingAsks, type VoiceFields } from "@/intelligence/voice-flow";
 import { routeVoice } from "@/intelligence/voice-router";
-import { extractCtx, nextNeed } from "@/intelligence/contextual-needs";
+import { contextOf, extractCtx, nextNeed } from "@/intelligence/contextual-needs";
 import { communityFilterOf, type CgSelection } from "@/intelligence/community-filter";
 import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas";
 
@@ -126,6 +126,11 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     const route = routeVoice(text);
     if (route.intent === "search") return { ...next, search: route.search.term };
     const draft = route.draft;
+    /* A ride or groceries request is a Wish — no "wish or borrow?" detour. */
+    if (contextOf(text) && (draft.action === "wish" || draft.action === "borrow" || !draft.action)) {
+      const asWish = { ...draft, action: "wish" as const, clarification: null };
+      return nextAsk({ ...next, action: "wish", fields: fieldsFromDraft(asWish, text), pending: null });
+    }
     if (route.intent !== "clarify" && draft.action) {
       return nextAsk({ ...next, action: draft.action, fields: fieldsFromDraft(draft, text), pending: null });
     }

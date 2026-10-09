@@ -77,7 +77,7 @@ export function fieldsFromDraft(draft: ActionDraft, raw: string): VoiceFields {
     ...EMPTY_FIELDS,
     context,
     ctx: context ? extractCtx(context, raw, {}) : {},
-    what: draft.action === "trade" ? (e.offer ?? e.item ?? "") : (e.item ?? (context === "ride" ? "a ride" : context === "groceries" ? "help with groceries" : "")),
+    what: draft.action === "trade" ? (e.offer ?? e.item ?? "") : (context === "ride" ? "a ride" : context === "groceries" ? "help with groceries" : (e.item ?? "")),
     want: draft.action === "trade" ? (e.want ?? "") : "",
     kind: (e.category as GiveType | null) ?? null,
     when: e.availability ?? e.date ?? (whenM ? whenM[1] ?? "" : ""),

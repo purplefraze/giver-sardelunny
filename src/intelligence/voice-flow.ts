@@ -61,7 +61,7 @@ export const EMPTY_FIELDS: VoiceFields = {
   ctx: {},
 };
 
-const WHERE = /\b(?:in|at|near|around|on)\s+((?:the\s+)?[a-z0-9'][a-z0-9' -]{1,40}?)(?=[.,!?]|\s+(?:on|at|from|after|before|by|this|next|tomorrow|today|tonight)\b|$)/;
+const WHERE = /\b(?:in|at|near|around|on)\s+((?:the\s+)?[a-z0-9'][a-z0-9' -]{1,40}?)(?=[.,!?]|\s+(?:on|at|from|after|before|by|this|next|tomorrow|today|tonight|(?:mon|tues|wednes|thurs|fri|satur|sun)day|weekend)\b|$)/;
 const WHEN =
   /\b(today|tonight|tomorrow(?: (?:morning|afternoon|evening|night))?|this (?:morning|afternoon|evening|weekend|week)|next (?:week|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:on )?(?:mon|tues|wednes|thurs|fri|satur|sun)day(?: (?:morning|afternoon|evening))?|(?:after|before|by|from|at) \d{1,2}(?::\d{2})?\s?(?:am|pm)?|\d{1,2}(?::\d{2})?\s?(?:am|pm)|any ?time|whenever|weekends?|evenings?|mornings?)\b/;
 const TIME_WORD = /\b(today|tonight|tomorrow|week|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening)\b/;

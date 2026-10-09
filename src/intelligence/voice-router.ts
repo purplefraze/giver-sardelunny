@@ -28,7 +28,7 @@ export type VoiceRoute =
   | { intent: Exclude<VoiceIntent, "search" | "clarify">; draft: ActionDraft }
   | { intent: "clarify"; draft: ActionDraft };
 
-const SEARCH = /\b(?:i'?m looking for|i am looking for|looking for|find me|find|search for|search|show me|is there|are there|anyone got|anyone have|does anyone have)\s+(.+)/;
+const SEARCH = /\b(?:i'?m looking for|i am looking for|looking for|find me|find|search for|search|show me|is there|are there|anyone got|anyone have|does anyone have|is (?:anyone|anybody) (?:giving away|offering|lending))\s+(.+)/;
 const WANT_BORROW = /\b(?:i want to borrow|i'd like to borrow|i need to borrow|can i borrow|borrow)\s+(.+)/;
 
 const singular = (w: string) =>

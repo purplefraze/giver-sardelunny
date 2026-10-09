@@ -121,7 +121,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
 
   if (s.stage === "ready") {
     if (YES.test(lower)) return { ...next, stage: "review" };
-    if (NOT_YET.test(lower) || DONE.test(lower)) return { ...next, stage: "anything", prompt: "what would you like to add?" };
+    if (NOT_YET.test(lower) || (DONE.test(lower) && lower.split(/\s+/).length <= 3)) return { ...next, stage: "anything", prompt: "what would you like to add?" };
   }
 
   if (!next.action) {
@@ -159,7 +159,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     };
   }
 
-  if (s.stage === "anything" && DONE.test(lower)) {
+  /* "no" alone is done; "no, make it 10am" is a correction. */
+  if (s.stage === "anything" && DONE.test(lower) && lower.split(/\s+/).length <= 3 && !/\d|day\b/.test(lower)) {
     return { ...next, stage: "ready", prompt: readyAsk(next.action), asking: null };
   }
 

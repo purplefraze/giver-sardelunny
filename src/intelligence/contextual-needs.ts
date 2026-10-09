@@ -24,8 +24,8 @@ export const RIDE_FIELDS = ["pickup", "dropoff", "date", "pickupTime", "flightTi
 export const GROCERY_FIELDS = ["mode", "list", "store", "deliveryArea", "day", "window", "flexible"] as const;
 export const FIELDS_OF: Record<ContextKind, readonly string[]> = { ride: RIDE_FIELDS, groceries: GROCERY_FIELDS };
 
-const RIDE = /\b(ride|lift|drive me|pick me up|airport run|carpool|car pool|take me to|drop me (?:off )?at)\b/;
-const GROCERY = /\b(groceries|grocery|supermarket|food shop(?:ping)?|weekly shop|my shopping|the shopping|click and collect)\b/;
+const RIDE = /\b(ride|lift|drive me|pick me up|airport run|carpool|car pool|take me to|drop me (?:off )?at|rdie|lfit)\b/;
+const GROCERY = /\b(groceries|grocery|supermarket|food shop(?:ping)?|weekly shop|my (?:food |weekly )?shopping|the shopping|click and collect)\b/;
 
 export function contextOf(text: string): ContextKind | null {
   const t = text.toLowerCase();
@@ -40,7 +40,7 @@ const DATE =
   /\b(today|tonight|tomorrow(?: (?:morning|afternoon|evening|night))?|(?:this|next) (?:mon|tues|wednes|thurs|fri|satur|sun)day|(?:mon|tues|wednes|thurs|fri|satur|sun)day|this weekend|next weekend|next week|(?:the )?\d{1,2}(?:st|nd|rd|th)(?: of [a-z]+)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]* \d{1,2}(?:st|nd|rd|th)?)\b/;
 const TIME = /\b(?:(at|by|around|about|for|@)\s+)?(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.|in the morning|in the afternoon|in the evening|at night|o'?clock)?\b|\b(noon|midday|midnight)\b/g;
 const FLIGHT_BEFORE = /(flight|plane|depart(?:s|ure)?|leaves|takes off|boarding|train leaves|my train)[^.,;]{0,22}$/;
-const STOP = /\s+(?:on|at|by|around|this|next|tomorrow|today|tonight|for|before|after|and then|then|because|my flight|flight)\b.*$/;
+const STOP = /\s+(?:on|at|by|around|this|next|tomorrow|today|tonight|for|before|after|and then|then|because|my flight|flight|(?:mon|tues|wednes|thurs|fri|satur|sun)day|pick(?:ing)? (?:me )?up|leaving)\b.*$/;
 const VERB_AFTER_TO = /^(?:pick|get|buy|collect|go|be|do|help|take|see|make|have|drop|shop|bring)\b/;
 
 const clean = (s: string) =>
@@ -50,7 +50,7 @@ const clean = (s: string) =>
     .replace(/[.,!?;]+$/, "")
     .trim();
 
-const PRECISE = /\b\d+[a-z]?\s+[a-z][a-z' -]*\b(?:st|street|rd|road|ave|avenue|lane|ln|drive|dr|court|ct|place|pl|way|blvd|boulevard|crescent|cres|terrace|close)\b|^\s*\d+\s+[a-z]/i;
+const PRECISE = /\b\d+[a-z]?\s+[a-z][a-z' -]*\b(?:st|street|rd|road|ave|avenue|lane|ln|drive|dr|court|ct|place|pl|way|blvd|boulevard|crescent|cres|terrace|close)\b|^\s*\d+\s+[a-z]|\b[a-z]{1,2}\d[a-z\d]?\s*\d[a-z]{2}\b/i;
 /** A precise address (house number + street) must never reach the public feed. */
 export const isPrecise = (s: string) => PRECISE.test(s);
 /** What the public post may show for a place the person gave. */
@@ -98,6 +98,12 @@ const resolveHalf = (hour: string, lower: string): string | null => {
 /** Pull places out of one utterance. */
 function places(lower: string) {
   const r: { from?: string; to?: string } = {};
+  const toFrom = lower.match(/\bto\s+(?!\d)(.+?)\s+from\s+(.+?)(?=[.,!?;]|$)/);
+  if (toFrom && !VERB_AFTER_TO.test(toFrom[1] ?? "")) {
+    r.to = clean(toFrom[1] ?? "");
+    r.from = clean(toFrom[2] ?? "");
+    return r;
+  }
   const fromTo = lower.match(/\bfrom\s+(.+?)\s+to\s+(.+?)(?=[.,!?;]|$)/);
   if (fromTo) {
     r.from = clean(fromTo[1] ?? "");
@@ -136,9 +142,11 @@ const put = (ctx: Ctx, key: string, value: string | undefined, force: boolean) =
  * was about, so a bare answer ("Leith") lands there and nowhere else.
  */
 export function extractCtx(kind: ContextKind, raw: string, prev: Ctx, asking: string | null = null): Ctx {
-  const lower = raw.toLowerCase().trim();
+  const said = raw.toLowerCase().trim();
+  const force = CORRECTION.test(said) || /\bnot\s/.test(said);
+  /* "no, not friday, saturday" — the negated value is never extracted. */
+  const lower = said.replace(/\bnot\s+(?:on\s+|at\s+)?[a-z0-9:]+(?:\s?(?:am|pm))?\s*,?/g, " ").replace(/\s+/g, " ").trim();
   const ctx: Ctx = { ...prev };
-  const force = CORRECTION.test(lower);
   const filled = new Set<string>();
   const set = (k: string, v: string | undefined) => {
     if (!v) return;
@@ -188,14 +196,14 @@ export function extractCtx(kind: ContextKind, raw: string, prev: Ctx, asking: st
     const access = lower.match(/\b(wheelchair|walker|mobility|step-free|car seat|guide dog)\b[^.,;]*/);
     if (access) set("accessibility", access[0].trim());
   } else {
-    if (/\b(click and collect|collect(?:ion)?|pick up (?:my|an|the) order|already ordered|order(?:ed)? online)\b/.test(lower)) set("mode", "collection");
-    else if (/\b(do (?:my|the) shopping|shop for me|go shopping|buy|get (?:me )?(?:some|a few)|pick up some|shopping list)\b/.test(lower)) set("mode", "shopping");
+    if (/\b(click and collect|collect(?:ed|ion|ing)?|pick up (?:my|an|the) (?:order|groceries|grocery order|shopping)|already ordered|order(?:ed)? online)\b/.test(lower)) set("mode", "collection");
+    else if (/\b(do (?:my|the)(?: food| weekly| grocery)? shopping|get (?:my|the) groceries|shop for me|go shopping|buy|get (?:me )?(?:some|a few)|pick up some|shopping list)\b/.test(lower)) set("mode", "shopping");
     else if (asking === "ctx:mode") {
       if (/\bcollect|order\b/.test(lower)) set("mode", "collection");
       else if (/\bshop/.test(lower)) set("mode", "shopping");
     }
-    const list = lower.match(/\b(?:list(?: is)?:?|need|buy|get(?: me)?)\s+((?:some\s+)?[a-z ]+(?:,\s*[a-z ]+)+(?:,?\s*and\s+[a-z ]+)?)/);
-    if (list) set("list", list[1]?.trim());
+    const list = lower.match(/\b(?:list(?: is)?:?|need|buy|get(?: me)?|just)\s+((?:some\s+)?[a-z]+(?:(?:,\s*|\s+and\s+)[a-z]+(?: [a-z]+)?)+)/);
+    if (list && !/\b(someone|anyone|shopping|groceries|deliver)\b/.test(list[1] ?? "")) set("list", list[1]?.trim());
     const store = lower.match(/\bfrom\s+((?:the\s+)?[a-z0-9'&-]+(?:\s+[a-z0-9'&-]+){0,3})(?=[.,!?;]|\s+(?:and|on|at|by|to|for)\b|$)/);
     if (store && (ctx.mode === "collection" || asking === "ctx:store")) set("store", store[1]);
     const to = lower.match(/\b(?:deliver(?:ed)?|drop(?:ped)?(?: it)?(?: off)?|bring(?: it)?)\s+(?:to|in|at)\s+(.+?)(?=[.,!?;]|$)/);

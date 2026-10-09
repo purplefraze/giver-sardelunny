@@ -78,7 +78,8 @@ async function load() {
     /* PUBLIC COLUMNS ONLY — birthday, gender, answers and sparks are owner-only
        in the database (column grants); the owner reads them via my_profile(). */
     .select(PUBLIC_PROFILE_COLUMNS);
-  const rows = data ?? [];
+  /* Private columns are absent by design; the shape stays one ProfileRow. */
+  const rows = (data ?? []) as unknown as ProfileRow[];
   const sampleIds: Record<string, string> = {};
   const byId: Record<string, ProfileRow> = {};
   for (const row of rows) {

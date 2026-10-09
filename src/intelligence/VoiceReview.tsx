@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { GIVE_TYPES, type GiveType } from "@/data/give-lexicon";
 import { defaultExpiry, expiresAt } from "@/data/give-when";
 import { savePin } from "@/data/give-pins";
@@ -111,7 +111,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         setProblem(result.reason === "account" ? (result.say ?? "finish your account in my g to share this.") : (result.say ?? "this couldn't be shared right now."));
         return;
       }
-      const id = result.id;
+      id = result.id;
       if (c.pin) savePin(id, c.pin);
       const exact = privatePlaces(f.ctx);
       if (Object.keys(exact).length) {
@@ -130,6 +130,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       }
       created.current = id;
     } else itemsStore.patch(id, { published: true });
+    if (!id) return;
     /* LIVE ONLY AFTER THE SERVER HAS IT. A failed save keeps the draft here,
        hides the local copy, and offers the same button again. */
     const saved = await confirmItemSaved(id);

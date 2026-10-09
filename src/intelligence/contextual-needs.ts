@@ -14,7 +14,11 @@
  * These rules are also the honest FALLBACK whenever the model is unavailable.
  */
 export type ContextKind = "ride" | "groceries";
-export type Ctx = Record<string, string>;
+export type CtxKey =
+  | "pickup" | "dropoff" | "date" | "pickupTime" | "flightTime" | "luggage" | "passengers" | "accessibility"
+  | "mode" | "list" | "store" | "deliveryArea" | "day" | "window" | "flexible" | "__ambig";
+export type Ctx = { [K in CtxKey]?: string };
+type Loose = Record<string, string | undefined>;
 
 export const RIDE_FIELDS = ["pickup", "dropoff", "date", "pickupTime", "flightTime", "luggage", "passengers", "accessibility"] as const;
 export const GROCERY_FIELDS = ["mode", "list", "store", "deliveryArea", "day", "window", "flexible"] as const;
@@ -123,7 +127,8 @@ const answerText = (raw: string) => {
 
 const put = (ctx: Ctx, key: string, value: string | undefined, force: boolean) => {
   if (!value) return;
-  if (force || !ctx[key]) ctx[key] = value;
+  const c = ctx as Loose;
+  if (force || !c[key]) c[key] = value;
 };
 
 /**
@@ -137,9 +142,9 @@ export function extractCtx(kind: ContextKind, raw: string, prev: Ctx, asking: st
   const filled = new Set<string>();
   const set = (k: string, v: string | undefined) => {
     if (!v) return;
-    const before = ctx[k];
+    const before = (ctx as Loose)[k];
     put(ctx, k, v, force);
-    if (ctx[k] !== before) filled.add(k);
+    if ((ctx as Loose)[k] !== before) filled.add(k);
     else if (before === v) filled.add(k);
   };
 
@@ -148,7 +153,7 @@ export function extractCtx(kind: ContextKind, raw: string, prev: Ctx, asking: st
     const [hour, field] = ctx.__ambig.split("|");
     const fixed = hour && field ? resolveHalf(hour, lower) : null;
     if (fixed && field) {
-      ctx[field] = fixed;
+      (ctx as Loose)[field] = fixed;
       delete ctx.__ambig;
       filled.add(field);
     }
@@ -169,7 +174,7 @@ export function extractCtx(kind: ContextKind, raw: string, prev: Ctx, asking: st
       if (h.ambiguous) {
         const fixed = resolveHalf(h.text, lower.replace(DATE, ""));
         if (fixed) set(field, fixed);
-        else if (force || !ctx[field]) {
+        else if (force || !(ctx as Loose)[field]) {
           ctx.__ambig = `${h.text}|${field}`;
           filled.add(field);
         }
@@ -211,10 +216,10 @@ export function extractCtx(kind: ContextKind, raw: string, prev: Ctx, asking: st
       else if (field === "window" && flexible) {
         ctx.window = "flexible";
         ctx.flexible = "yes";
-      } else if ((field === "luggage" || field === "passengers") && /^(?:no|none|nope|just me|nothing)\b/.test(ans.toLowerCase())) ctx[field] = "none";
+      } else if ((field === "luggage" || field === "passengers") && /^(?:no|none|nope|just me|nothing)\b/.test(ans.toLowerCase())) (ctx as Loose)[field] = "none";
       else if (field === "mode") {
         /* An unclear answer to shop-or-collect is not guessed. */
-      } else if (ans.length >= 1) ctx[field] = ans;
+      } else if (ans.length >= 1) (ctx as Loose)[field] = ans;
     }
   }
   return ctx;
@@ -285,7 +290,7 @@ export function publicExtras(ctx: Ctx): Record<string, string> {
 /** Precise places, kept only on the owner's device. */
 export function privatePlaces(ctx: Ctx): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const k of ["pickup", "dropoff", "deliveryArea"]) if (ctx[k] && isPrecise(ctx[k]!)) out[k] = ctx[k]!;
+  for (const k of ["pickup", "dropoff", "deliveryArea"] as const) { const v = ctx[k]; if (v && isPrecise(v)) out[k] = v; }
   return out;
 }
 
@@ -310,7 +315,7 @@ export function validateModel(
       if (!value || value.length > 120) continue;
       const words = value.toLowerCase().replace(/[^a-z0-9: ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !/^(the|and|for|pm|am)$/.test(w));
       const grounded = k === "flexible" ? FLEX.test(said) : words.length > 0 && words.every((w) => said.includes(w.replace(/(am|pm)$/, "")));
-      if (grounded) next[k] = value;
+      if (grounded) (next as Loose)[k] = value;
     }
   }
   const rule = nextNeed(kind, next);

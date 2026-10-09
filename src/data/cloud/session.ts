@@ -196,7 +196,7 @@ async function load(userId: string, email: string | null) {
   store(ENDED_KEY, null);
   const fetchBoth = () =>
     Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.rpc("my_profile").maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
   let [{ data: profile }, { data: roles }] = await fetchBoth();
@@ -302,22 +302,20 @@ export const sessionStore = {
     const { userId, profile } = state;
     if (!userId) throw new Error("sign in first");
     if (profile) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("profiles")
         .update(fields)
-        .eq("id", profile.id)
-        .select("*")
-        .maybeSingle();
+        .eq("id", profile.id);
       if (error) throw error;
+      const { data } = await supabase.rpc("my_profile").maybeSingle();
       if (data) commit({ ...state, profile: data });
       return data ?? null;
     }
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("profiles")
-      .insert({ ...fields, user_id: userId })
-      .select("*")
-      .maybeSingle();
+      .insert({ ...fields, user_id: userId });
     if (error) throw error;
+    const { data } = await supabase.rpc("my_profile").maybeSingle();
     if (data) commit({ ...state, profile: data });
     return data ?? null;
   },

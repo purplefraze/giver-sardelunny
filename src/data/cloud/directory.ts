@@ -39,7 +39,7 @@ function commit(next: Directory) {
 /** A real tester, seen the way every other Giver view expects to see a person. */
 export function memberFromProfile(row: ProfileRow): Member {
   const handle = row.handle ? `@${row.handle}` : "@giver";
-  const answers = (row.answers ?? {}) as Record<string, string>;
+  const answers = ((row as Partial<ProfileRow>).answers ?? {}) as Record<string, string>;
   return {
     id: row.id,
     name: row.name || handle.replace("@", ""),
@@ -54,7 +54,7 @@ export function memberFromProfile(row: ProfileRow): Member {
     activity: "",
     about: row.about ?? "",
     age: "",
-    gender: row.gender ?? "",
+    gender: (row as Partial<ProfileRow>).gender ?? "",
     byDay: row.by_day ?? "",
     byNight: row.by_night ?? "",
     weekend: row.weekend ?? "",
@@ -69,8 +69,15 @@ export function memberFromProfile(row: ProfileRow): Member {
   };
 }
 
+const PUBLIC_PROFILE_COLUMNS =
+  "id,user_id,sample_key,is_sample,handle,name,photo_url,about,by_day,by_night,weekend,pronouns,created_at,updated_at";
+
 async function load() {
-  const { data } = await supabase.from("profiles").select("*");
+  const { data } = await supabase
+    .from("profiles")
+    /* PUBLIC COLUMNS ONLY — birthday, gender, answers and sparks are owner-only
+       in the database (column grants); the owner reads them via my_profile(). */
+    .select(PUBLIC_PROFILE_COLUMNS);
   const rows = data ?? [];
   const sampleIds: Record<string, string> = {};
   const byId: Record<string, ProfileRow> = {};

@@ -183,8 +183,10 @@ export function FullProfile({
 
   /** WHO THIS PERSON IS, IN ONE LINE: age, how they describe themselves, distance. */
   const identity = [
-    member.age ? `${member.age}` : null,
-    member.gender || null,
+    /* PUBLIC VIEW IS TASK-FOCUSED (Oct 9): someone else's G shows only the
+       broad distance — never age or gender. */
+    mine && member.age ? `${member.age}` : null,
+    mine ? member.gender || null : null,
     mine ? null : member.distance,
   ].filter(Boolean) as string[];
 
@@ -211,12 +213,12 @@ export function FullProfile({
             <img
               src={member.photo}
               alt={`${member.username}, ${member.byDay} by day`}
-              className="h-32 w-32 rounded-full object-cover"
+              className={mine ? "h-24 w-24 rounded-full object-cover" : "h-14 w-14 rounded-full object-cover"}
             />
           ) : (
             <div
               aria-hidden
-              className="h-32 w-32 rounded-full"
+              className={mine ? "h-24 w-24 rounded-full" : "h-14 w-14 rounded-full"}
               style={{ background: "var(--giver-ink)", opacity: 0.08 }}
             />
           )}
@@ -299,6 +301,8 @@ export function FullProfile({
           ) : (
             (() => {
               /* THEIR OWN ANSWERS, AS SENTENCES — never question/answer labels. */
+              /* Someone else's fun answers stay off their public view. */
+              if (!mine) return null;
               const said = answeredStatements(member.answers, {
                 mine: false,
                 name: member.name.toLowerCase(),
@@ -486,7 +490,7 @@ export function FullProfile({
           somebody messaged, followed or looked. Before the first completed act
           there is nothing here at all, so the section stays away entirely.
         */}
-        {connections.length ? (
+        {mine && connections.length ? (
           <Section title="connections" accent="var(--giver-connection)">
             <p className="g-body" style={{ color: "var(--giver-connection)" }}>
               {mine

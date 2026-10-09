@@ -37,7 +37,7 @@ export function contextOf(text: string): ContextKind | null {
 const CORRECTION = /^(?:actually|no[,.!]?\s|nope|sorry|wait|change (?:it|that)|make it|instead|i meant|correction)\b/;
 const FLEX = /\b(flexible|any ?time|whenever|no rush|not fussed|doesn'?t matter|any day)\b/;
 const DATE =
-  /\b(today|tonight|tomorrow(?: (?:morning|afternoon|evening|night))?|(?:this|next) (?:mon|tues|wednes|thurs|fri|satur|sun)day|(?:on )?(?:mon|tues|wednes|thurs|fri|satur|sun)day|this weekend|next weekend|next week|(?:the )?\d{1,2}(?:st|nd|rd|th)(?: of [a-z]+)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]* \d{1,2}(?:st|nd|rd|th)?)\b/;
+  /\b(today|tonight|tomorrow(?: (?:morning|afternoon|evening|night))?|(?:this|next) (?:mon|tues|wednes|thurs|fri|satur|sun)day|tues|tues|wednes|thurs|fri|satur|sun)day|this weekend|next weekend|next week|(?:the )?\d{1,2}(?:st|nd|rd|th)(?: of [a-z]+)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]* \d{1,2}(?:st|nd|rd|th)?)\b/;
 const TIME = /\b(?:(at|by|around|about|for|@)\s+)?(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm|a\.m\.|p\.m\.|in the morning|in the afternoon|in the evening|at night|o'?clock)?\b|\b(noon|midday|midnight)\b/g;
 const FLIGHT_BEFORE = /(flight|plane|depart(?:s|ure)?|leaves|takes off|boarding|train leaves|my train)[^.,;]{0,22}$/;
 const STOP = /\s+(?:on|at|by|around|this|next|tomorrow|today|tonight|for|before|after|and then|then|because|my flight|flight)\b.*$/;

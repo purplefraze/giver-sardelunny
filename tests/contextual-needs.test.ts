@@ -76,7 +76,7 @@ describe("groceries wish", () => {
 describe("lightweight wishes", () => {
   test("a plant wish gets no transport schedule questions", () => {
     let s = talk("i need a monstera plant");
-    if (!s.action && s.choices.length) s = hear(s, s.choices.find((c) => /wish/i.test(c)) ?? "wish");
+    if (!s.action && s.choices.length) s = hear(s, s.choices.find((c) => /keep/i.test(c)) ?? "find one to keep");
     expect(s.action).toBe("wish");
     expect(s.fields.context).toBeNull();
     expect(String(s.asking ?? "")).not.toMatch(/^ctx:/);

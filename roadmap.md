@@ -32,3 +32,4 @@
 - [x] Universal voice intent router: search reads existing listings; give drafts; other actions open existing forms; clarify otherwise
 - [x] Plan only: voice-mode choreography written to docs/spec/voice-motion.md (build awaits approval)
 - [x] In-G voice conversation (Oct 8): hold/slide-lock record, live words in the bottom loop, one question at a time in the middle loop, photo plus, review-only glide + unfold, editable preview, explicit "Share with the community"
+- [x] My G eight-area profile loop with voice navigation (review at /dev/my-g)

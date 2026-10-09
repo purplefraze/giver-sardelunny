@@ -406,7 +406,7 @@ export function MyGRing({
             <path d={LIVING_G_PATH} fill={BLUE} />
           </g>
         </g>
-        <path d={arcPath(MID, -128, RIM_PATCH.a1, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={RIM_PATCH.width} />
+        <path d={arcPath(MID, -128, RIM_PATCH.a1, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={RIM_PATCH.width + 4} />
         <rect
           x={C.x - RING.STEM_HALF}
           y={C.y + OUTER - 4}
@@ -417,13 +417,13 @@ export function MyGRing({
         <circle cx={C.x} cy={C.y} r={RING.RING_MID} fill="none" stroke={BLUE} strokeWidth={RING.RING_W} />
         {PROFILE_AREAS.map((item) => {
           const on = item.id === seat.id;
-          const p = onRim(item.at, OUTER + 11);
+          const p = item.at === 90 ? { x: C.x + OUTER + 30, y: C.y } : item.at === 270 ? { x: C.x - OUTER - 30, y: C.y } : onRim(item.at, OUTER + 11);
           return (
             <text
               key={item.id}
               x={p.x}
               y={p.y + 2.4}
-              textAnchor="middle"
+              textAnchor={item.at === 90 ? "end" : item.at === 270 ? "start" : "middle"}
               fill={BLUE}
               fontSize={on ? 7.4 : 6}
               fontWeight={on ? 900 : 700}

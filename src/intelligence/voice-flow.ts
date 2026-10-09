@@ -102,7 +102,7 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
   if (!f.what.trim()) out.push({ field: "what", ask: action === "give" ? "what are you giving?" : "what is it?" });
   if (action === "trade" && !f.want.trim()) out.push({ field: "want", ask: "what would you like for it?" });
   if (action === "fund" && !f.amount.trim()) out.push({ field: "amount", ask: "how much are you raising?" });
-  if ((action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? "where can someone collect it?" : "where is it?" });
+  if ((action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? (tangible ? "where can someone collect it?" : "where are you based? an area is fine.") : "where is it?" });
   if (action === "give" && !f.when.trim())
     out.push({ field: "when", ask: tangible ? "when?" : "when are you free?" });
   if ((action === "borrow" || action === "lend") && !f.when.trim())

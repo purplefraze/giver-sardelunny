@@ -132,12 +132,12 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
         return nextAsk({ ...next, action: resolved.action, fields: fieldsFromDraft(resolved, s.heard || text), pending: null });
       }
     }
+    const lead = contextOf(text) ? null : leadIntent(text);
+    if (lead?.action) return nextAsk({ ...next, action: lead.action, fields: fieldsFromDraft(lead, text), pending: null });
     const area = profileAreaOf(text);
     if (area) return { ...next, profile: area };
     const cg = communityFilterOf(text);
     if (cg) return { ...next, community: cg };
-    const lead = contextOf(text) ? null : leadIntent(text);
-    if (lead?.action) return nextAsk({ ...next, action: lead.action, fields: fieldsFromDraft(lead, text), pending: null });
     const route = routeVoice(text);
     if (route.intent === "search") return { ...next, search: route.search.term };
     const draft = route.draft;

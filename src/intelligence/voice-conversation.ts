@@ -123,6 +123,11 @@ export const conversation = {
   choose(words: string) {
     conversation.type(words);
   },
+  /** Editing a contextual detail in the preview (the person's edit wins). */
+  editCtx(field: string, value: string) {
+    const s = snap.session;
+    if (s) set({ session: { ...s, fields: { ...s.fields, ctx: { ...s.fields.ctx, [field]: value } } } });
+  },
   edit(field: keyof VoiceFields, value: string) {
     if (snap.session) set({ session: editField(snap.session, field, value) });
   },

@@ -285,7 +285,7 @@ export const conversation = {
     if (next.asking === "seed") next = { ...next, asking: null };
     if(field==="what"&&next.action&&!snap.edited.includes("title"))next={...next,fields:{...next.fields,title:listingTitle(next.action,value)}};
     /* The on-screen question follows what's actually still missing. */
-    if (snap.form && next.action && (next.stage === "talk" || next.stage === "anything")) next = nextAsk(next);
+    if (snap.form && next.action && field !== "where" && (next.stage === "talk" || next.stage === "anything")) next = nextAsk(next);
     set({ edited: mark(field), session: next });
   },
   /** Deliberate typed answer advances once; typing alone never advances. */

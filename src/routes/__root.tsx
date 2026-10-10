@@ -142,6 +142,32 @@ function RootComponent() {
   useEffect(() => {
     bootCloud();
   }, []);
+  /* A stale code chunk (after an update/restart) reloads once instead of blanking. */
+  useEffect(() => {
+    const KEY = "giver:chunk-reload";
+    const isChunkError = (m: unknown) =>
+      /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module/i.test(String(m));
+    const recover = () => {
+      if (sessionStorage.getItem(KEY)) return;
+      sessionStorage.setItem(KEY, "1");
+      window.location.reload();
+    };
+    const onPreload = (e: Event) => { e.preventDefault(); recover(); };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      if (isChunkError((e.reason as Error)?.message ?? e.reason)) recover();
+    };
+    const onError = (e: ErrorEvent) => { if (isChunkError(e.message)) recover(); };
+    window.addEventListener("vite:preloadError", onPreload);
+    window.addEventListener("unhandledrejection", onRejection);
+    window.addEventListener("error", onError);
+    const clear = window.setTimeout(() => sessionStorage.removeItem(KEY), 10000);
+    return () => {
+      window.removeEventListener("vite:preloadError", onPreload);
+      window.removeEventListener("unhandledrejection", onRejection);
+      window.removeEventListener("error", onError);
+      window.clearTimeout(clear);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

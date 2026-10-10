@@ -28,8 +28,8 @@ export type VoiceSession = {
   said: string[];
   choices: readonly string[];
   pending: ActionDraft | null;
-  /** The record a Share already created for this draft (kept through fold/reopen/seat switches so a retry never makes a second one). */
-  recordId?: string;
+  /** Stable identity of THIS draft: Share results are matched to it, never to whatever is on screen. */
+  draftId: string;
   /** Last words heard (shown in the bottom loop between segments). */
   heard: string;
   wantsPhoto: boolean;
@@ -64,7 +64,10 @@ export const SEED_OPENING: Record<GiverAction, string> = {
   fund: "what needs funding?",
 };
 
+let draftSeq = 0;
+const newDraftId = () => `d${Date.now().toString(36)}-${(++draftSeq).toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 export const startSession = (seed: GiverAction | null = null): VoiceSession => ({
+  draftId: newDraftId(),
   stage: "talk",
   action: seed,
   fields: { ...EMPTY_FIELDS },

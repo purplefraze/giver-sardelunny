@@ -32,3 +32,15 @@ export function savePin(itemId: string, pin: Pin) {
 export function pinFor(itemId: string): Pin | null {
   return read()[itemId] ?? null;
 }
+
+export function removePin(itemId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const all = read();
+    if (!(itemId in all)) return;
+    delete all[itemId];
+    window.localStorage.setItem(KEY, JSON.stringify(all));
+  } catch {
+    /* storage unavailable */
+  }
+}

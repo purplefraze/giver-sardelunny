@@ -10,6 +10,7 @@
 ## Actual checks
 - Consolidated Bun suite: 568 passing, zero failures, 18,074 assertions, 15 files. Two obsolete slide/hold tests were removed; focused lesson, map radius, raw interim, cancellation, initial-seat and timing checks were added.
 - Authenticated Chromium 390×844: actual tap starts; release keeps listening; second tap stops; raw interim appears; denied recognition recovers; keyboard record/stop; selected seat protected; all eight prompts occupy the same centre (195.0, 297.2); all idle dots appear after settling. Simulated recognition only, no real microphone.
+- Tall-phone 390×932 additionally passed cancel-to-G, unsupported recognition and typed fallback to a seat-seeded Give.
 - Complete guitar dialogue: offer → in person → Leith → Tuesday → every Tuesday → editable review. No condition, no Share invoked. Reviewed screenshots include intermediate G interpolation and final border.
 - Community browser-only 50-row fixtures at 320×740, 390×844, 430×932: one-row tabs (identical y), actual list scroll, stable oldest/latest, 5km returns 25 rows, 10km 50 rows, 50 matching Leaflet markers. No account session used for fixtures; no shared records were written.
 - Gateway authenticated catalog includes openai/gpt-6-astra, zero retention on Responses. Existing effective configuration: Responses, low reasoning, stream true, store false, no model environment override. One bounded live lesson sample returned HTTP 200, asked the missing area and did not invent details.

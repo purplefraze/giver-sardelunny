@@ -14,7 +14,7 @@ import { conversation } from "@/intelligence/voice-conversation";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { canGoLive, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
 import { NOUN } from "@/intelligence/voice-session";
-import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras } from "@/intelligence/contextual-needs";
+import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -80,7 +80,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     if (f.context) Object.assign(extras, publicExtras(f.ctx));
     if (f.duration.trim()) extras["how long"] = f.duration.trim();
     const details: ItemDetails = {
-      ...(service ? { where: f.ctx.format === "online" ? "online" : publicExtras(f.ctx)["area"] ?? "" } : f.where.trim() ? { where: f.where.trim() } : {}),
+      ...(service ? { where: f.ctx.format === "online" ? "online" : publicExtras(f.ctx)["area"] ?? "" } : f.where.trim() ? { where: publicPlace(f.where.trim()) } : {}),
       ...(Object.keys(extras).length ? { extras } : {}),
     };
     const note = f.note.trim() || undefined;

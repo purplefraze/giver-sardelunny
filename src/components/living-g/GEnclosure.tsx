@@ -190,14 +190,15 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     let dead = false, raf = 0;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) { setT(1); setReady(true); return; }
-    raf = requestAnimationFrame(() => {
+    /* Wait for the stage to lay out (two frames), then measure once. */
+    raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => {
       const f = measure();
       if (!f) { setT(1); setReady(true); return; }
       setFit(f);
       const start = performance.now();
       const step = (now: number) => { if (dead) return; const k = Math.min(1, (now - start) / 900); const e = k * k * (3 - 2 * k); setT(e); if (k < 1) raf = requestAnimationFrame(step); else setReady(true); };
       raf = requestAnimationFrame(step);
-    });
+    }); });
     const resize = () => { setFit(null); };
     window.addEventListener("resize", resize);
     return () => { dead = true; cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };

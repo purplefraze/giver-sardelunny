@@ -304,11 +304,13 @@ function Index() {
 
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const talk = useSyncExternalStore(conversation.subscribe, conversation.get, conversation.getServer);
-  const talking_ = talk.session !== null && talk.session.stage !== "review" && talk.session.stage !== "live";
-  const reviewing = talk.session?.stage === "review" || talk.session?.stage === "live";
+  const talking_ = !talk.form && talk.session !== null && talk.session.stage !== "review" && talk.session.stage !== "live";
+  /* ONE unfolded form for both doors: middle-loop tap (manual-first) and voice review. */
+  const reviewing = talk.form || talk.session?.stage === "live";
+  const reachedReview = talk.session?.stage === "review" && !talk.form;
   useEffect(() => {
-    if (reviewing) { conversation.review(); }
-  }, [reviewing]);
+    if (reachedReview) { conversation.review(); }
+  }, [reachedReview]);
   useEffect(() => () => { conversation.stopLocked(); voiceCapture.cancel(); }, []);
   /* A spoken search leaves the conversation for communi-g's own listings. */
   useEffect(() => {
@@ -770,10 +772,11 @@ function Index() {
     }
     /* FUND opens its own form — "ask for funding" — in the same chamber.
        (The pledge sheet stays one loop down: Fund's communi-g.) */
-    if (activity === "fund") {
-      setEditor({ kind: "ask-fund" });
-      return;
-    }
+    /* EVERY POSTING MODE: the middle loop opens that mode's editable form
+       at once, inside the unfolded G — fresh, or the seat's kept draft. */
+    haptics.light();
+    conversation.openForm(seat);
+    return;
     /* TAP TO ENTER (testing phase): the seat's own action screen — the
        existing CategoryForm ("what can you give today?" for Give) — opens
        even before the profile exists. It used to route first-arrival taps to

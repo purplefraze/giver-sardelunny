@@ -218,10 +218,18 @@ export const conversation = {
     const s = snap.session;
     if (!s) return;
     let next = editField(s, field, value);
-    /* A typed "guitar lessons" is a lesson: lesson labels, never condition. */
-    if (field === "what" && !next.fields.context && s.action !== "trade") {
+    /* A typed title gets the same grounded context as voice, in every mode;
+       a title that turns back into a physical thing drops stale lesson labels. */
+    if (field === "what" && !snap.edited.includes("context")) {
       const k = contextOf(value);
-      if (k === "lesson" || k === "service") next = { ...next, fields: { ...next.fields, context: k } };
+      const svc = k === "lesson" || k === "service";
+      const was = next.fields.context === "lesson" || next.fields.context === "service";
+      if (svc) next = { ...next, fields: { ...next.fields, context: k } };
+      else if (was) next = { ...next, fields: { ...next.fields, context: null, ctx: {} } };
+      if (s.action === "give" && !snap.edited.includes("kind")) {
+        const auto = next.fields.kind === null || next.fields.kind === "a skill" || next.fields.kind === "a hand";
+        if (auto) next = { ...next, fields: { ...next.fields, kind: svc ? (k === "lesson" ? "a skill" : "a hand") : was ? null : next.fields.kind } };
+      }
     }
     const kind = next.fields.context;
     if (field === "what" && (kind === "lesson" || kind === "service") && !snap.edited.includes("ctx:subject"))

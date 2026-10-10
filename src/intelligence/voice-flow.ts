@@ -1,3 +1,4 @@
+import { parseAmount, validTarget } from "@/data/fund-rules";
 import type { GiveType } from "@/data/give-lexicon";
 import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance } from "@/intelligence/bind";
@@ -110,7 +111,14 @@ export function canGoLive(action: GiverAction, f: VoiceFields): boolean {
   if (f.what.trim().length < 2) return false;
   if (action === "give") return f.kind !== null && (f.context === "lesson" || f.context === "service" ? f.ctx.format === "online" || !!f.ctx.area : f.where.trim().length > 0);
   if (action === "trade") return f.want.trim().length > 0;
+  if (action === "fund") return fundTargetOf(f) !== null;
   return true;
+}
+
+/** The ONE parsed, validated Fund goal (existing limits); null = not a Fund yet. */
+export function fundTargetOf(f: Pick<VoiceFields, "amount">): number | null {
+  const cents = parseAmount(f.amount ?? "");
+  return cents === null ? null : validTarget(cents);
 }
 
 /**

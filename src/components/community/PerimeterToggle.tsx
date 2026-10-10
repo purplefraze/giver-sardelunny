@@ -3,7 +3,7 @@ import { LOWER_STATIONS, clampLower, lowerAngle, lowerToken, lowerWord, nearestL
 export type { CgStation } from "./lower-stations";
 import { Button } from "@/components/ui/button";
 import { haptics } from "@/lib/haptics";
-import { ARM_LENGTH, SNAP_MS, TRACK_PATH, TRACK_WIDTH, armPath, crossings, easeOut, frameOf, inputAngle, settleDuration, signedTurn, wrap, type Point } from "./perimeter-geometry";
+import { ARM_LENGTH, SNAP_MS, TRACK_PATH, TRACK_WIDTH, sPath, crossings, easeOut, frameOf, inputAngle, settleDuration, signedTurn, wrap, type Point } from "./perimeter-geometry";
 
 const clockOf = lowerAngle;
 const STATIONS = LOWER_STATIONS.map(s => s.value);
@@ -16,7 +16,9 @@ type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; do
 /** ONE angle → one paint. Only release owns an animation; no camera timer.
  * A stable gesture-space ellipse is INPUT only, never a frozen camera/lens. */
 /** Tap = onTap (never exits) · stationary hold = onHold (record mode toggle). */
-export function PerimeterToggle({ value, onChange, onTap, onHold, record = false, listening = false, children }: { value: CgStation; onChange: (next: CgStation) => void; onTap?: () => void; onHold?: () => void; record?: boolean; listening?: boolean; children?: ReactNode }) {
+/** backdrop = content clipped to the loop's hollow (the map at 12).
+ * onBack = a deliberate tap on the toggle once SETTLED at the outside "back". */
+export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record = false, listening = false, backdrop, children }: { value: CgStation; onChange: (next: CgStation) => void; onTap?: () => void; onHold?: () => void; onBack?: () => void; record?: boolean; listening?: boolean; backdrop?: ReactNode; children?: ReactNode }) {
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 390, h: 844 });
   const [angle, setAngle] = useState(() => clockOf(value));
@@ -29,8 +31,8 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
   const raf = useRef(0);
   const previousValue = useRef(value);
   const external = useRef(false);
-  const callbacks = useRef({ onChange, onTap, onHold });
-  callbacks.current = { onChange, onTap, onHold };
+  const callbacks = useRef({ onChange, onTap, onHold, onBack });
+  callbacks.current = { onChange, onTap, onHold, onBack };
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heldLong = useRef(false);
   const clearHold = () => { if (holdTimer.current) clearTimeout(holdTimer.current); holdTimer.current = null; };
@@ -46,6 +48,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
     if (station === shownRef.current) return;
     shownRef.current = station; setShown(station);
     // Content changes at real station crossings; 12:00 is the all-types map; no wrapped station crossings.
+    if (station === "back") return; // reaching back never leaves, never changes content
     if (!external.current) { previousValue.current = station; callbacks.current.onChange(station); }
   };
   const put = (next: number, tactile = false) => {
@@ -86,24 +89,34 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
     gesture.current = null; setHeld(false); clearHold();
     if (g.target.hasPointerCapture(g.id)) g.target.releasePointerCapture(g.id);
     if (heldLong.current) { heldLong.current = false; return; }
-    if (!cancel && !g.moved) { haptics.light(); callbacks.current.onTap?.(); }
+    if (!cancel && !g.moved) {
+      haptics.light();
+      /* Only a tap on the settled outside "back" returns to the whole G. */
+      if (shownRef.current === "back" && Math.abs(angleRef.current - clockOf("back")) < .5) { callbacks.current.onBack?.(); return; }
+      callbacks.current.onTap?.();
+    }
     settle(nearest(angleRef.current), !cancel && g.moved);
   };
   const frame = frameOf(size.w, size.h, angle);
   const colour = ink(shown), word = lowerWord(shown);
   // Smooth interior clearance; no threshold-based page jumps as the camera rides.
-  const a = angle * Math.PI / 180;
+  const a = Math.min(0, angle) * Math.PI / 180;
   const left = 16 + Math.max(0, -Math.sin(a)) * 98, right = 16 + Math.max(0, Math.sin(a)) * 98;
-  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "map" ? 118 : shown === "wish" || shown === "give" ? 180 : 290), bottom = shown === "map" ? 118 : 16 + Math.max(0, -Math.cos(a)) * 98;
+  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "map" || shown === "back" ? 118 : shown === "wish" || shown === "give" ? 180 : 290), bottom = shown === "map" || shown === "back" ? 118 : 16 + Math.max(0, -Math.cos(a)) * 98;
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
-    <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0" aria-hidden="true" data-cg-world="">
+    {backdrop ? <>
+      <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={TRACK_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
+      <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)" }} data-cg-backdrop="">{backdrop}</div>
+    </> : null}
+    <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">
-        <path d={TRACK_PATH} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" data-cg-track="" />
+        <path d={TRACK_PATH} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-track="" />
+        <path d={sPath(size.w, size.h)} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-s-connector="" />
       </g>
-      <path d={armPath(frame.tip, frame.root, frame.normal)} fill={colour} data-cg-stem-arm="" />
+      <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={10} strokeLinecap="round" data-cg-stem-arm="" />
     </svg>
     {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left, right, top, bottom }} data-cg-interior=""><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
-    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={0} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
+    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={shown === "back" ? "back — tap to return to the living g" : record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={clockOf("back")} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
         const rect = stage.current?.getBoundingClientRect(); if (!rect) return;
@@ -137,7 +150,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
         if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) {
           e.preventDefault(); const dir = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
           const next = STATIONS[Math.max(0, Math.min(STATIONS.length - 1, index + dir))]; if (next) settle(next, true);
-        } else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); callbacks.current.onTap?.(); }
+        } else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (shownRef.current === "back") callbacks.current.onBack?.(); else callbacks.current.onTap?.(); }
         else if (e.key === "Escape") { e.preventDefault(); stage.current?.dispatchEvent(new CustomEvent("giver:community-return", { bubbles:true })); }
         else if (e.key === "r" || e.key === "R") { e.preventDefault(); callbacks.current.onHold?.(); }
       }}>

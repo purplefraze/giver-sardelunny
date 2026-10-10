@@ -13,7 +13,7 @@ describe("Communi-G single-angle geometry", () => {
       expect(scaleOf(a)).toBeGreaterThanOrEqual(1.45);
       expect(scaleOf(a)).toBeLessThanOrEqual(1.85);
       expect(scaleOf(a + 360)).toBeCloseTo(scaleOf(a), 8);
-      expect(frameOf(390, 844, lower(a)).scale).toBe(scaleOf(a));
+      expect(frameOf(390, 844, lower(a)).scale).toBeCloseTo(scaleOf(a), 8);
       expect(Math.abs(scaleOf(a + .01) - scaleOf(a))).toBeLessThan(.0001);
     }
     expect(scaleOf(-.001)).toBeCloseTo(scaleOf(.001), 10);

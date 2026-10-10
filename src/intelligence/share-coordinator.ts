@@ -4,6 +4,7 @@ import type { Pin } from "@/data/give-pins";
 import type { GiverAction } from "@/intelligence/action-draft";
 import { canGoLive, fundTargetOf, type VoiceFields } from "@/intelligence/voice-flow";
 import { privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
+import { collectionLocationSchema, coarseCollectionPin } from "@/lib/collection-location";
 
 /**
  * THE ONE SHARE ORCHESTRATION for the Living G form (used by VoiceReview).
@@ -101,7 +102,9 @@ export function createShareCoordinator(deps: ShareDeps) {
   const bump = () => { version++; subs.forEach((f) => f()); };
 
   const applyPrivate = (id: string, input: ShareInput) => {
-    if (input.pin) deps.savePin(id, input.pin); else deps.removePin(id);
+    const collection = collectionLocationSchema.safeParse(input.fields.collectionLocation);
+    const pin = input.action === "give" ? (collection.success ? coarseCollectionPin(collection.data.pin) : null) : input.pin;
+    if (pin) deps.savePin(id, pin); else deps.removePin(id);
     const exact = privatePlaces(input.fields.ctx);
     deps.savePrivatePlaces(id, Object.keys(exact).length ? exact : null);
   };

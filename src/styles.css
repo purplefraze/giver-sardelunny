@@ -2054,12 +2054,12 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .gv-loop-low .gv-heard { font:450 20px/1.3 var(--giver-font); min-height:0; max-height:5.4em; opacity:1; }
 
 /* Communi-g lockup: active category on top, communi-g beneath, centred, one line each. */
-.cg-head { display:flex; flex-direction:column; align-items:center; gap:2px; margin:0; text-align:center; white-space:nowrap; text-transform:lowercase; }
-.cg-head-cat { font:700 11px/1.2 var(--giver-font); letter-spacing:.26em; margin-right:-.26em; }
+.cg-head { display:flex; flex-direction:column; align-items:flex-start; gap:2px; margin:0; text-align:left; white-space:nowrap; text-transform:lowercase; }
+.cg-head-cat { font:700 18px/1.2 var(--giver-font); letter-spacing:0; }
 .cg-context { font:900 22px/1.1 var(--giver-font); letter-spacing:-0.02em; color:var(--foreground); white-space:nowrap; hyphens:none; }
-.cg-filters { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; flex-shrink:0; scrollbar-width:none; padding:2px 0; justify-content:safe center; }
+.cg-filters { display:flex; gap:10px; flex-wrap:nowrap; overflow-x:auto; flex-shrink:0; scrollbar-width:none; padding:2px 0; justify-content:flex-start; }
 .cg-filter { font:700 13px var(--giver-font); letter-spacing:0; padding:4px 0; height:auto; min-height:32px; color:var(--muted-foreground); text-transform:lowercase; }
-.cg-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px 10px; flex-shrink:0; padding:2px 0 6px; font:450 13px var(--giver-font); }
+.cg-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:4px 10px; flex-shrink:0; padding:2px 0 6px; font:450 13px var(--giver-font); }
 [data-world="communigy"] { text-transform:lowercase; }
 [data-world="communigy"] input, [data-world="communigy"] textarea { text-transform:none; }
 
@@ -2098,7 +2098,7 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .gv-sheet { gap:10px; }
 .gv-field { padding:8px 0; gap:10px; }
 .gv-title { font-size:24px; }
-[data-cg-mode="map"] .cg-head { background:var(--background); border-radius:14px; padding:4px 14px; }
+[data-cg-mode="map"] .cg-head { background:var(--background); }
 .cg-map-count { font:700 12px/1.3 var(--giver-font); letter-spacing:.02em; opacity:.7; }
 
 /* Readable floors (supersedes any smaller computed size) and the dense reflow. */
@@ -2169,3 +2169,8 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
   position:sticky; bottom:0; background:var(--world-bg); z-index:1;
 }
 .gv-field input,.gv-field textarea,.gv-field select { font-size:max(16px, calc(17px * var(--gv-fit))); }
+.gv-collection { min-width:0; }
+.gv-collection .gv-field { grid-template-columns:minmax(0,1fr); gap:2px; }
+.gv-collection .gv-answer-actions { margin:0; gap:8px; }
+.gv-collection-map { height:128px; width:100%; min-width:0; margin-block:6px; }
+.gv-collection-pin { border-radius:50%; background:var(--mode-give); border:3px solid var(--background); }

@@ -14,6 +14,7 @@ import { pickedAnswerTime } from "./answer-time";
 import { toDateOnly, parseDateOnly } from "@/lib/date-only";
 import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
 import { formKeyboardBounds } from "@/lib/form-keyboard";
+import { CollectionLocation } from "./CollectionLocation";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -92,6 +93,13 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const service = f.context === "lesson" || f.context === "service";
   const guided=!c.inspected && s.stage!=="review";
   const temporal=!!c.timePending || s.asking==="when" || ["ctx:day","ctx:date","ctx:window","ctx:pickupTime"].includes(s.asking??"");
+  const collection = action === "give" && !service;
+  const collectionQuestion = collection && s.asking === "where";
+  const chooseDate = (value: string) => {
+    const timing = pickedAnswerTime(value, f.timing?.time ?? "");
+    if (timing) conversation.setTiming(timing);
+    else if (!value) conversation.edit("when", "");
+  };
 
   if (s.stage === "live") {
     return (
@@ -118,7 +126,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     const input = { draftId: s.draftId, action, fields: f, photo: c.photo, pin: c.pin };
     if (!canGoLive(action, f)) {
       haptics.warning();
-      setProblem(f.what.trim().length < 2 ? "what is it?" : action === "fund" ? "how much are you raising? enter a goal, like 1200." : action === "give" && !f.kind ? "what kind of give is it?" : action === "trade" ? "what would you like for it?" : "where is it?");
+       setProblem(f.what.trim().length < 2 ? "what is it?" : action === "fund" ? "how much are you raising? enter a goal, like 1200." : action === "give" && !f.kind ? "what kind of give is it?" : collection && !f.collectionLocation ? "confirm a real approximate collection area" : collection && f.kind === "food" && !f.timing?.date ? "choose a collection date" : action === "trade" ? "what would you like for it?" : "where is it?");
       return;
     }
     if (!skipPhoto && photoReminder(action, f.kind, !!c.photo)) {
@@ -154,15 +162,15 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       {guided ? <section className="gv-guided" data-guided-intake="">
         <p className="g-meta">{noun}</p>
         <h1 className="gv-question">{c.timePending?.question || ask || ({give:"what would you like to give?",wish:"what are you wishing for?",borrow:"what would you like to borrow?",lend:"what can you lend?",trade:"what would you like to trade?",fund:"what are you raising funds for?"}[action])}</h1>
-        <label className="gv-field"><span className="sr-only">your answer</span><textarea aria-label="your answer" autoCapitalize="none" rows={2} value={answer} onChange={e=>setAnswer(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(answer.trim()){conversation.answer(answer);setAnswer("");}}}} /></label>
+         {collectionQuestion ? <CollectionLocation draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : <label className="gv-field"><span className="sr-only">your answer</span><textarea aria-label="your answer" autoCapitalize="none" rows={2} value={answer} onChange={e=>setAnswer(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(answer.trim()){conversation.answer(answer);setAnswer("");}}}} /></label>}
         {listening || v.transcript ? <div className="gv-live" aria-live="polite" data-form-listening=""><p className="g-meta" role="status">{v.state==="listening"?"listening…":v.state==="processing"?"got it…":listening?"starting…":"heard"}</p>{v.transcript?<p className="gv-heard" data-form-heard="">{v.transcript}</p>:null}</div> : null}
         {s.choices?.length?<div className="gv-answer-choices">{s.choices.map(choice=><Button variant="ghost" type="button" key={choice} onClick={()=>conversation.answer(choice)}>{choice}</Button>)}</div>:null}
-        {temporal ? <div className="gv-date-answer">
+         {temporal && collection ? <label className="gv-field"><span>collection date</span><input type="date" aria-label="collection date" value={f.timing?.date ?? ""} onChange={e => chooseDate(e.target.value)} /></label> : temporal ? <div className="gv-date-answer">
           <Popover><PopoverTrigger asChild><Button variant="ghost" type="button" aria-label="choose a collection or availability date"><CalendarDays />{date||"choose a date"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0 pointer-events-auto"><Calendar mode="single" selected={parseDateOnly(date)??undefined} onSelect={d=>{if(d)setDate(toDateOnly(d));}} className="pointer-events-auto" /></PopoverContent></Popover>
           <label className="gv-field"><span>time (optional)</span><input type="time" aria-label="availability time" value={time} onChange={e=>setTime(e.target.value)} /></label>
           {date?<><p className="g-body">{pickedAnswerTime(date,time)?.label}</p><Button variant="ghost" type="button" onClick={()=>{const value=pickedAnswerTime(date,time);if(value){conversation.setTiming(value);setDate("");setTime("");}}}>use this date{time?" and time":""}</Button></>:null}
         </div>:null}
-        <div className="gv-answer-actions"><Button variant="ghost" type="button" disabled={!answer.trim()} onClick={()=>{conversation.answer(answer);setAnswer("");}}>next →</Button><Button variant="ghost" type="button" onClick={()=>conversation.inspect()}>review draft</Button></div>
+         <div className="gv-answer-actions">{!collectionQuestion ? <Button variant="ghost" type="button" disabled={!answer.trim()} onClick={()=>{conversation.answer(answer);setAnswer("");}}>next →</Button> : null}<Button variant="ghost" type="button" onClick={()=>conversation.inspect()}>review draft</Button></div>
         {c.understanding?<p className="g-meta" role="status">understanding…</p>:null}
         {c.understandingError?<p className="g-meta" role="status">{c.understandingError.toLowerCase()}</p>:null}
       </section> : <>
@@ -179,7 +187,8 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         {action === "trade" ? field("want", "for") : null}
         {action === "fund" ? field("amount", "raising", "amount") : null}
         {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
-        {!service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
+         {collection ? <CollectionLocation draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
+         {collection ? <label className="gv-field"><span>collection date</span><input type="date" aria-label="collection date" value={f.timing?.date ?? ""} onChange={e => chooseDate(e.target.value)} /></label> : null}
         {f.context
           ? FIELDS_OF[f.context]
               .filter((k) => k !== "flexible" && k !== "subject" && !(service && k === "day" && f.ctx.recurrence?.startsWith("every")) && (!service || !["level", "window", "lessonDuration", "date"].includes(k) || !!f.ctx[k as keyof typeof f.ctx] || (k === "date" && f.ctx.recurrence === "one-off")))
@@ -195,7 +204,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
                   />
                 </label>
               ))
-          : action !== "trade"
+           : action !== "trade" && !collection
             ? field("when", "when", action === "give" ? "e.g. tuesday" : "")
             : null}
         {(action === "borrow" || action === "lend") && !f.context ? field("duration", "how long", "e.g. a week") : null}

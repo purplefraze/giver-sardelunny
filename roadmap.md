@@ -1,4 +1,10 @@
 # Communi-G track repair
+## Oct 10 22:28 combined regression repair
+- [x] Fixed top-left community headings and left-aligned lists across seats; preserve toggle/navigation.
+- [x] Middle seat label colours/content clearance and local fine track paint; canonical path unchanged.
+- [x] Give collection date, permission-based approximate location, explicit provider search and draggable preview; mock draft/payload checks.
+- [x] Recheck retained email restoration and six modes with simulated keyboard changes and isolated data.
+- [ ] Physical iPhone Safari, true autocomplete, live provider/publication and smallest-phone dense-review no-scroll remain unverified/incomplete; see docs/combined-mobile-regressions-oct10.md.
 ## Oct 10 22:19 onboarding keyboard regression
 - [x] Follow-up 22:21: history confirms keyboard scaling introduced by 7094f9d and textarea wrapping by 5481d30; a last working real Safari version is not proven.
 - [x] Remove sign-in keyboard scaling and email wrapping; retain canonical artwork and background composition. 22:23: no G motion on keyboard events.

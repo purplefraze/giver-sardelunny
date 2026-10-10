@@ -10,6 +10,7 @@ import { contextOf } from "@/intelligence/contextual-needs";
 import { inferGiveType } from "@/data/give-lexicon";
 import { listingTitle, validateDraftSuggestion } from "./draft-understanding";
 import { readAnswerTime, type AnswerTime } from "./answer-time";
+import { collectionLocationSchema, type CollectionLocation } from "@/lib/collection-location";
 
 /**
  * THE ONE VOICE CONVERSATION — lives while the G stays intact.
@@ -265,6 +266,7 @@ export const conversation = {
     if (!s) return;
     let next = editField(s, field, value);
     if(field==="when"){const fields={...next.fields};delete fields.timing;next={...next,fields};}
+    if(field==="where"){const fields={...next.fields};delete fields.collectionLocation;next={...next,fields};set({pin:null});}
     /* A typed title gets the same grounded context as voice, in every mode;
        a title that turns back into a physical thing drops stale lesson labels. */
     if (field === "what" && !snap.edited.includes("context")) {
@@ -283,7 +285,7 @@ export const conversation = {
     if (next.asking === "seed") next = { ...next, asking: null };
     if(field==="what"&&next.action&&!snap.edited.includes("title"))next={...next,fields:{...next.fields,title:listingTitle(next.action,value)}};
     /* The on-screen question follows what's actually still missing. */
-    if (snap.form && next.action && (next.stage === "talk" || next.stage === "anything")) next = nextAsk(next);
+    if (snap.form && next.action && !(field === "where" && next.action === "give") && (next.stage === "talk" || next.stage === "anything")) next = nextAsk(next);
     set({ edited: mark(field), session: next });
   },
   /** Deliberate typed answer advances once; typing alone never advances. */
@@ -298,6 +300,12 @@ export const conversation = {
     set({edited:[...new Set([...snap.edited,...changed,...ctxChanged])]});
   },
   inspect() { conversation.stopLocked();set({inspected:true}); },
+  setCollectionLocation(location: CollectionLocation, draftId: string) {
+    const s = snap.session; const result = collectionLocationSchema.safeParse(location);
+    if (!s || s.draftId !== draftId || !result.success) return;
+    const fields = { ...s.fields, where: result.data.label, collectionLocation: result.data };
+    set({ pin: result.data.pin, edited: [...new Set([...snap.edited, "where", "collectionLocation"])], session: nextAsk({ ...s, fields }) });
+  },
   continueQuestions() {const s=snap.session;if(s?.action)set({inspected:false,session:nextAsk(s)});},
   setTiming(value:AnswerTime) {
     const s=snap.session;if(!s?.action)return;

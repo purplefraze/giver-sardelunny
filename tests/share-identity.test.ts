@@ -134,7 +134,7 @@ describe("pending Share while the form folds/reopens", () => {
 
   test("record id attaches before the photo upload; reopen during upload cannot create again", async () => {
     const sc = coord();
-    conversation.openForm("give"); conversation.edit("what", "a lamp"); conversation.edit("kind", "objects"); conversation.edit("where", "leith");
+    conversation.openForm("give"); conversation.edit("what", "a lamp"); conversation.edit("kind", "a thing"); conversation.setCollectionLocation({ label: "leith", pin: { lat: 55.97, lng: -3.17 }, source: "place" }, conversation.currentDraftId() ?? "");
     const input = { ...inputOf(), photo: { file: new File(["x"], "x.jpg"), url: "data:x" } };
     upload = defer();
     const p1 = sc.share(input);

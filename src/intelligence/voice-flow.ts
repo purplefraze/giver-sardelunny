@@ -5,6 +5,7 @@ import { bindUtterance } from "@/intelligence/bind";
 import { contextOf, extractCtx, type ContextKind, type Ctx } from "@/intelligence/contextual-needs";
 import { incompleteLead, itemOf, leadIntent } from "@/intelligence/lead-intent";
 import type { AnswerTime } from "./answer-time";
+import { validCollectionLocation, type CollectionLocation } from "@/lib/collection-location";
 
 /**
  * THE IN-G VOICE SEQUENCE — pure rules only (no DOM, no network, no write).
@@ -27,6 +28,7 @@ export type VoiceFields = {
   /** Public wording stays distinct from raw speech and extracted subject. */
   title?: string;
   timing?: AnswerTime;
+  collectionLocation?: CollectionLocation;
   what: string;
   want: string;
   kind: GiveType | null;
@@ -126,7 +128,7 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
 /** Required to go live — mirrors the existing forms' minimums. */
 export function canGoLive(action: GiverAction, f: VoiceFields): boolean {
   if (f.what.trim().length < 2 || incompleteLead(f.what)) return false;
-  if (action === "give") return f.kind !== null && (f.context === "lesson" || f.context === "service" ? f.ctx.format === "online" || !!f.ctx.area : f.where.trim().length > 0);
+   if (action === "give") return f.kind !== null && (f.context === "lesson" || f.context === "service" ? f.ctx.format === "online" || !!f.ctx.area : validCollectionLocation(f.collectionLocation, f.where) && (f.kind !== "food" || !!f.timing?.date));
   if (action === "trade") return f.want.trim().length > 0;
   if (action === "fund") return fundTargetOf(f) !== null;
   return true;

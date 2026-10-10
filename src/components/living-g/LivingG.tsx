@@ -70,6 +70,7 @@ type Props = {
    * MIDDLE: the same outline eroded to a 28.5-unit stroke (g-weight.tsx).
    */
   weight?: "normal" | "heavy" | "middle";
+  middleStroke?: number;
 };
 
 
@@ -143,7 +144,7 @@ export const RHYTHM = {
  * redrawn as one perfect arc across that span, so the 2 o'clock section of the
  * G is a single continuous curve — no bump, kink or flat spot, in any mode.
  */
-function rimPatch(thin = false) {
+function rimPatch(thin = false, middleStroke?: number) {
   /* The patch's centre line (rMid) is the stroke's centre line at every
      weight; only its width follows the weight (53.5 → 28.5). */
   return (
@@ -151,7 +152,7 @@ function rimPatch(thin = false) {
       d={arcPath(LOOP_CENTRE.middle, RIM_PATCH.a0, RIM_PATCH.a1, RIM_PATCH.rMid)}
       fill="none"
       stroke="var(--world-g)"
-      strokeWidth={thin ? G_STROKE.middle : RIM_PATCH.width}
+      strokeWidth={middleStroke ?? (thin ? G_STROKE.middle : RIM_PATCH.width)}
       strokeLinecap="butt"
     />
   );
@@ -173,6 +174,7 @@ export function LivingG({
   contentKey = "",
   earCut = false,
   weight = "normal",
+  middleStroke,
 }: Props) {
   const [pressed, setPressed] = useState<RegionKey | null>(null);
   /** The temporary word cue: revealed by a deliberate press-and-hold. */
@@ -309,7 +311,7 @@ export function LivingG({
             />
           </mask>
         ) : null}
-        {thin ? <GThinMask id={`${uid}-thin`} weight="middle" /> : null}
+        {thin ? <GThinMask id={`${uid}-thin`} weight="middle" middleWidth={middleStroke} /> : null}
       </defs>
 
       <g>
@@ -319,9 +321,9 @@ export function LivingG({
             <path d={LIVING_G_PATH} {...heavy} {...(thin ? { mask: `url(#${uid}-thin)` } : {})} />
           </g>
         </g>
-        {earCut ? rimPatch(thin) : null}
+        {earCut ? rimPatch(thin, middleStroke) : null}
         {/* THE MIDDLE LOOP, CLOSED at render time (loop-close.tsx). */}
-        <MiddleLoopClose weight={weight} />
+        <MiddleLoopClose weight={weight} strokeWidth={middleStroke} />
 
         {ORDER.map((key) => {
           const isPressed = pressed === key;
@@ -340,8 +342,8 @@ export function LivingG({
                     <path d={LIVING_G_PATH} {...heavy} {...(thin ? { mask: `url(#${uid}-thin)` } : {})} />
                   </g>
                 </g>
-                {earCut ? rimPatch(thin) : null}
-                <MiddleLoopClose weight={weight} />
+                {earCut ? rimPatch(thin, middleStroke) : null}
+                <MiddleLoopClose weight={weight} strokeWidth={middleStroke} />
               </g>
             </g>
           );

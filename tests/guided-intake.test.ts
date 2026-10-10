@@ -25,9 +25,10 @@ test("unfinished lead never completes subject",()=>{
 test("six selected modes keep one draft, no mic and no live stage before Share",()=>{
   for(const mode of ["give","wish","borrow","lend","trade","fund"]){conversation.close();conversation.openForm(mode);const id=conversation.currentDraftId();conversation.answer(mode==="fund"?"raising funds for a garden":"a table");expect(conversation.get().mode).toBe("off");expect(conversation.get().session?.action).toBe(mode);expect(conversation.get().session?.stage).not.toBe("live");conversation.closeForm();conversation.openForm(mode);expect(conversation.currentDraftId()).toBe(id);expect(conversation.get().session?.fields.what).not.toBe("");}
 });
-test("multi-detail item skips supplied area, date and condition",()=>{
+test("multi-detail item keeps supplied date/condition; area can be confirmed in review",()=>{
   conversation.openForm("give");conversation.type("I'd like to give a table tomorrow in Leith, good condition");
   const s=conversation.get().session;expect(s?.fields.where).toBe("leith");expect(s?.fields.timing?.date).toBeTruthy();expect(s?.fields.condition).toBe("good condition");expect(s?.stage).toBe("review");
+  conversation.setCollectionLocation({label:"leith",pin:{lat:55.97,lng:-3.17},source:"place"},s?.draftId??"");expect(conversation.get().session?.stage).toBe("review");
 });
 test("lesson needs meeting and recurrence, never physical condition",()=>{
   conversation.openForm("give");conversation.answer("guitar lessons");expect(conversation.get().session?.fields.kind).toBe("a skill");conversation.answer("online");conversation.type("Tuesday");expect(conversation.get().session?.prompt).toMatch(/this tuesday or every tuesday/i);conversation.type("every Tuesday");expect(conversation.get().session?.fields.timing?.recurrence).toBe("every tuesday");expect(conversation.get().session?.fields.condition).toBe("");

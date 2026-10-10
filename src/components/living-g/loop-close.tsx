@@ -54,16 +54,18 @@ const CLOSE_WIDTH = {
 export function MiddleLoopClose({
   weight = "normal",
   fill = "var(--world-g)",
+  strokeWidth,
 }: {
   weight?: keyof typeof CLOSE_WIDTH;
   fill?: string;
+  strokeWidth?: number | undefined;
 }) {
   return (
     <path
       d={CLOSE_PATH}
       fill="none"
       stroke={fill}
-      strokeWidth={CLOSE_WIDTH[weight]}
+      strokeWidth={strokeWidth ?? CLOSE_WIDTH[weight]}
       strokeLinecap="butt"
       strokeLinejoin="round"
       pointerEvents="none"

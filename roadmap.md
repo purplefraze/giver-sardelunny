@@ -47,7 +47,7 @@
 - [x] Plan only: voice-mode choreography written to docs/spec/voice-motion.md (build awaits approval)
 - [x] In-G voice conversation (Oct 8): tap record/stop (Oct 10 supersedes hold/slide-lock), live words in the bottom loop, one question at a time in the middle loop, photo plus, review-only glide + unfold, editable preview, explicit "Share with communi-g"
 - [x] My G eight-area profile loop with voice navigation (review at /dev/my-g)
-- [x] Communi-G: one selection drives inside toggle + filter row + feed; 12:00 = my active posts; hold-for-voice on toggle (review at /dev/communi-g)
+- [x] Communi-G: one selection drives inside toggle + filter row + feed; 12:00 = blue all-types map (Oct 10 16:50 supersedes own aggregate); existing expanded voice controls retained (review at /dev/communi-g)
 - [x] Main middle toggle: landing label → idle dot → tap to record/stop on the toggle itself (seat seeds the draft); nook mic removed
 - [ ] Tapping My G zooms into the actual toggle circle with the profile bead inside (not started; profile loop still rides the middle-loop rim)
 - Contextual follow-up: rule engine + AI second read (openai/gpt-6-astra) via src/lib/followup.functions.ts — done; device speech test open

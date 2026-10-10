@@ -19,6 +19,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const [problem, setProblem] = useState<string | null>(null);
   const [remind, setRemind] = useState(false);
   const [busy, setBusy] = useState(false);
+  useSyncExternalStore(shareCoordinator.subscribe, shareCoordinator.version, shareCoordinator.version);
   /* One local record per draft: a retry re-confirms it, never re-creates it. */
   const [liveId, setLiveId] = useState<string | null>(null);
   const folding = useRef(false);
@@ -160,7 +161,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       ) : null}
       {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
       <div className="gv-taps gv-taps-row">
-        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy}>Share with communi-g</Button>
+        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>Share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
       </div>
       {noMic ? <p className="gv-problem" role="status">{noMic}</p> : null}

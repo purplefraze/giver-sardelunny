@@ -194,7 +194,7 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     if (reduced) { setT(1); setReady(true); return; }
     /* Wait for the stage to lay out (two frames), then measure once. */
     raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => {
-      const f = measure();
+      const f = measure(); console.log("fit", JSON.stringify(f));
       if (!f) { setT(1); setReady(true); return; }
       setFit(f);
       const start = performance.now();

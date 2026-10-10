@@ -770,22 +770,11 @@ function Index() {
       openMyG();
       return;
     }
-    /* FUND opens its own form — "ask for funding" — in the same chamber.
-       (The pledge sheet stays one loop down: Fund's communi-g.) */
-    /* EVERY POSTING MODE: the middle loop opens that mode's editable form
-       at once, inside the unfolded G — fresh, or the seat's kept draft. */
+    /* EVERY POSTING MODE (Fund included): the middle loop opens that mode's
+       editable form at once inside the unfolded G — fresh, or the seat's
+       kept draft. Never listens, never saves. */
     haptics.light();
     conversation.openForm(seat);
-    return;
-    /* TAP TO ENTER (testing phase): the seat's own action screen — the
-       existing CategoryForm ("what can you give today?" for Give) — opens
-       even before the profile exists. It used to route first-arrival taps to
-       profile setup; that detour is removed for testing. */
-    setEditor({
-      kind: "category",
-      category: mode,
-      ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
-    });
   };
 
   /**

@@ -12,7 +12,8 @@ import { contextOf } from "@/intelligence/contextual-needs";
  * THE ONE VOICE CONVERSATION — lives while the G stays intact.
  * Main toggle tap starts/stops hands-free listening; "off" keeps the draft.
  * The legacy hold adapter is only for the existing profile/review controls.
- * Listening pauses while Giver speaks; review always stops it.
+ * Listening pauses while Giver speaks. On the G, reaching review stops it;
+ * inside the unfolded form only an explicit record tap starts or stops it.
  * Nothing here publishes.
  */
 export type MicMode = "off" | "hold" | "locked";
@@ -54,7 +55,7 @@ function keepEdits(before: VoiceSession, after: VoiceSession): VoiceSession {
     else (fields as Record<string, unknown>)[k] = before.fields[k as keyof VoiceFields];
   }
   if (snap.edited.includes("what") && before.fields.context) fields.context = before.fields.context;
-  return nextAsk({ ...after, fields }).stage === "review" && after.stage !== "review" && !snap.form ? after : { ...after, fields };
+  return { ...after, fields };
 }
 
 const speakIfNew = () => {

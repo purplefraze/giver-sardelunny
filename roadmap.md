@@ -1,4 +1,10 @@
 # Communi-G track repair
+## Oct 10 16:50 lower follow-up
+- [x] Prefix-only category colours, stronger communi-g heading, hide account chrome inside community.
+- [x] Lower-only blue map entry, open top-to-Give gap, bounded counterclockwise navigation and consistent assembly tokens.
+- [x] Cause-based unedited synthetic Fund, existing target/pledge progress, schema-consistent Fund detail.
+- [ ] Requested real S-curve midpoint return: blocked by absent connected centreline/attachment geometry; explicit accessible return retained, no invented crossing.
+- [ ] Final phone checks, data/voice regressions and automatic compilation verification.
 ## Oct 10 full correction
 - [x] 1–4: tap record/stop, seat-seeded prompts, centred middle voice and readable raw transcript/typing.
 - [x] 5–7: grounded identified lesson/service context, contextual review and visible path interpolation.

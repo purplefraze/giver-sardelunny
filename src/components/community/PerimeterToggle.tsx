@@ -142,7 +142,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
       <svg width={64} height={64} viewBox="-32 -32 64 64" aria-hidden="true" data-cg-bead-shape="circle-arm">
         <circle r={24.5} fill="var(--world-bg)" />
         <circle r={28.4} fill="none" stroke={colour} style={{ stroke: colour }} strokeWidth={7.2} data-cg-ring="" />
-        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} data-cg-seat-label="" style={{ fontFamily: "var(--giver-font)", fontSize: word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
+        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} data-cg-seat-label="" style={{ fontFamily: "var(--giver-font)", fontSize: word.length > 5 ? 9.5 : 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
       </svg>
     </Button>
   </div>;

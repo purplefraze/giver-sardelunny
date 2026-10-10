@@ -2,15 +2,16 @@ import { askLocation } from "@/data/my-location";
 import type { Pin } from "@/data/give-pins";
 import { pickImages, readImage, shrinkImage } from "@/lib/pick-image";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { editField, hear, isEcho, nextAsk, startSession, type VoiceSession } from "@/intelligence/voice-session";
+import { editField, hear, isEcho, nextAsk, startSession, sessionForSeat, type VoiceSession } from "@/intelligence/voice-session";
 import { followUp } from "@/lib/followup.functions";
 import type { VoiceFields } from "@/intelligence/voice-flow";
 import type { GiverAction } from "@/intelligence/action-draft";
 
 /**
  * THE ONE VOICE CONVERSATION — lives while the G stays intact.
- * Mic mode: "hold" records until release; "locked" stays hands-free across
- * answers (listening pauses while Giver speaks); "off" keeps the draft.
+ * Main toggle tap starts/stops hands-free listening; "off" keeps the draft.
+ * The legacy hold adapter is only for the existing profile/review controls.
+ * Listening pauses while Giver speaks; review always stops it.
  * Nothing here publishes.
  */
 export type MicMode = "off" | "hold" | "locked";
@@ -26,20 +27,24 @@ export type Conversation = {
 let snap: Conversation = { session: null, mode: "off", photo: null, pin: null, picking: false };
 const subs = new Set<() => void>();
 let spokenPrompt = "";
+let revision = 0;
+const parked = new Map<string, Conversation>();
+let currentSeat = "";
 let wired = false;
 
 const set = (next: Partial<Conversation>) => {
+  if (next.session !== undefined) revision++;
   snap = { ...snap, ...next };
   subs.forEach((f) => f());
 };
 
 const speakIfNew = () => {
   const s = snap.session;
-  if (!s || snap.mode === "hold" || s.stage === "review" || s.stage === "live") return;
+  if (!s || snap.mode === "off" || snap.mode === "hold" || s.stage === "review" || s.stage === "live") return;
   if (s.prompt === spokenPrompt) return;
   spokenPrompt = s.prompt;
   voiceCapture.speak(s.prompt, () => {
-    if (snap.mode === "locked" && !snap.picking) voiceCapture.start();
+    if (snap.mode === "locked" && !snap.picking && voiceCapture.get().state === "idle" && snap.session?.stage !== "review" && snap.session?.stage !== "live") voiceCapture.start();
   });
 };
 
@@ -47,6 +52,7 @@ const advance = (words: string) => {
   if (!snap.session) return;
   if (isEcho(words, spokenPrompt)) return;
   set({ session: hear(snap.session, words) });
+  if (snap.session?.stage === "review") { set({ mode: "off" }); voiceCapture.stop(); return; }
   void locate();
   void refine();
   if (snap.mode === "locked") speakIfNew();
@@ -63,7 +69,7 @@ async function refine() {
   const s = snap.session;
   const kind = s?.fields.context;
   if (!s || !kind || (s.stage !== "talk" && s.stage !== "anything")) return;
-  const turn = s.said.length;
+  const turn = revision;
   let r: Awaited<ReturnType<typeof followUp>>;
   try {
     r = await followUp({ data: { kind, ctx: s.fields.ctx as Record<string, string>, said: s.said } });
@@ -71,7 +77,7 @@ async function refine() {
     return;
   }
   const cur = snap.session;
-  if (!cur || cur.said.length !== turn || cur.fields.context !== kind || r.source !== "model") return;
+  if (!cur || revision !== turn || cur.fields.context !== kind || r.source !== "model") return;
   const ctx = { ...cur.fields.ctx } as Record<string, string | undefined>;
   for (const [k, v] of Object.entries(r.ctx)) if (v && !ctx[k]) ctx[k] = v;
   let next = nextAsk({ ...cur, fields: { ...cur.fields, ctx } });
@@ -79,15 +85,17 @@ async function refine() {
   if (r.ask && r.field && next.asking === `ctx:${r.field}` && (unspoken || next.asking !== cur.asking)) next = { ...next, prompt: r.ask };
   if (next.asking === cur.asking && next.prompt === cur.prompt && JSON.stringify(ctx) === JSON.stringify(cur.fields.ctx)) return;
   set({ session: next });
-  if (snap.mode === "locked") speakIfNew();
+  if (next.stage === "review") { set({mode:"off"}); voiceCapture.stop(); }
+  else if (snap.mode === "locked") speakIfNew();
 }
 
 async function locate() {
   const s = snap.session;
   if (!s?.wantsLocation || snap.pin) return;
+  const turn = revision;
   const r = await askLocation();
   const cur = snap.session;
-  if (!cur) return;
+  if (!cur || turn !== revision) return;
   if (r.ok) {
     set({ pin: r.pin, session: { ...cur, fields: { ...cur.fields, where: cur.fields.where || "near my current location" } } });
   } else {
@@ -102,16 +110,15 @@ function wire() {
   wired = true;
   voiceCapture.onFinal(advance);
   /* Hands-free: when the browser ends a recognition segment on its own,
-     carry on listening. A hold release has already set mode to "off". */
+     carry on listening only in an active hands-free draft. Explicit stop sets mode off. */
   voiceCapture.subscribe(() => {
     const v = voiceCapture.get();
-    if (v.state === "idle" && snap.mode === "off") speakIfNew();
-    if (v.state === "idle" && snap.mode === "locked" && !snap.picking && snap.session) {
+    if (v.state === "idle" && snap.mode === "locked" && !snap.picking && snap.session && snap.session.stage !== "review" && snap.session.stage !== "live") {
       queueMicrotask(() => {
-        if (voiceCapture.get().state === "idle" && snap.mode === "locked") voiceCapture.start();
+        if (voiceCapture.get().state === "idle" && snap.mode === "locked" && snap.session?.stage !== "review" && snap.session?.stage !== "live") voiceCapture.start();
       });
     }
-    if (v.state === "error" && snap.mode !== "off") set({ mode: "off" });
+    if ((v.state === "error" || v.state === "unsupported") && snap.mode !== "off") set({ mode: "off" });
   });
 }
 
@@ -123,7 +130,23 @@ export const conversation = {
   get: () => snap,
   getServer: () => snap,
 
-  /** Finger down on the record button. Synchronous (Safari activation). */
+  selectSeat(seat: string) {
+    if (seat === currentSeat) return;
+    if (snap.session && currentSeat) parked.set(currentSeat, snap);
+    currentSeat = seat;
+    spokenPrompt = "";
+    set({ ...(parked.get(seat) ?? { session:sessionForSeat(seat), photo:null, pin:null, picking:false }), mode:"off" });
+    voiceCapture.cancel();
+  },
+  toggle(seat: string) {
+    wire();
+    if (snap.mode !== "off") { conversation.stopLocked(); return; }
+    if (!snap.session || currentSeat !== seat) conversation.selectSeat(seat);
+    if (snap.session?.stage === "review" || snap.session?.stage === "live") return;
+    set({ mode: "locked" });
+    voiceCapture.start();
+  },
+  /** Legacy profile/review adapter. Finger down on the record button. Synchronous (Safari activation). */
   press(seed: GiverAction | null = null) {
     wire();
     if (!snap.session) {
@@ -151,6 +174,7 @@ export const conversation = {
   stopLocked() {
     set({ mode: "off" });
     voiceCapture.stop();
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
   },
   /** Typing works everywhere (fallback + permission recovery). */
   type(words: string) {
@@ -191,12 +215,17 @@ export const conversation = {
     set({
       picking: false,
       photo,
-      ...(s && photo ? { session: { ...s, wantsPhoto: false, prompt: s.stage === "talk" ? s.prompt : "anything else?" } } : {}),
+      ...(s && photo ? { session: { ...s, wantsPhoto: false, prompt: s.prompt } } : {}),
     });
     if (resume) voiceCapture.start();
   },
   removePhoto() {
     set({ photo: null });
+  },
+  resume() {
+    const s=snap.session; if (!s || s.stage === "live") return;
+    set({ mode:"off",session:{...s,stage:"talk",asking:null,prompt:"add a detail, or review when ready"} });
+    voiceCapture.prepare();
   },
   review() {
     const s = snap.session;
@@ -211,6 +240,7 @@ export const conversation = {
   close() {
     voiceCapture.cancel();
     spokenPrompt = "";
+    parked.delete(currentSeat); currentSeat = "";
     set({ session: null, mode: "off", photo: null, pin: null, picking: false });
   },
 };

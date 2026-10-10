@@ -73,21 +73,8 @@ export function modeFor(type: ItemType | null, side?: "borrow" | "lend"): CgMode
 /* ---------------------------------------------------------------------------
  * THE MAP'S PINS.
  *
- * WHAT BACKS THEM (no new tables, no coordinates in any shared column):
- *   1. MY OWN LISTINGS with a pin saved on this device (give-pins.ts,
- *      localStorage "giver.give-pins.v1"): a give's pin from the give flow's
- *      map, or a borrow / lend published after "allow location" (my
- *      approximate, already-offset spot, my-location.ts) sit at that pin.
- *   2. EVERY OTHER LISTING (the seeded sample members' items, remote testers'
- *      items, my items without a pin) has no coordinates at all — only a
- *      coarse distanceKm. It is placed DETERMINISTICALLY: at its distanceKm
- *      from the city centre (give-boundary CITY_CENTRE, the placeholder
- *      home area), on a bearing hashed from its id — so it never moves
- *      between visits and is never an exact address. No distance → a hashed
- *      0.4–2.8 km.
- *   3. SAMPLE FEED LINES (signin-feed.ts, the written sample activity) fill
- *      in any mode with fewer than MIN_PER_MODE real listings (today: lend
- *      and fund), placed the same way and marked `sample`.
+ * Only explicitly supplied device pins may be mapped. Unknown locations stay
+ * unknown; no hashed bearings, assumed city or filler listings.
  * ------------------------------------------------------------------------- */
 export type MapPin = {
   id: string;
@@ -145,44 +132,10 @@ const placed = (id: string, km: number | undefined): Pin => {
 };
 
 export function mapPins(items: Item[], mode: CgMode, itemText: (item: Item) => string): MapPin[] {
-  const real: MapPin[] = items
-    .filter((i) => inMode(i, mode))
-    .map((item) => {
-      const exact = pinFor(item.id);
-      return {
-        id: item.id,
-        mode: itemMode(item),
-        pin: exact ?? placed(item.id, item.distanceKm),
-        text: itemText(item),
-        itemId: item.id,
-        sample: false,
-        exact: Boolean(exact),
-      };
-    });
-  const kinds: SignInFeedKind[] =
-    mode === "everything" ? ["give", "lend", "trade", "fund", "borrow", "wish"] : [mode];
-  const extra: MapPin[] = [];
-  const lines = signInFeedLines().filter((l) => l.text.includes(" is "));
-  for (const k of kinds) {
-    const have = real.filter((p) => p.mode === k).length;
-    if (have >= MIN_PER_MODE) continue;
-    lines
-      .filter((l) => l.kind === k)
-      .slice(0, MIN_PER_MODE + 2 - have)
-      .forEach((l, n) => {
-        const id = `sample-${k}-${n}-${l.text}`;
-        extra.push({
-          id,
-          mode: k,
-          pin: placed(id, undefined),
-          text: l.text,
-          itemId: null,
-          sample: true,
-          exact: false,
-        });
-      });
-  }
-  return [...real, ...extra];
+  return items.filter(i=>inMode(i,mode)).flatMap(item=> {
+    const pin=pinFor(item.id);
+    return pin ? [{id:item.id,mode:itemMode(item),pin,text:itemText(item),itemId:item.id,sample:item.id.startsWith("seed-"),exact:false}] : [];
+  });
 }
 
 /** NEAR ME: the radius the circle draws and the filter keeps (km). */

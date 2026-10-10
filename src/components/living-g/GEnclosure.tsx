@@ -151,3 +151,40 @@ export function GEnclosure({
     </div>
   );
 }
+
+/** The canonical filled G visibly unthreads into the review's rounded rim. */
+export function VoiceEnclosure({ seat, children }: { seat: string; children: React.ReactNode }) {
+  const source = useRef<SVGPathElement>(null);
+  const [morphed, setMorphed] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let dead = false, raf = 0;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) { setReady(true); return; }
+    void import("flubber").then(({ interpolate }) => {
+      const matrix = source.current?.getScreenCTM();
+      if (!matrix || dead) return;
+      const inverse = matrix.inverse();
+      const w = window.innerWidth, h = window.innerHeight;
+      const points: {x:number;y:number}[] = [];
+      const rounded = (inset:number, radius:number, reverse=false) => {
+        const corners = [{x:w-inset-radius,y:inset+radius,start:-90},{x:w-inset-radius,y:h-inset-radius,start:0},{x:inset+radius,y:h-inset-radius,start:90},{x:inset+radius,y:inset+radius,start:180}];
+        const ring = corners.flatMap(c => Array.from({length:10},(_,i) => {const a=(c.start+i*90/9)*Math.PI/180;return {x:c.x+radius*Math.cos(a),y:c.y+radius*Math.sin(a)};}));
+        return reverse ? ring.reverse() : ring;
+      };
+      points.push(...rounded(0,30),...rounded(10,20,true));
+      const local = points.map(p => new DOMPoint(p.x,p.y).matrixTransform(inverse));
+      const outer=local.slice(0,40), inner=local.slice(40);
+      const target = `M${outer.map(p=>`${p.x},${p.y}`).join("L")}Z M${inner.map(p=>`${p.x},${p.y}`).join("L")}Z`;
+      const morph = interpolate(LIVING_G_PATH, target, {maxSegmentLength:80});
+      const start = performance.now();
+      const step = (now:number) => { if(dead) return; const t=Math.min(1,(now-start)/1150); setMorphed(morph(t*t*(3-2*t))); if(t<1) raf=requestAnimationFrame(step); else setReady(true); };
+      raf=requestAnimationFrame(step);
+    });
+    return () => { dead=true; cancelAnimationFrame(raf); };
+  }, []);
+  return <div className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready ? "1":"0"}>
+    {!ready ? <div className="absolute inset-0 pointer-events-none" data-g-unpretzel=""><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={morphed ?? LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div> : null}
+    <div className="gv-review-content">{children}</div>
+  </div>;
+}

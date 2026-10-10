@@ -10,10 +10,10 @@ const items = [at("mine-new", ME_ID, "give"), at("theirs", "someone", "give"), a
 test("the just-shared give appears in the community gives category", () => {
   const ids = feedFor(items, "give", "", "mine-new").map((i) => i.id);
   expect(ids).toContain("mine-new");
-  expect(ids).not.toContain("mine-old");
+  expect(ids).toContain("mine-old");
 });
 
-test("lower My G lists all my active shared posts", () => {
+test("lower communi-g own scope lists all my active shared posts", () => {
   expect(feedFor(items, "mine").map((i) => i.id).sort()).toEqual(["mine-new", "mine-old"]);
 });
 

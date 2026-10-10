@@ -692,8 +692,8 @@ function seedItems(): Item[] {
           status: "active",
           priority: i,
           published: true,
-          createdAt: now - (mi + 1) * 86400000 - i * 3600000,
-          updatedAt: now - (mi + 1) * 86400000 - i * 3600000,
+          createdAt: now - (i * MEMBERS.length + mi + 1) * 3600000,
+          updatedAt: now - (i * MEMBERS.length + mi + 1) * 3600000,
           ...(km === undefined ? {} : { distanceKm: km }),
           details: detailsFor(`seed-${member.id}-${type}-${i}`, text, mi, i),
           boostCount: 0,
@@ -726,6 +726,7 @@ function withSeedDetails(item: Item): Item {
       .replace(/^science tutoring, evenings$/, "science tutoring");
   return {
     ...item,
+    createdAt: Date.UTC(2026, 9, 10, 12) - (index * MEMBERS.length + mi + 1) * 3600000,
     text: heal(item.text),
     ...(item.offer ? { offer: heal(item.offer) } : {}),
     details: detailsFor(item.id, item.text, mi, index),

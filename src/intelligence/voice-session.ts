@@ -16,6 +16,7 @@ import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas"
 export type VoiceStage = "talk" | "anything" | "ready" | "review" | "live";
 
 export type VoiceSession = {
+  routeSeat?: "giver" | "map" | undefined;
   stage: VoiceStage;
   action: GiverAction | null;
   fields: VoiceFields;
@@ -53,12 +54,12 @@ export const OPENING = "what would you like to share, or ask for?";
 
 /** The selected toggle seat's own first question (no "which mode?" detour). */
 export const SEED_OPENING: Record<GiverAction, string> = {
-  give: "what are you giving?",
-  wish: "what do you wish for?",
-  trade: "what would you like to trade?",
-  borrow: "what would you like to borrow?",
-  lend: "what can you lend?",
-  fund: "what are you raising money for?",
+  give: "give something",
+  wish: "make a wish",
+  trade: "make a trade",
+  borrow: "what do you need to borrow?",
+  lend: "what are you lending?",
+  fund: "what needs funding?",
 };
 
 export const startSession = (seed: GiverAction | null = null): VoiceSession => ({
@@ -77,6 +78,11 @@ export const startSession = (seed: GiverAction | null = null): VoiceSession => (
   profile: null,
   community: null,
 });
+
+export function sessionForSeat(seat: string): VoiceSession {
+  if (seat === "giver" || seat === "map") return { ...startSession(), routeSeat: seat, prompt: seat === "giver" ? "what would you like to update?" : "what are you looking for?" };
+  return startSession((["give", "wish", "trade", "borrow", "lend", "fund"] as const).find(a => a === seat) ?? null);
+}
 
 const PHOTO = /\b(just a photo|add (?:a )?(?:photo|picture|pic)|take (?:a )?(?:photo|picture)|(?:a |with a )?photo of it)\b/;
 const HERE = /\b(?:my )?(?:current )?location\b|\bwhere i am\b|\bright here\b|^here\b/;
@@ -105,7 +111,7 @@ export function nextAsk(s: VoiceSession): VoiceSession {
   if (!s.action) return s;
   const kind = s.fields.context;
   const need = kind ? nextNeed(kind, s.fields.ctx) : null;
-  if (need) return { ...s, stage: "talk", prompt: need.ask, asking: `ctx:${need.field}`, choices: [] };
+  if (need) return { ...s, stage: "talk", prompt: need.ask, asking: `ctx:${need.field}`, choices: need.field === "recurrence" ? ["this Tuesday", "every Tuesday"].map(x => x.replace("Tuesday", s.fields.ctx.day ?? "Tuesday")) : [] };
   const open = missingAsks(s.action, s.fields).find((q) => !(q.field === "where" && s.wantsLocation));
   if (open) return { ...s, stage: "talk", prompt: open.ask, asking: open.field, choices: [] };
   return { ...s, stage: "review", prompt: `here's your ${NOUN[s.action]}. edit anything, then share.`, asking: null, choices: [] };
@@ -123,7 +129,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     return s.action ? { ...s, said, heard: text, fields: withCtx(mergeFollowUp(s.action, s.fields, text), null) } : s;
   const lower = text.toLowerCase();
   let next: VoiceSession = { ...s, said, heard: text };
-  if (CANCEL.test(lower)) return { ...startSession(), said, heard: text, prompt: `ok, cleared. ${OPENING}` };
+  if (CANCEL.test(lower)) return { ...startSession(), said, heard:text, prompt:`ok, cleared. ${OPENING}` };
 
   if (PHOTO.test(lower)) {
     next.wantsPhoto = true;
@@ -137,10 +143,22 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     if (NOT_YET.test(lower) || (DONE.test(lower) && lower.split(/\s+/).length <= 3)) return { ...next, stage: "anything", prompt: "what would you like to add?" };
   }
 
+  if (s.routeSeat === "giver" && !/^(?:actually|instead|i meant)/i.test(text)) {
+    const area = profileAreaOf(text);
+    return { ...next, profile: area ?? "bio", action: null };
+  }
+  if (s.routeSeat === "map" && !/^(?:actually|instead|i meant)/i.test(text)) return { ...next, community: communityFilterOf(text, true) ?? "everything", search: communityFilterOf(text, true) ? null : text.replace(/^(?:show me|find|search for|looking for)\s+/i,""), action: null };
+  if (/^(?:actually|no[, ]|instead|i meant|change)/i.test(text)) {
+    const corrected = text.replace(/^(?:actually|no[, ]+|instead|i meant|change)\s*/i, "");
+    const routed = routeVoice(corrected);
+    const intent = leadIntent(corrected) ?? (routed.intent === "search" ? null : routed.draft);
+    if (intent?.action && intent.action !== s.action) return nextAsk({ ...next, action: intent.action, routeSeat:undefined, fields: fieldsFromDraft(intent, text) });
+  }
+
   /* SEEDED by the toggle seat: the first answer is that mode's draft, unless
      it clearly names another intent or a profile/community/search request. */
   if (s.asking === "seed" && s.action) {
-    const lead = contextOf(text) ? null : leadIntent(text);
+    const lead = ["ride", "groceries"].includes(contextOf(text) ?? "") ? null : leadIntent(text);
     if (lead?.action) return nextAsk({ ...next, action: lead.action, fields: fieldsFromDraft(lead, text), pending: null });
     const area = profileAreaOf(text);
     if (area) return { ...next, profile: area };
@@ -149,8 +167,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     const route = routeVoice(text);
     if (route.intent === "search") return { ...next, search: route.search.term };
     const d = route.draft;
-    const ctxWish = contextOf(text) && (s.action === "wish" || s.action === "borrow");
-    const action = ctxWish ? "wish" : route.intent !== "clarify" && d.action ? d.action : s.action;
+    const ctxWish = ["ride", "groceries"].includes(contextOf(text) ?? "") && (s.action === "wish" || s.action === "borrow");
+    const action = ctxWish ? "wish" : s.action;
     const fields = fieldsFromDraft({ ...d, action, clarification: null }, text);
     if (!fields.what && action !== "fund" && !fields.context) fields.what = text.replace(/^(?:a|an|my|some)\s+/i, "") ;
     return nextAsk({ ...next, action, fields, pending: null });
@@ -164,7 +182,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
         return nextAsk({ ...next, action: resolved.action, fields: fieldsFromDraft(resolved, s.heard || text), pending: null });
       }
     }
-    const lead = contextOf(text) ? null : leadIntent(text);
+    const lead = ["ride", "groceries"].includes(contextOf(text) ?? "") ? null : leadIntent(text);
     if (lead?.action) return nextAsk({ ...next, action: lead.action, fields: fieldsFromDraft(lead, text), pending: null });
     const area = profileAreaOf(text);
     if (area) return { ...next, profile: area };
@@ -174,7 +192,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     if (route.intent === "search") return { ...next, search: route.search.term };
     const draft = route.draft;
     /* A ride or groceries request is a Wish — no "wish or borrow?" detour. */
-    if (contextOf(text) && (draft.action === "wish" || draft.action === "borrow" || !draft.action)) {
+    if (["ride", "groceries"].includes(contextOf(text) ?? "") && (draft.action === "wish" || draft.action === "borrow" || !draft.action)) {
       const asWish = { ...draft, action: "wish" as const, clarification: null };
       return nextAsk({ ...next, action: "wish", fields: fieldsFromDraft(asWish, text), pending: null });
     }

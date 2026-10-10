@@ -386,3 +386,33 @@ describe("privacy and model guard", () => {
     expect(nextNeed("ride", ctx)?.field).toBe("pickup");
   });
 });
+
+describe("Oct 10 grounded lessons and services", () => {
+  test("guitar offer infers skill and keeps meeting separate from area", () => {
+    let s=hear(startSession("give"),"I'd like to give some guitar lessons.");
+    expect(s.fields.context).toBe("lesson"); expect(s.fields.kind).toBe("a skill"); expect(s.fields.what).toBe("Offering guitar lessons");
+    expect(s.prompt).toBe("online or in person?");
+    s=hear(s,"in person"); expect(s.fields.ctx.format).toBe("in person"); expect(s.fields.ctx.area).toBeUndefined(); expect(s.prompt).toBe("which area would you meet in?");
+    s=hear(s,"Leith"); s=hear(s,"Tuesday"); expect(s.asking).toBe("ctx:recurrence"); expect(s.fields.ctx.date).toBeUndefined(); expect(s.fields.ctx.recurrence).toBeUndefined();
+    s=hear(s,"every Tuesday"); expect(s.stage).toBe("review"); expect(s.fields.ctx.recurrence).toBe("every tuesday"); expect(s.fields.condition).toBe(""); expect(hear(s,"share it").stage).toBe("review");
+  });
+  test("complete lesson retains multiple details without optional questions", () => {
+    const s=hear(startSession("give"),"Offering guitar lessons online for beginners every Tuesday evening for 30 minutes");
+    expect(s.stage).toBe("review"); expect(s.fields.ctx.level).toBe("beginners"); expect(s.fields.ctx.lessonDuration).toBe("30 minutes"); expect(s.fields.ctx.format).toBe("online");
+  });
+  test("one-off weekday never fabricates a calendar date", () => {
+    const s=hear(hear(startSession("give"),"guitar lessons online Tuesday"),"this Tuesday");
+    expect(s.fields.ctx.recurrence).toBe("one-off"); expect(s.fields.ctx.date).toBeUndefined(); expect(s.stage).toBe("review");
+  });
+  test("meeting correction preserves the rest of the draft", () => {
+    const s=hear(hear(startSession("give"),"guitar lessons online every Tuesday"),"actually in person in Leith");
+    expect(s.fields.ctx.format).toBe("in person"); expect(s.fields.ctx.area).toBe("leith"); expect(s.fields.ctx.recurrence).toBe("every tuesday");
+  });
+  for(const action of ["give","wish","trade","borrow","lend","fund"] as const) test(`${action} services never ask collection or condition`,()=>{
+    const s=hear(startSession(action),"guitar lessons"); expect(s.fields.context).toBe("lesson"); expect(s.prompt).not.toContain("collect"); expect(s.fields.condition).toBe(""); expect(s.stage).not.toBe("live");
+  });
+  test("AI cannot override corrected service fields or invent an area",()=>{
+    const v=validateModel("lesson",{subject:"guitar lessons",format:"in person",area:"Leith",day:"flexible"},"guitar lessons in person in Leith whenever",{updates:{area:"London",format:"online"}});
+    expect(v?.ctx.area).toBe("Leith"); expect(v?.ctx.format).toBe("in person");
+  });
+});

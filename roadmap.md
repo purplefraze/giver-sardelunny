@@ -1,4 +1,12 @@
 # Communi-G track repair
+## Oct 10 full correction
+- [x] 1–4: tap record/stop, seat-seeded prompts, centred middle voice and readable raw transcript/typing.
+- [x] 5–7: grounded identified lesson/service context, contextual review and visible path interpolation.
+- [ ] General model-based unknown-intent classification and hand-authored multi-contour unpretzel are not finished; current identified contexts and interpolated unfolding work.
+- [ ] Shared approximate listing coordinates need an approved data/privacy design; current map never invents missing coordinates.
+- [ ] Real-device speech/keyboard/haptics and successful share/reload/second-viewer require hardware and isolated writable test environment.
+- [x] 8–12: lower placement/wording/colours, single-line filters, scrolling, sort/map/radius, synthetic author variety.
+- [x] 13: update obsolete guidance, regression tests and phone preview verification; no production deployment.
 - [x] Urgent record visibility and voice entry verified on both phone sizes; see docs/voice-preview-verification.md for tested behavior and remaining touch-target/device limitations.
 - [ ] Build an isolated Wish-first middle-loop spatial prototype using the live eight-seat map, canonical artwork and toggle proportions.
 - [ ] Verify phone/tall-phone framing, upright editable content, drag/hold/reversal, snapping, all seats and reduced motion; keep normal navigation untouched.
@@ -31,9 +39,9 @@
 - [x] ~~Seat-coloured record control in S-curve~~ (superseded by hold-on-toggle)
 - [x] Universal voice intent router: search reads existing listings; give drafts; other actions open existing forms; clarify otherwise
 - [x] Plan only: voice-mode choreography written to docs/spec/voice-motion.md (build awaits approval)
-- [x] In-G voice conversation (Oct 8): hold/slide-lock record, live words in the bottom loop, one question at a time in the middle loop, photo plus, review-only glide + unfold, editable preview, explicit "Share with the community"
+- [x] In-G voice conversation (Oct 8): tap record/stop (Oct 10 supersedes hold/slide-lock), live words in the bottom loop, one question at a time in the middle loop, photo plus, review-only glide + unfold, editable preview, explicit "Share with communi-g"
 - [x] My G eight-area profile loop with voice navigation (review at /dev/my-g)
 - [x] Communi-G: one selection drives inside toggle + filter row + feed; 12:00 = my active posts; hold-for-voice on toggle (review at /dev/communi-g)
-- [x] Main middle toggle: hold to record on the toggle itself (seat seeds the draft); nook mic removed
+- [x] Main middle toggle: landing label → idle dot → tap to record/stop on the toggle itself (seat seeds the draft); nook mic removed
 - [ ] Tapping My G zooms into the actual toggle circle with the profile bead inside (not started; profile loop still rides the middle-loop rim)
 - Contextual follow-up: rule engine + AI second read (openai/gpt-6-astra) via src/lib/followup.functions.ts — done; device speech test open

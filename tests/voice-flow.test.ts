@@ -7,17 +7,8 @@ import {
   mergeFollowUp,
   missingAsks,
   photoReminder,
-  releaseOutcome,
   SEAT_OF_ACTION,
 } from "../src/intelligence/voice-flow";
-
-test("holding then releasing stops recording", () => {
-  expect(releaseOutcome(0, 1200)).toBe("stop");
-});
-
-test("sliding right into the lock keeps recording after release", () => {
-  expect(releaseOutcome(12, 1200)).toBe("keep");
-});
 
 test("'I'm getting rid of a fridge' fills a give for a fridge, a thing, nothing invented", () => {
   const d = bindUtterance("I'm getting rid of a fridge");

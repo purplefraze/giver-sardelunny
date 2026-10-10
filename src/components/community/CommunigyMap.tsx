@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -21,7 +22,7 @@ import { haptics } from "@/lib/haptics";
  * detail from there. Sample pins (written sample activity) say so.
  */
 const pinSvg = (colour: string) =>
-  `<svg viewBox="0 0 30 40" width="26" height="35" aria-hidden="true"><path d="M15 39C15 39 28 23.5 28 14.5A13 13 0 0 0 2 14.5C2 23.5 15 39 15 39Z" style="fill:${colour}" stroke="#fff" stroke-width="1.6"/><circle cx="15" cy="14" r="4.4" fill="#fff"/></svg>`;
+  `<svg viewBox="0 0 30 40" width="26" height="35" aria-hidden="true"><path d="M15 39C15 39 28 23.5 28 14.5A13 13 0 0 0 2 14.5C2 23.5 15 39 15 39Z" style="fill:${colour}" stroke="var(--background)" stroke-width="1.6"/><circle cx="15" cy="14" r="4.4" fill="var(--background)"/></svg>`;
 
 export function CommunigyMap({
   pins,
@@ -41,6 +42,7 @@ export function CommunigyMap({
   const ring = useRef<Leaflet.Circle | null>(null);
   const me = useRef<Leaflet.CircleMarker | null>(null);
   const [ready, setReady] = useState(false);
+  const [tileProblem, setTileProblem] = useState(false);
   const [picked, setPicked] = useState<MapPin | null>(null);
 
   /* The map, once. */
@@ -59,6 +61,7 @@ export function CommunigyMap({
           maxZoom: 19,
           attribution: "© openstreetmap contributors",
         })
+        .on("tileerror", () => setTileProblem(true))
         .addTo(m);
       layer.current = lib.layerGroup().addTo(m);
       map.current = m;
@@ -84,7 +87,7 @@ export function CommunigyMap({
        resolve the red token to its value first. */
     const red =
       getComputedStyle(document.documentElement).getPropertyValue("--mode-communigy").trim() ||
-      "#e8322b";
+      getComputedStyle(document.documentElement).getPropertyValue("--mode-map").trim();
     ring.current = lib
       .circle([centre.lat, centre.lng], {
         radius: radiusKm * 1000,
@@ -99,7 +102,7 @@ export function CommunigyMap({
     me.current = lib
       .circleMarker([centre.lat, centre.lng], {
         radius: 6,
-        color: "#fff",
+        color: getComputedStyle(document.documentElement).getPropertyValue("--background").trim(),
         weight: 2,
         fillColor: red,
         fillOpacity: 1,
@@ -135,6 +138,7 @@ export function CommunigyMap({
   return (
     <div className="cg-map-wrap relative min-h-0 flex-1" data-testid="communigy-map">
       <div ref={box} className="cg-map absolute inset-0" aria-label="map of nearby listings" />
+      {tileProblem ? <p className="absolute top-2 left-2 right-2 z-[500] bg-background p-2 g-meta">map tiles unavailable · listing pins still work</p> : null}
       {picked ? (
         <div className="cg-map-card">
           <span className="g-heading block" style={{ color: CG_INK[picked.mode] }}>
@@ -145,16 +149,16 @@ export function CommunigyMap({
             {picked.text}
           </span>
           {picked.itemId ? (
-            <button
+            <Button variant="ghost"
               type="button"
               className="cg-map-open"
               onClick={() => {
                 haptics.light();
-                onOpen(picked.itemId!);
+                if (picked.itemId) onOpen(picked.itemId);
               }}
             >
               open
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

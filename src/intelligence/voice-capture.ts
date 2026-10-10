@@ -52,6 +52,7 @@ let snap: VoiceSnapshot = { state: "idle", transcript: "", error: null };
 let rec: Recognition | null = null;
 let finalText = "";
 let cancelled = false;
+let speechEpoch = 0;
 const subs = new Set<() => void>();
 const finals = new Set<(words: string) => void>();
 
@@ -76,6 +77,7 @@ export const voiceCapture = {
 
   /** Call directly from the tap handler. */
   start() {
+    speechEpoch++;
     const C = ctor();
     if (!C) {
       set({ state: "unsupported", transcript: "", error: null });
@@ -97,17 +99,19 @@ export const voiceCapture = {
     r.onresult = (e) => {
       if (rec !== r || cancelled) return;
       let interim = "";
+      const completed: string[] = [];
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
         if (!res) continue;
         const words = res[0]?.transcript ?? "";
         if (res.isFinal) {
           finalText = `${finalText} ${words}`.trim();
-          if (words.trim()) finals.forEach((f) => f(words.trim()));
+          if (words.trim()) completed.push(words.trim());
         }
         else interim += words;
       }
       set({ transcript: `${finalText} ${interim}`.replace(/\s+/g, " ").trim() });
+      completed.forEach(words => finals.forEach(f => f(words)));
     };
     r.onerror = (e) => {
       if (rec !== r || cancelled || e.error === "aborted") return;
@@ -153,6 +157,7 @@ export const voiceCapture = {
    * itself; `after` runs when speech ends (or at once without speech output).
    */
   speak(text: string, after: () => void) {
+    const epoch = ++speechEpoch;
     const r = rec;
     rec = null;
     try {
@@ -169,7 +174,7 @@ export const voiceCapture = {
     set({ state: "speaking" });
     let done = false;
     const finish = () => {
-      if (done) return;
+      if (done || epoch !== speechEpoch) return;
       done = true;
       if (snap.state === "speaking") set({ state: "idle" });
       after();
@@ -189,6 +194,7 @@ export const voiceCapture = {
 
   /** Throw the listening away. */
   cancel() {
+    speechEpoch++;
     cancelled = true;
     try {
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();

@@ -1,3 +1,6 @@
+import { ListingLine } from "./ListingLine";
+import { memberById } from "@/data/giver";
+import { itemsStore } from "@/data/items";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
@@ -31,7 +34,7 @@ export function CommunigyMap({
   onOpen,
 }: {
   pins: MapPin[];
-  centre: Pin;
+  centre: Pin | null;
   radiusKm: number;
   onOpen: (itemId: string) => void;
 }) {
@@ -54,7 +57,7 @@ export function CommunigyMap({
       L.current = lib;
       const m = lib
         .map(box.current, { zoomControl: false, attributionControl: false })
-        .setView([centre.lat, centre.lng], 13);
+        .setView(centre ? [centre.lat, centre.lng] : [0, 0], centre ? 13 : 1);
       lib.control.attribution({ position: "bottomright", prefix: false }).addTo(m);
       lib
         .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -83,6 +86,7 @@ export function CommunigyMap({
     if (!ready || !lib || !m) return;
     ring.current?.remove();
     me.current?.remove();
+    if (!centre) return;
     /* Leaflet writes SVG presentation attributes, which cannot read var():
        resolve the red token to its value first. */
     const red =
@@ -110,7 +114,7 @@ export function CommunigyMap({
       })
       .addTo(m);
     m.fitBounds(ring.current.getBounds(), { padding: [18, 18] });
-  }, [ready, centre.lat, centre.lng, radiusKm]);
+  }, [ready, centre?.lat, centre?.lng, radiusKm]);
 
   /* One pin per listing, in its mode colour. */
   useEffect(() => {
@@ -118,6 +122,7 @@ export function CommunigyMap({
     const group = layer.current;
     if (!ready || !lib || !group) return;
     group.clearLayers();
+    setPicked(null);
     for (const p of pins) {
       const icon = lib.divIcon({
         className: "cg-pin",
@@ -126,14 +131,15 @@ export function CommunigyMap({
         iconAnchor: [13, 34],
       });
       lib
-        .marker([p.pin.lat, p.pin.lng], { icon, keyboard: true, title: p.text })
+        .marker([p.pin.lat, p.pin.lng], { icon, keyboard: true, title: `${p.mode}: ${p.text}` })
         .on("click", () => {
           haptics.selection();
           setPicked(p);
         })
         .addTo(group);
     }
-  }, [ready, pins]);
+    if (!centre && pins.length) map.current?.fitBounds(lib.latLngBounds(pins.map(p => [p.pin.lat, p.pin.lng])), { padding: [24, 24], maxZoom: 13 });
+  }, [ready, pins, centre]);
 
   return (
     <div className="cg-map-wrap relative min-h-0 flex-1" data-testid="communigy-map">
@@ -141,13 +147,8 @@ export function CommunigyMap({
       {tileProblem ? <p className="absolute top-2 left-2 right-2 z-[500] bg-background p-2 g-meta">map tiles unavailable · listing pins still work</p> : null}
       {picked ? (
         <div className="cg-map-card">
-          <span className="g-heading block" style={{ color: CG_INK[picked.mode] }}>
-            {picked.mode}
-            {picked.sample ? <span className="cg-map-sample"> · sample</span> : null}
-          </span>
-          <span className="cg-map-line" style={{ color: CG_INK[picked.mode] }}>
-            {picked.text}
-          </span>
+          <span className="cg-map-line"><ListingLine mode={picked.mode} text={picked.text} /></span>
+          <span className="g-meta">{memberById(itemsStore.get().items.find(i => i.id === picked.itemId)?.ownerId ?? "")?.username ?? ""}{picked.sample ? " · demo" : ""}</span>
           {picked.itemId ? (
             <Button variant="ghost"
               type="button"

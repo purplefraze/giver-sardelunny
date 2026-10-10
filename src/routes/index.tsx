@@ -323,6 +323,7 @@ function Index() {
   useEffect(() => {
     const cg = talk.session?.community;
     if (!cg || talk.session?.search) return;
+    if (cg === "mine") { conversation.close(); setMyGArea({ id: "activity", n: Date.now() }); setMyG(true); return; }
     conversation.close();
     setBrowse({ type: null, selection: cg });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -715,7 +716,7 @@ function Index() {
   const activity: ActivitySeat | null = seat === "giver" || seat === "map" ? null : seat;
   /** THE 6:00 DOOR: map / search opens communi-g's map, never a form. */
   const atMap = seat === "map";
-  const openMap = () => setBrowse({ type: null, view: "map" });
+  const openMap = () => setBrowse({ type: null, selection: "map", view: "map" });
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = seatMode(activity ?? "give");
   const content = MODE_CONTENT[mode];
@@ -846,7 +847,7 @@ function Index() {
           />
         </VoiceEnclosure>
       ) : null}
-      {entered && !chromeQuiet ? <DevSeal /> : null}
+      {entered && !chromeQuiet && !browse ? <DevSeal /> : null}
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
@@ -1347,8 +1348,7 @@ function Index() {
                       });
                     }}
                     onClose={() => setBrowse(null)}
-                    /* 12:00 ON THE LOWER LOOP IS THE EXIT: back to the full
-                       G with the toggle at 6:00 (communi-g), the G red. */
+                    /* Explicit accessible return; lower 12:00 is now map, not exit. */
                     onExit={() => {
                       setBrowse(null);
                       setSeat("map");

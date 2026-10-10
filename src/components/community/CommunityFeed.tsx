@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { ListingLine } from "./ListingLine";
 import { Button } from "@/components/ui/button";
 import { askLocation, useMyLocation } from "@/data/my-location";
 import { pinFor, type Pin } from "@/data/give-pins";
@@ -6,7 +7,7 @@ import { kmBetween, itemMode, CG_WORD, type MapPin } from "@/data/communigy";
 const CommunigyMap = lazy(() => import("./CommunigyMap").then(m => ({ default: m.CommunigyMap })));
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { seatPlacement } from "@/intelligence/seat-placement";
-const CG_CLOCK: Record<string, number> = { mine: 0, give: 45, lend: 90, trade: 135, everything: 180, fund: 225, borrow: 270, wish: 315 };
+const CG_CLOCK: Record<string, number> = { map: 0, mine: 0, give: 45, lend: 90, trade: 135, everything: 180, fund: 225, borrow: 270, wish: 315 };
 
 import { BackArrow } from "@/components/BackArrow";
 import { PerimeterToggle, type CgStation } from "@/components/community/PerimeterToggle";
@@ -22,29 +23,29 @@ import { haptics } from "@/lib/haptics";
 
 /**
  * COMMUNI-G — the lower loop. ONE selection drives the inside toggle, the
- * filter row and the feed. 6:00 = all community posts · 12:00 = communi-g (my own
- * active community posts; never an exit) · the back arrow returns to the G.
+ * filter row and feed. 12:00 = blue all-types map; 6:00 = all list.
+ * The explicit return remains available until real S-curve routing is defined.
  * Hold the toggle for voice (record icon), tap it to listen.
  */
 type Scope = "everyone" | "mine";
 type View = "list" | "map";
 
-const toStation = (s: CgSelection): CgStation => (s === "mine" ? "exit" : s);
-const fromStation = (s: CgStation): CgSelection => (s === "exit" ? "mine" : s);
+const toStation = (s: CgSelection): CgStation => (s === "mine" ? "map" : s);
+const fromStation = (s: CgStation): CgSelection => s;
 
 /** Pure: what the feed lists for one selection. Only active, published posts. */
 export function feedFor(items: Item[], sel: CgSelection, term = "", keep?: string): Item[] {
   const t = term.trim().toLowerCase();
   return items
     .filter((i) => i.status === "active" && i.published)
-    .filter((i) => sel === "mine" ? i.ownerId === ME_ID : inMode(i, sel))
+    .filter((i) => sel === "mine" ? i.ownerId === ME_ID : inMode(i, sel === "map" ? "everything" : sel))
     .filter((i) => !t || itemLine(i).toLowerCase().includes(t) || (i.note ?? "").toLowerCase().includes(t))
     .sort((a, b) => b.createdAt - a.createdAt || a.id.localeCompare(b.id));
 }
 
 export function CommunityFeed({
   initialType = null,
-  initialView = "list",
+  initialView = "map",
   initialSide,
   initialScope,
   initialSelection,
@@ -69,7 +70,7 @@ export function CommunityFeed({
   onExit?: () => void;
 }) {
   const [sel, setSel] = useState<CgSelection>(
-    initialSelection ?? (initialScope === "mine" ? "mine" : modeFor(initialType, initialSide)),
+    initialSelection ?? (initialScope === "mine" ? "mine" : initialType ? modeFor(initialType, initialSide) : "map"),
   );
   const [record, setRecord] = useState(false);
   const [term, setTerm] = useState(initialTerm);
@@ -77,7 +78,7 @@ export function CommunityFeed({
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const items = useItems();
   const listening = voice.state === "listening";
-  const ink = CG_INK[sel === "mine" ? "everything" : sel];
+  const ink = sel === "map" ? "var(--mode-giver)" : CG_INK[sel === "mine" ? "everything" : sel];
   const location = useMyLocation();
   const [view, setView] = useState<View>(initialView);
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
@@ -136,6 +137,7 @@ export function CommunityFeed({
   const choose = (v: CgSelection) => {
     haptics.selection();
     setSel(v);
+    if (v === "map") setView("map");
   };
   /* Seat-dependent placement: content sits away from the inside toggle. */
   const place = seatPlacement(CG_CLOCK[sel] ?? 180);
@@ -149,10 +151,10 @@ export function CommunityFeed({
       className="relative h-full w-full overflow-hidden"
       style={{ background: "var(--world-bg)", ["--cg-ink" as string]: ink }}
     >
-      <p className="cg-context">{sel === "mine" || sel === "everything" ? "communi-g" : `community ${CG_WORD[sel]}`}</p>
+      <p className="cg-context">{"communi-g"}</p>
       <PerimeterToggle
         value={toStation(sel)}
-        onChange={(st) => setSel(fromStation(st))}
+        onChange={(st) => { setSel(fromStation(st)); if (st === "map") setView("map"); }}
         record={record}
         listening={listening}
         onHold={() => {
@@ -198,7 +200,7 @@ export function CommunityFeed({
               }}
             >
               <p className="g-body text-[15px]" style={{ color: ink }}>
-                {sel === "everything" ? "what are you looking for in the community?" : `what ${where} are you looking for?`}
+                {sel === "everything" || sel === "map" ? "what are you looking for in the community?" : `what ${where} are you looking for?`}
               </p>
               <input
                 aria-label="or type here"
@@ -217,7 +219,7 @@ export function CommunityFeed({
             </Button>
           ) : null}
           <div className="flex min-h-0 flex-1 flex-col" style={{justifyContent: sel === "wish" || sel === "give" || sel === "mine" ? "flex-start" : place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center"}}>
-          {view === "map" && centre ? <Suspense fallback={<p className="g-body">opening map</p>}><CommunigyMap pins={pins} centre={centre} radiusKm={radius ?? 10} onOpen={onOpen} />{!pins.length ? <p className="g-meta">no matching listings with a shared approximate location.</p> : null}</Suspense> : <ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
+          {view === "map" ? <Suspense fallback={<p className="g-body">opening map</p>}><CommunigyMap pins={pins} centre={centre} radiusKm={radius ?? 10} onOpen={onOpen} />{!pins.length ? <p className="g-meta">no matching listings with a shared approximate location.</p> : null}</Suspense> : null}<ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li
                 key={i.id}
@@ -226,8 +228,8 @@ export function CommunityFeed({
                 {...(i.id === highlightId ? { "data-cg-new": "", "aria-current": "true" as const } : {})}
                 ref={i.id === highlightId ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
               >
-                <Button variant="ghost" type="button" className="w-full" style={{ textAlign: place.align, color: CG_INK[itemMode(i)] }} onClick={() => onOpen(i.id)} data-cg-item={i.type}>
-                  <span className="g-body block text-[15px]">{itemLine(i)}</span>
+                <Button variant="ghost" type="button" className="w-full" style={{ textAlign: place.align, color: "var(--foreground)" }} onClick={() => onOpen(i.id)} data-cg-item={i.type}>
+                  <span className="g-body block text-[15px]"><ListingLine mode={itemMode(i)} text={itemLine(i)} /></span>
                   <span className="g-meta block text-muted-foreground">
                     {sel === "mine" ? (i.type === "borrow" && i.side === "lend" ? "lend" : i.type) : (memberById(i.ownerId)?.username ?? "")}
                   </span>
@@ -240,7 +242,7 @@ export function CommunityFeed({
               </li>
             ) : null}
             {sel === "wish" ? <li className="pt-4"><WishMatch onOpen={onOpen} /></li> : null}
-          </ul>}
+          </ul>
           </div>
         </div>
       </PerimeterToggle>

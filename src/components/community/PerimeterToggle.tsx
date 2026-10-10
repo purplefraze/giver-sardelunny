@@ -22,7 +22,7 @@ type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; do
  * onBack = a deliberate tap on the toggle once SETTLED at the outside "back". */
 /** header = the centred communi-g lockup at the top of the hollow (one line each).
  * backdropHidden keeps the map mounted (centre/zoom kept) while a detail shows. */
-export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record = false, listening = false, backdrop, backdropHidden = false, header, children }: { value: CgStation; onChange: (next: CgStation) => void; onTap?: () => void; onHold?: () => void; onBack?: () => void; record?: boolean; listening?: boolean; backdrop?: ReactNode; backdropHidden?: boolean; header?: ReactNode; children?: ReactNode }) {
+export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record = false, listening = false, backdrop, backdropHidden = false, header, children, flow = false }: { value: CgStation; onChange: (next: CgStation) => void; onTap?: () => void; onHold?: () => void; onBack?: () => void; record?: boolean; listening?: boolean; backdrop?: ReactNode; backdropHidden?: boolean; header?: ReactNode; children?: ReactNode; flow?: boolean }) {
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 390, h: 844 });
   const [angle, setAngle] = useState(() => clockOf(value));
@@ -115,7 +115,12 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   /* THE BEAD'S OWN CLEARANCE at the shown seat's rest pose (changes only at a
      station change, never mid-drag): if the bead still reaches into the
      interior, step that one side out — whichever keeps more usable area. */
-  const inner = beadClear(size, frameOf(size.w, size.h, clockOf(shown)).bead, { l: left, r: right, t: header ? headTop + HEADER_H : top, b: bottom });
+  const box0 = { l: left, r: right, t: header ? headTop + HEADER_H : top, b: bottom };
+  const restBead = frameOf(size.w, size.h, clockOf(shown)).bead;
+  /* A single record may instead flow AROUND the bead (CSS float) so the whole
+     hollow is usable; lists keep the plain rectangular clearance. */
+  const flowed = flow ? beadFlow(size, restBead, box0) : null;
+  const inner = flowed ? box0 : beadClear(size, restBead, box0);
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     {backdrop ? <>
       <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={TRACK_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
@@ -129,7 +134,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
       <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={10} strokeLinecap="round" data-cg-stem-arm="" />
     </svg>
     {header ? <div className="pointer-events-none absolute z-[6] flex justify-center" style={{ left: Math.max(left, right), right: Math.max(left, right), top: headTop, height: HEADER_H }} data-cg-header="">{header}</div> : null}
-    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left: inner.l, right: inner.r, top: inner.t, bottom: inner.b }} data-cg-interior=""><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
+    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left: inner.l, right: inner.r, top: inner.t, bottom: inner.b, ...(flowed ? { ["--bead-top" as string]: `${flowed.top}px`, ["--bead-w" as string]: `${flowed.w}px`, ["--bead-h" as string]: `${flowed.h}px` } : {}) }} data-cg-interior="" data-cg-bead-flow={flowed ? flowed.side : undefined}><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
     <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={shown === "back" ? "back — tap to return to the living g" : record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={clockOf("back")} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
@@ -185,4 +190,17 @@ export function beadClear(size: { w: number; h: number }, bead: Point, box: { l:
   const vert = bead.y > size.h / 2 ? { ...box, b: Math.max(box.b, size.h - (bead.y - R)) } : { ...box, t: Math.max(box.t, bead.y + R) };
   const area = (q: typeof box) => Math.max(0, size.w - q.l - q.r) * Math.max(0, size.h - q.t - q.b);
   return area(side) >= area(vert) ? side : vert;
+}
+
+/** Pure: where a bead resting at the bottom edge of the box intrudes, as a
+ *  float (distance from the box top, width from that side, height). Null when
+ *  the bead is clear, not at the bottom, or not against a side. */
+export function beadFlow(size: { w: number; h: number }, bead: Point, box: { l: number; r: number; t: number; b: number }, R = 50) {
+  const top = bead.y - R - box.t, boxH = size.h - box.t - box.b, boxW = size.w - box.l - box.r;
+  if (top <= 0 || top >= boxH || bead.y < size.h / 2) return null;
+  const leftW = bead.x + R - box.l, rightW = size.w - box.r - (bead.x - R);
+  const side = leftW <= rightW ? "left" as const : "right" as const;
+  const w = Math.max(0, Math.min(boxW, side === "left" ? leftW : rightW));
+  if (w <= 0 || w > boxW * 0.6) return null;
+  return { side, top: Math.round(top), w: Math.round(w), h: Math.round(boxH - top) };
 }

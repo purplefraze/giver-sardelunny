@@ -59,6 +59,17 @@ export const EMPTY_FIELDS: VoiceFields = {
 const WHERE = /\b(?:in|at|near|around|on)\s+((?:the\s+)?[a-z0-9'][a-z0-9' -]{1,40}?)(?=[.,!?]|\s+(?:on|at|from|after|before|by|this|next|tomorrow|today|tonight|(?:mon|tues|wednes|thurs|fri|satur|sun)day|weekend)\b|$)/;
 const WHEN =
   /\b(today|tonight|tomorrow(?: (?:morning|afternoon|evening|night))?|this (?:morning|afternoon|evening|weekend|week)|next (?:week|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:on )?(?:mon|tues|wednes|thurs|fri|satur|sun)day(?: (?:morning|afternoon|evening))?|(?:after|before|by|from|at) \d{1,2}(?::\d{2})?\s?(?:am|pm)?|\d{1,2}(?::\d{2})?\s?(?:am|pm)|any ?time|whenever|weekends?|evenings?|mornings?)\b/;
+/** "in good condition", "in working order" describe the thing, never a place. */
+const NOT_PLACE = /^(?:(?:very |really )?(?:good|great|perfect|fair|ok|okay|decent|excellent|poor|bad|working|mint|new|like new|used|top|nice|full) )?(?:condition|shape|nick|order|working order|box|packaging|use)\b/;
+const WHERE_ALL = new RegExp(WHERE.source, "g");
+/** The first phrase that is actually a place (not a time, not a condition). */
+export function placeOf(lower: string): string {
+  for (const m of lower.matchAll(WHERE_ALL)) {
+    const t = (m[1] ?? "").trim();
+    if (t && !TIME_WORD.test(t) && !NOT_PLACE.test(t)) return t;
+  }
+  return "";
+}
 const TIME_WORD = /\b(today|tonight|tomorrow|week|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening)\b/;
 
 const DURATION =
@@ -71,8 +82,7 @@ const money = (cents: number | null) => (cents == null ? "" : String(Math.round(
 export function fieldsFromDraft(draft: ActionDraft, raw: string): VoiceFields {
   const e = draft.entities;
   const lower = raw.toLowerCase();
-  const whereM = lower.match(WHERE);
-  const whereText = e.location ?? (whereM && !TIME_WORD.test(whereM[1] ?? "") ? (whereM[1] ?? "").trim() : "");
+  const whereText = (e.location && !NOT_PLACE.test(e.location.toLowerCase()) ? e.location : null) ?? placeOf(lower);
   const whenM = lower.match(WHEN);
   const detected = contextOf(raw);
   const context = detected === "lesson" || detected === "service" || draft.action === "wish" || draft.action === "borrow" ? detected : null;
@@ -160,9 +170,9 @@ export function mergeFollowUp(action: GiverAction, f: VoiceFields, raw: string):
     next.when = whenM[1] ?? "";
     used = true;
   }
-  const whereM = lower.match(WHERE);
-  if (whereM && !TIME_WORD.test(whereM[1] ?? "") && !next.where.trim()) {
-    next.where = (whereM[1] ?? "").trim();
+  const place = placeOf(lower);
+  if (place && !next.where.trim()) {
+    next.where = place;
     used = true;
   }
   const b = bindUtterance(text);

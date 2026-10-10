@@ -143,14 +143,15 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     if (NOT_YET.test(lower) || (DONE.test(lower) && lower.split(/\s+/).length <= 3)) return { ...next, stage: "anything", prompt: "what would you like to add?" };
   }
 
-  if (s.routeSeat === "giver") {
+  if (s.routeSeat === "giver" && !/^(?:actually|instead|i meant)/i.test(text)) {
     const area = profileAreaOf(text);
     return { ...next, profile: area ?? "bio", action: null };
   }
-  if (s.routeSeat === "map") return { ...next, community: communityFilterOf(text, true) ?? "everything", search: text, action: null };
+  if (s.routeSeat === "map" && !/^(?:actually|instead|i meant)/i.test(text)) return { ...next, community: communityFilterOf(text, true) ?? "everything", search: text, action: null };
   if (/^(?:actually|no[, ]|instead|i meant|change)/i.test(text)) {
-    const intent = leadIntent(text.replace(/^(?:actually|no[, ]+|instead|i meant|change)\s*/i, ""));
-    if (intent?.action && intent.action !== s.action) return nextAsk({ ...next, action: intent.action, fields: fieldsFromDraft(intent, text) });
+    const corrected = text.replace(/^(?:actually|no[, ]+|instead|i meant|change)\s*/i, "");
+    const intent = leadIntent(corrected) ?? routeVoice(corrected).draft;
+    if (intent?.action && intent.action !== s.action) return nextAsk({ ...next, action: intent.action, routeSeat:undefined, fields: fieldsFromDraft(intent, text) });
   }
 
   /* SEEDED by the toggle seat: the first answer is that mode's draft, unless

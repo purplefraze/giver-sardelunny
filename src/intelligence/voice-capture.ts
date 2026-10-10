@@ -52,6 +52,7 @@ let snap: VoiceSnapshot = { state: "idle", transcript: "", error: null };
 let rec: Recognition | null = null;
 let finalText = "";
 let cancelled = false;
+let speechEpoch = 0;
 const subs = new Set<() => void>();
 const finals = new Set<(words: string) => void>();
 
@@ -76,6 +77,7 @@ export const voiceCapture = {
 
   /** Call directly from the tap handler. */
   start() {
+    speechEpoch++;
     const C = ctor();
     if (!C) {
       set({ state: "unsupported", transcript: "", error: null });
@@ -155,6 +157,7 @@ export const voiceCapture = {
    * itself; `after` runs when speech ends (or at once without speech output).
    */
   speak(text: string, after: () => void) {
+    const epoch = ++speechEpoch;
     const r = rec;
     rec = null;
     try {
@@ -171,7 +174,7 @@ export const voiceCapture = {
     set({ state: "speaking" });
     let done = false;
     const finish = () => {
-      if (done) return;
+      if (done || epoch !== speechEpoch) return;
       done = true;
       if (snap.state === "speaking") set({ state: "idle" });
       after();
@@ -191,6 +194,7 @@ export const voiceCapture = {
 
   /** Throw the listening away. */
   cancel() {
+    speechEpoch++;
     cancelled = true;
     try {
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();

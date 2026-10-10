@@ -264,7 +264,7 @@ export function MyGRing({
   const panelW = Math.max(100, panelRight - panelLeft);
   const panelTop = photoView
     ? Math.min(box.h - 104, hollow.y + safeRadius + 32)
-    : Math.max(24, hollow.y - safeRadius * .68);
+    : Math.max(24, hollow.y - safeRadius * (opened === "bio" ? .74 : .68));
   const panelMaxH = photoView ? box.h - panelTop - 12
     : Math.max(100, Math.min(safeRadius * 1.36, box.h - panelTop - 32));
 
@@ -469,7 +469,7 @@ export function MyGRing({
           style={{ left: panelLeft, top: panelTop, width: panelW, height: panelMaxH, color: INK, textAlign: "left" }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {!photoView ? <h1 className={`g-heading ${opened === "bio" ? "mb-2" : "mb-5"}`} style={{ color: BLUE }}>{seat.word}</h1> : null}
+          {!photoView && opened !== "bio" ? <h1 className="g-heading mb-5" style={{ color: BLUE }}>{seat.word}</h1> : null}
           {recMode ? (
             <form
               className="mb-3 flex gap-2"
@@ -553,10 +553,10 @@ function Area({
     const birthdayResult = profileBirthdaySchema().safeParse(d.birthday);
     const birthdayError = birthdayResult.success ? "" : birthdayResult.error.issues[0]?.message ?? "enter a valid birthday";
     const row = (k: keyof Bio, label: string, multi = false) => (
-      <label className="mb-2 block">
+      <label className="mb-1 block">
         <span className="g-meta block opacity-60">{label}</span>
         {multi ? (
-          <textarea className={`${field} resize-none`} rows={2} maxLength={1000} value={d[k] ?? ""} onChange={(e) => set(k, e.target.value)} />
+          <textarea className={`${field} block h-14 resize-none leading-tight`} rows={2} maxLength={1000} value={d[k] ?? ""} onChange={(e) => set(k, e.target.value)} />
         ) : (
           <input className={field} value={d[k] ?? ""} onChange={(e) => set(k, e.target.value)} />
         )}
@@ -566,11 +566,11 @@ function Area({
       <div data-profile-bio="">
         {row("username", "username")}
         {row("about", "about me", true)}
-        <label className="mb-2 block">
+        <label className="mb-1 block">
           <span className="g-meta block">birthday · only you</span>
           <input type="date" aria-label="birthday" aria-invalid={Boolean(birthdayError)} aria-describedby={birthdayError ? "profile-birthday-error" : undefined} {...birthdayBounds()} className={`${field} min-h-11 min-w-0 max-w-full`} value={d.birthday} onChange={e => set("birthday", e.target.value)} />
         </label>
-        {birthdayError ? <p id="profile-birthday-error" role="alert" className="g-meta mb-2">{birthdayError}</p> : null}
+        {birthdayError ? <p id="profile-birthday-error" role="alert" className="g-meta mb-1">{birthdayError}</p> : null}
         <div className="flex gap-4">
           <Button variant="ghost"
             type="button"

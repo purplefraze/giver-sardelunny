@@ -52,7 +52,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
     next = clampLower(next);
     const before = angleRef.current;
     const events = crossings(before, next, LABELED);
-    for (const station of events) show(station);
+    if (!external.current) for (const station of events) show(station);
     if (tactile && crossings(before, next, DETENTS).length > 0) haptics.selection();
     angleRef.current = next; setAngle(next);
   };
@@ -60,6 +60,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
   const settle = (station: CgStation, tactile: boolean, programmatic = false) => {
     external.current = programmatic;
     stop();
+    if (programmatic) show(station);
     const from = angleRef.current, delta = clockOf(station) - from;
     const duration = settleDuration(delta, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     // Ask in the release gesture, not a later RAF; actual motor delivery is optional.
@@ -137,6 +138,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
           e.preventDefault(); const dir = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
           const next = STATIONS[Math.max(0, Math.min(STATIONS.length - 1, index + dir))]; if (next) settle(next, true);
         } else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); callbacks.current.onTap?.(); }
+        else if (e.key === "Escape") { e.preventDefault(); stage.current?.dispatchEvent(new CustomEvent("giver:community-return", { bubbles:true })); }
         else if (e.key === "r" || e.key === "R") { e.preventDefault(); callbacks.current.onHold?.(); }
       }}>
       <svg width={64} height={64} viewBox="-32 -32 64 64" aria-hidden="true" data-cg-bead-shape="circle-arm">

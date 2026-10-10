@@ -94,6 +94,8 @@ export function CommunityFeed({
   const selectedTab = useRef<HTMLButtonElement | null>(null);
   useEffect(() => { selectedTab.current?.scrollIntoView({ block:"nearest", inline:"nearest" }); }, [sel]);
   useEffect(() => () => { voiceCapture.cancel(); }, []);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => { const el = root.current; if (!el) return; const leave = () => (onExit ?? onClose)(); el.addEventListener("giver:community-return", leave); return () => el.removeEventListener("giver:community-return", leave); }, [onExit, onClose]);
   const allowLocation = async () => { const result = await askLocation(); if (!result.ok) setLocationProblem(result.reason === "denied" ? "location isn't allowed. choose a map centre below." : "location isn't available. choose a map centre below."); else setLocationProblem(""); };
 
 
@@ -146,6 +148,7 @@ export function CommunityFeed({
 
   return (
     <div
+      ref={root}
       data-world="communigy"
       data-cg-mode={sel}
       className="relative h-full w-full overflow-hidden"
@@ -169,7 +172,7 @@ export function CommunityFeed({
         }}
       >
         <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-align={place.align} style={{ textAlign: place.align }}>
-          <div className="relative h-12 shrink-0">
+          <div className="relative h-10 shrink-0">
             <BackArrow onClick={onExit ?? onClose} label="back to the living g" />
           </div>
           <div role="tablist" aria-label="community filter" className="cg-filters">
@@ -218,7 +221,7 @@ export function CommunityFeed({
               “{term}” · clear
             </Button>
           ) : null}
-          <div className="flex min-h-0 flex-1 flex-col" style={{justifyContent: sel === "wish" || sel === "give" || sel === "mine" ? "flex-start" : place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center"}}>
+          <div className="flex min-h-0 flex-1 flex-col" style={{justifyContent: view === "map" ? "flex-start" : sel === "wish" || sel === "give" || sel === "mine" ? "flex-start" : place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center"}}>
           {view === "map" ? <Suspense fallback={<p className="g-body">opening map</p>}><CommunigyMap pins={pins} centre={centre} radiusKm={radius ?? 10} onOpen={onOpen} />{!pins.length ? <p className="g-meta">no matching listings with a shared approximate location.</p> : null}</Suspense> : null}<ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li

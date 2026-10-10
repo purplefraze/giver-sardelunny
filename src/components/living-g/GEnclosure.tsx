@@ -154,7 +154,7 @@ export function GEnclosure({
 
 /** The canonical filled G visibly unthreads into the review's rounded rim;
  * a two-finger inward pinch drives the same morph backwards (repretzel). */
-export function VoiceEnclosure({ seat, children, onFold }: { seat: string; children: React.ReactNode; onFold?: () => void }) {
+export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: string; children: React.ReactNode; onFold?: () => void; onFoldStart?: () => void }) {
   const source = useRef<SVGPathElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const [morphed, setMorphed] = useState<string | null>(null);
@@ -164,6 +164,8 @@ export function VoiceEnclosure({ seat, children, onFold }: { seat: string; child
   const morphRef = useRef<((t: number) => string) | null>(null);
   const foldRef = useRef(onFold);
   foldRef.current = onFold;
+  const startRef = useRef(onFoldStart);
+  startRef.current = onFoldStart;
 
   /** Built from the CURRENT viewport, so rotation/resizes stay correct. */
   const build = async () => {
@@ -212,7 +214,7 @@ export function VoiceEnclosure({ seat, children, onFold }: { seat: string; child
       active = true; startDist = dist(e) || 1; p = 0;
       cancelAnimationFrame(raf);
       /* Leaving begins: mic off now, no auto-restart, draft kept. */
-      foldRef.current && (globalThis as { __giverStopMic?: () => void }).__giverStopMic?.();
+      startRef.current?.();
       setReady(false);
       if (!morphRef.current) void build().then((m) => { if (m) morphRef.current = m; });
     };

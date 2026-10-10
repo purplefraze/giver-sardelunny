@@ -38,8 +38,6 @@ let revision = 0;
 const parked = new Map<string, Conversation>();
 let currentSeat = "";
 let wired = false;
-/* Pinch-to-fold stops the mic synchronously, before any repaint. */
-if (typeof globalThis !== "undefined") (globalThis as { __giverStopMic?: () => void }).__giverStopMic = () => { if (snap.mode !== "off") { set({ mode: "off" }); voiceCapture.stop(); } };
 
 const set = (next: Partial<Conversation>) => {
   if (next.session !== undefined) revision++;

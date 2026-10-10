@@ -26,6 +26,8 @@ import { togglePath, type TrackPose } from "./toggle-path";
  */
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
+/** A stationary press this long on the main toggle becomes a record hold. */
+export const HOLD_MS = 420;
 export type Mode = (typeof MODES)[number];
 
 /**
@@ -829,6 +831,7 @@ export function EarSelector({
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
           startPeek();
+          if (!locked) armRecord();
           // CAPTURE ON THE ELEMENT THAT HANDLES THE GESTURE, so the drag keeps
           // running even once the finger leaves the disc.
           (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
@@ -847,6 +850,7 @@ export function EarSelector({
           const g = gesture.current;
           if (g && !g.moved && dist(move.point, g.start) > 14) {
             g.moved = true;
+            clearRecTimer();
             /* A drag is a mode change, not a peek. */
             stopPeek();
             held.current = false;
@@ -862,11 +866,11 @@ export function EarSelector({
           e.stopPropagation();
           end(e);
         }}
-        onPointerCancel={(e) => end(e)}
+        onPointerCancel={(e) => end(e, true)}
         onLostPointerCapture={(e) => {
           // Android can revoke a capture mid-gesture: settle where we are and
           // leave the control immediately usable again.
-          if (activeId.current === e.pointerId) end(e);
+          if (activeId.current === e.pointerId) end(e, true);
         }}
         onKeyDown={(e) => {
           const i = ring.indexOf(mode);

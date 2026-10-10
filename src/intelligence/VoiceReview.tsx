@@ -50,7 +50,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       if (!keyboard || !(active instanceof HTMLElement) || !el.contains(active)) return;
       const field = active.getBoundingClientRect();
       const band = el.getBoundingClientRect();
-      if (field.bottom > band.bottom - 80) el.scrollTop += field.bottom - band.bottom + 80;
+      if (field.bottom > band.bottom - 12) el.scrollTop += field.bottom - band.bottom + 12;
       else if (field.top < band.top + 12) el.scrollTop -= band.top + 12 - field.top;
     };
     if (!keyboard) el.scrollTop = 0;

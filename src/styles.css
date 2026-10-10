@@ -1997,6 +1997,7 @@
 .cg-location { font:450 14px/1.4 var(--giver-font); padding:10px 0; }
 .cg-list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; }
 
+.gv-morph-frame { --spatial-mask-on: #fff; --spatial-mask-off: #000; }
 .gv-outline { position:absolute; inset:0; pointer-events:none; }
 .gv-review-content { position:absolute; inset:10px; visibility:hidden; pointer-events:none; overflow:hidden; border-radius:20px; }
 .gv-morph-frame[data-unfold-ready="1"] .gv-review-content { visibility:visible; pointer-events:auto; }
@@ -2185,7 +2186,7 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 
 /* Keyboard changes content only; the captured G box/contour stays fixed. */
 .gv-morph-frame[data-keyboard="1"] .gv-review-content {
-  top:max(30px, calc(var(--gv-keyboard-top, 0px) + 12px));
+  top:max(72px, calc(var(--gv-keyboard-top, 0px) + 12px));
   bottom:calc(var(--gv-keyboard-bottom, 0px) + 12px);
 }
 .gv-morph-frame[data-keyboard="1"] .gv-scroll { overflow-y:auto; }

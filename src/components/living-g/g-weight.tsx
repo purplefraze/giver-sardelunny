@@ -78,7 +78,7 @@ export function GThinMask({ id, weight, transformed = false, middleWidth }: { id
     <>
       <path d={LIVING_G_PATH} fill="#fff" stroke="#000" strokeWidth={w} strokeLinejoin="round" />
       {middleWidth !== undefined ? <>
-        <defs><clipPath id={`${id}-middle-band`}><rect x="-4000" y="5730" width="16000" height="10000" /></clipPath></defs>
+        <defs><clipPath id={`${id}-middle-band`}><circle cx={LOOP_CENTRE.middle.x * 10} cy={(1133 - LOOP_CENTRE.middle.y) * 10} r={2050} /></clipPath></defs>
         <path d={LIVING_G_PATH} fill="none" stroke="#000" strokeWidth={(G_STROKE.normal - middleWidth) * 10} strokeLinejoin="round" clipPath={`url(#${id}-middle-band)`} />
       </> : null}
     </>

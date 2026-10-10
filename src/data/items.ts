@@ -16,6 +16,7 @@
  */
 
 import { MEMBERS } from "@/data/giver";
+import { reviseFundFixture } from "./fund-fixture";
 import { logGiveEnd } from "@/data/review-flags";
 
 export type ItemType = "wish" | "give" | "trade" | "borrow";
@@ -656,7 +657,7 @@ const FIXTURE_DETAILS: Record<string, ItemDetails> = {
  * running total vs target to show. Demo only, like every seeded item.
  */
 const FIXTURE_FUND_TARGET: Record<string, number> = {
-  "seed-robin-wish-3": 150000, // "a spare onewheel for the playa" — $1,500
+  "seed-robin-wish-3": 150000, // Demo dentures cause — existing $1,500 target.
 };
 
 /** The written fixture wins; everything else is derived. */
@@ -701,7 +702,7 @@ function seedItems(): Item[] {
       });
     });
   });
-  return out;
+  return out.map(reviseFundFixture);
 }
 
 /**
@@ -740,7 +741,7 @@ function read(): ItemsState {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return { items: seedItems(), boosts: [], seeded: true };
     const parsed = JSON.parse(raw) as Partial<ItemsState>;
-    const stored = (parsed.items ?? seedItems()).map(withSeedDetails);
+    const stored = (parsed.items ?? seedItems()).map(withSeedDetails).map(reviseFundFixture);
     /* NEW SAMPLE ACTIVITY REACHES PEOPLE WHO ARE ALREADY HERE. Only sample
        items that have never been seen are added; nothing of a person's own is
        touched, reordered or overwritten. */

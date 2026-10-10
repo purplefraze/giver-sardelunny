@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { itemMode, CG_INK } from "@/data/communigy";
+import { useFund } from "@/hooks/use-fund";
+import { fundedTotal, wishTarget } from "@/data/fund";
+import { formatCents } from "@/data/fund-rules";
 import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
 import { ACTIVITY_FILL, ME_ID, itemLine, visibleToOthers, type Item, type ItemType } from "@/data/items";
@@ -73,6 +77,7 @@ export function ActivityDetail({
   onClose: () => void;
 }) {
   const items = useItems();
+  const fund = useFund();
   const links = useConnections();
   const sparkles = useMyProfile().sparkles;
   /* THE DEVELOPER SWITCH, and the live people projection it can edit. */
@@ -108,7 +113,8 @@ export function ActivityDetail({
   const others = connectionsForItem(links, item.id).filter(
     (c) => isOpen(c) && c.helperId !== ME_ID,
   ).length;
-  const fill = ACTIVITY_FILL[item.type];
+  const fill = CG_INK[itemMode(item)];
+  const target = itemMode(item) === "fund" ? wishTarget(item) : null;
   /* ACTING on someone else's give is blocked at the cap; looking never is.
      A conversation that already exists (one of the three) stays open. */
   const cap = giveCapState(links.connections, items.items, ME_ID);
@@ -163,6 +169,10 @@ export function ActivityDetail({
       <h1 className="g-display mt-4" style={{ color: fill }}>
         {itemLine(item)}
       </h1>
+      {target !== null ? <div className="g-rule mt-5 pt-4">
+        <p className="g-body">{formatCents(fundedTotal(fund, item.id))} pledged · {formatCents(target)} target</p>
+        <p className="g-meta">{item.id.startsWith("seed-") ? "demo cause · demo pledges only · no payments collected" : "pledges only · no payments collected"}</p>
+      </div> : null}
 
       {/* WHO POSTED IT, RIGHT NEXT TO WHAT IT IS — and they are clickable. */}
       <p className="g-meta mt-5">
@@ -268,7 +278,7 @@ export function ActivityDetail({
               className={`text-left g-display-sm ${capBlocks ? "gf-faded" : ""}`}
               style={{ color: fill }}
             >
-              {mine ? "open the conversation" : actionWord(item)}
+              {mine ? "open the conversation" : target !== null ? "talk about this cause" : actionWord(item)}
             </button>
 
             {/* MESSAGING, WITH THE ITEM AS ITS SUBJECT. */}

@@ -7,7 +7,7 @@ mock.module("@/lib/followup.functions",()=>({followUp:async()=>({source:"rules",
 mock.module("@/data/my-location",()=>({askLocation:async()=>({ok:false})}));
 const {conversation}=await import("../src/intelligence/voice-conversation");
 const {buildPayload}=await import("../src/intelligence/share-coordinator");
-beforeEach(()=>conversation.close());
+beforeEach(()=>{for(const seat of ["give","wish","borrow","lend","trade","fund"]){conversation.selectSeat(seat);conversation.close();}});
 test("whole and fragmented ordinary Give keep subject, category and no invented place/date",()=>{
   for(const lines of [["I would like to give a table"],["I would like to give","A table"],["I'd like to give a table"]]){
     conversation.close();conversation.openForm("give");for(const line of lines)conversation.type(line);

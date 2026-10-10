@@ -1,5 +1,6 @@
 # Communi-G track repair
 ## Oct 10 21:50 creation keyboard regression
+- [ ] Replace stretched/redrawn form perimeter with uniformly transformed canonical middle-loop artwork; remove extra Fund fragments and duplicate microphone errors; screenshot all six modes hidden/shown keyboard.
 - [ ] Remove creation-entry autofocus and freeze enclosure geometry through keyboard viewport changes.
 - [ ] Keep tapped fields/actions reachable above keyboard; verify all six modes, dismiss and pinch with mocked writes.
 ## Oct 10 21:47 urgent bio correction

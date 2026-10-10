@@ -187,7 +187,7 @@ export function MyGRing({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area?.n]);
 
-  useEffect(() => () => cancelAnimationFrame(anim.current), []);
+  useEffect(() => () => { cancelAnimationFrame(anim.current); if (holdTimer.current) clearTimeout(holdTimer.current); }, []);
 
   const seat = seatOf(deg);
   const settledSeat = seatOf(degRef.current);
@@ -260,7 +260,7 @@ export function MyGRing({
   const panelW = Math.max(100, panelRight - panelLeft);
   const photoView = opened === "photo" && !recMode;
   const panelTop = photoView
-    ? Math.min(box.h - 92, hollow.y + safeRadius + 12)
+    ? Math.min(box.h - 104, hollow.y + safeRadius + 32)
     : Math.max(24, hollow.y - safeRadius * .68);
   const panelMaxH = photoView ? box.h - panelTop - 12
     : Math.max(100, Math.min(safeRadius * 1.36, box.h - panelTop - 32));
@@ -382,6 +382,8 @@ export function MyGRing({
       aria-label={`my g profile loop, on ${seat.word}. arrow keys move, enter opens.`}
       data-profile-loop=""
       data-profile-seat={seat.id}
+      data-profile-angle={deg}
+      data-profile-camera-angle={deg}
       className="absolute inset-0 overflow-hidden outline-none"
       style={{ background: PAPER, color: INK }}
       onKeyDown={onKey}
@@ -443,12 +445,14 @@ export function MyGRing({
       <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${box.w} ${box.h}`} aria-hidden="true">
         {PROFILE_AREAS.map(item => {
           const on = item.id === seat.id;
+          if (Math.abs(turn(seat.at, item.at)) > 45) return null;
           const p = toScreen(onRim(item.at, OUTER + 11));
+          if (on) p.y -= Math.abs(Math.sin(deg * Math.PI / 180)) * 58;
           const size = on ? 22 : 18;
           const half = item.word.length * size * .31;
           return <text key={item.id} data-profile-label={item.id}
             x={Math.max(half + 12, Math.min(box.w - half - 12, p.x))}
-            y={Math.max(26, Math.min(box.h - 18, p.y))}
+            y={Math.max(26, Math.min(box.h - 26, p.y))}
             textAnchor="middle" dominantBaseline="central" fill={BLUE}
             fontSize={size} fontWeight={on ? 900 : 700} opacity={on ? 1 : .5}
             style={{ fontFamily: "var(--giver-font)", letterSpacing: 0 }}>{item.word}</text>;

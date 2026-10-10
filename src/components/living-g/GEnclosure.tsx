@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
-import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX, G_ANCHORS, LIVING_G_FRAME } from "./g-path";
+import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX, G_ANCHORS, LIVING_G_FRAME, EAR_CUT, LOOP_CENTRE, RIM_PATCH, arcPath, wedgePath } from "./g-path";
 import { haptics } from "@/lib/haptics";
 import { formOutline, movingEar, type OutlinePose } from "./form-outline";
 import { SEAT_ANGLE, type Seat } from "./EarSelector";
 import { formKeyboardBounds } from "@/lib/form-keyboard";
+import { formCamera } from "@/lib/form-camera";
+import { GThinMask, G_STROKE } from "./g-weight";
+import { MiddleLoopClose } from "./loop-close";
 
 /**
  * GOING INSIDE A LIVING G.
@@ -244,10 +247,21 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     return()=>{el.removeEventListener("touchstart",start);el.removeEventListener("touchmove",move);el.removeEventListener("touchend",end);el.removeEventListener("touchcancel",cancel);el.removeEventListener("giver:fold",request);window.removeEventListener("keydown",key);};
   },[]);
   const angle=SEAT_ANGLE[seat as Seat] ?? SEAT_ANGLE.give;
+  const camera=geometry?formCamera(t,geometry.pose,geometry.width,geometry.height):null;
   return <div ref={frame} tabIndex={-1} className="gv-frame gv-morph-frame outline-none" data-seat={seat} data-voice-frame="" data-unfold-ready={ready?"1":"0"} data-fold={(1-t).toFixed(3)}>
     {geometry ? <svg className="gv-outline" width={geometry.width} height={geometry.height} viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true" data-g-unpretzel="">
-      <path d={formOutline(t,geometry.pose,geometry.width,geometry.height)} fill="var(--world-g)" fillRule="evenodd" />
-      <path d={movingEar(t,geometry.pose,geometry.width,geometry.height,angle)} fill="var(--world-g)" fillRule="evenodd" />
+      <defs>
+        <GThinMask id="form-canonical-thin" weight="middle" />
+        <mask id="form-canonical-earcut" maskUnits="userSpaceOnUse" x="-400" y="-400" width="1600" height="2000">
+          <rect x="-400" y="-400" width="1600" height="2000" fill="var(--spatial-mask-on)" />
+          <path d={wedgePath(LOOP_CENTRE.middle,EAR_CUT.a0,EAR_CUT.a1,EAR_CUT.r0,EAR_CUT.r1)} fill="var(--spatial-mask-off)" />
+        </mask>
+      </defs>
+      {camera?<g transform={`translate(${camera.x} ${camera.y}) scale(${camera.scale})`} data-form-camera="">
+        <g mask="url(#form-canonical-earcut)"><g transform={LIVING_G_TRANSFORM} fill="var(--world-g)"><path d={LIVING_G_PATH} mask="url(#form-canonical-thin)" data-form-canonical="" /></g></g>
+        <path d={arcPath(LOOP_CENTRE.middle,RIM_PATCH.a0,RIM_PATCH.a1,RIM_PATCH.rMid)} fill="none" stroke="var(--world-g)" strokeWidth={G_STROKE.middle} />
+        <MiddleLoopClose weight="middle" />
+      </g>:null}
     </svg> : null}
     <div className="gv-review-content" inert={!ready}>{children}</div>
   </div>;

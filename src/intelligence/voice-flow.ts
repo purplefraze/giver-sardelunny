@@ -113,8 +113,8 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
   if (!f.what.trim() || incompleteLead(f.what)) out.push({ field: "what", ask: action === "give" ? "what are you giving?" : "what is it?" });
   if (action === "trade" && !f.want.trim()) out.push({ field: "want", ask: "what would you like for it?" });
   if (action === "fund" && !f.amount.trim()) out.push({ field: "amount", ask: "how much are you raising?" });
-  if (!service && ((action === "give" && !validCollectionLocation(f.collectionLocation, f.where)) || (action === "lend" && !f.where.trim()))) out.push({ field: "where", ask: action === "give" ? "where can someone collect it?" : "where is it?" });
-  if (!service && action === "give" && (!f.when.trim() || (f.kind === "food" && !f.timing?.date)))
+  if (!service && (action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? (tangible ? "where can someone collect it?" : "where are you based? an area is fine.") : "where is it?" });
+  if (!service && action === "give" && !f.when.trim())
     out.push({ field: "when", ask: tangible ? "when can it be collected?" : "when are you free?" });
   if (action === "give" && f.what.trim() && !f.kind) out.push({field:"kind",ask:"is it a thing, or something you can do?"});
   if (!service && (action === "borrow" || action === "lend") && !f.when.trim())

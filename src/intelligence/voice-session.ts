@@ -16,7 +16,7 @@ import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas"
 export type VoiceStage = "talk" | "anything" | "ready" | "review" | "live";
 
 export type VoiceSession = {
-  routeSeat?: "giver" | "map";
+  routeSeat?: "giver" | "map" | undefined;
   stage: VoiceStage;
   action: GiverAction | null;
   fields: VoiceFields;
@@ -150,7 +150,8 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
   if (s.routeSeat === "map" && !/^(?:actually|instead|i meant)/i.test(text)) return { ...next, community: communityFilterOf(text, true) ?? "everything", search: text, action: null };
   if (/^(?:actually|no[, ]|instead|i meant|change)/i.test(text)) {
     const corrected = text.replace(/^(?:actually|no[, ]+|instead|i meant|change)\s*/i, "");
-    const intent = leadIntent(corrected) ?? routeVoice(corrected).draft;
+    const routed = routeVoice(corrected);
+    const intent = leadIntent(corrected) ?? (routed.intent === "search" ? null : routed.draft);
     if (intent?.action && intent.action !== s.action) return nextAsk({ ...next, action: intent.action, routeSeat:undefined, fields: fieldsFromDraft(intent, text) });
   }
 

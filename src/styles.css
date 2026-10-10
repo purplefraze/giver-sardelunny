@@ -2125,3 +2125,54 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .gv-title { font-size:24px; }
 [data-cg-mode="map"] .cg-head { background:var(--background); border-radius:14px; padding:4px 14px; }
 .cg-map-count { font:700 12px/1.3 var(--giver-font); letter-spacing:.02em; opacity:.7; }
+
+/* Readable floors (supersedes any smaller computed size) and the dense reflow. */
+.cg-d-kind { font-size:max(11px, calc(12px * var(--fit))); }
+.cg-d-meta { font-size:max(11px, calc(12px * var(--fit))); letter-spacing:.06em; }
+.cg-d-facts dt { font-size:max(11px, calc(11px * var(--fit))); letter-spacing:.14em; }
+.cg-d-facts dd { font-size:max(13px, calc(14px * var(--fit))); overflow-wrap:break-word; }
+.cg-d-note { font-size:max(13px, calc(14px * var(--fit))); overflow-wrap:break-word; }
+.cg-d-quiet { font-size:max(11px, calc(11px * var(--fit))); letter-spacing:.14em; }
+.cg-d-primary { font-size:max(15px, calc(17px * var(--fit))); }
+.cg-d-title { font-size:max(19px, calc(var(--title) * var(--fit))); }
+.cg-detail[data-dense="1"] { gap:6px; }
+/* Dense facts read as single wrapped lines: "purpose  dentures so she can eat…". */
+.cg-detail[data-dense="1"] .cg-d-facts { display:block; }
+.cg-detail[data-dense="1"] .cg-d-facts > div { margin:0 0 3px; }
+.cg-detail[data-dense="1"] .cg-d-facts dt, .cg-detail[data-dense="1"] .cg-d-facts dd { display:inline; }
+.cg-detail[data-dense="1"] .cg-d-facts dt { margin-right:8px; }
+.cg-detail[data-dense="1"] .cg-d-owner { padding:3px 0; }
+.cg-detail[data-dense="1"] .cg-d-avatar { width:34px; height:34px; }
+.cg-detail[data-dense="1"] .cg-d-meta { letter-spacing:.02em; }
+.cg-detail[data-dense="1"] .cg-d-note { line-height:1.28; }
+.cg-detail[data-dense="1"] .cg-d-actions { gap:0 12px; }
+.cg-detail[data-dense="1"] .cg-d-primary, .cg-detail[data-dense="1"] .cg-d-quiet { min-height:40px; }
+/* The same compact record when opened from a profile or my g. */
+.cg-detail-page { position:relative; height:100%; width:100%; padding:max(56px, calc(env(safe-area-inset-top) + 40px)) 28px max(40px, calc(env(safe-area-inset-bottom) + 24px)); background:var(--world-bg); color:var(--giver-ink); }
+.cg-detail-page .cg-detail { max-width:440px; margin:0 auto; }
+
+/* Posting intake/review: one screen. Scroll only while the keyboard is up. */
+.gv-form { --gv-fit:1; }
+.gv-scroll { overflow-y:visible; }
+.gv-form[data-keyboard="1"] .gv-scroll { overflow-y:auto; }
+.gv-question { font-size:max(24px, calc(30px * var(--gv-fit))); }
+.gv-title { font-size:max(20px, calc(24px * var(--gv-fit))); }
+.gv-sheet { gap:calc(10px * var(--gv-fit)); }
+.gv-field { padding:calc(8px * var(--gv-fit)) 0; }
+.gv-field input,.gv-field textarea,.gv-field select { font-size:max(15px, calc(17px * var(--gv-fit))); line-height:1.3; }
+.gv-field > span:first-child { font-size:max(12px, calc(13px * var(--gv-fit))); }
+.gv-form[data-dense="1"] .gv-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; }
+.gv-form[data-dense="1"] .gv-field { grid-template-columns:minmax(0,1fr); gap:2px; }
+.gv-form[data-dense="1"] .gv-field-wide { grid-column:1 / -1; grid-template-columns:76px minmax(0,1fr); gap:10px; }
+.gv-form[data-dense="1"] .gv-field textarea { resize:none; }
+.gv-form[data-dense="1"] .gv-actions { flex-direction:row; flex-wrap:wrap; align-items:center; margin-block:6px; }
+
+/* A single record flows around a bead resting inside the hollow (lists don't). */
+.cg-flow-a, .cg-flow-b { display:none; }
+[data-cg-bead-flow] .cg-detail { display:block; padding-top:0; padding-bottom:0; }
+[data-cg-bead-flow] .cg-detail > :not(.cg-flow-a):not(.cg-flow-b) { margin:0 0 calc(9px * var(--fit)); }
+[data-cg-bead-flow] .cg-detail .cg-flow-a { display:block; width:0; height:var(--bead-top); }
+[data-cg-bead-flow] .cg-detail .cg-flow-b { display:block; width:var(--bead-w); height:var(--bead-h); }
+[data-cg-bead-flow="left"] .cg-detail .cg-flow-a, [data-cg-bead-flow="left"] .cg-detail .cg-flow-b { float:left; }
+[data-cg-bead-flow="right"] .cg-detail .cg-flow-a, [data-cg-bead-flow="right"] .cg-detail .cg-flow-b { float:right; }
+[data-cg-bead-flow] .cg-detail .cg-flow-b { clear:both; }

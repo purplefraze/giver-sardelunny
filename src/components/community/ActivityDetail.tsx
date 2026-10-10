@@ -21,7 +21,7 @@ import { useMyProfile } from "@/hooks/use-my-profile";
 import { useAdmin } from "@/hooks/use-admin";
 import { useMemberEdits } from "@/hooks/use-member-edits";
 import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
-import { ItemFacts, itemFacts, itemKindWord } from "@/components/profile/ItemFacts";
+import { itemFacts, itemKindWord } from "@/components/profile/ItemFacts";
 import { buzz } from "@/lib/haptics";
 import { OTHER_PERSON_COLOUR, exchangeState } from "@/lib/exchange-colours";
 import { startConnection } from "@/data/cloud/connections-sync";
@@ -96,11 +96,15 @@ export function ActivityDetail({
   useEffect(() => { live.current.alive = true; const ref = live.current; return () => { ref.alive = false; }; }, []);
   /* ONE SCREEN: the in-loop detail reflows (never scrolls) to fit its hollow. */
   const fitBox = useRef<HTMLDivElement | null>(null);
-  const [fit, setFit] = useState(1);
+  /* Reflow levels: gentle type steps with a readable floor (0.88), then a
+     denser arrangement (tighter rows, three-column facts) — never microtype. */
+  const [level, setLevel] = useState(0);
+  const fit = FIT_LEVELS[level] ?? 0.88;
+  const setFit = (v: number) => { if (v === 1) setLevel(0); };
   useLayoutEffect(() => {
     const el = fitBox.current;
     if (!el) return;
-    if (el.scrollHeight > el.clientHeight + 1 && fit > 0.74) setFit(f => Math.max(0.74, Math.round((f - 0.04) * 100) / 100));
+    if (el.scrollHeight > el.clientHeight + 1 && level < FIT_LEVELS.length) setLevel(l => l + 1);
   });
   useEffect(() => {
     const el = fitBox.current;
@@ -182,15 +186,19 @@ export function ActivityDetail({
   const statusWord = status === "completed" ? "completed and verified" : mine ? STATE_WORD[mine.state] : status === "connecting" ? `${others} ${others === 1 ? "person" : "people"} talking · still open` : "open";
   const facts = itemFacts(item);
   const title = itemLine(item);
-  if (embedded) return (
+  /* ONE COMPACT RECORD FOR EVERY ENTRY PATH (community hollow, a profile, my g). */
+  return (
+    <div className={embedded ? "contents" : "cg-detail-page"} data-world="community">
     <div
       ref={fitBox}
       data-world="community"
-      data-community-detail="in-loop"
+      data-community-detail={embedded ? "in-loop" : "standalone"}
       data-cg-fit={fit}
+      data-dense={level >= FIT_LEVELS.length ? "1" : "0"}
       className="cg-detail"
       style={{ color: "var(--giver-ink)", ["--fit" as string]: fit, ["--title" as string]: title.length > 42 ? "21px" : title.length > 24 ? "24px" : "27px" }}
     >
+      <span className="cg-flow-a" aria-hidden="true" /><span className="cg-flow-b" aria-hidden="true" />
       <div className="cg-d-head">
         <button type="button" className="cg-d-back" aria-label="back to the list" onClick={() => { buzz(); onClose(); }}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
@@ -223,202 +231,9 @@ export function ActivityDetail({
       {capOpen ? <CapScreen kind={cap.waiting ? "waiting" : "prompt"} onBack={() => setCapOpen(false)} onGive={() => { setCapOpen(false); onStartGive?.(); }} /> : null}
       {admin && editing ? <AdminItemEditor itemId={item.id} onClose={() => setEditing(false)} /> : null}
     </div>
-  );
-
-  return (
-    <div
-      data-world="community"
-      data-community-detail={embedded ? "in-loop" : "standalone"}
-      className={embedded ? "cg-detail relative flex h-full min-h-0 w-full flex-col overflow-y-auto overscroll-contain" : "g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"}
-      style={{ color: "var(--giver-ink)" }}
-    >
-      <BackArrow onClick={onClose} label="back" sticky />
-      {problem ? <p className="g-body mb-4" style={{ color: fill }}>{problem}</p> : null}
-
-      {/* WHAT THIS IS, SAID EXACTLY: borrowing and lending are not the same. */}
-      <span className="g-heading" style={{ color: fill }}>
-        {itemKindWord(item)}
-      </span>
-      <h1 className="g-display mt-4" style={{ color: fill }}>
-        {itemLine(item)}
-      </h1>
-      {target !== null ? <div className="g-rule mt-5 pt-4">
-        <p className="g-body">{formatCents(fundedTotal(fund, item.id))} pledged · {formatCents(target)} target</p>
-        <p className="g-meta">{item.id.startsWith("seed-") ? "demo cause · demo pledges only · no payments collected" : "pledges only · no payments collected"}</p>
-      </div> : null}
-
-      {/* WHO POSTED IT, RIGHT NEXT TO WHAT IT IS — and they are clickable. */}
-      <p className="g-meta mt-5">
-        {isMine || !owner ? (
-          who
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              buzz();
-              onOpenProfile?.(owner.id);
-            }}
-            className="font-black underline decoration-current/40 underline-offset-4"
-            style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
-          >
-            {owner.username}
-          </button>
-        )}
-        {item.distanceKm === undefined ? "" : ` · ${item.distanceKm} km away`}
-        {" · "}
-        {status === "completed"
-          ? "completed and verified"
-          : mine
-            ? STATE_WORD[mine.state]
-            : status === "connecting"
-              ? `${others} ${others === 1 ? "person" : "people"} already talking — still open`
-              : "open"}
-      </p>
-
-      {/*
-        THE PERSON, NOT JUST THEIR NAME. The item and whoever is behind it are
-        read in the same breath — one door straight through to their whole
-        profile, in the shared profile system everybody else uses.
-      */}
-      {!isMine && owner ? (
-        <button
-          type="button"
-          onClick={() => {
-            buzz();
-            onOpenProfile?.(owner.id);
-          }}
-          className="g-rule mt-6 flex w-full items-center gap-4 pt-5 text-left transition-opacity active:opacity-60"
-        >
-          {owner.photo ? (
-            <img
-              src={owner.photo}
-              alt={owner.username}
-              className="h-14 w-14 shrink-0 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              aria-hidden
-              className="h-14 w-14 shrink-0 rounded-full"
-              style={{ background: "var(--giver-ink)", opacity: 0.08 }}
-            />
-          )}
-          <span className="min-w-0">
-            <span
-              className="g-name block"
-              style={{ color: OTHER_PERSON_COLOUR[exchangeState(item.type)] }}
-            >
-              {owner.username}
-            </span>
-            <span className="g-meta mt-1 block opacity-55">
-              {[owner.age ? `${owner.age}` : null, owner.gender || null, owner.distance || null]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
-            <span className="g-meta mt-1 block opacity-40">see their whole profile</span>
-          </span>
-        </button>
-      ) : null}
-
-
-      {/* THE PHOTOS OF THE REAL THING, from the one shared record. */}
-      {item.photos?.length ? (
-        <div className="mt-6 flex gap-3 overflow-x-auto">
-          {item.photos.map((p, i) => (
-            <img
-              key={i}
-              src={p}
-              alt={`${itemLine(item)} photo ${i + 1}`}
-              className="h-32 w-32 shrink-0 object-cover"
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {/* EVERY STRUCTURED PARAMETER, ORGANISED — never a flat string. */}
-      <ItemFacts item={item} accent={fill} />
-
-      <div className="mt-10 flex flex-col items-start gap-5 pb-4">
-        {status === "completed" ? (
-          <p className="g-display-sm opacity-45">this one already happened.</p>
-        ) : isMine ? (
-          <p className="g-body opacity-55">this one is yours.</p>
-        ) : (
-          <>
-            {/* THE RESPONSE, IN THIS ITEM'S OWN LANGUAGE. */}
-            <button
-              type="button"
-              onClick={open}
-              className={`text-left g-display-sm ${capBlocks ? "gf-faded" : ""}`}
-              style={{ color: fill }}
-            >
-              {mine ? "open the conversation" : target !== null ? "talk about this cause" : actionWord(item)}
-            </button>
-
-            {/* MESSAGING, WITH THE ITEM AS ITS SUBJECT. */}
-            <button
-              type="button"
-              onClick={open}
-              className={`text-left text-[13px] font-black lowercase tracking-[0.26em] ${capBlocks ? "gf-faded" : ""}`}
-              style={{ color: "var(--giver-messages)" }}
-            >
-              {`message ${who}`}
-            </button>
-          </>
-        )}
-
-        {/* SPARKLES HELP SOMEBODY ELSE GET SEEN. Not a completion, not a payment. */}
-        {status !== "completed" && !isMine ? (
-          <button
-            type="button"
-            disabled={sparkles < 1}
-            onClick={() => {
-              buzz();
-              if (!canEngageCommunity(items)) {
-                onNeedGive?.();
-                return;
-              }
-              myProfileStore.useSparkle(item.id);
-            }}
-            className="text-[12px] font-black lowercase tracking-[0.26em] disabled:opacity-25"
-            style={{ color: "var(--giver-sparkles)" }}
-          >
-            {item.boostCount > 0 ? `sparkled ×${item.boostCount}` : "sparkle this"}
-          </button>
-        ) : null}
-
-        {/*
-          THE DEVELOPER DOOR. Present only while the dev switch is on, so the
-          end-user experience never sees it — and it edits the same one record.
-        */}
-        {admin ? (
-          <button
-            type="button"
-            onClick={() => {
-              buzz();
-              setEditing(true);
-            }}
-            className="text-[12px] font-black lowercase tracking-[0.26em]"
-            style={{ color: "var(--giver-me)" }}
-          >
-            edit this activity
-          </button>
-        ) : null}
-      </div>
-
-      {capOpen ? (
-        <CapScreen
-          kind={cap.waiting ? "waiting" : "prompt"}
-          onBack={() => setCapOpen(false)}
-          onGive={() => {
-            setCapOpen(false);
-            onStartGive?.();
-          }}
-        />
-      ) : null}
-      {admin && editing ? (
-        <AdminItemEditor itemId={item.id} onClose={() => setEditing(false)} />
-      ) : null}
     </div>
   );
-
 }
+
+const FIT_LEVELS = [1, 0.94, 0.88];
+

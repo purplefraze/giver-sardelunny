@@ -250,6 +250,7 @@ export function CommunityFeed({
       style={{ background: "var(--world-bg)", ["--cg-ink" as string]: ink }}
     >
       <PerimeterToggle
+        flow={showDetail}
         value={toStation(sel)}
         onChange={(st) => { if (st !== "back") go(fromStation(st)); }}
         onBack={onExit ?? onClose}

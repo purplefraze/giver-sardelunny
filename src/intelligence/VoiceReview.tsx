@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { GIVE_TYPES, type GiveType } from "@/data/give-lexicon";
 import { haptics } from "@/lib/haptics";
@@ -27,6 +27,32 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const [answer, setAnswer] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  /* ONE SCREEN: the intake/review reflows to fit its hollow instead of scrolling.
+     Only while the keyboard covers the screen may the sheet scroll, so the
+     focused field stays reachable. */
+  const sheet = useRef<HTMLDivElement | null>(null);
+  const [level, setLevel] = useState(0);
+  const [keyboard, setKeyboard] = useState(false);
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!vv) return;
+    const on = () => setKeyboard(vv.height < window.innerHeight * 0.78);
+    on(); vv.addEventListener("resize", on);
+    return () => vv.removeEventListener("resize", on);
+  }, []);
+  useLayoutEffect(() => {
+    const el = sheet.current;
+    if (!el || keyboard) return;
+    if (el.scrollHeight > el.clientHeight + 1 && level < 3) setLevel(l => l + 1);
+  });
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let h = el.clientHeight;
+    const ro = new ResizeObserver(() => { if (Math.abs(el.clientHeight - h) > 1) { h = el.clientHeight; setLevel(0); } });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   useEffect(()=>{setAnswer("");},[c.session?.draftId,c.session?.asking,c.session?.prompt]);
   useSyncExternalStore(shareCoordinator.subscribe, shareCoordinator.version, shareCoordinator.version);
   /* One local record per draft: a retry re-confirms it, never re-creates it. */
@@ -61,7 +87,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   }
 
   const field = (key: keyof VoiceFields, label: string, placeholder = "") => (
-    <label className="gv-field">
+    <label className={key === "what" || key === "title" || key === "note" || key === "want" ? "gv-field gv-field-wide" : "gv-field"}>
       <span>{label}</span>
       {key === "what" || key === "title" || key === "note" || key === "want" ? <textarea rows={key === "note" ? 2 : 2} value={String(f[key] ?? "")} placeholder={placeholder} maxLength={key === "note" ? 100 : 60} onChange={e => conversation.edit(key, e.target.value)} /> : <input value={String(f[key] ?? "")} placeholder={placeholder} inputMode={key === "amount" ? "decimal" : undefined} maxLength={80} onChange={e => conversation.edit(key, e.target.value)} />}
     </label>
@@ -96,14 +122,14 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const ask = s.stage === "talk" || s.stage === "anything" ? s.prompt : null;
 
   return (
-    <form className="gv-form" data-voice-review={action} data-listening={listening ? "1" : "0"} onSubmit={(e) => {
+    <form className="gv-form" data-voice-review={action} data-listening={listening ? "1" : "0"} data-keyboard={keyboard ? "1" : "0"} data-dense={level >= 3 ? "1" : "0"} style={{ ["--gv-fit" as string]: [1, 0.94, 0.88, 0.88][level] }} onSubmit={(e) => {
       e.preventDefault();
       /* Only the Share button itself submits — never Enter in a field. */
       const by = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
       if(guided){if(answer.trim()){conversation.answer(answer);setAnswer("");}return;}
       if (by?.dataset["share"] === "1") void share();
     }}>
-      <div className="gv-scroll">
+      <div className="gv-scroll" ref={sheet} data-gv-sheet="">
       <div className="gv-sheet">
       <Button variant="ghost" type="button" className="gv-back sr-only focus:not-sr-only" aria-label="return to the living g (keeps your draft)" onClick={back}>return to the g</Button>
       {guided ? <section className="gv-guided" data-guided-intake="">

@@ -1,8 +1,8 @@
 # Communi-G track repair
 ## Oct 10 21:50 creation keyboard regression
-- [ ] Replace stretched/redrawn form perimeter with uniformly transformed canonical middle-loop artwork; remove extra Fund fragments and duplicate microphone errors; screenshot all six modes hidden/shown keyboard.
-- [ ] Remove creation-entry autofocus and freeze enclosure geometry through keyboard viewport changes.
-- [ ] Keep tapped fields/actions reachable above keyboard; verify all six modes, dismiss and pinch with mocked writes.
+- [x] Replace warped form renderer with uniformly transformed canonical middle-loop artwork; restore mask tokens and one form warning; six-mode hidden/shown screenshots. Enlarged existing joins remain visible; see docs/form-keyboard-geometry-verification-oct10.md.
+- [x] Remove creation-entry autofocus and freeze enclosure geometry through simulated keyboard viewport changes.
+- [x] Verify all six modes at 320×568, tapped answer field, dismissal and simulated inward pinch with writes blocked. Physical iPhone/Safari remains unverified; four opaque startup errors remain unexplained.
 ## Oct 10 21:47 urgent bio correction
 - [x] Remove obsolete bio fields from UI/draft/save; native birthday, strict calendar/18+ validation, no invented date.
 - [x] Verify isolated birthday save/reopen, invalid/underage rejection and small-phone circular fit; preserve earlier profile fixes. Physical iOS picker and signed-in Cloud persistence remain unverified; see docs/profile-birthday-verification-oct10.md.

@@ -560,7 +560,7 @@ function Area({
                 byDay: (d.byDay ?? "").trim(),
                 byNight: (d.byNight ?? "").trim(),
                 weekend: (d.weekend ?? "").trim(),
-                birthday: d.birthday || null,
+                birthday: d.birthday,
               });
               setBioDraft(null);
               buzz(16);

@@ -70,11 +70,11 @@ export function ActivityDetail({
   itemId: string;
   onOpenConnection: (connectionId: string) => void;
   /** The person is always their own destination. */
-  onOpenProfile?: (ownerId: string) => void;
+  onOpenProfile?: ((ownerId: string) => void) | undefined;
   /** communi-g is visible; engaging still needs one active give. */
-  onNeedGive?: () => void;
+  onNeedGive?: (() => void) | undefined;
   /** The three-gives prompt's green circle: start a give. */
-  onStartGive?: () => void;
+  onStartGive?: (() => void) | undefined;
   onClose: () => void;
   embedded?: boolean;
 }) {

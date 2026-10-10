@@ -19,7 +19,6 @@ export const Route = createFileRoute("/dev/communi-g")({
 function LowerReview() {
   const [detail, setDetail] = useState<string | null>(null);
   return <div className="fixed inset-0">
-    <CommunityFeed onOpen={setDetail} onClose={() => history.back()} />
-    {detail ? <div className="absolute inset-0 z-40 bg-background"><ActivityDetail itemId={detail} onClose={() => setDetail(null)} onOpenConnection={() => {}} /></div> : null}
+    <CommunityFeed detailId={detail} onCloseDetail={() => setDetail(null)} onOpen={setDetail} onClose={() => history.back()} />
   </div>;
 }

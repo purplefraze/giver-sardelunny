@@ -13,6 +13,7 @@ import { CalendarDays } from "lucide-react";
 import { pickedAnswerTime } from "./answer-time";
 import { toDateOnly, parseDateOnly } from "@/lib/date-only";
 import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
+import { formKeyboardBounds } from "@/lib/form-keyboard";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -36,10 +37,28 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   useEffect(() => {
     const vv = typeof window !== "undefined" ? window.visualViewport : null;
     if (!vv) return;
-    const on = () => setKeyboard(vv.height < window.innerHeight * 0.78);
-    on(); vv.addEventListener("resize", on);
-    return () => vv.removeEventListener("resize", on);
+    const height = sheet.current?.closest("[data-voice-frame]")?.getBoundingClientRect().height ?? window.innerHeight;
+    const on = () => setKeyboard(formKeyboardBounds(height, vv.height, vv.offsetTop, vv.scale).keyboard);
+    on(); vv.addEventListener("resize", on); vv.addEventListener("scroll", on);
+    return () => { vv.removeEventListener("resize", on); vv.removeEventListener("scroll", on); };
   }, []);
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el) return;
+    const reveal = () => {
+      const active = document.activeElement;
+      if (!keyboard || !(active instanceof HTMLElement) || !el.contains(active)) return;
+      const field = active.getBoundingClientRect();
+      const band = el.getBoundingClientRect();
+      if (field.bottom > band.bottom - 80) el.scrollTop += field.bottom - band.bottom + 80;
+      else if (field.top < band.top + 12) el.scrollTop -= band.top + 12 - field.top;
+    };
+    if (!keyboard) el.scrollTop = 0;
+    const raf = requestAnimationFrame(reveal);
+    el.addEventListener("focusin", reveal);
+    window.visualViewport?.addEventListener("resize", reveal);
+    return () => { cancelAnimationFrame(raf); el.removeEventListener("focusin", reveal); window.visualViewport?.removeEventListener("resize", reveal); };
+  }, [keyboard]);
   useLayoutEffect(() => {
     const el = sheet.current;
     if (!el || keyboard) return;

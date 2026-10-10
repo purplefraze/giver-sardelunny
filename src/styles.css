@@ -2182,3 +2182,15 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .gv-field textarea { min-height:0; }
 .gv-form[data-dense="1"] .gv-field { padding-block:5px; }
 .gv-form[data-dense="1"] .gv-title { margin-bottom:2px; }
+
+/* Keyboard changes content only; the captured G box/contour stays fixed. */
+.gv-morph-frame[data-keyboard="1"] .gv-review-content {
+  top:max(30px, calc(var(--gv-keyboard-top, 0px) + 12px));
+  bottom:calc(var(--gv-keyboard-bottom, 0px) + 12px);
+}
+.gv-morph-frame[data-keyboard="1"] .gv-scroll { overflow-y:auto; }
+.gv-morph-frame[data-keyboard="1"] .gv-actions,
+.gv-morph-frame[data-keyboard="1"] .gv-answer-actions {
+  position:sticky; bottom:0; background:var(--world-bg); z-index:1;
+}
+.gv-field input,.gv-field textarea,.gv-field select { font-size:max(16px, calc(17px * var(--gv-fit))); }

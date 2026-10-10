@@ -4,6 +4,7 @@ import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX, G_ANCHORS, LIVING_
 import { haptics } from "@/lib/haptics";
 import { formOutline, movingEar, type OutlinePose } from "./form-outline";
 import { SEAT_ANGLE, type Seat } from "./EarSelector";
+import { formKeyboardBounds } from "@/lib/form-keyboard";
 
 /**
  * GOING INSIDE A LIVING G.
@@ -181,6 +182,10 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
   };
   useEffect(() => {
     const el=frame.current; if(!el)return;
+    // Entry never carries an old text focus into the newly opened form.
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active.matches("input,textarea,[contenteditable=true]")) active.blur();
+    el.focus({ preventScroll: true });
     // This is the actual live main artwork's screen transform, not GStage's
     // guessed pose or the path's baked Give ear. It remains mounted below us.
     const main=el.closest("main");
@@ -189,25 +194,38 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     const box=el.getBoundingClientRect();
     const pose:OutlinePose=matrix ? {x:matrix.e-box.left,y:matrix.f-box.top,scale:matrix.a} : {x:0,y:0,scale:1};
     setGeometry({pose,width:box.width,height:box.height});
+    // Freeze the layout box as well as the contour: Safari's keyboard can
+    // resize dvh without resizing the layout viewport.
+    el.style.width = `${box.width}px`;
+    el.style.height = `${box.height}px`;
     document.documentElement.dataset["giverForm"]="1";
     animate(1,760);
-    const observer=new ResizeObserver(()=>{
-      const b=el.getBoundingClientRect();
-      setGeometry(g=>g?{...g,width:b.width,height:b.height}:g);
-    }); observer.observe(el);
-    return ()=>{cancelAnimationFrame(raf.current);observer.disconnect();delete document.documentElement.dataset["giverForm"];};
+    const viewport = window.visualViewport;
+    const update = () => {
+      const bounds = formKeyboardBounds(box.height, viewport?.height ?? window.innerHeight, viewport?.offsetTop ?? 0, viewport?.scale ?? 1);
+      el.dataset["keyboard"] = bounds.keyboard ? "1" : "0";
+      el.style.setProperty("--gv-keyboard-top", `${bounds.top}px`);
+      el.style.setProperty("--gv-keyboard-bottom", `${bounds.bottom}px`);
+    };
+    update();
+    viewport?.addEventListener("resize", update);
+    viewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return ()=>{cancelAnimationFrame(raf.current);viewport?.removeEventListener("resize",update);viewport?.removeEventListener("scroll",update);window.removeEventListener("resize",update);delete document.documentElement.dataset["giverForm"];};
     // Only mounting enters; mode edits do not restart the opening animation.
   }, []);
   useEffect(()=>{
     const el=frame.current;if(!el)return;
     let active=false,startDist=0,zoom=false;
     const distance=(e:TouchEvent)=>{const a=e.touches[0],b=e.touches[1];return a&&b?Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY):0;};
-    const returnToG=()=>{startRef.current?.();animate(0,360*progress.current);};
+    const dismissKeyboard=()=>{const active=document.activeElement;if(active instanceof HTMLElement&&el.contains(active))active.blur();};
+    const returnToG=()=>{dismissKeyboard();startRef.current?.();animate(0,360*progress.current);};
     const start=(e:TouchEvent)=>{
       if(e.touches.length!==2||active||!readyRef.current)return;
       if((e.target as Element)?.closest("input,textarea,select,button"))return;
       startDist=distance(e);if(startDist<30)return;
       active=true;zoom=false;
+      dismissKeyboard();
     };
     const move=(e:TouchEvent)=>{
       if(!active||e.touches.length!==2)return;
@@ -226,7 +244,7 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     return()=>{el.removeEventListener("touchstart",start);el.removeEventListener("touchmove",move);el.removeEventListener("touchend",end);el.removeEventListener("touchcancel",cancel);el.removeEventListener("giver:fold",request);window.removeEventListener("keydown",key);};
   },[]);
   const angle=SEAT_ANGLE[seat as Seat] ?? SEAT_ANGLE.give;
-  return <div ref={frame} className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready?"1":"0"} data-fold={(1-t).toFixed(3)}>
+  return <div ref={frame} tabIndex={-1} className="gv-frame gv-morph-frame outline-none" data-seat={seat} data-voice-frame="" data-unfold-ready={ready?"1":"0"} data-fold={(1-t).toFixed(3)}>
     {geometry ? <svg className="gv-outline" width={geometry.width} height={geometry.height} viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true" data-g-unpretzel="">
       <path d={formOutline(t,geometry.pose,geometry.width,geometry.height)} fill="var(--world-g)" fillRule="evenodd" />
       <path d={movingEar(t,geometry.pose,geometry.width,geometry.height,angle)} fill="var(--world-g)" fillRule="evenodd" />

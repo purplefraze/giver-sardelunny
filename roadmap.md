@@ -1,5 +1,6 @@
 # Communi-G track repair
 ## Oct 10 22:19 onboarding keyboard regression
+- [ ] Follow-up 22:21: compare sign-in edit history, identify culprit changes and restore prior behavior selectively without undoing intentional features.
 - [ ] Remove sign-in keyboard scaling and email wrapping; retain canonical artwork and background composition.
 - [ ] Verify focus, varying lengths, autofill-style input, viewport contraction/panning and dismissal on phone bounds; regress other creation forms with mocked writes.
 - [ ] Physical iPhone Safari keyboard/autofill verification requires an actual device; desktop simulation is not proof.

@@ -168,6 +168,8 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
   const [t, setT] = useState(0);
   const [ready, setReady] = useState(false);
   const [fit, setFit] = useState<Fit | null>(null);
+  const readyRef = useRef(false);
+  readyRef.current = ready;
   const foldRef = useRef(onFold);
   foldRef.current = onFold;
   const startRef = useRef(onFoldStart);
@@ -199,7 +201,9 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
       const step = (now: number) => { if (dead) return; const k = Math.min(1, (now - start) / 900); const e = k * k * (3 - 2 * k); setT(e); if (k < 1) raf = requestAnimationFrame(step); else setReady(true); };
       raf = requestAnimationFrame(step);
     }); });
-    const resize = () => { setFit(null); };
+    /* A rotation/resize after settling re-measures at the next pinch;
+       mid-unfold resizes simply keep the running fit (no jump). */
+    const resize = () => { if (readyRef.current) setFit(null); };
     window.addEventListener("resize", resize);
     return () => { dead = true; cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);

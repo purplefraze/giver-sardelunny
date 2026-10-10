@@ -1,4 +1,7 @@
 # Communi-G track repair
+## Oct 10 21:47 urgent bio correction
+- [x] Remove obsolete bio fields from UI/draft/save; native birthday, strict calendar/18+ validation, no invented date.
+- [x] Verify isolated birthday save/reopen, invalid/underage rejection and small-phone circular fit; preserve earlier profile fixes. Physical iOS picker and signed-in Cloud persistence remain unverified; see docs/profile-birthday-verification-oct10.md.
 ## Oct 10 21:41 focused My G repair
 - [x] Repair only profile camera/drag, viewport-safe neighboring labels and circular Photo presentation using existing communi-g helpers.
 - [x] Verify all eight profile seats, narrow-phone photo and navigation without cloud mutations; see docs/profile-loop-verification-oct10.md for component checks and device/main-entry limits.

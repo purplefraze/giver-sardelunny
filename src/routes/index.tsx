@@ -942,6 +942,7 @@ function Index() {
                 label: "",
                 panelTitle: content.mine.title,
                 panelBody: null,
+                ariaLabel: atMap ? "open the communi-g map" : activity === null ? "open my g" : `open the ${seat} form`,
                 onPress: enterSelectedWorld,
                 /* The label is drawn by <LoopLabels> in the overlay. */
               },

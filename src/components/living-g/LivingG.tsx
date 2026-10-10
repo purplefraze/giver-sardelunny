@@ -39,6 +39,8 @@ export type Anchor = { x: number; y: number };
 
 export type GRegion = {
   label?: string;
+  /** Spoken name for keyboard/screen readers when the visible label is drawn elsewhere. */
+  ariaLabel?: string;
   onPress?: () => void;
   /** Extra SVG content drawn at the region's ring centre (photo, sparks…). */
   render?: ((anchor: Anchor) => React.ReactNode) | undefined;
@@ -421,7 +423,7 @@ export function LivingG({
             stroke="none"
             role="button"
             tabIndex={0}
-            aria-label={region.label || (region.panelTitle ? `${key} loop: ${region.panelTitle}` : key)}
+            aria-label={region.label || region.ariaLabel || key}
             className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
             style={{ cursor: "pointer", outline: "none" }}
 

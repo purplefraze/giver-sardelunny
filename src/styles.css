@@ -1796,10 +1796,6 @@
   overflow: hidden;
   min-height: 280px;
 }
-/* PALE TILES: the pins and the red frame carry the colour, not the map. */
-.cg-map .leaflet-tile-pane {
-  filter: grayscale(1) brightness(1.12) contrast(0.72);
-}
 .cg-map {
   background: #f4f3f1;
 }
@@ -2022,7 +2018,16 @@
 [data-cg-stage] [data-cg-ring] { transition:none; }
 .cg-listing-line { color:var(--foreground); overflow-wrap:anywhere; }
 [data-cg-description] { color:var(--foreground); }
-[data-cg-interior-page] .cg-map-wrap { flex:none; height:240px; min-height:240px; width:100%; border-radius:0; }
+/* WHOLE-LOOP MAP: fills the stage, clipped to the lower hollow. */
+[data-cg-backdrop] .cg-map-wrap { position:absolute; inset:0; margin:0; border-radius:0; min-height:0; }
+.cg-map-attribution { position:absolute; left:50%; bottom:22%; transform:translateX(-50%); z-index:500; font:450 10px var(--giver-font); color:var(--foreground); background:var(--background); padding:1px 6px; border-radius:999px; opacity:.85; }
+/* Over the map, the page lets the map pan; only its controls take touches. */
+[data-cg-interior] > div:has(> [data-cg-view="map"]) { pointer-events:none; }
+[data-cg-interior-page][data-cg-view="map"] { pointer-events:none; }
+[data-cg-interior-page][data-cg-view="map"] > *, [data-cg-interior-page][data-cg-view="map"] [data-cg-results] > * { pointer-events:auto; }
+[data-cg-interior-page][data-cg-view="map"] [data-cg-results] { pointer-events:none; }
+[data-cg-interior-page][data-cg-view="map"] .cg-filters, [data-cg-interior-page][data-cg-view="map"] .cg-tools, .cg-map-note, [data-cg-interior-page][data-cg-view="map"] .cg-list { background:var(--background); border-radius:14px; padding-left:8px; padding-right:8px; }
+.cg-map-note { display:flex; align-items:center; gap:8px; justify-content:center; }
 [data-cg-view="map"] [data-cg-results] { overflow-y:auto; justify-content:flex-start; }
 [data-cg-view="map"] .cg-list { flex:none; max-height:none; overflow:visible; }
 

@@ -35,7 +35,7 @@ export function CommunigyMap({
 }: {
   pins: MapPin[];
   centre: Pin | null;
-  radiusKm: number;
+  radiusKm: number | null;
   onOpen: (itemId: string) => void;
 }) {
   const box = useRef<HTMLDivElement | null>(null);
@@ -58,11 +58,10 @@ export function CommunigyMap({
       const m = lib
         .map(box.current, { zoomControl: false, attributionControl: false, zoomAnimation:false, fadeAnimation:false, markerZoomAnimation:false })
         .setView(centre ? [centre.lat, centre.lng] : [0, 0], centre ? 13 : 1);
-      lib.control.attribution({ position: "bottomright", prefix: false }).addTo(m);
       lib
         .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
-          attribution: "© openstreetmap contributors",
+          attribution: "",
         })
         .on("tileerror", () => setTileProblem(true))
         .addTo(m);
@@ -88,12 +87,13 @@ export function CommunigyMap({
     ring.current?.remove();
     me.current?.remove();
     if (!centre) return;
+    if (radiusKm === null) { m.setView([centre.lat, centre.lng], 12); }
     /* Leaflet writes SVG presentation attributes, which cannot read var():
        resolve the red token to its value first. */
     const red =
       getComputedStyle(document.documentElement).getPropertyValue("--mode-communigy").trim() ||
       getComputedStyle(document.documentElement).getPropertyValue("--mode-map").trim();
-    ring.current = lib
+    if (radiusKm !== null) ring.current = lib
       .circle([centre.lat, centre.lng], {
         radius: radiusKm * 1000,
         color: red,
@@ -114,7 +114,7 @@ export function CommunigyMap({
         interactive: false,
       })
       .addTo(m);
-    m.fitBounds(ring.current.getBounds(), { padding: [18, 18] });
+    if (radiusKm !== null && ring.current) m.fitBounds(ring.current.getBounds(), { padding: [18, 18] });
   }, [ready, centre?.lat, centre?.lng, radiusKm]);
 
   /* One pin per listing, in its mode colour. */
@@ -143,8 +143,9 @@ export function CommunigyMap({
   }, [ready, pins, centre]);
 
   return (
-    <div className="cg-map-wrap relative min-h-0 flex-1" data-testid="communigy-map">
+    <div className="cg-map-wrap" data-testid="communigy-map">
       <div ref={box} className="cg-map absolute inset-0" aria-label="map of nearby listings" />
+      <a className="cg-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
       {tileProblem ? <p className="absolute top-2 left-2 right-2 z-[500] bg-background p-2 g-meta">map tiles unavailable · listing pins still work</p> : null}
       {picked ? (
         <div className="cg-map-card">

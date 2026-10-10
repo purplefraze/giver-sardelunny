@@ -22,7 +22,7 @@
 - The lower loop shares one selection through community-filter, toggle, filters and feed; its lower-only stations module owns bounded unwrapped travel and token lookup so map entry cannot wrap across the opening or inherit upper-seat colours.
 - ListingLine renders explicit schema-derived prefixes with neutral descriptions in feed/map results; this keeps Fund and lending unambiguous without colouring entire titles.
 - Revise only the unedited Fund fixture through the pure fund-fixture helper; this heals cached demo titles without converting real or deliberately edited records.
-- The requested S-curve return requires an approved measured connected centreline and attachment normals; retain the explicit accessible return until those exist rather than fabricate a hidden connector.
+- Lower progress past 12 rides a fitted C1 S connector (`sCurve` in perimeter-geometry.ts) to an outside horizontal "back" seat that only a settled tap leaves; the map exists only at the lower 12 seat; this keeps one toggle and no detached Back button.
 - Profile birthday, gender, answers and sparks are owner-only by column grants; the owner reads its full row via `my_profile()` and the directory selects public columns only — UI privacy alone can be bypassed.
 - My G zooms into the actual toggle circle at 12 (bead on the ring's track, middle-loop curve kept in view, area content in the middle loop's hollow); this keeps origin and continuity instead of a detached profile page.
 - Expanded profile/community use the shared seat-placement table; the full Living G voice prompt/controls are always centred in the actual middle hollow, keeping dialogue readable independent of the selector.

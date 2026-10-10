@@ -31,7 +31,7 @@ type Scope = "everyone" | "mine";
 type View = "list" | "map";
 
 const toStation = (s: CgSelection): CgStation => (s === "mine" ? "map" : s);
-const fromStation = (s: CgStation): CgSelection => s;
+const fromStation = (s: CgStation): CgSelection => (s === "back" ? "map" : s);
 
 /** Pure: what the feed lists for one selection. Only active, published posts. */
 export function feedFor(items: Item[], sel: CgSelection, term = "", keep?: string): Item[] {
@@ -80,7 +80,11 @@ export function CommunityFeed({
   const listening = voice.state === "listening";
   const ink = sel === "map" ? "var(--mode-giver)" : CG_INK[sel === "mine" ? "everything" : sel];
   const location = useMyLocation();
-  const [view, setView] = useState<View>(initialView);
+  /* The map exists ONLY at the lower loop's 12 o'clock seat; every other
+     seat is a list. No independent view state can carry a map elsewhere. */
+  void initialView;
+  const view: View = sel === "map" ? "map" : "list";
+  const [mapList, setMapList] = useState(false);
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
   const [radius, setRadius] = useState<number | null>(null);
   const [manual, setManual] = useState<Pin | null>(null);
@@ -96,6 +100,33 @@ export function CommunityFeed({
   useEffect(() => () => { voiceCapture.cancel(); }, []);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => { const el = root.current; if (!el) return; const leave = () => (onExit ?? onClose)(); el.addEventListener("giver:community-return", leave); return () => el.removeEventListener("giver:community-return", leave); }, [onExit, onClose]);
+  /* PINCH TO RETURN: two fingers inward, both OUTSIDE the map (map pinch stays
+     map zoom), contracts the expanded world; past ~45% it returns to the whole
+     G, otherwise it springs back. Recording stops as the pinch begins. */
+  const exitRef = useRef(onExit ?? onClose);
+  exitRef.current = onExit ?? onClose;
+  useEffect(() => {
+    const el = root.current; if (!el) return;
+    let d0 = 0, p = 0, active = false, raf = 0;
+    const onMap = (t: Touch) => !!(t.target as Element | null)?.closest?.(".leaflet-container");
+    const dist = (e: TouchEvent) => Math.hypot(e.touches[0]!.clientX - e.touches[1]!.clientX, e.touches[0]!.clientY - e.touches[1]!.clientY);
+    const paint = (k: number) => { el.style.transform = k ? `scale(${1 - 0.55 * k})` : ""; el.style.opacity = k ? String(1 - 0.6 * k) : ""; el.dataset["cgPinch"] = k.toFixed(2); };
+    const start = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || active || onMap(e.touches[0]!) || onMap(e.touches[1]!)) return;
+      active = true; d0 = dist(e) || 1; p = 0; cancelAnimationFrame(raf);
+      voiceCapture.cancel(); setRecord(false);
+    };
+    const move = (e: TouchEvent) => { if (!active || e.touches.length < 2) return; e.preventDefault(); p = Math.max(0, Math.min(1, (d0 - dist(e)) / (d0 * .55))); paint(p); };
+    const end = (e: TouchEvent) => {
+      if (!active || e.touches.length >= 2) return; active = false;
+      const to = p > .45 ? 1 : 0, from = p, t0 = performance.now(), reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches, ms = reduced ? 0 : 240;
+      const step = (now: number) => { const k = ms ? Math.min(1, (now - t0) / ms) : 1; p = from + (to - from) * (1 - (1 - k) ** 3); paint(p); if (k < 1) raf = requestAnimationFrame(step); else if (to === 1) exitRef.current(); else paint(0); };
+      raf = requestAnimationFrame(step);
+    };
+    el.addEventListener("touchstart", start, { passive: true }); el.addEventListener("touchmove", move, { passive: false });
+    el.addEventListener("touchend", end); el.addEventListener("touchcancel", end);
+    return () => { cancelAnimationFrame(raf); el.removeEventListener("touchstart", start); el.removeEventListener("touchmove", move); el.removeEventListener("touchend", end); el.removeEventListener("touchcancel", end); };
+  }, []);
   const allowLocation = async () => { const result = await askLocation(); if (!result.ok) setLocationProblem(result.reason === "denied" ? "location isn't allowed. choose a map centre below." : "location isn't available. choose a map centre below."); else setLocationProblem(""); };
 
 
@@ -139,7 +170,6 @@ export function CommunityFeed({
   const choose = (v: CgSelection) => {
     haptics.selection();
     setSel(v);
-    if (v === "map") setView("map");
   };
   /* Seat-dependent placement: content sits away from the inside toggle. */
   const place = seatPlacement(CG_CLOCK[sel] ?? 180);
@@ -157,7 +187,9 @@ export function CommunityFeed({
       <p className="cg-context">{"communi-g"}</p>
       <PerimeterToggle
         value={toStation(sel)}
-        onChange={(st) => { setSel(fromStation(st)); if (st === "map") setView("map"); }}
+        onChange={(st) => { if (st !== "back") setSel(fromStation(st)); }}
+        onBack={onExit ?? onClose}
+        backdrop={view === "map" ? <Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={onOpen} /></Suspense> : undefined}
         record={record}
         listening={listening}
         onHold={() => {
@@ -180,7 +212,6 @@ export function CommunityFeed({
           </div>
           <div className="cg-tools">
             <select aria-label="sort listings" value={sort} onChange={e => setSort(e.target.value as typeof sort)}><option value="latest">Latest</option><option value="oldest">Oldest</option><option value="nearest">Nearest</option></select>
-            <select aria-label="list or map" value={view} onChange={e => setView(e.target.value as View)}><option value="list">List</option><option value="map">Map</option></select>
             <select aria-label="nearby radius" value={radius ?? "all"} onChange={e => setRadius(e.target.value === "all" ? null : Number(e.target.value))}><option value="all">Any distance</option>{[2,5,10,25].map(km => <option key={km} value={km}>{km} km</option>)}</select>
             <Button variant="ghost" className="cg-filter" onClick={() => void allowLocation()}>near me</Button>
           </div>
@@ -222,7 +253,7 @@ export function CommunityFeed({
             </Button>
           ) : null}
           <div className="flex min-h-0 flex-1 flex-col" data-cg-results="" style={{justifyContent: view === "map" ? "flex-start" : sel === "wish" || sel === "give" || sel === "mine" ? "flex-start" : place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center"}}>
-          {view === "map" ? <Suspense fallback={<p className="g-body">opening map</p>}><CommunigyMap pins={pins} centre={centre} radiusKm={radius ?? 10} onOpen={onOpen} />{!pins.length ? <p className="g-meta">no matching listings with a shared approximate location.</p> : null}</Suspense> : null}<ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
+          {view === "map" ? <div className="cg-map-note"><span className="g-meta">{pins.length ? `${pins.length} on the map` : "no matching listings with a shared approximate location."}</span> <Button variant="ghost" type="button" className="cg-filter" aria-expanded={mapList} onClick={() => setMapList(v => !v)}>{mapList ? "hide list" : "show list"}</Button></div> : null}{view === "map" && !mapList ? null : <ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li
                 key={i.id}
@@ -245,7 +276,7 @@ export function CommunityFeed({
               </li>
             ) : null}
             {sel === "wish" ? <li className="pt-4"><WishMatch onOpen={onOpen} /></li> : null}
-          </ul>
+          </ul>}
           </div>
         </div>
       </PerimeterToggle>

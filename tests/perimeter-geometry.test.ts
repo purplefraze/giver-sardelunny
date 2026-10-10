@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { crossings, frameOf, inputAngle, scaleOf, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "../src/components/community/perimeter-geometry";
 
+/* Positive progress now rides the S connector past twelve; the lower wire's
+   periodic ellipse is exercised on its own (non-positive) domain. */
+const lower = (a: number) => (a > 0 ? a - 360 * Math.ceil(a / 360) : a);
 describe("Communi-G single-angle geometry", () => {
   test("Bentley lens expands and contracts only with progress, continuously across the seam", () => {
     expect(scaleOf(0)).toBeCloseTo(1.45, 8);
@@ -10,7 +13,7 @@ describe("Communi-G single-angle geometry", () => {
       expect(scaleOf(a)).toBeGreaterThanOrEqual(1.45);
       expect(scaleOf(a)).toBeLessThanOrEqual(1.85);
       expect(scaleOf(a + 360)).toBeCloseTo(scaleOf(a), 8);
-      expect(frameOf(390, 844, a).scale).toBe(scaleOf(a));
+      expect(frameOf(390, 844, lower(a)).scale).toBeCloseTo(scaleOf(a), 8);
       expect(Math.abs(scaleOf(a + .01) - scaleOf(a))).toBeLessThan(.0001);
     }
     expect(scaleOf(-.001)).toBeCloseTo(scaleOf(.001), 10);
@@ -19,7 +22,7 @@ describe("Communi-G single-angle geometry", () => {
     for (const h of [844, 932]) {
       const centre = { x: 195, y: h / 2 }, radii = { x: 141, y: h / 2 - 54 };
       for (let a = 0; a < 360; a += 5) {
-        const bead = frameOf(390, h, a).bead, next = frameOf(390, h, a + 5).bead;
+        const bead = frameOf(390, h, lower(a)).bead, next = frameOf(390, h, lower(a + 5)).bead;
         const raw = inputAngle(bead, centre, radii), after = inputAngle(next, centre, radii);
         if (raw === null || after === null) throw new Error("accessible grip must have input angle");
         expect(signedTurn(raw, after)).toBeCloseTo(5, 8);
@@ -54,7 +57,7 @@ describe("Communi-G single-angle geometry", () => {
   });
   test("all eight stations and intermediate points keep the full grip accessible", () => {
     for (const h of [844, 932]) for (let a = -720; a <= 720; a += 2.5) {
-      const f = frameOf(390, h, a);
+      const f = frameOf(390, h, lower(a));
       expect(f.bead.x - 44).toBeGreaterThanOrEqual(0);
       expect(f.bead.x + 44).toBeLessThanOrEqual(390);
       expect(f.bead.y - 44).toBeGreaterThanOrEqual(0);
@@ -64,11 +67,11 @@ describe("Communi-G single-angle geometry", () => {
   test("paint and square arm contact share the same smooth curve", () => {
     expect(TRACK_WIDTH).toBe(17);
     for (let angle = 0; angle < 360; angle += 3) {
-      const pose = trackPose(angle), frame = frameOf(390, 844, angle);
+      const pose = trackPose(angle), frame = frameOf(390, 844, lower(angle));
       const painted = { x: pose.point.x * frame.scale + frame.x, y: pose.point.y * frame.scale + frame.y };
       expect(Math.hypot(frame.root.x - painted.x, frame.root.y - painted.y)).toBeCloseTo(7.9, 6);
       expect(Math.hypot(pose.normal.x, pose.normal.y)).toBeCloseTo(1, 8);
-      const next = frameOf(390, 844, angle + .01);
+      const next = frameOf(390, 844, lower(angle + .01));
       expect(Math.hypot(next.x - frame.x, next.y - frame.y)).toBeLessThan(1);
     }
     expect(trackPose(0).point.x).toBeCloseTo(trackPose(360).point.x, 8);

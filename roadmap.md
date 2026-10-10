@@ -60,3 +60,7 @@
 - [x] Typed titles infer context/category in all modes incl. Trade; re-infer on title change
 - [x] Morph: no blob, pinch reverses same movement
 - [ ] Whole lower loop = full-colour map; ambient outside-radius activity backdrop with tap/magnifier (Frazer Oct 10 17:36)
+- [x] Map only at lower 12; categories are lists
+- [x] Rounded gap terminations + arm continuation
+- [x] Toggle continues from 12 along S to outside horizontal back (tap returns)
+- [x] Inward pinch returns from expanded community

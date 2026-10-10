@@ -44,12 +44,12 @@ export type VoiceSession = {
 };
 
 export const NOUN: Record<GiverAction, string> = {
-  give: "Give",
-  wish: "Wish",
-  trade: "Trade",
-  borrow: "Borrow",
-  lend: "Lend",
-  fund: "Fund",
+  give: "give",
+  wish: "wish",
+  trade: "trade",
+  borrow: "borrow",
+  lend: "lend",
+  fund: "fund",
 };
 
 export const OPENING = "what would you like to share, or ask for?";

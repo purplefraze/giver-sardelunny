@@ -11,6 +11,8 @@ const LABELED = LOWER_STATIONS;
 const DETENTS = Array.from({ length: 29 }, (_, i) => ({ angle: -i * 11.25, value: i }));
 const nearest = nearestLower;
 const ink = (s: CgStation) => `var(${lowerToken(s)})`;
+/** Height of the centred category + communi-g lockup (two short lines). */
+const HEADER_H = 50;
 type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; down: Point; moved: boolean; target: HTMLButtonElement };
 
 /** ONE angle → one paint. Only release owns an animation; no camera timer.
@@ -18,7 +20,9 @@ type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; do
 /** Tap = onTap (never exits) · stationary hold = onHold (record mode toggle). */
 /** backdrop = content clipped to the loop's hollow (the map at 12).
  * onBack = a deliberate tap on the toggle once SETTLED at the outside "back". */
-export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record = false, listening = false, backdrop, children }: { value: CgStation; onChange: (next: CgStation) => void; onTap?: () => void; onHold?: () => void; onBack?: () => void; record?: boolean; listening?: boolean; backdrop?: ReactNode; children?: ReactNode }) {
+/** header = the centred communi-g lockup at the top of the hollow (one line each).
+ * backdropHidden keeps the map mounted (centre/zoom kept) while a detail shows. */
+export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record = false, listening = false, backdrop, backdropHidden = false, header, children }: { value: CgStation; onChange: (next: CgStation) => void; onTap?: () => void; onHold?: () => void; onBack?: () => void; record?: boolean; listening?: boolean; backdrop?: ReactNode; backdropHidden?: boolean; header?: ReactNode; children?: ReactNode }) {
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 390, h: 844 });
   const [angle, setAngle] = useState(() => clockOf(value));
@@ -105,10 +109,17 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   const a = Math.min(0, angle) * Math.PI / 180;
   const left = 16 + Math.max(0, -Math.sin(a)) * 98, right = 16 + Math.max(0, Math.sin(a)) * 98;
   const top = 16 + Math.max(0, Math.cos(a)) * (shown === "map" || shown === "back" ? 118 : shown === "wish" || shown === "give" ? 180 : 290), bottom = shown === "map" || shown === "back" ? 118 : 16 + Math.max(0, -Math.cos(a)) * 98;
+  /* The lockup is centred on the stage and never sits under the bead: when the
+     bead rides the upper band it drops just below the bead's ring. */
+  const headTop = header && frame.bead.y < size.h * 0.45 && Math.abs(frame.bead.x - size.w / 2) < 150 ? Math.max(top, frame.bead.y + 46) : top;
+  /* THE BEAD'S OWN CLEARANCE at the shown seat's rest pose (changes only at a
+     station change, never mid-drag): if the bead still reaches into the
+     interior, step that one side out — whichever keeps more usable area. */
+  const inner = beadClear(size, frameOf(size.w, size.h, clockOf(shown)).bead, { l: left, r: right, t: header ? headTop + HEADER_H : top, b: bottom });
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     {backdrop ? <>
       <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={TRACK_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
-      <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)" }} data-cg-backdrop="">{backdrop}</div>
+      <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)", ...(backdropHidden ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={backdropHidden || undefined} data-cg-backdrop="">{backdrop}</div>
     </> : null}
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">
@@ -117,7 +128,8 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
       </g>
       <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={10} strokeLinecap="round" data-cg-stem-arm="" />
     </svg>
-    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left, right, top, bottom }} data-cg-interior=""><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
+    {header ? <div className="pointer-events-none absolute z-[6] flex justify-center" style={{ left: Math.max(left, right), right: Math.max(left, right), top: headTop, height: HEADER_H }} data-cg-header="">{header}</div> : null}
+    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left: inner.l, right: inner.r, top: inner.t, bottom: inner.b }} data-cg-interior=""><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
     <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={shown === "back" ? "back — tap to return to the living g" : record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={clockOf("back")} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
@@ -163,4 +175,14 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
       </svg>
     </Button>
   </div>;
+}
+
+/** Pure: interior insets that keep a 50px-radius bead out of the content box. */
+export function beadClear(size: { w: number; h: number }, bead: Point, box: { l: number; r: number; t: number; b: number }, R = 50) {
+  const hits = (q: typeof box) => bead.x + R > q.l && bead.x - R < size.w - q.r && bead.y + R > q.t && bead.y - R < size.h - q.b;
+  if (!hits(box)) return box;
+  const side = bead.x < size.w / 2 ? { ...box, l: Math.max(box.l, bead.x + R) } : { ...box, r: Math.max(box.r, size.w - (bead.x - R)) };
+  const vert = bead.y > size.h / 2 ? { ...box, b: Math.max(box.b, size.h - (bead.y - R)) } : { ...box, t: Math.max(box.t, bead.y + R) };
+  const area = (q: typeof box) => Math.max(0, size.w - q.l - q.r) * Math.max(0, size.h - q.t - q.b);
+  return area(side) >= area(vert) ? side : vert;
 }

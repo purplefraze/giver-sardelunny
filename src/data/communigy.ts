@@ -127,14 +127,31 @@ export function kmBetween(a: Pin, b: Pin): number {
 }
 
 const placed = (id: string, km: number | undefined): Pin => {
-  const dist = km ?? 0.4 + hash(`${id}:km`) * 2.4;
+  const dist = (km ?? 0.4 + hash(`${id}:km`) * 2.4) * (0.55 + hash(`${id}:spread`) * 0.9);
   return destination(CITY_CENTRE, Math.max(0.15, dist), hash(id) * 360);
 };
 
+/** The honest name of the place the sample pins are drawn around. */
+export const DEMO_REGION = "sample pins, demo area";
+export const isDemoListing = (item: Pick<Item, "id">) => item.id.startsWith("seed-");
+
+/**
+ * WHERE A LISTING SITS ON THE MAP. A real listing only ever uses the coarse
+ * pin its author explicitly shared on this device; without one it has no pin
+ * (it stays in lists). ONLY unedited sample (seed-*) records get an explicitly
+ * marked, deterministic sample position around the demo area.
+ */
+export function listingPin(item: Pick<Item, "id" | "distanceKm" | "edited">, saved: (id: string) => Pin | null = pinFor): Pin | null {
+  const own = saved(item.id);
+  if (own) return own;
+  if (!isDemoListing(item) || item.edited) return null;
+  return placed(item.id, item.distanceKm);
+}
+
 export function mapPins(items: Item[], mode: CgMode, itemText: (item: Item) => string): MapPin[] {
   return items.filter(i=>inMode(i,mode)).flatMap(item=> {
-    const pin=pinFor(item.id);
-    return pin ? [{id:item.id,mode:itemMode(item),pin,text:itemText(item),itemId:item.id,sample:item.id.startsWith("seed-"),exact:false}] : [];
+    const pin=listingPin(item);
+    return pin ? [{id:item.id,mode:itemMode(item),pin,text:itemText(item),itemId:item.id,sample:isDemoListing(item),exact:false}] : [];
   });
 }
 

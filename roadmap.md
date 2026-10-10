@@ -1,8 +1,8 @@
 # Communi-G track repair
 ## Oct 10 22:19 onboarding keyboard regression
-- [ ] Follow-up 22:21: compare sign-in edit history, identify culprit changes and restore prior behavior selectively without undoing intentional features.
-- [ ] Remove sign-in keyboard scaling and email wrapping; retain canonical artwork and background composition.
-- [ ] Verify focus, varying lengths, autofill-style input, viewport contraction/panning and dismissal on phone bounds; regress other creation forms with mocked writes.
+- [x] Follow-up 22:21: history confirms keyboard scaling introduced by 7094f9d and textarea wrapping by 5481d30; a last working real Safari version is not proven.
+- [x] Remove sign-in keyboard scaling and email wrapping; retain canonical artwork and background composition. 22:23: no G motion on keyboard events.
+- [x] Verify four lengths, autofill-style events, viewport contraction/offset and dismissal at 320×568, 390×640, 390×844, 430×932 on / and /auth. Six creation-form checks pass; prior four opaque signed-in startup errors remain.
 - [ ] Physical iPhone Safari keyboard/autofill verification requires an actual device; desktop simulation is not proof.
 ## Oct 10 21:50 creation keyboard regression
 - [x] Replace warped form renderer with uniformly transformed canonical middle-loop artwork; restore mask tokens and one form warning; six-mode hidden/shown screenshots. Enlarged existing joins remain visible; see docs/form-keyboard-geometry-verification-oct10.md.

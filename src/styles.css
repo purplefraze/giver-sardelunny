@@ -1261,6 +1261,8 @@
    --------------------------------------------------------------- */
 .signin {
   --seat: var(--mode-give);
+  --signin-field-rule: #ece9e4;
+  --signin-placeholder: #b8b3ab;
   /* The Living G / EarSelector read the world pair: here it is the seat. */
   --world-g: var(--seat);
   --world-bg: var(--seat-bg);
@@ -1475,7 +1477,7 @@
   min-width: 0;
   height: 24px;
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--signin-field-rule);
 }
 .signin-email-input {
   display: block;
@@ -1505,7 +1507,7 @@
   appearance: none;
 }
 .signin-email-input::placeholder {
-  color: var(--muted-foreground);
+  color: var(--signin-placeholder);
   opacity: 1;
 }
 .signin-field--code {
@@ -1535,8 +1537,6 @@
   --inner-mid: 51.423%;
   --nudge: 2.658%;
   --tail: 0px;
-  /* A wrapped email address (EmailField) grows the field by this much. */
-  --field-extra: 0px;
   --stack: calc(26px + 33px + var(--send) + var(--tail));
   --ask: calc(var(--inner-mid) - var(--nudge) - var(--stack) / 2);
   --field: calc(var(--ask) + 26px);

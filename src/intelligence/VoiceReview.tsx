@@ -1,4 +1,5 @@
 import { useRef, useState, useSyncExternalStore } from "react";
+import { Button } from "@/components/ui/button";
 import { GIVE_TYPES, type GiveType } from "@/data/give-lexicon";
 import { defaultExpiry, expiresAt } from "@/data/give-when";
 import { savePin } from "@/data/give-pins";
@@ -17,7 +18,7 @@ import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras } from "@/intelligenc
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
- * bottom. Edits win over later voice. Only "Share with the community" posts.
+ * bottom. Edits win over later voice. Only "Share with communi-g" posts.
  */
 export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; onSeeInCommunity: (itemId: string | null) => void }) {
   const c = useSyncExternalStore(conversation.subscribe, conversation.get, conversation.getServer);
@@ -33,14 +34,15 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const action = s.action;
   const f = s.fields;
   const noun = NOUN[action];
+  const service = f.context === "lesson" || f.context === "service";
 
   if (s.stage === "live") {
     return (
       <div className="gv-sheet" data-voice-live="">
         <p className="gv-title">your {noun} is live</p>
         <div className="gv-taps gv-taps-row">
-          <button type="button" className="gv-tap gv-tap-strong" onClick={() => onSeeInCommunity(liveId)}>see it in communi-g</button>
-          <button type="button" className="gv-tap" onClick={onDone}>done</button>
+          <Button variant="ghost" type="button" className="gv-tap gv-tap-strong" onClick={() => onSeeInCommunity(liveId)}>see it in communi-g</Button>
+          <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>done</Button>
         </div>
       </div>
     );
@@ -49,13 +51,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const field = (key: keyof VoiceFields, label: string, placeholder = "") => (
     <label className="gv-field">
       <span>{label}</span>
-      <input
-        value={String(f[key] ?? "")}
-        placeholder={placeholder}
-        maxLength={key === "note" ? 100 : 60}
-        inputMode={key === "amount" ? "numeric" : undefined}
-        onChange={(e) => conversation.edit(key, e.target.value)}
-      />
+      {key === "what" || key === "note" || key === "want" ? <textarea rows={key === "note" ? 2 : 2} value={String(f[key] ?? "")} placeholder={placeholder} maxLength={key === "note" ? 100 : 60} onChange={e => conversation.edit(key, e.target.value)} /> : <input value={String(f[key] ?? "")} placeholder={placeholder} inputMode={key === "amount" ? "decimal" : undefined} maxLength={80} onChange={e => conversation.edit(key, e.target.value)} />}
     </label>
   );
 
@@ -84,7 +80,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     if (f.context) Object.assign(extras, publicExtras(f.ctx));
     if (f.duration.trim()) extras["how long"] = f.duration.trim();
     const details: ItemDetails = {
-      ...(f.where.trim() ? { where: f.where.trim() } : {}),
+      ...(service ? { where: f.ctx.format === "online" ? "online" : publicExtras(f.ctx)["area"] ?? "" } : f.where.trim() ? { where: f.where.trim() } : {}),
       ...(Object.keys(extras).length ? { extras } : {}),
     };
     const note = f.note.trim() || undefined;
@@ -157,25 +153,17 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         {field("what", action === "trade" ? "offering" : "what")}
         {action === "trade" ? field("want", "for") : null}
         {action === "fund" ? field("amount", "raising", "amount") : null}
-        {action === "give" ? (
-          <div className="gv-field">
-            <span>kind</span>
-            <div className="gv-chips">
-              {GIVE_TYPES.map((t) => (
-                <button key={t} type="button" aria-pressed={f.kind === t} className="gv-chip" onClick={() => conversation.edit("kind", t)}>{t}</button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        {action !== "wish" && action !== "fund" ? field("where", "where", "area or street") : null}
+        {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
+        {!service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
         {f.context
           ? FIELDS_OF[f.context]
-              .filter((k) => k !== "flexible")
+              .filter((k) => k !== "flexible" && k !== "subject" && (!service || !["level", "window", "lessonDuration", "date"].includes(k) || !!f.ctx[k as keyof typeof f.ctx] || (k === "date" && f.ctx.recurrence === "one-off")))
               .map((k) => (
                 <label key={k} className="gv-field">
                   <span>{CTX_LABEL[k]}</span>
                   <input
                     value={(f.ctx as Record<string, string | undefined>)[k] ?? ""}
+                    type={service && k === "date" ? "date" : "text"}
                     maxLength={80}
                     placeholder={k === "pickup" || k === "dropoff" || k === "deliveryArea" ? "an area is fine" : ""}
                     onChange={(e) => conversation.editCtx(k, e.target.value)}
@@ -186,44 +174,33 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
             ? field("when", "when", action === "give" ? "e.g. tuesday" : "")
             : null}
         {(action === "borrow" || action === "lend") && !f.context ? field("duration", "how long", "e.g. a week") : null}
-        {action === "give" || action === "lend" || action === "trade" ? field("condition", "condition") : null}
-        {field("note", "anything else")}
+        {!service && (action === "give" || action === "lend" || action === "trade") ? field("condition", "condition") : null}
+        {field("note", "details", "optional")}
         <div className="gv-field">
           <span>photo</span>
           {c.photo ? (
             <span className="gv-photo">
               <img src={c.photo.url} alt="your photo" />
-              <button type="button" className="gv-tap" onClick={() => conversation.removePhoto()}>remove</button>
+              <Button variant="ghost" type="button" className="gv-tap" onClick={() => conversation.removePhoto()}>remove</Button>
             </span>
           ) : (
-            <button type="button" className="gv-tap" onClick={() => void conversation.addPhoto()}>+ add a photo</button>
+            <Button variant="ghost" type="button" className="gv-tap" onClick={() => void conversation.addPhoto()}>+ add a photo</Button>
           )}
         </div>
-      </div>
-      <div className="gv-taps gv-taps-row">
-        <button
-          type="button"
-          className="gv-tap"
-          aria-pressed={listening}
-          onClick={() => (listening ? conversation.stopLocked() : (conversation.press(), conversation.release("keep")))}
-        >
-          {listening ? "stop listening" : "say more"}
-        </button>
-        {v.state === "listening" && v.transcript ? <span className="gv-heard-inline">{v.transcript}</span> : null}
       </div>
       {remind ? (
         <div className="gv-remind" role="alert">
           <p>a photo helps people say yes.</p>
           <div className="gv-taps gv-taps-row">
-            <button type="button" className="gv-tap gv-tap-strong" onClick={() => void conversation.addPhoto()}>add photo</button>
-            <button type="button" className="gv-tap" onClick={() => void share(true)}>continue without</button>
+            <Button variant="ghost" type="button" className="gv-tap gv-tap-strong" onClick={() => void conversation.addPhoto()}>add photo</Button>
+            <Button variant="ghost" type="button" className="gv-tap" onClick={() => void share(true)}>continue without</Button>
           </div>
         </div>
       ) : null}
       {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
       <div className="gv-taps gv-taps-row">
-        <button type="submit" className="gv-share" disabled={busy}>Share with the community</button>
-        <button type="button" className="gv-tap" onClick={onDone}>cancel</button>
+        <Button variant="ghost" type="submit" className="gv-share" disabled={busy}>Share with communi-g</Button>
+        <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>cancel</Button>
       </div>
     </form>
   );

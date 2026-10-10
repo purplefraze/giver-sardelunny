@@ -88,11 +88,11 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
     settle(nearest(angleRef.current), !cancel && g.moved);
   };
   const frame = frameOf(size.w, size.h, angle);
-  const colour = ink(shown), word = SEAT_TITLE[STATION_SEAT[shown]];
+  const colour = ink(shown), word = shown === "exit" ? "communi-g" : SEAT_TITLE[STATION_SEAT[shown]];
   // Smooth interior clearance; no threshold-based page jumps as the camera rides.
   const a = angle * Math.PI / 180;
   const left = 16 + Math.max(0, -Math.sin(a)) * 98, right = 16 + Math.max(0, Math.sin(a)) * 98;
-  const top = 16 + Math.max(0, Math.cos(a)) * 290, bottom = 16 + Math.max(0, -Math.cos(a)) * 98;
+  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "exit" || shown === "wish" || shown === "give" ? 130 : 290), bottom = 16 + Math.max(0, -Math.cos(a)) * 98;
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">
@@ -101,7 +101,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
       <path d={armPath(frame.tip, frame.root, frame.normal)} fill={colour} data-cg-stem-arm="" />
     </svg>
     {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left, right, top, bottom }} data-cg-interior=""><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
-    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={0} aria-valuemax={360} aria-valuenow={wrap(angle)} aria-valuetext={shown === "exit" ? "my g" : shown} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
+    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={0} aria-valuemax={360} aria-valuenow={wrap(angle)} aria-valuetext={shown === "exit" ? "communi-g" : shown} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
         const rect = stage.current?.getBoundingClientRect(); if (!rect) return;

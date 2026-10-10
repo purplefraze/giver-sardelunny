@@ -13,22 +13,28 @@
  *
  * These rules are also the honest FALLBACK whenever the model is unavailable.
  */
-export type ContextKind = "ride" | "groceries";
+export type ContextKind = "ride" | "groceries" | "lesson" | "service";
 export type CtxKey =
   | "pickup" | "dropoff" | "date" | "pickupTime" | "flightTime" | "luggage" | "passengers" | "accessibility"
+  | "subject" | "level" | "format" | "area" | "recurrence" | "lessonDuration" | "__weekday"
   | "mode" | "list" | "store" | "deliveryArea" | "day" | "window" | "flexible" | "__ambig";
 export type Ctx = { [K in CtxKey]?: string };
 type Loose = Record<string, string | undefined>;
 
 export const RIDE_FIELDS = ["pickup", "dropoff", "date", "pickupTime", "flightTime", "luggage", "passengers", "accessibility"] as const;
 export const GROCERY_FIELDS = ["mode", "list", "store", "deliveryArea", "day", "window", "flexible"] as const;
-export const FIELDS_OF: Record<ContextKind, readonly string[]> = { ride: RIDE_FIELDS, groceries: GROCERY_FIELDS };
+export const LESSON_FIELDS = ["subject", "level", "format", "area", "day", "date", "recurrence", "window", "lessonDuration", "flexible"] as const;
+export const FIELDS_OF: Record<ContextKind, readonly string[]> = { ride: RIDE_FIELDS, groceries: GROCERY_FIELDS, lesson: LESSON_FIELDS, service: LESSON_FIELDS };
 
 const RIDE = /\b(ride|lift|drive me|pick me up|airport run|carpool|car pool|take me to|drop me (?:off )?at|rdie|lfit)\b/;
 const GROCERY = /\b(groceries|grocery|supermarket|food shop(?:ping)?|weekly shop|my (?:food |weekly )?shopping|the shopping|click and collect)\b/;
 
 export function contextOf(text: string): ContextKind | null {
   const t = text.toLowerCase();
+  if (GROCERY.test(t)) return "groceries";
+  if (RIDE.test(t)) return "ride";
+  if (/\b(lessons?|tutor(?:ing)?|teaching|teach|coaching|classes|mentoring|workshop)\b/.test(t)) return "lesson";
+  if (/\b(cleaning|repair(?:ing)?|gardening|babysitting|dog walking|service|help (?:with|fix|move))\b/.test(t)) return "service";
   if (RIDE.test(t)) return "ride";
   if (GROCERY.test(t)) return "groceries";
   return null;
@@ -142,6 +148,7 @@ const put = (ctx: Ctx, key: string, value: string | undefined, force: boolean) =
  * was about, so a bare answer ("Leith") lands there and nowhere else.
  */
 export function extractCtx(kind: ContextKind, raw: string, prev: Ctx, asking: string | null = null): Ctx {
+  if (kind === "lesson" || kind === "service") return extractService(raw, prev, asking);
   const said = raw.toLowerCase().trim();
   const force = CORRECTION.test(said) || /\bnot\s/.test(said);
   /* "no, not friday, saturday" — the negated value is never extracted. */
@@ -239,6 +246,7 @@ const isAirport = (ctx: Ctx) => /\b(airport|flight|terminal)\b/.test(`${ctx.drop
 
 /** The ONE next question this request still needs, or null. */
 export function nextNeed(kind: ContextKind, ctx: Ctx): Need | null {
+  if (kind === "lesson" || kind === "service") return serviceNeed(ctx);
   if (ctx.__ambig) {
     const [hour, field] = ctx.__ambig.split("|");
     return { field: field ?? "pickupTime", ask: `${hour} in the morning or the evening?` };
@@ -266,6 +274,7 @@ export function nextNeed(kind: ContextKind, ctx: Ctx): Need | null {
 
 /** Human labels for review and the public post (no private addresses). */
 export const CTX_LABEL: Record<string, string> = {
+  subject: "offer", level: "level", format: "meeting", area: "area", recurrence: "repeat", lessonDuration: "duration",
   pickup: "pickup",
   dropoff: "drop-off",
   date: "day",
@@ -290,7 +299,7 @@ export function publicExtras(ctx: Ctx): Record<string, string> {
     if (k.startsWith("__") || !v) continue;
     const label = CTX_LABEL[k];
     if (!label) continue;
-    out[label] = k === "pickup" || k === "dropoff" || k === "deliveryArea" ? publicPlace(v) : v;
+    out[label] = k === "pickup" || k === "dropoff" || (k === "deliveryArea" || k === "area") ? publicPlace(v) : v;
   }
   return out;
 }
@@ -298,7 +307,7 @@ export function publicExtras(ctx: Ctx): Record<string, string> {
 /** Precise places, kept only on the owner's device. */
 export function privatePlaces(ctx: Ctx): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const k of ["pickup", "dropoff", "deliveryArea"] as const) { const v = ctx[k]; if (v && isPrecise(v)) out[k] = v; }
+  for (const k of ["pickup", "dropoff", "deliveryArea", "area"] as const) { const v = ctx[k]; if (v && isPrecise(v)) out[k] = v; }
   return out;
 }
 
@@ -324,7 +333,7 @@ export function validateModel(
       if (!value || value.length > 120) continue;
       const words = value.toLowerCase().replace(/[^a-z0-9: ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !/^(the|and|for|pm|am)$/.test(w));
       const grounded = k === "flexible" ? FLEX.test(said) : words.length > 0 && words.every((w) => said.includes(w.replace(/(am|pm)$/, "")));
-      if (grounded) (next as Loose)[k] = value;
+      if (grounded && !(next as Loose)[k]) (next as Loose)[k] = value;
     }
   }
   const rule = nextNeed(kind, next);
@@ -336,4 +345,57 @@ export function validateModel(
     return { ctx: next, need: { field: f, ask: q.toLowerCase() } };
   }
   return { ctx: next, need: rule };
+}
+
+/** Service facts stay separate from physical collection and item condition. */
+function extractService(raw: string, prev: Ctx, asking: string | null): Ctx {
+  const t = raw.toLowerCase().replace(/[’]/g, "'").trim();
+  const ctx = { ...prev };
+  const force = CORRECTION.test(t) || /\bnot\b/.test(t);
+  const put = (key: CtxKey, value: string | undefined) => { if (value && (force || !ctx[key])) ctx[key] = value; };
+  const cleaned = t.replace(/\bnot (?:online|in person|on \w+|\w+day)\b/g, "");
+  const subject = cleaned.match(/\b([a-z]+(?: [a-z]+)?) (lessons?|tutoring|coaching|classes|workshop)\b/);
+  if (subject) put("subject", subject[0].replace(/^(?:some|give|offer|giving) /, ""));
+  const service = cleaned.match(/\b(cleaning|gardening|babysitting|dog walking|repairs?|mentoring)\b/);
+  if (service) put("subject", service[0]);
+  const help = cleaned.match(/\bhelp with (?:your |the |my )?([a-z ]+?)(?=[.,;]|$)/);
+  if (help) put("subject", `help with ${help[1]}`);
+  if (/\b(in[ -]person|face to face)\b/.test(cleaned)) put("format", "in person");
+  else if (/\b(online|remote|zoom|video call)\b/.test(cleaned)) put("format", "online");
+  const area = cleaned.match(/\b(?:in|near|at|around) (?!person\b)([a-z][a-z '-]*?)(?=[.,;]|\s+(?:on|every|each|for|at|this|next|online|whenever|tuesday|monday|wednesday|thursday|friday|saturday|sunday)\b|$)/);
+  if (area) { put("area", area[1]?.trim()); if (!ctx.format) put("format", "in person"); }
+  const level = cleaned.match(/\b(beginners?|intermediate|advanced|any level|all levels)\b/);
+  if (level) put("level", level[0]);
+  const duration = cleaned.match(/\b(\d+[- ]?(?:minutes?|mins?|hours?)|half an hour|an hour|one hour)\b/);
+  if (duration) put("lessonDuration", duration[0]);
+  if (FLEX.test(cleaned)) { put("flexible", "yes"); put("day", "flexible"); }
+  if (/\b(weekday|weekend|mornings|afternoons|evenings)\b/.test(cleaned)) put("day", cleaned.match(/\b(?:weekday |weekend )?(?:mornings?|afternoons?|evenings?)\b|\bweekends?\b/)?.[0]);
+  const weekday = cleaned.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/)?.[1];
+  if (weekday) {
+    put("day", weekday);
+    if (/\b(every|each|weekly|recurring)\b/.test(cleaned)) { ctx.recurrence = `every ${weekday}`; delete ctx.__weekday; }
+    else if (/\b(this|next|one.off|one time|just once)\b/.test(cleaned)) { ctx.recurrence = "one-off"; ctx.day = cleaned.match(DATE)?.[0] ?? weekday; delete ctx.__weekday; }
+    else if (!ctx.recurrence || force) ctx.__weekday = weekday;
+  }
+  if (/\b(one.off|one time|just once)\b/.test(cleaned)) { ctx.recurrence = "one-off"; delete ctx.__weekday; }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) ctx.date = cleaned;
+  const window = cleaned.match(/\b(mornings?|afternoons?|evenings?|between [^.,;]+|after \d+(?:am|pm)|before \d+(?:am|pm))\b/);
+  if (window) put("window", window[0]);
+  const exact = times(cleaned).find(h => !h.ambiguous);
+  if (exact) put("window", exact.text);
+  if (asking?.startsWith("ctx:")) {
+    const key = asking.slice(4) as CtxKey;
+    if (key === "area" && !ctx.area && !/^(in person|online)$/.test(cleaned)) ctx.area = answerText(raw);
+    if (key === "day" && !ctx.day && !weekday) ctx.day = answerText(raw);
+    if (key === "subject" && !ctx.subject) ctx.subject = answerText(raw);
+  }
+  return ctx;
+}
+function serviceNeed(ctx: Ctx): Need | null {
+  if (!ctx.subject) return { field: "subject", ask: "what lesson or service is it?" };
+  if (!ctx.format) return { field: "format", ask: "online or in person?" };
+  if (ctx.format === "in person" && !ctx.area) return { field: "area", ask: "which area would you meet in?" };
+  if (ctx.__weekday) return { field: "recurrence", ask: `this ${ctx.__weekday} or every ${ctx.__weekday}?` };
+  if (!ctx.day && ctx.flexible !== "yes") return { field: "day", ask: "when are you available, or are you flexible?" };
+  return null;
 }

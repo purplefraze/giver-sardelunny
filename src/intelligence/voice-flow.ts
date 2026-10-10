@@ -79,17 +79,20 @@ export function fieldsFromDraft(draft: ActionDraft, raw: string): VoiceFields {
   const whereM = lower.match(WHERE);
   const whereText = e.location ?? (whereM && !TIME_WORD.test(whereM[1] ?? "") ? (whereM[1] ?? "").trim() : "");
   const whenM = lower.match(WHEN);
-  const context = draft.action === "wish" || draft.action === "borrow" ? contextOf(raw) : null;
+  const detected = contextOf(raw);
+  const context = detected === "lesson" || detected === "service" || draft.action === "wish" || draft.action === "borrow" ? detected : null;
+  const ctx = context ? extractCtx(context, raw, {}) : {};
+  const service = context === "lesson" || context === "service";
   return {
     ...EMPTY_FIELDS,
     context,
-    ctx: context ? extractCtx(context, raw, {}) : {},
-    what: draft.action === "trade" ? (e.offer ?? e.item ?? "") : (context === "ride" ? "a ride" : context === "groceries" ? "help with groceries" : (e.item ?? "")),
+    ctx,
+    what: service && ctx.subject ? `${draft.action === "wish" || draft.action === "borrow" ? "Seeking" : "Offering"} ${ctx.subject}` : draft.action === "trade" ? (e.offer ?? e.item ?? "") : (context === "ride" ? "a ride" : context === "groceries" ? "help with groceries" : (e.item ?? "")),
     want: draft.action === "trade" ? (e.want ?? "") : "",
-    kind: (e.category as GiveType | null) ?? null,
+    kind: service ? context === "lesson" ? "a skill" : "a hand" : (e.category as GiveType | null) ?? null,
     when: e.availability ?? e.date ?? (whenM ? whenM[1] ?? "" : ""),
-    where: whereText,
-    condition: e.condition ?? "",
+    where: service ? ctx.format === "online" ? "online" : ctx.area ?? "" : whereText,
+    condition: service ? "" : e.condition ?? "",
     amount: draft.action === "fund" ? money(e.amountCents) : "",
     duration: draft.action === "borrow" || draft.action === "lend" ? durationOf(lower) : "",
   };
@@ -98,14 +101,15 @@ export function fieldsFromDraft(draft: ActionDraft, raw: string): VoiceFields {
 /** The short natural question for each still-empty field, in form order. */
 export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof VoiceFields; ask: string }[] {
   const out: { field: keyof VoiceFields; ask: string }[] = [];
+  const service = f.context === "lesson" || f.context === "service";
   const tangible = f.kind === "a thing" || f.kind === "clothes" || f.kind === "food" || f.kind === null;
   if (!f.what.trim()) out.push({ field: "what", ask: action === "give" ? "what are you giving?" : "what is it?" });
   if (action === "trade" && !f.want.trim()) out.push({ field: "want", ask: "what would you like for it?" });
   if (action === "fund" && !f.amount.trim()) out.push({ field: "amount", ask: "how much are you raising?" });
-  if ((action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? (tangible ? "where can someone collect it?" : "where are you based? an area is fine.") : "where is it?" });
-  if (action === "give" && !f.when.trim())
+  if (!service && (action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? (tangible ? "where can someone collect it?" : "where are you based? an area is fine.") : "where is it?" });
+  if (!service && action === "give" && !f.when.trim())
     out.push({ field: "when", ask: tangible ? "when?" : "when are you free?" });
-  if ((action === "borrow" || action === "lend") && !f.when.trim())
+  if (!service && (action === "borrow" || action === "lend") && !f.when.trim())
     out.push({ field: "when", ask: action === "borrow" ? "when do you need it?" : "when is it free to borrow?" });
   if ((action === "borrow" || action === "lend") && !f.context && !f.duration.trim())
     out.push({ field: "duration", ask: action === "borrow" ? "how long do you need it for?" : "how long can they keep it?" });
@@ -115,7 +119,7 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
 /** Required to go live — mirrors the existing forms' minimums. */
 export function canGoLive(action: GiverAction, f: VoiceFields): boolean {
   if (f.what.trim().length < 2) return false;
-  if (action === "give") return f.kind !== null && f.where.trim().length > 0;
+  if (action === "give") return f.kind !== null && (f.context === "lesson" || f.context === "service" ? f.ctx.format === "online" || !!f.ctx.area : f.where.trim().length > 0);
   if (action === "trade") return f.want.trim().length > 0;
   return true;
 }

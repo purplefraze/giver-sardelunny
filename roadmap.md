@@ -1,4 +1,9 @@
 # Communi-G track repair
+## Oct 10 full correction
+- [ ] 1–4: tap record/stop, seat-seeded prompts, centred middle voice and readable raw transcript/typing.
+- [ ] 5–7: grounded lesson/service understanding, contextual editable review and visible G-to-frame transition.
+- [ ] 8–12: lower placement/wording/colours, single-line filters, scrolling, sort/map/radius, synthetic author variety.
+- [ ] 13: update obsolete guidance, regression tests and phone preview verification; no production deployment.
 - [x] Urgent record visibility and voice entry verified on both phone sizes; see docs/voice-preview-verification.md for tested behavior and remaining touch-target/device limitations.
 - [ ] Build an isolated Wish-first middle-loop spatial prototype using the live eight-seat map, canonical artwork and toggle proportions.
 - [ ] Verify phone/tall-phone framing, upright editable content, drag/hold/reversal, snapping, all seats and reduced motion; keep normal navigation untouched.

@@ -26,3 +26,8 @@ describe("hold on the toggle seeds the selected mode", () => {
     expect(s.stage).not.toBe("live");
   });
 });
+
+test("all six initial prompts match the current seat",()=>{
+  const expected={give:"give something",wish:"make a wish",lend:"what are you lending?",borrow:"what do you need to borrow?",trade:"make a trade",fund:"what needs funding?"};
+  for(const [seat,prompt] of Object.entries(expected)) expect(startSession(seat as keyof typeof expected).prompt).toBe(prompt);
+});

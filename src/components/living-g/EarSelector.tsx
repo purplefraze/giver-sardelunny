@@ -26,8 +26,8 @@ import { togglePath, type TrackPose } from "./toggle-path";
  */
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
-/** A stationary press this long on the main toggle becomes a record hold. */
-export const HOLD_MS = 420;
+/** Seat landing affordance; never activates the microphone. */
+export const RECORD_AFFORDANCE_MS = 1800;
 export type Mode = (typeof MODES)[number];
 
 /**
@@ -385,9 +385,9 @@ export function EarSelector({
    * When shown it is the ONLY thing inside the ring (no photo).
    */
   title?: boolean;
-  /** Stationary hold began: listen for the selected seat (call start synchronously). */
+  /** Explicit record tap: start synchronously to retain browser activation. */
   onRecordStart?: () => void;
-  /** The hold ended (release, or cancelled / lost capture). */
+  /** Explicit stop tap; pointer release is not a recording stop. */
   onRecordEnd?: (cancelled: boolean) => void;
   /** Show the record button inside the ring instead of the seat title. */
   recording?: boolean;
@@ -430,34 +430,19 @@ export function EarSelector({
     setPeek(false);
   };
 
-  /**
-   * HOLD TO RECORD on this same toggle: a stationary press past HOLD_MS turns
-   * the ring's interior into a record button and starts listening; release
-   * ends it. Any travel first makes it a drag; a quick lift stays a tap.
-   */
-  const recTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const recHeld = useRef(false);
-  const clearRecTimer = () => {
-    if (recTimer.current) clearTimeout(recTimer.current);
-    recTimer.current = null;
+  const [recordReady, setRecordReady] = useState(false);
+  useEffect(() => {
+    setRecordReady(false);
+    if (!onRecordStart || dragging || recording) return;
+    const timer = setTimeout(() => setRecordReady(true), RECORD_AFFORDANCE_MS);
+    return () => clearTimeout(timer);
+  }, [mode, dragging, recording, onRecordStart !== undefined]);
+  useEffect(() => () => { if (peekTimer.current) clearTimeout(peekTimer.current); }, []);
+  const activate = () => {
+    if (recording) onRecordEnd?.(false);
+    else if (recordReady && onRecordStart) onRecordStart();
+    else onTap?.();
   };
-  const armRecord = () => {
-    clearRecTimer();
-    recHeld.current = false;
-    if (!onRecordStart) return;
-    recTimer.current = setTimeout(() => {
-      recTimer.current = null;
-      if (gesture.current && !gesture.current.moved) {
-        recHeld.current = true;
-        dragRef.current = null;
-        setDrag(null);
-        onRecordStart();
-      }
-    }, HOLD_MS);
-  };
-  useEffect(() => () => {
-    if (peekTimer.current) clearTimeout(peekTimer.current);
-  }, []);
 
   /** ONE SOURCE OF TRUTH: the assembly's angle on the track. */
   const restAngle = SEAT_ANGLE[mode];
@@ -565,14 +550,11 @@ export function EarSelector({
     activeId.current = null;
     const g = gesture.current;
     const wasHeld = held.current;
-    const wasRecording = recHeld.current;
-    clearRecTimer();
-    recHeld.current = false;
+
     stopPeek();
     held.current = false;
-    if (wasRecording) onRecordEnd?.(cancelled);
-    else if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
-    else if (g && !g.moved && !wasHeld && !cancelled) onTap?.();
+    if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
+    else if (g && !g.moved && !wasHeld && !cancelled) activate();
     gesture.current = null;
     dragRef.current = null;
     setDrag(null);
@@ -666,11 +648,9 @@ export function EarSelector({
       {/* THE SEAT'S TITLE — upright (outside the piece's rotation), centred
           on the ring, in the ring's colour, and transparent to the pointer so
           a tap on a parked toggle still reaches the grip beneath. */}
-      {recording ? (
-        /* HOLD = RECORD: the ring's interior becomes a record button. */
-        <g pointerEvents="none" data-toggle-record="" aria-hidden="true">
-          <circle className="g-record-halo" cx={ear.x} cy={ear.y} r={EAR.innerR * 0.62} fill="none" stroke="var(--world-g)" strokeWidth={3} />
-          <circle cx={ear.x} cy={ear.y} r={EAR.innerR * 0.42} fill="var(--world-g)" />
+      {recording || (recordReady && !dragging) ? (
+        <g pointerEvents="none" data-toggle-record={recording ? "listening" : "idle"} aria-hidden="true">
+          {recording ? <rect x={ear.x - EAR.innerR * .3} y={ear.y - EAR.innerR * .3} width={EAR.innerR * .6} height={EAR.innerR * .6} rx={4} fill="var(--world-g)" /> : <circle cx={ear.x} cy={ear.y} r={EAR.innerR * .38} fill="var(--world-g)" />}
         </g>
       ) : title ? (
         <text
@@ -767,7 +747,7 @@ export function EarSelector({
         piece itself always wins the overlap. Same pointer events, same commit —
         no separate touch implementation anywhere.
       */}
-      {!locked
+      {!locked && !recording
         ? seats.map((m) => {
             if (m === mode) return null;
             const spot = poseAt(SEAT_ANGLE[m], weight);
@@ -820,7 +800,7 @@ export function EarSelector({
         style={{ cursor: "grab", touchAction: "none", outline: "none" }}
         role="slider"
         tabIndex={0}
-        aria-label="mode"
+        aria-label={onRecordStart ? recording ? "stop listening" : recordReady ? `record for ${SEAT_TITLE[mode]}` : `${SEAT_TITLE[mode]} — open selected seat` : "mode"}
         aria-valuemin={1}
         aria-valuemax={ring.length}
         aria-valuenow={ring.indexOf(mode) + 1}
@@ -834,33 +814,32 @@ export function EarSelector({
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
           startPeek();
-          if (!locked) armRecord();
+
           // CAPTURE ON THE ELEMENT THAT HANDLES THE GESTURE, so the drag keeps
           // running even once the finger leaves the disc.
           (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
           // LOCKED: the seat only STATES the mode; it cannot be dragged.
-          if (locked) return;
+          if (locked || recording) return;
           const a = grab?.angle ?? angleRef.current;
           dragRef.current = a;
-          setDrag(a);
+
         }}
         onPointerMove={(e) => {
           if (activeId.current !== e.pointerId) return;
-          if (locked || dragRef.current === null) return;
+          if (locked || recording || dragRef.current === null) return;
           e.stopPropagation();
           const move = angleFrom(e);
           if (!move) return;
           const g = gesture.current;
           if (g && !g.moved && dist(move.point, g.start) > 14) {
             g.moved = true;
-            clearRecTimer();
             /* A drag is a mode change, not a peek. */
             stopPeek();
             held.current = false;
           }
+          if (!g?.moved) return;
           dragRef.current = move.angle;
           setDrag(move.angle);
-          if (!g?.moved) return;
           const near = nearestOf(move.angle, seats);
           if (Math.abs(shortest(move.angle, SEAT_ANGLE[near])) < 0.2) commit(near);
         }}
@@ -877,6 +856,7 @@ export function EarSelector({
         }}
         onKeyDown={(e) => {
           const i = ring.indexOf(mode);
+          if (recording && e.key.startsWith("Arrow")) return;
           if (e.key === "ArrowRight" || e.key === "ArrowDown") {
             e.preventDefault();
             commit(ring[(i + 1) % ring.length]!);
@@ -888,7 +868,7 @@ export function EarSelector({
 
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onTap?.();
+            activate();
           }
         }}
       />

@@ -13,14 +13,15 @@ import { FIELDS_OF, nextNeed, validateModel, type ContextKind, type Ctx } from "
 export const FOLLOWUP_MODEL = "openai/gpt-6-astra";
 
 const Input = z.object({
-  kind: z.enum(["ride", "groceries"]),
+  kind: z.enum(["ride", "groceries", "lesson", "service"]),
   ctx: z.record(z.string(), z.string()),
   said: z.array(z.string().max(400)).max(30),
 });
 
-const SYSTEM = `You help Giver, a neighbourly sharing app, ask ONE short follow-up question for a Wish.
+const SYSTEM = `You help Giver, a neighbourly sharing app, ask ONE short follow-up question for any Give, Wish, Trade, Borrow, Lend or Fund.
 Rules:
 - Read the whole conversation and the known details. Fill a detail in "updates" ONLY with words the person actually said; otherwise null. Never guess.
+- Lessons/services use subject, format (online/in person), area, availability, recurrence and optional level/duration. Never ask collection or condition. A bare weekday is ambiguous, never invent a date or recurrence. Never force optional level or duration.
 - A flight/train departure time is "flightTime", never "pickupTime".
 - An hour without am/pm is ambiguous: leave it null.
 - If the person corrects something ("actually 8pm"), use the corrected value.
@@ -72,7 +73,8 @@ export const followUp = createServerFn({ method: "POST" })
           text: { format: { type: "json_schema", name: "followup", strict: true, schema: schemaFor(kind) } },
         }),
       });
-      if (!res.ok || !res.body) return rules(`gateway ${res.status}`);
+      if (!res.ok) { const body = await res.text(); console.error(`AI follow-up [${res.status}]: ${body}`); return rules(`gateway ${res.status}: ${body}`); }
+      if (!res.body) return rules("empty stream");
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buf = "";

@@ -97,17 +97,19 @@ export const voiceCapture = {
     r.onresult = (e) => {
       if (rec !== r || cancelled) return;
       let interim = "";
+      const completed: string[] = [];
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
         if (!res) continue;
         const words = res[0]?.transcript ?? "";
         if (res.isFinal) {
           finalText = `${finalText} ${words}`.trim();
-          if (words.trim()) finals.forEach((f) => f(words.trim()));
+          if (words.trim()) completed.push(words.trim());
         }
         else interim += words;
       }
       set({ transcript: `${finalText} ${interim}`.replace(/\s+/g, " ").trim() });
+      completed.forEach(words => finals.forEach(f => f(words)));
     };
     r.onerror = (e) => {
       if (rec !== r || cancelled || e.error === "aborted") return;

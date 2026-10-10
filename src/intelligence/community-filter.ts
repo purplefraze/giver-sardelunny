@@ -15,7 +15,7 @@ export const CG_FILTERS: { value: CgSelection; word: string }[] = [
   { value: "borrow", word: "borrows" },
   { value: "lend", word: "lends" },
   { value: "fund", word: "funds" },
-  { value: "mine", word: "my g" },
+  { value: "mine", word: "communi-g" },
 ];
 
 const RULES: [RegExp, CgSelection][] = [

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
+import { VoiceEnclosure } from "@/components/living-g/GEnclosure";
 import { GStage } from "@/components/living-g/GStage";
 import { GThinMask } from "@/components/living-g/g-weight";
 import { MiddleLoopClose } from "@/components/living-g/loop-close";
@@ -305,6 +306,10 @@ function Index() {
   const talk = useSyncExternalStore(conversation.subscribe, conversation.get, conversation.getServer);
   const talking_ = talk.session !== null && talk.session.stage !== "review" && talk.session.stage !== "live";
   const reviewing = talk.session?.stage === "review" || talk.session?.stage === "live";
+  useEffect(() => {
+    if (reviewing) { conversation.review(); }
+  }, [reviewing]);
+  useEffect(() => () => { conversation.stopLocked(); voiceCapture.cancel(); }, []);
   /* A spoken search leaves the conversation for communi-g's own listings. */
   useEffect(() => {
     if (!talk.session?.search) return;
@@ -410,6 +415,7 @@ function Index() {
   const moveToggle = (next: Seat) => {
     if (next === seat) return;
     setSeat(next);
+    if (talk.session) conversation.selectSeat(next);
     noteToggleUse();
   };
 
@@ -780,14 +786,6 @@ function Index() {
    * onTap). One tap enters the seat, exactly like the middle loop.
    */
   const tapToggle = () => {
-    const now = Date.now();
-    /* A double tap from any seat is my g. A single tap on the blue 12 is too. */
-    if (now - lastToggleTap.current < 320) {
-      lastToggleTap.current = 0;
-      openMyG();
-      return;
-    }
-    lastToggleTap.current = now;
     noteToggleUse();
     enterSelectedWorld();
   };
@@ -831,7 +829,7 @@ function Index() {
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
       {entered && !chromeQuiet ? <DevControls /> : null}
       {reviewing ? (
-        <div className="gv-frame" data-voice-frame="" data-seat={seat}>
+        <VoiceEnclosure seat={talk.session?.action ?? seat}>
           <VoiceReview
             onDone={() => conversation.close()}
             onSeeInCommunity={(itemId) => {
@@ -843,7 +841,7 @@ function Index() {
               setBrowse({ type, selection, ...(itemId ? { highlight: itemId } : {}), ...(a === "borrow" || a === "lend" ? { side: a } : {}) });
             }}
           />
-        </div>
+        </VoiceEnclosure>
       ) : null}
       {entered && !chromeQuiet ? <DevSeal /> : null}
       {!entered ? (
@@ -893,7 +891,7 @@ function Index() {
               <LoopLabels
                 seat={seat}
                 quiet={
-                  talking_ ? ["top", "middle", "bottom"] : firstLand ? ["top", "bottom"] : []
+                  talking_ ? ["top", "middle", "bottom"] : recordAvailable(firstLand?.phase ?? null) ? ["middle", "bottom"] : firstLand ? ["top", "bottom"] : []
                 }
               />
               {/* ONE TOGGLE: while the ceremony runs, it draws the only bead. */}
@@ -910,24 +908,15 @@ function Index() {
                   {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
                   /* TAP ON THE TOGGLE: enters the seat's action screen. */
                   onTap={tapToggle}
-                  /* HOLD THE SAME TOGGLE TO RECORD for the selected seat. */
-                  {...(recordAvailable(firstLand?.phase ?? null)
-                    ? {
-                        recording: talk.mode !== "off",
-                        onRecordStart: () => {
-                          haptics.light();
-                          conversation.press(seedOf(seat));
-                        },
-                        onRecordEnd: (cancelled: boolean) => {
-                          haptics.selection();
-                          if (cancelled) conversation.abortHold();
-                          else conversation.release("stop");
-                        },
-                      }
-                    : {})}
+                  /* Landing reveals record; only tap starts, next tap stops. */
+                  {...(recordAvailable(firstLand?.phase ?? null) ? {
+                    recording: talk.mode !== "off",
+                    onRecordStart: () => { haptics.light(); conversation.toggle(seat); },
+                    onRecordEnd: () => { haptics.selection(); conversation.stopLocked(); },
+                  } : {})}
                 />
               )}
-              {talking_ ? <VoiceLoops onReview={enterReview} seatDeg={(SEAT_ANGLE[seat] * 180) / Math.PI + 90} /> : null}
+              {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} seat={seat} /> : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}

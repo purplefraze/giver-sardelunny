@@ -27,7 +27,6 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const [remind, setRemind] = useState(false);
   const [busy, setBusy] = useState(false);
   /* One local record per draft: a retry re-confirms it, never re-creates it. */
-  const created = useRef<string | null>(null);
   const [liveId, setLiveId] = useState<string | null>(null);
   const folding = useRef(false);
   /** BACK: mic stops now; the draft stays; the G folds back to the same seat. */
@@ -104,7 +103,9 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       ...(Object.keys(extras).length ? { extras } : {}),
     };
     const note = f.note.trim() || undefined;
-    let id = created.current;
+    const seatAt = conversation.seat();
+    let id = s.recordId ?? null;
+    if (id && !itemsStore.get().items.find((it) => it.id === id)) id = null;
     if (!id) {
       let result: ReturnType<typeof myProfileStore.addItem>;
       if (action === "give") {
@@ -148,13 +149,14 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           if (up) itemsStore.patch(id, { photos: [up.url], details: { ...details, photoPath: up.path } });
         } else itemsStore.addPhoto(id, c.photo.url);
       }
-      created.current = id;
-    } else itemsStore.patch(id, { published: true });
+      conversation.attachRecord(seatAt, id);
+    } else itemsStore.patch(id, { text: f.what.trim(), ...(note ? { note } : {}), details: { ...(itemsStore.get().items.find((it) => it.id === id)?.details ?? {}), ...details }, published: true });
     if (!id) return;
     /* LIVE ONLY AFTER THE SERVER HAS IT. A failed save keeps the draft here,
        hides the local copy, and offers the same button again. */
     const saved = await confirmItemSaved(id);
     if (!saved) {
+      if (conversation.seat() !== seatAt) return;
       itemsStore.patch(id, { published: false });
       setBusy(false);
       haptics.warning();
@@ -162,10 +164,10 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       return;
     }
     void pullItems().catch(() => {});
+    if (!conversation.confirmLive(seatAt, id)) return;
     setLiveId(id);
     setBusy(false);
     haptics.light();
-    conversation.live();
   };
 
   const listening = c.mode !== "off" && v.state !== "error" && v.state !== "unsupported";

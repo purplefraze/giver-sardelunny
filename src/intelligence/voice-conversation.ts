@@ -262,6 +262,8 @@ export const conversation = {
   closeForm() {
     voiceCapture.stop();
     const s = snap.session;
+    /* A shared draft is finished: fold to the G on the same seat with a fresh draft, so reopening can never repost it. */
+    if (s?.stage === "live") { parked.delete(currentSeat); set({ ...BLANK, form: false, mode: "off", session: sessionForSeat(currentSeat) }); return; }
     set({ form: false, mode: "off", ...(s && s.stage === "review" ? { session: { ...s, stage: "talk", asking: null, prompt: "add a detail, or tap the middle to see your draft" } } : {}) });
   },
   useLocation() {
@@ -303,6 +305,21 @@ export const conversation = {
     if (snap.form) { if (s.stage !== "review") set({ session: { ...s, stage: "review" } }); return; }
     set({ mode: "off", form: true, session: { ...s, stage: "review" } });
     voiceCapture.cancel();
+  },
+  /** The seat whose draft is on screen now (scopes async Share completions). */
+  seat: () => currentSeat,
+  /** Remember the record a Share created on THAT seat's draft, current or parked. */
+  attachRecord(seat: string, id: string) {
+    if (seat === currentSeat) { const s = snap.session; if (s) set({ session: { ...s, recordId: id } }); return; }
+    const p = parked.get(seat);
+    if (p?.session) parked.set(seat, { ...p, session: { ...p.session, recordId: id } });
+  },
+  /** Server confirmed: live only if that draft is still on screen; a parked one is retired. */
+  confirmLive(seat: string, id: string): boolean {
+    if (seat === currentSeat && snap.session?.recordId === id) { conversation.live(); return true; }
+    const p = parked.get(seat);
+    if (p?.session?.recordId === id) parked.delete(seat);
+    return false;
   },
   live() {
     const s = snap.session;

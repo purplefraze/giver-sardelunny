@@ -28,6 +28,8 @@ export type VoiceSession = {
   said: string[];
   choices: readonly string[];
   pending: ActionDraft | null;
+  /** The record a Share already created for this draft (kept through fold/reopen/seat switches so a retry never makes a second one). */
+  recordId?: string;
   /** Last words heard (shown in the bottom loop between segments). */
   heard: string;
   wantsPhoto: boolean;

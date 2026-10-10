@@ -217,7 +217,8 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     const dist = (e: TouchEvent) => { const [a, b] = [e.touches[0]!, e.touches[1]!]; return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); };
     const paint = (k: number) => setT(1 - k);
     const onStart = (e: TouchEvent) => {
-      if (e.touches.length !== 2 || active) return;
+      /* The opening unfold owns the frame until it settles: no racing pinch. */
+      if (e.touches.length !== 2 || active || !readyRef.current) return;
       active = true; startDist = dist(e) || 1; p = 0;
       cancelAnimationFrame(raf);
       /* Leaving begins: mic off now, no auto-restart, draft kept. */
@@ -247,11 +248,13 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
       active = false;
       settle(p > 0.45 ? 1 : 0);
     };
+    /* The OS took the touch away: never a commit — always back to the form. */
+    const onCancel = () => { if (!active) return; active = false; settle(0); };
     el.addEventListener("touchstart", onStart, { passive: true });
     el.addEventListener("touchmove", onMove, { passive: false });
     el.addEventListener("touchend", onEnd);
-    el.addEventListener("touchcancel", onEnd);
-    return () => { cancelAnimationFrame(raf); el.removeEventListener("touchstart", onStart); el.removeEventListener("touchmove", onMove); el.removeEventListener("touchend", onEnd); el.removeEventListener("touchcancel", onEnd); };
+    el.addEventListener("touchcancel", onCancel);
+    return () => { cancelAnimationFrame(raf); el.removeEventListener("touchstart", onStart); el.removeEventListener("touchmove", onMove); el.removeEventListener("touchend", onEnd); el.removeEventListener("touchcancel", onCancel); };
   }, []);
 
   const f = fit;

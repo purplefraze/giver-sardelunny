@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -21,7 +22,7 @@ import { haptics } from "@/lib/haptics";
  * detail from there. Sample pins (written sample activity) say so.
  */
 const pinSvg = (colour: string) =>
-  `<svg viewBox="0 0 30 40" width="26" height="35" aria-hidden="true"><path d="M15 39C15 39 28 23.5 28 14.5A13 13 0 0 0 2 14.5C2 23.5 15 39 15 39Z" style="fill:${colour}" stroke="#fff" stroke-width="1.6"/><circle cx="15" cy="14" r="4.4" fill="#fff"/></svg>`;
+  `<svg viewBox="0 0 30 40" width="26" height="35" aria-hidden="true"><path d="M15 39C15 39 28 23.5 28 14.5A13 13 0 0 0 2 14.5C2 23.5 15 39 15 39Z" style="fill:${colour}" stroke="var(--background)" stroke-width="1.6"/><circle cx="15" cy="14" r="4.4" fill="var(--background)"/></svg>`;
 
 export function CommunigyMap({
   pins,
@@ -84,7 +85,7 @@ export function CommunigyMap({
        resolve the red token to its value first. */
     const red =
       getComputedStyle(document.documentElement).getPropertyValue("--mode-communigy").trim() ||
-      "#e8322b";
+      getComputedStyle(document.documentElement).getPropertyValue("--mode-map").trim();
     ring.current = lib
       .circle([centre.lat, centre.lng], {
         radius: radiusKm * 1000,
@@ -99,7 +100,7 @@ export function CommunigyMap({
     me.current = lib
       .circleMarker([centre.lat, centre.lng], {
         radius: 6,
-        color: "#fff",
+        color: getComputedStyle(document.documentElement).getPropertyValue("--background").trim(),
         weight: 2,
         fillColor: red,
         fillOpacity: 1,
@@ -145,16 +146,16 @@ export function CommunigyMap({
             {picked.text}
           </span>
           {picked.itemId ? (
-            <button
+            <Button variant="ghost"
               type="button"
               className="cg-map-open"
               onClick={() => {
                 haptics.light();
-                onOpen(picked.itemId!);
+                if (picked.itemId) onOpen(picked.itemId);
               }}
             >
               open
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

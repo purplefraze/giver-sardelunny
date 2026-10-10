@@ -44,7 +44,7 @@ const speakIfNew = () => {
   if (s.prompt === spokenPrompt) return;
   spokenPrompt = s.prompt;
   voiceCapture.speak(s.prompt, () => {
-    if (snap.mode === "locked" && !snap.picking && snap.session?.stage !== "review" && snap.session?.stage !== "live") voiceCapture.start();
+    if (snap.mode === "locked" && !snap.picking && voiceCapture.get().state === "idle" && snap.session?.stage !== "review" && snap.session?.stage !== "live") voiceCapture.start();
   });
 };
 
@@ -91,9 +91,10 @@ async function refine() {
 async function locate() {
   const s = snap.session;
   if (!s?.wantsLocation || snap.pin) return;
+  const turn = revision;
   const r = await askLocation();
   const cur = snap.session;
-  if (!cur) return;
+  if (!cur || turn !== revision) return;
   if (r.ok) {
     set({ pin: r.pin, session: { ...cur, fields: { ...cur.fields, where: cur.fields.where || "near my current location" } } });
   } else {
@@ -108,7 +109,7 @@ function wire() {
   wired = true;
   voiceCapture.onFinal(advance);
   /* Hands-free: when the browser ends a recognition segment on its own,
-     carry on listening. A hold release has already set mode to "off". */
+     carry on listening only in an active hands-free draft. Explicit stop sets mode off. */
   voiceCapture.subscribe(() => {
     const v = voiceCapture.get();
     if (v.state === "idle" && snap.mode === "locked" && !snap.picking && snap.session && snap.session.stage !== "review" && snap.session.stage !== "live") {

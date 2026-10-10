@@ -2,10 +2,10 @@ import type { CgMode } from "@/data/communigy";
 
 /**
  * LOWER-LOOP SELECTION — one value drives the inside toggle, the filter row
- * and the feed. "mine" is the 12:00 lower seat (my active community posts);
- * it is never an exit. Pure.
+ * and the feed. "map" is the blue 12:00 all-types map. "mine" remains a
+ * legacy voice scope routed to My G activity, never a lower seat.
  */
-export type CgSelection = CgMode | "mine";
+export type CgSelection = CgMode | "map" | "mine";
 
 export const CG_FILTERS: { value: CgSelection; word: string }[] = [
   { value: "everything", word: "all" },
@@ -15,10 +15,11 @@ export const CG_FILTERS: { value: CgSelection; word: string }[] = [
   { value: "borrow", word: "borrows" },
   { value: "lend", word: "lends" },
   { value: "fund", word: "funds" },
-  { value: "mine", word: "communi-g" },
+  { value: "map", word: "map" },
 ];
 
 const RULES: [RegExp, CgSelection][] = [
+  [/\bmap\b/, "map"],
   [/\b(?:my (?:posts|gives|wishes|trades|borrows|lends|funds|community posts|active posts)|mine)\b/, "mine"],
   [/\bgives?\b|\bgiving\b/, "give"],
   [/\bwish(?:es)?\b/, "wish"],

@@ -150,7 +150,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         } else itemsStore.addPhoto(id, c.photo.url);
       }
       conversation.attachRecord(seatAt, id);
-    } else itemsStore.patch(id, { text: f.what.trim(), note, details: { ...(itemsStore.get().items.find((it) => it.id === id)?.details ?? {}), ...details }, published: true });
+    } else itemsStore.patch(id, { text: f.what.trim(), ...(note ? { note } : {}), details: { ...(itemsStore.get().items.find((it) => it.id === id)?.details ?? {}), ...details }, published: true });
     if (!id) return;
     /* LIVE ONLY AFTER THE SERVER HAS IT. A failed save keeps the draft here,
        hides the local copy, and offers the same button again. */

@@ -64,3 +64,4 @@
 - [x] Rounded gap terminations + arm continuation
 - [x] Toggle continues from 12 along S to outside horizontal back (tap returns)
 - [x] Inward pinch returns from expanded community
+- [ ] Share identity in session (no dup on fold/reopen retry); live pinch returns + retires draft; touchcancel never commits; no pinch during opening

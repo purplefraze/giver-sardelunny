@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CommunityFeed } from "@/components/community/CommunityFeed";
+import { useState } from "react";
+import { ActivityDetail } from "@/components/community/ActivityDetail";
 
 export const Route = createFileRoute("/dev/communi-g")({
   head: () => ({ meta: [
@@ -11,9 +13,13 @@ export const Route = createFileRoute("/dev/communi-g")({
     { name: "twitter:card", content: "summary" },
     { name: "robots", content: "noindex, nofollow" },
   ] }),
-  component: () => (
-    <div className="fixed inset-0">
-      <CommunityFeed onOpen={() => {}} onClose={() => history.back()} />
-    </div>
-  ),
+  component: LowerReview,
 });
+
+function LowerReview() {
+  const [detail, setDetail] = useState<string | null>(null);
+  return <div className="fixed inset-0">
+    <CommunityFeed onOpen={setDetail} onClose={() => history.back()} />
+    {detail ? <div className="absolute inset-0 z-40 bg-background"><ActivityDetail itemId={detail} onClose={() => setDetail(null)} onOpenConnection={() => {}} /></div> : null}
+  </div>;
+}

@@ -2022,8 +2022,8 @@
 .cg-listing-line { color:var(--foreground); overflow-wrap:anywhere; }
 [data-cg-description] { color:var(--foreground); }
 [data-cg-interior-page] .cg-map-wrap { flex:none; height:240px; min-height:240px; width:100%; border-radius:0; }
-[data-cg-interior-page]:has(.cg-map-wrap) > div:last-child { overflow-y:auto; justify-content:flex-start; }
-[data-cg-interior-page]:has(.cg-map-wrap) .cg-list { flex:0 0 auto; max-height:none; overflow:visible; }
+[data-cg-view="map"] [data-cg-results] { overflow-y:auto; justify-content:flex-start; }
+[data-cg-view="map"] .cg-list { flex:none; max-height:none; overflow:visible; }
 
 .cg-list [data-cg-item] { min-width:0; max-width:100%; }
 .cg-list [data-cg-item] > span { width:100%; min-width:0; white-space:normal; overflow-wrap:anywhere; }

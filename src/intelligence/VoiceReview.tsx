@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { GIVE_TYPES, type GiveType } from "@/data/give-lexicon";
 import { defaultExpiry, expiresAt } from "@/data/give-when";
@@ -29,6 +29,26 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   /* One local record per draft: a retry re-confirms it, never re-creates it. */
   const created = useRef<string | null>(null);
   const [liveId, setLiveId] = useState<string | null>(null);
+  const folding = useRef(false);
+  /** BACK: mic stops now; the draft stays; the G folds back to the same seat. */
+  const back = () => {
+    if (folding.current) return;
+    folding.current = true;
+    conversation.stopLocked();
+    haptics.selection();
+    const frame = document.querySelector<HTMLElement>("[data-voice-frame]");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (frame && !reduced) {
+      frame.dataset["folding"] = "1";
+      setTimeout(() => conversation.closeForm(), 280);
+    } else conversation.closeForm();
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && conversation.get().form) { e.preventDefault(); back(); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const s = c.session;
   if (!s?.action || (!c.form && s.stage !== "live")) return null;
   const action = s.action;
@@ -155,6 +175,9 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       const by = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
       if (by?.dataset["share"] === "1") void share();
     }}>
+      <Button variant="ghost" type="button" className="gv-back" aria-label="back to the Living G (keeps your draft)" onClick={back}>
+        <span aria-hidden="true">←</span> back
+      </Button>
       <p className="gv-title">your {noun}</p>
       {ask || listening || v.transcript ? (
         <div className="gv-live" aria-live="polite" data-form-prompt="">
@@ -213,7 +236,6 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
       <div className="gv-taps gv-taps-row">
         <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy}>Share with communi-g</Button>
-        <Button variant="ghost" type="button" className="gv-tap" onClick={() => { haptics.selection(); conversation.closeForm(); }}>back to the G</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
       </div>
       {noMic ? <p className="gv-problem" role="status">{noMic}</p> : null}

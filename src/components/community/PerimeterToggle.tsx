@@ -54,7 +54,9 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   const put = (next: number, tactile = false) => {
     next = clampLower(next);
     const before = angleRef.current;
-    const events = crossings(before, next, LABELED);
+    /* The lower route is OPEN (not periodic): only real, in-range crossings. */
+    const events = LABELED.filter(st => next > before ? st.angle > before && st.angle <= next : st.angle < before && st.angle >= next)
+      .sort((a, b) => next > before ? a.angle - b.angle : b.angle - a.angle).map(st => st.value);
     if (!external.current) for (const station of events) show(station);
     if (tactile && crossings(before, next, DETENTS).length > 0) haptics.selection();
     angleRef.current = next; setAngle(next);
@@ -111,7 +113,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">
         <path d={TRACK_PATH} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-track="" />
-        <path d={sPath(size.w, size.h)} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-s-connector="" />
+        {angle > 0 ? <path opacity={Math.min(1, angle / 8)} d={sPath(size.w, size.h)} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-s-connector="" /> : null}
       </g>
       <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={10} strokeLinecap="round" data-cg-stem-arm="" />
     </svg>

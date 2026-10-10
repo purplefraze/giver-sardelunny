@@ -823,7 +823,7 @@ function Index() {
          over the launch/auth screens. Both return once the G is showing.
          (DevControls is also DEV-build-only; its "replay onboarding" now
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
-      {entered && !chromeQuiet ? <DevControls /> : null}
+      {entered && !chromeQuiet && !reviewing ? <DevControls /> : null}
       {reviewing ? (
         <VoiceEnclosure seat={talk.session?.action ?? seat}>
           <VoiceReview
@@ -839,7 +839,7 @@ function Index() {
           />
         </VoiceEnclosure>
       ) : null}
-      {entered && !chromeQuiet && !browse ? <DevSeal /> : null}
+      {entered && !chromeQuiet && !browse && !reviewing ? <DevSeal /> : null}
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding

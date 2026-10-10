@@ -223,7 +223,12 @@ export const conversation = {
       const k = contextOf(value);
       if (k === "lesson" || k === "service") next = { ...next, fields: { ...next.fields, context: k } };
     }
+    const kind = next.fields.context;
+    if (field === "what" && (kind === "lesson" || kind === "service") && !snap.edited.includes("ctx:subject"))
+      next = { ...next, fields: { ...next.fields, ctx: { ...next.fields.ctx, subject: value.trim() } } };
     if (next.asking === "seed") next = { ...next, asking: null };
+    /* The on-screen question follows what's actually still missing. */
+    if (snap.form && next.action && (next.stage === "talk" || next.stage === "anything")) next = nextAsk(next);
     set({ edited: mark(field), session: next });
   },
   /**

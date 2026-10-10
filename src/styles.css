@@ -2005,7 +2005,8 @@
 .cg-context { position:absolute; top:max(14px,env(safe-area-inset-top)); left:16px; max-width:150px; z-index:6; font:900 26px/1.1 var(--giver-font); color:var(--foreground); }
 .cg-list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; }
 
-.gv-morph-frame[data-unfold-ready="0"] { border-color:transparent; }
+.gv-morph-frame[data-unfold-ready="0"] { border-width:0; padding:10px; overflow:hidden; }
+.gv-morph-rim { position:absolute; inset:0; border:10px solid var(--gv-ink); border-radius:30px; pointer-events:none; }
 .gv-review-content { opacity:0; transition:opacity 200ms ease-out; pointer-events:none; }
 .gv-morph-frame[data-unfold-ready="1"] .gv-review-content { opacity:1; pointer-events:auto; }
 @media(prefers-reduced-motion:reduce) { .gv-review-content { transition:none; } }

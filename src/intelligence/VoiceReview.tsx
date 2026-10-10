@@ -12,7 +12,7 @@ import { haptics } from "@/lib/haptics";
 import { TOPIC_OF } from "@/components/give/GiveFlow";
 import { conversation } from "@/intelligence/voice-conversation";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { canGoLive, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
+import { canGoLive, fundTargetOf, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
 import { NOUN } from "@/intelligence/voice-session";
 import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
 
@@ -79,7 +79,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     setProblem(null);
     if (!canGoLive(action, f)) {
       haptics.warning();
-      setProblem(f.what.trim().length < 2 ? "what is it?" : action === "give" && !f.kind ? "what kind of give is it?" : action === "trade" ? "what would you like for it?" : "where is it?");
+      setProblem(f.what.trim().length < 2 ? "what is it?" : action === "fund" ? "how much are you raising? enter a goal, like 1200." : action === "give" && !f.kind ? "what kind of give is it?" : action === "trade" ? "what would you like for it?" : "where is it?");
       return;
     }
     if (!skipPhoto && photoReminder(action, f.kind, !!c.photo)) {
@@ -117,8 +117,12 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       } else if (action === "borrow" || action === "lend") {
         result = myProfileStore.addItem("borrow", f.what.trim(), undefined, note, { side: action, details });
       } else {
-        const cents = Math.round(Number(f.amount.replace(/[^0-9.]/g, "")) * 100);
-        if (action === "fund" && cents > 0) details.fundTarget = cents;
+        if (action === "fund") {
+          const target = fundTargetOf(f);
+          /* Never a Wish fallback: an invalid goal creates no record at all. */
+          if (target === null) { setBusy(false); setProblem("how much are you raising? enter a goal, like 1200."); return; }
+          details.fundTarget = target;
+        }
         result = myProfileStore.addItem("wish", f.what.trim(), undefined, note, { details });
       }
       if (!result.ok || !result.id) {

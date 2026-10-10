@@ -152,53 +152,60 @@ export function GEnclosure({
   );
 }
 
-/** The canonical filled G visibly unthreads into the review's rounded rim;
- * a two-finger inward pinch drives the same morph backwards (repretzel). */
+/** The middle loop's measured hollow in viewBox space (isPointInFill scan). */
+const HOLLOW = { left: 129, right: 417, top: 156, bottom: 448 } as const;
+type Fit = { ax: number; ay: number; sx: number; sy: number };
+
+/** THE SAME G EXPANDS INTO THE RIM. No shape interpolation (which collapsed the
+ * hollows into a solid blob): the canonical artwork is only stretched about its
+ * middle loop until that hollow is the screen and its band is the rim. Every
+ * frame keeps the G's real holes and stroke. A two-finger inward pinch drives
+ * the very same transform backwards (repretzel). */
 export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: string; children: React.ReactNode; onFold?: () => void; onFoldStart?: () => void }) {
   const source = useRef<SVGPathElement>(null);
   const frame = useRef<HTMLDivElement>(null);
-  const [morphed, setMorphed] = useState<string | null>(null);
   /* 1 = form open, 0 = full G. Drives both the outline and the content. */
   const [t, setT] = useState(0);
   const [ready, setReady] = useState(false);
-  const morphRef = useRef<((t: number) => string) | null>(null);
+  const [fit, setFit] = useState<Fit | null>(null);
+  const readyRef = useRef(false);
+  readyRef.current = ready;
   const foldRef = useRef(onFold);
   foldRef.current = onFold;
   const startRef = useRef(onFoldStart);
   startRef.current = onFoldStart;
 
-  /** Built from the CURRENT viewport, so rotation/resizes stay correct. */
-  const build = async () => {
-    const { interpolate } = await import("flubber");
-    const matrix = source.current?.getScreenCTM();
-    if (!matrix) return null;
-    const inverse = matrix.inverse();
-    const w = window.innerWidth, h = window.innerHeight;
-    const rounded = (inset:number, radius:number, reverse=false) => {
-      const corners = [{x:w-inset-radius,y:inset+radius,start:-90},{x:w-inset-radius,y:h-inset-radius,start:0},{x:inset+radius,y:h-inset-radius,start:90},{x:inset+radius,y:inset+radius,start:180}];
-      const ring = corners.flatMap(c => Array.from({length:10},(_,i) => {const a=(c.start+i*90/9)*Math.PI/180;return {x:c.x+radius*Math.cos(a),y:c.y+radius*Math.sin(a)};}));
-      return reverse ? ring.reverse() : ring;
-    };
-    const local = [...rounded(0,30),...rounded(10,20,true)].map(p => new DOMPoint(p.x,p.y).matrixTransform(inverse));
-    const outer=local.slice(0,40), inner=local.slice(40);
-    const target = `M${outer.map(p=>`${p.x},${p.y}`).join("L")}Z M${inner.map(p=>`${p.x},${p.y}`).join("L")}Z`;
-    return interpolate(LIVING_G_PATH, target, {maxSegmentLength:80});
+  /** Measured from the CURRENT viewport, so rotation/resizes stay correct. */
+  const measure = (): Fit | null => {
+    const el = source.current, box = frame.current?.getBoundingClientRect();
+    const m = el?.ownerSVGElement?.getScreenCTM();
+    if (!m || !box) return null;
+    const pt = (x: number, y: number) => new DOMPoint(x, y).matrixTransform(m);
+    const tl = pt(HOLLOW.left, HOLLOW.top), br = pt(HOLLOW.right, HOLLOW.bottom);
+    const L = tl.x - box.left, R = br.x - box.left, T = tl.y - box.top, B = br.y - box.top;
+    const inset = 10;
+    const sx = (box.width - 2 * inset) / (R - L), sy = (box.height - 2 * inset) / (B - T);
+    return { sx, sy, ax: inset - sx * L, ay: inset - sy * T };
   };
 
   useEffect(() => {
     let dead = false, raf = 0;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) { setT(1); setReady(true); return; }
-    void build().then((morph) => {
-      if (!morph || dead) return;
-      morphRef.current = morph;
+    /* Wait for the stage to lay out (two frames), then measure once. */
+    raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => {
+      const f = measure();
+      if (!f) { setT(1); setReady(true); return; }
+      setFit(f);
       const start = performance.now();
-      const step = (now:number) => { if(dead) return; const k=Math.min(1,(now-start)/1150); const e=k*k*(3-2*k); setT(e); setMorphed(morph(e)); if(k<1) raf=requestAnimationFrame(step); else setReady(true); };
-      raf=requestAnimationFrame(step);
-    });
-    const resize = () => { morphRef.current = null; };
+      const step = (now: number) => { if (dead) return; const k = Math.min(1, (now - start) / 900); const e = k * k * (3 - 2 * k); setT(e); if (k < 1) raf = requestAnimationFrame(step); else setReady(true); };
+      raf = requestAnimationFrame(step);
+    }); });
+    /* A rotation/resize after settling re-measures at the next pinch;
+       mid-unfold resizes simply keep the running fit (no jump). */
+    const resize = () => { if (readyRef.current) setFit(null); };
     window.addEventListener("resize", resize);
-    return () => { dead=true; cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+    return () => { dead = true; cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
 
   /* PINCH TO FOLD — two fingers only; one finger scrolls/types as normal. */
@@ -208,15 +215,14 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     let startDist = 0, p = 0, active = false, raf = 0;
     const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const dist = (e: TouchEvent) => { const [a, b] = [e.touches[0]!, e.touches[1]!]; return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); };
-    const paint = (k: number) => { setT(1 - k); const m = morphRef.current; if (m) setMorphed(m(1 - k)); };
+    const paint = (k: number) => setT(1 - k);
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 2 || active) return;
       active = true; startDist = dist(e) || 1; p = 0;
       cancelAnimationFrame(raf);
       /* Leaving begins: mic off now, no auto-restart, draft kept. */
       startRef.current?.();
-      setReady(false);
-      if (!morphRef.current) void build().then((m) => { if (m) morphRef.current = m; });
+      if (!reduced()) { setFit((f) => f ?? measure()); setReady(false); }
     };
     const onMove = (e: TouchEvent) => {
       if (!active || e.touches.length < 2) return;
@@ -225,7 +231,7 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
       if (!reduced()) paint(p);
     };
     const settle = (to: 0 | 1) => {
-      const from = p, t0 = performance.now(), ms = reduced() ? 0 : 220 * Math.abs(to - from) + 60;
+      const from = p, t0 = performance.now(), ms = reduced() ? 0 : 260 * Math.abs(to - from) + 60;
       const step = (now: number) => {
         const k = ms ? Math.min(1, (now - t0) / ms) : 1;
         p = from + (to - from) * (1 - (1 - k) ** 3);
@@ -248,8 +254,16 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     return () => { cancelAnimationFrame(raf); el.removeEventListener("touchstart", onStart); el.removeEventListener("touchmove", onMove); el.removeEventListener("touchend", onEnd); el.removeEventListener("touchcancel", onEnd); };
   }, []);
 
-  return <div ref={frame} className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready ? "1":"0"} data-fold={(1 - t).toFixed(2)}>
-    <div className="absolute inset-0 pointer-events-none" data-g-unpretzel="" style={{ visibility: ready ? "hidden" : "visible" }}><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={morphed ?? LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div>
-    <div className="gv-review-content" style={ready ? undefined : { opacity: Math.max(0, (t - 0.6) / 0.4) }}>{children}</div>
+  const f = fit;
+  const transform = f ? `matrix(${1 + (f.sx - 1) * t},0,0,${1 + (f.sy - 1) * t},${f.ax * t},${f.ay * t})` : undefined;
+  /* The real G stays visible until the CSS rim exactly overlays its band. */
+  const showG = !ready && (!!f || t < 1);
+  /* Last quarter: the stretched G hands over to the identical CSS rim. */
+  const hand = Math.max(0, Math.min(1, (t - 0.78) / 0.22));
+
+  return <div ref={frame} className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready ? "1" : "0"} data-fold={(1 - t).toFixed(2)}>
+    <div className="absolute inset-0 pointer-events-none" data-g-unpretzel="" style={{ visibility: showG ? "visible" : "hidden", transformOrigin: "0 0", transform, opacity: 1 - hand }}><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div>
+    {!ready && <div className="gv-morph-rim" aria-hidden="true" style={{ opacity: hand }} />}
+    <div className="gv-review-content" style={ready ? undefined : { opacity: Math.max(0, (t - 0.7) / 0.3) }}>{children}</div>
   </div>;
 }

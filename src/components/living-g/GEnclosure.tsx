@@ -181,7 +181,7 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     const pt = (x: number, y: number) => new DOMPoint(x, y).matrixTransform(m);
     const tl = pt(HOLLOW.left, HOLLOW.top), br = pt(HOLLOW.right, HOLLOW.bottom);
     const L = tl.x - box.left, R = br.x - box.left, T = tl.y - box.top, B = br.y - box.top;
-    const inset = 9;
+    const inset = 10;
     const sx = (box.width - 2 * inset) / (R - L), sy = (box.height - 2 * inset) / (B - T);
     return { sx, sy, ax: inset - sx * L, ay: inset - sy * T };
   };
@@ -253,9 +253,12 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
   const transform = f ? `matrix(${1 + (f.sx - 1) * t},0,0,${1 + (f.sy - 1) * t},${f.ax * t},${f.ay * t})` : undefined;
   /* The real G stays visible until the CSS rim exactly overlays its band. */
   const showG = !ready && (!!f || t < 1);
+  /* Last quarter: the stretched G hands over to the identical CSS rim. */
+  const hand = Math.max(0, Math.min(1, (t - 0.78) / 0.22));
 
   return <div ref={frame} className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready ? "1" : "0"} data-fold={(1 - t).toFixed(2)}>
-    <div className="absolute inset-0 pointer-events-none" data-g-unpretzel="" style={{ visibility: showG ? "visible" : "hidden", transformOrigin: "0 0", transform }}><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div>
+    <div className="absolute inset-0 pointer-events-none" data-g-unpretzel="" style={{ visibility: showG ? "visible" : "hidden", transformOrigin: "0 0", transform, opacity: 1 - hand }}><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div>
+    {!ready && <div className="gv-morph-rim" aria-hidden="true" style={{ opacity: hand }} />}
     <div className="gv-review-content" style={ready ? undefined : { opacity: Math.max(0, (t - 0.7) / 0.3) }}>{children}</div>
   </div>;
 }

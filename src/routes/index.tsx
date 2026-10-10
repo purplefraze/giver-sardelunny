@@ -891,7 +891,7 @@ function Index() {
               <LoopLabels
                 seat={seat}
                 quiet={
-                  talking_ ? ["top", "middle", "bottom"] : recordAvailable(firstLand?.phase ?? null) ? ["middle", "bottom"] : firstLand ? ["top", "bottom"] : []
+                  talking_ ? ["top", "middle", "bottom"] : recordAvailable(firstLand?.phase ?? null) ? ["top", "middle", "bottom"] : firstLand ? ["top", "bottom"] : []
                 }
               />
               {/* ONE TOGGLE: while the ceremony runs, it draws the only bead. */}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { ageFrom, passwordStrongEnough } from "@/data/account";
+import { passwordStrongEnough } from "@/data/account";
+import { birthdayBounds, profileBirthdaySchema } from "@/lib/profile-birthday";
 import { myProfileStore, reservedTotal } from "@/data/my-profile";
 import { ME_ID, itemLine, type Item } from "@/data/items";
 import { memberById } from "@/data/giver";
@@ -49,7 +50,7 @@ import { seatCentre, toggleGeometry } from "@/components/living-g/EarSelector";
  * tap = start/stop listening. Nothing saves without its own button.
  */
 
-type Bio = { username: string; about: string; byDay: string; byNight: string; weekend: string; birthday: string };
+type Bio = { username: string; about: string; birthday: string };
 
 const BLUE = "var(--mode-giver)";
 const PAPER = "var(--background)";
@@ -219,9 +220,6 @@ export function MyGRing({
   const bioFrom = () => ({
     username: (me.username ?? "").replace(/^@/, ""),
     about: me.aboutMe ?? "",
-    byDay: me.byDay ?? "",
-    byNight: me.byNight ?? "",
-    weekend: me.weekend ?? "",
     birthday: me.birthday ?? "",
   });
 
@@ -467,11 +465,11 @@ export function MyGRing({
       {showPanel && (opened || recMode) ? (
         <div
           data-interior=""
-          className="absolute overflow-y-auto overscroll-contain touch-auto px-1 pb-3 transition-opacity duration-200"
+          className={`absolute ${opened === "bio" && !recMode ? "overflow-visible" : "overflow-y-auto"} overscroll-contain touch-auto px-1 pb-3 transition-opacity duration-200`}
           style={{ left: panelLeft, top: panelTop, width: panelW, height: panelMaxH, color: INK, textAlign: "left" }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {!photoView ? <h1 className="g-heading mb-5" style={{ color: BLUE }}>{seat.word}</h1> : null}
+          {!photoView ? <h1 className={`g-heading ${opened === "bio" ? "mb-2" : "mb-5"}`} style={{ color: BLUE }}>{seat.word}</h1> : null}
           {recMode ? (
             <form
               className="mb-3 flex gap-2"
@@ -552,40 +550,39 @@ function Area({
     const d = bioDraft ?? bioFrom();
     const set = (k: keyof Bio, v: string) => setBioDraft({ ...d, [k]: v });
     const dirty = bioDraft !== null && JSON.stringify(bioDraft) !== JSON.stringify(bioFrom());
-    const age = ageFrom(me.birthday);
+    const birthdayResult = profileBirthdaySchema().safeParse(d.birthday);
+    const birthdayError = birthdayResult.success ? "" : birthdayResult.error.issues[0]?.message ?? "enter a valid birthday";
     const row = (k: keyof Bio, label: string, multi = false) => (
-      <label className="mb-3 block">
+      <label className="mb-2 block">
         <span className="g-meta block opacity-60">{label}</span>
         {multi ? (
-          <textarea className={field} rows={3} value={d[k] ?? ""} onChange={(e) => set(k, e.target.value)} />
+          <textarea className={`${field} resize-none`} rows={2} maxLength={1000} value={d[k] ?? ""} onChange={(e) => set(k, e.target.value)} />
         ) : (
           <input className={field} value={d[k] ?? ""} onChange={(e) => set(k, e.target.value)} />
         )}
       </label>
     );
     return (
-      <div>
+      <div data-profile-bio="">
         {row("username", "username")}
         {row("about", "about me", true)}
-        {row("byDay", "by day")}
-        {row("byNight", "by night")}
-        {row("weekend", "weekends")}
-        <label className="mb-4 block"><span className="g-meta block">birthday · only you</span><input type="date" aria-label="birthday" className={field} value={d.birthday} onChange={e => set("birthday",e.target.value)} /></label>
-        {age != null ? <p className="g-meta mb-3 opacity-60">{age}</p> : null}
+        <label className="mb-2 block">
+          <span className="g-meta block">birthday · only you</span>
+          <input type="date" aria-label="birthday" aria-invalid={Boolean(birthdayError)} aria-describedby={birthdayError ? "profile-birthday-error" : undefined} {...birthdayBounds()} className={`${field} min-h-11 min-w-0 max-w-full`} value={d.birthday} onChange={e => set("birthday", e.target.value)} />
+        </label>
+        {birthdayError ? <p id="profile-birthday-error" role="alert" className="g-meta mb-2">{birthdayError}</p> : null}
         <div className="flex gap-4">
           <Button variant="ghost"
             type="button"
             className={btn}
             style={{ color: BLUE, opacity: dirty ? 1 : 0.4 }}
-            disabled={!dirty}
+            disabled={!dirty || Boolean(birthdayError)}
             onClick={() => {
+              if (!profileBirthdaySchema().safeParse(d.birthday).success) return;
               const u = (d.username ?? "").trim().replace(/^@/, "");
               myProfileStore.patch({
                 ...(u ? { username: `@${u}` } : {}),
                 aboutMe: (d.about ?? "").trim(),
-                byDay: (d.byDay ?? "").trim(),
-                byNight: (d.byNight ?? "").trim(),
-                weekend: (d.weekend ?? "").trim(),
                 birthday: d.birthday,
               });
               setBioDraft(null);

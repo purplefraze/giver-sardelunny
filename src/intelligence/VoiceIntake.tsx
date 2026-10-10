@@ -179,7 +179,6 @@ export function VoiceIntake({
             if (listening) voiceCapture.stop();
             setText(e.target.value);
           }}
-          autoFocus={v.state === "unsupported" || v.state === "error"}
         />
       </label>
       {preview?.intent === "search" ? (

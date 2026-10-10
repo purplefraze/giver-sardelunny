@@ -1997,6 +1997,7 @@
 .cg-location { font:450 14px/1.4 var(--giver-font); padding:10px 0; }
 .cg-list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; }
 
+.gv-morph-frame { --spatial-mask-on: #fff; --spatial-mask-off: #000; }
 .gv-outline { position:absolute; inset:0; pointer-events:none; }
 .gv-review-content { position:absolute; inset:10px; visibility:hidden; pointer-events:none; overflow:hidden; border-radius:20px; }
 .gv-morph-frame[data-unfold-ready="1"] .gv-review-content { visibility:visible; pointer-events:auto; }
@@ -2060,7 +2061,7 @@
 html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 
 /* Curved posting/profile chambers: no page-border snap or listing card. */
-.gv-review-content { inset: max(30px, 7%) 32px; border-radius:0; }
+.gv-review-content { inset: max(90px, 12%) 32px max(64px, 10%); border-radius:0; }
 .gv-sheet { padding:12px 0 24px; }
 .gv-rec-dock { background:transparent; padding:10px 0; min-height:76px; }
 [data-profile-loop] [data-interior] { scrollbar-width:thin; touch-action:pan-y pinch-zoom; }
@@ -2182,3 +2183,15 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .gv-field textarea { min-height:0; }
 .gv-form[data-dense="1"] .gv-field { padding-block:5px; }
 .gv-form[data-dense="1"] .gv-title { margin-bottom:2px; }
+
+/* Keyboard changes content only; the captured G box/contour stays fixed. */
+.gv-morph-frame[data-keyboard="1"] .gv-review-content {
+  top:max(100px, calc(var(--gv-keyboard-top, 0px) + 12px));
+  bottom:calc(var(--gv-keyboard-bottom, 0px) + 12px);
+}
+.gv-morph-frame[data-keyboard="1"] .gv-scroll { overflow-y:auto; }
+.gv-morph-frame[data-keyboard="1"] .gv-actions,
+.gv-morph-frame[data-keyboard="1"] .gv-answer-actions {
+  position:sticky; bottom:0; background:var(--world-bg); z-index:1;
+}
+.gv-field input,.gv-field textarea,.gv-field select { font-size:max(16px, calc(17px * var(--gv-fit))); }

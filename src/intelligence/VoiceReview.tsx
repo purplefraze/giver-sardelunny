@@ -13,6 +13,7 @@ import { CalendarDays } from "lucide-react";
 import { pickedAnswerTime } from "./answer-time";
 import { toDateOnly, parseDateOnly } from "@/lib/date-only";
 import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
+import { formKeyboardBounds } from "@/lib/form-keyboard";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -36,10 +37,28 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   useEffect(() => {
     const vv = typeof window !== "undefined" ? window.visualViewport : null;
     if (!vv) return;
-    const on = () => setKeyboard(vv.height < window.innerHeight * 0.78);
-    on(); vv.addEventListener("resize", on);
-    return () => vv.removeEventListener("resize", on);
+    const height = sheet.current?.closest("[data-voice-frame]")?.getBoundingClientRect().height ?? window.innerHeight;
+    const on = () => setKeyboard(formKeyboardBounds(height, vv.height, vv.offsetTop, vv.scale).keyboard);
+    on(); vv.addEventListener("resize", on); vv.addEventListener("scroll", on);
+    return () => { vv.removeEventListener("resize", on); vv.removeEventListener("scroll", on); };
   }, []);
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el) return;
+    const reveal = () => {
+      const active = document.activeElement;
+      if (!keyboard || !(active instanceof HTMLElement) || !el.contains(active)) return;
+      const field = active.getBoundingClientRect();
+      const band = el.getBoundingClientRect();
+      if (field.bottom > band.bottom - 12) el.scrollTop += field.bottom - band.bottom + 12;
+      else if (field.top < band.top + 12) el.scrollTop -= band.top + 12 - field.top;
+    };
+    if (!keyboard) el.scrollTop = 0;
+    const raf = requestAnimationFrame(reveal);
+    el.addEventListener("focusin", reveal);
+    window.visualViewport?.addEventListener("resize", reveal);
+    return () => { cancelAnimationFrame(raf); el.removeEventListener("focusin", reveal); window.visualViewport?.removeEventListener("resize", reveal); };
+  }, [keyboard]);
   useLayoutEffect(() => {
     const el = sheet.current;
     if (!el || keyboard) return;
@@ -136,7 +155,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         <p className="g-meta">{noun}</p>
         <h1 className="gv-question">{c.timePending?.question || ask || ({give:"what would you like to give?",wish:"what are you wishing for?",borrow:"what would you like to borrow?",lend:"what can you lend?",trade:"what would you like to trade?",fund:"what are you raising funds for?"}[action])}</h1>
         <label className="gv-field"><span className="sr-only">your answer</span><textarea aria-label="your answer" autoCapitalize="none" rows={2} value={answer} onChange={e=>setAnswer(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(answer.trim()){conversation.answer(answer);setAnswer("");}}}} /></label>
-        {listening || v.transcript || v.state==="error" ? <div className="gv-live" aria-live="polite" data-form-listening=""><p className="g-meta" role="status">{v.state==="listening"?"listening…":v.state==="processing"?"got it…":v.state==="error"?(v.error??"listening stopped. type instead."):listening?"starting…":"heard"}</p>{v.transcript?<p className="gv-heard" data-form-heard="">{v.transcript}</p>:null}</div> : null}
+        {listening || v.transcript ? <div className="gv-live" aria-live="polite" data-form-listening=""><p className="g-meta" role="status">{v.state==="listening"?"listening…":v.state==="processing"?"got it…":listening?"starting…":"heard"}</p>{v.transcript?<p className="gv-heard" data-form-heard="">{v.transcript}</p>:null}</div> : null}
         {s.choices?.length?<div className="gv-answer-choices">{s.choices.map(choice=><Button variant="ghost" type="button" key={choice} onClick={()=>conversation.answer(choice)}>{choice}</Button>)}</div>:null}
         {temporal ? <div className="gv-date-answer">
           <Popover><PopoverTrigger asChild><Button variant="ghost" type="button" aria-label="choose a collection or availability date"><CalendarDays />{date||"choose a date"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0 pointer-events-auto"><Calendar mode="single" selected={parseDateOnly(date)??undefined} onSelect={d=>{if(d)setDate(toDateOnly(d));}} className="pointer-events-auto" /></PopoverContent></Popover>

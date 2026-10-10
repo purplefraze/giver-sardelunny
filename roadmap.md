@@ -51,3 +51,7 @@
 - [x] Main middle toggle: landing label → idle dot → tap to record/stop on the toggle itself (seat seeds the draft); nook mic removed
 - [ ] Tapping My G zooms into the actual toggle circle with the profile bead inside (not started; profile loop still rides the middle-loop rim)
 - Contextual follow-up: rule engine + AI second read (openai/gpt-6-astra) via src/lib/followup.functions.ts — done; device speech test open
+
+- [x] Oct 10 17:08: middle-loop tap opens every posting mode form in the unfolded G; bottom-centre in-form recorder shares the one draft.
+- [ ] Refine the unpretzel intermediate (filled-blob frame) and a reverse fold on return to the G.
+- [ ] Real iPhone microphone/Safari check of the in-form recorder.

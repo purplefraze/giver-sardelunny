@@ -6,12 +6,14 @@ import { editField, hear, isEcho, nextAsk, startSession, sessionForSeat, type Vo
 import { followUp } from "@/lib/followup.functions";
 import type { VoiceFields } from "@/intelligence/voice-flow";
 import type { GiverAction } from "@/intelligence/action-draft";
+import { contextOf } from "@/intelligence/contextual-needs";
 
 /**
  * THE ONE VOICE CONVERSATION — lives while the G stays intact.
  * Main toggle tap starts/stops hands-free listening; "off" keeps the draft.
  * The legacy hold adapter is only for the existing profile/review controls.
- * Listening pauses while Giver speaks; review always stops it.
+ * Listening pauses while Giver speaks. On the G, reaching review stops it;
+ * inside the unfolded form only an explicit record tap starts or stops it.
  * Nothing here publishes.
  */
 export type MicMode = "off" | "hold" | "locked";
@@ -22,9 +24,14 @@ export type Conversation = {
   photo: { file: File; url: string } | null;
   pin: Pin | null;
   picking: boolean;
+  /** The unfolded editable form is showing (manual-first or voice-to-review). */
+  form: boolean;
+  /** Fields the person typed; voice and the model never overwrite them. */
+  edited: string[];
 };
 
-let snap: Conversation = { session: null, mode: "off", photo: null, pin: null, picking: false };
+const BLANK = { photo: null, pin: null, picking: false, form: false, edited: [] as string[] };
+let snap: Conversation = { session: null, mode: "off", ...BLANK };
 const subs = new Set<() => void>();
 let spokenPrompt = "";
 let revision = 0;
@@ -38,9 +45,23 @@ const set = (next: Partial<Conversation>) => {
   subs.forEach((f) => f());
 };
 
+const mark = (k: string) => (snap.edited.includes(k) ? snap.edited : [...snap.edited, k]);
+/** The person's typed values survive any later voice turn. */
+function keepEdits(before: VoiceSession, after: VoiceSession): VoiceSession {
+  if (!snap.edited.length || before.action !== after.action) return after;
+  const fields = { ...after.fields, ctx: { ...after.fields.ctx } } as VoiceFields;
+  for (const k of snap.edited) {
+    if (k.startsWith("ctx:")) { const c = k.slice(4) as keyof VoiceFields["ctx"]; (fields.ctx as Record<string, unknown>)[c] = before.fields.ctx[c]; }
+    else (fields as Record<string, unknown>)[k] = before.fields[k as keyof VoiceFields];
+  }
+  if (snap.edited.includes("what") && before.fields.context) fields.context = before.fields.context;
+  return { ...after, fields };
+}
+
 const speakIfNew = () => {
   const s = snap.session;
-  if (!s || snap.mode === "off" || snap.mode === "hold" || s.stage === "review" || s.stage === "live") return;
+  /* Inside the form the question is on screen, never spoken (no self-capture). */
+  if (!s || snap.form || snap.mode === "off" || snap.mode === "hold" || s.stage === "review" || s.stage === "live") return;
   if (s.prompt === spokenPrompt) return;
   spokenPrompt = s.prompt;
   voiceCapture.speak(s.prompt, () => {
@@ -51,8 +72,9 @@ const speakIfNew = () => {
 const advance = (words: string) => {
   if (!snap.session) return;
   if (isEcho(words, spokenPrompt)) return;
-  set({ session: hear(snap.session, words) });
-  if (snap.session?.stage === "review") { set({ mode: "off" }); voiceCapture.stop(); return; }
+  const before = snap.session;
+  set({ session: keepEdits(before, hear(before, words)) });
+  if (snap.session?.stage === "review" && !snap.form) { set({ mode: "off" }); voiceCapture.stop(); return; }
   void locate();
   void refine();
   if (snap.mode === "locked") speakIfNew();
@@ -79,13 +101,13 @@ async function refine() {
   const cur = snap.session;
   if (!cur || revision !== turn || cur.fields.context !== kind || r.source !== "model") return;
   const ctx = { ...cur.fields.ctx } as Record<string, string | undefined>;
-  for (const [k, v] of Object.entries(r.ctx)) if (v && !ctx[k]) ctx[k] = v;
+  for (const [k, v] of Object.entries(r.ctx)) if (v && !ctx[k] && !snap.edited.includes(`ctx:${k}`)) ctx[k] = v;
   let next = nextAsk({ ...cur, fields: { ...cur.fields, ctx } });
   const unspoken = cur.prompt !== spokenPrompt;
   if (r.ask && r.field && next.asking === `ctx:${r.field}` && (unspoken || next.asking !== cur.asking)) next = { ...next, prompt: r.ask };
   if (next.asking === cur.asking && next.prompt === cur.prompt && JSON.stringify(ctx) === JSON.stringify(cur.fields.ctx)) return;
   set({ session: next });
-  if (next.stage === "review") { set({mode:"off"}); voiceCapture.stop(); }
+  if (next.stage === "review" && !snap.form) { set({mode:"off"}); voiceCapture.stop(); }
   else if (snap.mode === "locked") speakIfNew();
 }
 
@@ -113,9 +135,10 @@ function wire() {
      carry on listening only in an active hands-free draft. Explicit stop sets mode off. */
   voiceCapture.subscribe(() => {
     const v = voiceCapture.get();
-    if (v.state === "idle" && snap.mode === "locked" && !snap.picking && snap.session && snap.session.stage !== "review" && snap.session.stage !== "live") {
+    const may = () => snap.mode === "locked" && !snap.picking && !!snap.session && snap.session.stage !== "live" && (snap.form || snap.session.stage !== "review");
+    if (v.state === "idle" && may()) {
       queueMicrotask(() => {
-        if (voiceCapture.get().state === "idle" && snap.mode === "locked" && snap.session?.stage !== "review" && snap.session?.stage !== "live") voiceCapture.start();
+        if (voiceCapture.get().state === "idle" && may()) voiceCapture.start();
       });
     }
     if ((v.state === "error" || v.state === "unsupported") && snap.mode !== "off") set({ mode: "off" });
@@ -135,14 +158,14 @@ export const conversation = {
     if (snap.session && currentSeat) parked.set(currentSeat, snap);
     currentSeat = seat;
     spokenPrompt = "";
-    set({ ...(parked.get(seat) ?? { session:sessionForSeat(seat), photo:null, pin:null, picking:false }), mode:"off" });
+    set({ ...(parked.get(seat) ?? { session:sessionForSeat(seat), ...BLANK }), mode:"off" });
     voiceCapture.cancel();
   },
   toggle(seat: string) {
     wire();
     if (snap.mode !== "off") { conversation.stopLocked(); return; }
     if (!snap.session || currentSeat !== seat) conversation.selectSeat(seat);
-    if (snap.session?.stage === "review" || snap.session?.stage === "live") return;
+    if (snap.session?.stage === "live" || (snap.session?.stage === "review" && !snap.form)) return;
     set({ mode: "locked" });
     voiceCapture.start();
   },
@@ -189,10 +212,49 @@ export const conversation = {
   /** Editing a contextual detail in the preview (the person's edit wins). */
   editCtx(field: string, value: string) {
     const s = snap.session;
-    if (s) set({ session: { ...s, fields: { ...s.fields, ctx: { ...s.fields.ctx, [field]: value } } } });
+    if (s) set({ edited: mark(`ctx:${field}`), session: { ...s, asking: s.asking === "seed" ? null : s.asking, fields: { ...s.fields, ctx: { ...s.fields.ctx, [field]: value } } } });
   },
   edit(field: keyof VoiceFields, value: string) {
-    if (snap.session) set({ session: editField(snap.session, field, value) });
+    const s = snap.session;
+    if (!s) return;
+    let next = editField(s, field, value);
+    /* A typed "guitar lessons" is a lesson: lesson labels, never condition. */
+    if (field === "what" && !next.fields.context && s.action !== "trade") {
+      const k = contextOf(value);
+      if (k === "lesson" || k === "service") next = { ...next, fields: { ...next.fields, context: k } };
+    }
+    const kind = next.fields.context;
+    if (field === "what" && (kind === "lesson" || kind === "service") && !snap.edited.includes("ctx:subject"))
+      next = { ...next, fields: { ...next.fields, ctx: { ...next.fields.ctx, subject: value.trim() } } };
+    if (next.asking === "seed") next = { ...next, asking: null };
+    /* The on-screen question follows what's actually still missing. */
+    if (snap.form && next.action && (next.stage === "talk" || next.stage === "anything")) next = nextAsk(next);
+    set({ edited: mark(field), session: next });
+  },
+  /**
+   * MIDDLE-LOOP TAP: the selected mode's editable form, now — no recording
+   * first. Reuses that seat's parked draft, otherwise a fresh empty one.
+   * Never listens on its own; never saves.
+   */
+  openForm(seat: string) {
+    if (!(["give", "wish", "trade", "borrow", "lend", "fund"] as const).includes(seat as GiverAction)) return;
+    if (currentSeat !== seat || !snap.session) conversation.selectSeat(seat);
+    if (!snap.session?.action) set({ session: sessionForSeat(seat) });
+    set({ form: true });
+  },
+  /** The form's own bottom record button: same draft, same capture. */
+  recordInForm() {
+    wire();
+    if (!snap.form || !snap.session || snap.session.stage === "live") return;
+    if (snap.mode !== "off") { conversation.stopLocked(); return; }
+    set({ mode: "locked" });
+    voiceCapture.start();
+  },
+  /** Back to the Living G: listening stops, the unshared draft stays parked. */
+  closeForm() {
+    voiceCapture.stop();
+    const s = snap.session;
+    set({ form: false, mode: "off", ...(s && s.stage === "review" ? { session: { ...s, stage: "talk", asking: null, prompt: "add a detail, or tap the middle to see your draft" } } : {}) });
   },
   useLocation() {
     const s = snap.session;
@@ -230,17 +292,19 @@ export const conversation = {
   review() {
     const s = snap.session;
     if (!s?.action) return;
-    set({ mode: "off", session: { ...s, stage: "review" } });
+    if (snap.form) { if (s.stage !== "review") set({ session: { ...s, stage: "review" } }); return; }
+    set({ mode: "off", form: true, session: { ...s, stage: "review" } });
     voiceCapture.cancel();
   },
   live() {
     const s = snap.session;
-    if (s) set({ session: { ...s, stage: "live" } });
+    if (s) set({ mode: "off", session: { ...s, stage: "live" } });
+    voiceCapture.cancel();
   },
   close() {
     voiceCapture.cancel();
     spokenPrompt = "";
     parked.delete(currentSeat); currentSeat = "";
-    set({ session: null, mode: "off", photo: null, pin: null, picking: false });
+    set({ session: null, mode: "off", ...BLANK });
   },
 };

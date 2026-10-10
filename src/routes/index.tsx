@@ -304,11 +304,13 @@ function Index() {
 
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const talk = useSyncExternalStore(conversation.subscribe, conversation.get, conversation.getServer);
-  const talking_ = talk.session !== null && talk.session.stage !== "review" && talk.session.stage !== "live";
-  const reviewing = talk.session?.stage === "review" || talk.session?.stage === "live";
+  const talking_ = !talk.form && talk.session !== null && talk.session.stage !== "review" && talk.session.stage !== "live";
+  /* ONE unfolded form for both doors: middle-loop tap (manual-first) and voice review. */
+  const reviewing = talk.form || talk.session?.stage === "live";
+  const reachedReview = talk.session?.stage === "review" && !talk.form;
   useEffect(() => {
-    if (reviewing) { conversation.review(); }
-  }, [reviewing]);
+    if (reachedReview) { conversation.review(); }
+  }, [reachedReview]);
   useEffect(() => () => { conversation.stopLocked(); voiceCapture.cancel(); }, []);
   /* A spoken search leaves the conversation for communi-g's own listings. */
   useEffect(() => {
@@ -768,21 +770,11 @@ function Index() {
       openMyG();
       return;
     }
-    /* FUND opens its own form — "ask for funding" — in the same chamber.
-       (The pledge sheet stays one loop down: Fund's communi-g.) */
-    if (activity === "fund") {
-      setEditor({ kind: "ask-fund" });
-      return;
-    }
-    /* TAP TO ENTER (testing phase): the seat's own action screen — the
-       existing CategoryForm ("what can you give today?" for Give) — opens
-       even before the profile exists. It used to route first-arrival taps to
-       profile setup; that detour is removed for testing. */
-    setEditor({
-      kind: "category",
-      category: mode,
-      ...(seat === "lend" ? { side: "lend" as BorrowSide } : {}),
-    });
+    /* EVERY POSTING MODE (Fund included): the middle loop opens that mode's
+       editable form at once inside the unfolded G — fresh, or the seat's
+       kept draft. Never listens, never saves. */
+    haptics.light();
+    conversation.openForm(seat);
   };
 
   /**
@@ -831,7 +823,7 @@ function Index() {
          over the launch/auth screens. Both return once the G is showing.
          (DevControls is also DEV-build-only; its "replay onboarding" now
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
-      {entered && !chromeQuiet ? <DevControls /> : null}
+      {entered && !chromeQuiet && !reviewing ? <DevControls /> : null}
       {reviewing ? (
         <VoiceEnclosure seat={talk.session?.action ?? seat}>
           <VoiceReview
@@ -847,7 +839,7 @@ function Index() {
           />
         </VoiceEnclosure>
       ) : null}
-      {entered && !chromeQuiet && !browse ? <DevSeal /> : null}
+      {entered && !chromeQuiet && !browse && !reviewing ? <DevSeal /> : null}
       {!entered ? (
         /* ONBOARDING ENDS AT MY G. No profile flow, no reward screen. */
         <Onboarding
@@ -950,6 +942,7 @@ function Index() {
                 label: "",
                 panelTitle: content.mine.title,
                 panelBody: null,
+                ariaLabel: atMap ? "open the communi-g map" : activity === null ? "open my g" : `open the ${seat} form`,
                 onPress: enterSelectedWorld,
                 /* The label is drawn by <LoopLabels> in the overlay. */
               },

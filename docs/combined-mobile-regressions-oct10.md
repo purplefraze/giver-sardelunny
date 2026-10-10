@@ -13,10 +13,11 @@
 - Cooked turkey → explicit collection question → mock geocoder result → date → review: date and confirmed approximate area preserved. Mars rejected; public label excludes house number. Existing Share identity/retry tests use mocked dependencies, not real records.
 - All community headings (`all community`, `gives`, `wishes`, `trades`, `borrows`, `lends`, `funds`) measured identically at x24/y108; lists left aligned.
 - `/auth`: long email stays a native horizontally scrolling one-line input; Living G bounding box identical through focus, long typing, simulated visualViewport offset/contraction and dismissal.
-- Local test suite and automatic build status are recorded in the final verification update below. No deployment or remote mutation.
+- Final verification: 650 local tests passed, zero failed; harness automatic build reported `build OK` at 22:40:08. Final six-mode/community mock browser run had zero runtime errors, with remote writes blocked. No deployment or remote mutation.
 
 ## Unresolved / not claimed
 - Physical iPhone Safari keyboard, autofill, date picker, touch gestures and haptics cannot be verified in this sandbox. Chromium visualViewport simulation is not hardware proof.
 - Google Maps connector is absent. Existing OSM/Nominatim prototype provider is reused for explicit search only; its policy forbids per-keystroke autocomplete. True map autocomplete remains blocked pending an eligible connected provider. No paid service enabled.
 - Dense Give review at 320×568 requires its existing last-resort internal scroll; the full page and G do not scroll/reflow. Date/Share require scrolling inside that review at this smallest viewport.
 - Provider search browser checks use isolated responses; live geocoder availability and authenticated publication/second-viewer persistence remain unverified. Device location does not automatically establish a human-readable neighbourhood name.
+- Draggable-pin implementation has bounds/privacy unit coverage; physical dragging and fine middle-ring connection appearance still need device/visual review. No claim of a verified historical Safari implementation or complete hardware regression pass.

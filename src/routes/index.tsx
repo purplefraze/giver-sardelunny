@@ -884,12 +884,12 @@ function Index() {
             overlay={
               <>
               {/* THE LOOP LABELS — always shown, one component for every seat. */}
-              <LoopLabels
+              {!recordAvailable(firstLand?.phase ?? null) ? <LoopLabels
                 seat={seat}
                 quiet={
                   talking_ ? ["top", "middle", "bottom"] : recordAvailable(firstLand?.phase ?? null) ? ["top", "middle", "bottom"] : firstLand ? ["top", "bottom"] : []
                 }
-              />
+              /> : null}
               {/* ONE TOGGLE: while the ceremony runs, it draws the only bead. */}
               {ceremony ? null : (
                 <EarSelector

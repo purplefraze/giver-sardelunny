@@ -276,9 +276,9 @@ export const SEAT_TITLE: Record<Seat, string> = {
  * nudges it back so the ink, not the advance box, is centred.
  */
 export const TOGGLE_TITLE = {
-  sizeOfInner: 0.3,
-  tracking: 0.08,
-  weight: 400,
+  sizeOfInner: 0.36,
+  tracking: 0,
+  weight: 700,
   xHeight: 0.52,
 } as const;
 

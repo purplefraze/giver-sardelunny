@@ -24,7 +24,7 @@ export function VoiceLoops({ onReview, seat = "wish" }: { onReview: () => void; 
         {s.choices.length ? <div className="gv-taps">{s.choices.map(ch => <Button variant="ghost" key={ch} className="gv-tap" onClick={() => conversation.choose(ch)}>{ch}</Button>)}</div> : null}
         {s.asking === "where" && !c.pin ? <Button variant="ghost" className="gv-tap" onClick={() => conversation.useLocation()}>use my location</Button> : null}
         {s.wantsPhoto || c.photo ? <Button variant="ghost" className="gv-plus" aria-label={c.photo ? "change photo" : "add a photo"} onClick={() => { haptics.selection(); void conversation.addPhoto(); }}>{c.photo ? <img src={c.photo.url} alt="your photo" /> : <span aria-hidden>+</span>}</Button> : null}
-        {s.stage === "ready" ? <Button variant="ghost" className="gv-tap" onClick={onReview}>review</Button> : null}
+        {s.stage === "ready" || (s.action && s.asking === null) ? <Button variant="ghost" className="gv-tap" onClick={onReview}>review</Button> : null}
       </div>
     </foreignObject>
     <foreignObject x={b.x - 144} y={b.y - 124} width={288} height={248}>

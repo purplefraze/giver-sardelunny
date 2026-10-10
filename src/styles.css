@@ -2009,3 +2009,6 @@
 .gv-review-content { opacity:0; transition:opacity 200ms ease-out; pointer-events:none; }
 .gv-morph-frame[data-unfold-ready="1"] .gv-review-content { opacity:1; pointer-events:auto; }
 @media(prefers-reduced-motion:reduce) { .gv-review-content { transition:none; } }
+
+.cg-list [data-cg-item] { display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; white-space:normal; height:auto; padding:4px 0; }
+.cg-context { background:var(--world-bg); padding:2px 4px; }

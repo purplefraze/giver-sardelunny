@@ -221,6 +221,11 @@ export const conversation = {
   removePhoto() {
     set({ photo: null });
   },
+  resume() {
+    const s=snap.session; if (!s || s.stage === "live") return;
+    set({ mode:"off",session:{...s,stage:"talk",asking:null,prompt:"add a detail, or review when ready"} });
+    voiceCapture.prepare();
+  },
   review() {
     const s = snap.session;
     if (!s?.action) return;

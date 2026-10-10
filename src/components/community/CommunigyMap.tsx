@@ -42,6 +42,7 @@ export function CommunigyMap({
   const ring = useRef<Leaflet.Circle | null>(null);
   const me = useRef<Leaflet.CircleMarker | null>(null);
   const [ready, setReady] = useState(false);
+  const [tileProblem, setTileProblem] = useState(false);
   const [picked, setPicked] = useState<MapPin | null>(null);
 
   /* The map, once. */
@@ -60,6 +61,7 @@ export function CommunigyMap({
           maxZoom: 19,
           attribution: "© openstreetmap contributors",
         })
+        .on("tileerror", () => setTileProblem(true))
         .addTo(m);
       layer.current = lib.layerGroup().addTo(m);
       map.current = m;
@@ -136,6 +138,7 @@ export function CommunigyMap({
   return (
     <div className="cg-map-wrap relative min-h-0 flex-1" data-testid="communigy-map">
       <div ref={box} className="cg-map absolute inset-0" aria-label="map of nearby listings" />
+      {tileProblem ? <p className="absolute top-2 left-2 right-2 z-[500] bg-background p-2 g-meta">map tiles unavailable · listing pins still work</p> : null}
       {picked ? (
         <div className="cg-map-card">
           <span className="g-heading block" style={{ color: CG_INK[picked.mode] }}>

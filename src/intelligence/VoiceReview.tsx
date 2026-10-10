@@ -188,6 +188,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           )}
         </div>
       </div>
+      <Button variant="ghost" className="gv-tap" aria-label="return to recording" onClick={() => conversation.resume()}>return to recording</Button>
       {remind ? (
         <div className="gv-remind" role="alert">
           <p>a photo helps people say yes.</p>

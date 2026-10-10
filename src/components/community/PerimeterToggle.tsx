@@ -92,7 +92,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
   // Smooth interior clearance; no threshold-based page jumps as the camera rides.
   const a = angle * Math.PI / 180;
   const left = 16 + Math.max(0, -Math.sin(a)) * 98, right = 16 + Math.max(0, Math.sin(a)) * 98;
-  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "exit" || shown === "wish" || shown === "give" ? 130 : 290), bottom = 16 + Math.max(0, -Math.cos(a)) * 98;
+  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "exit" ? 90 : shown === "wish" || shown === "give" ? 180 : 290), bottom = 16 + Math.max(0, -Math.cos(a)) * 98;
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">

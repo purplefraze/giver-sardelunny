@@ -536,6 +536,7 @@ export function EarSelector({
 
   const end = (e?: React.PointerEvent<SVGElement>, cancelled = false) => {
     if (e && activeId.current !== null && e.pointerId !== activeId.current) return;
+    if (cancelled && recording) onRecordEnd?.(true);
     if (e) {
       const el = e.currentTarget as SVGElement & {
         releasePointerCapture?: (id: number) => void;

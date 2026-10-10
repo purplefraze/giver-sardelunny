@@ -1327,6 +1327,7 @@ function Index() {
                     {...(browse.view ? { initialView: browse.view } : {})}
                     {...(browse.side ? { initialSide: browse.side } : {})}
                     {...(browse.selection ? { initialSelection: browse.selection } : {})}
+                    {...(browse.term ? { initialTerm: browse.term } : {})}
                     {...(browse.highlight ? { highlightId: browse.highlight } : {})}
 
                     onOpen={(itemId) => setDetail(itemId)}

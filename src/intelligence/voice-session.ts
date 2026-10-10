@@ -147,7 +147,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     const area = profileAreaOf(text);
     return { ...next, profile: area ?? "bio", action: null };
   }
-  if (s.routeSeat === "map" && !/^(?:actually|instead|i meant)/i.test(text)) return { ...next, community: communityFilterOf(text, true) ?? "everything", search: text, action: null };
+  if (s.routeSeat === "map" && !/^(?:actually|instead|i meant)/i.test(text)) return { ...next, community: communityFilterOf(text, true) ?? "everything", search: communityFilterOf(text, true) ? null : text.replace(/^(?:show me|find|search for|looking for)\s+/i,""), action: null };
   if (/^(?:actually|no[, ]|instead|i meant|change)/i.test(text)) {
     const corrected = text.replace(/^(?:actually|no[, ]+|instead|i meant|change)\s*/i, "");
     const routed = routeVoice(corrected);

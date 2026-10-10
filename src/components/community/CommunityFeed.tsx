@@ -31,7 +31,7 @@ type Scope = "everyone" | "mine";
 type View = "list" | "map";
 
 const toStation = (s: CgSelection): CgStation => (s === "mine" ? "map" : s);
-const fromStation = (s: CgStation): CgSelection => s;
+const fromStation = (s: CgStation): CgSelection => (s === "back" ? "map" : s);
 
 /** Pure: what the feed lists for one selection. Only active, published posts. */
 export function feedFor(items: Item[], sel: CgSelection, term = "", keep?: string): Item[] {
@@ -80,7 +80,10 @@ export function CommunityFeed({
   const listening = voice.state === "listening";
   const ink = sel === "map" ? "var(--mode-giver)" : CG_INK[sel === "mine" ? "everything" : sel];
   const location = useMyLocation();
-  const [view, setView] = useState<View>(initialView);
+  /* The map exists ONLY at the lower loop's 12 o'clock seat; every other
+     seat is a list. No independent view state can carry a map elsewhere. */
+  void initialView;
+  const view: View = sel === "map" ? "map" : "list";
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
   const [radius, setRadius] = useState<number | null>(null);
   const [manual, setManual] = useState<Pin | null>(null);
@@ -139,7 +142,6 @@ export function CommunityFeed({
   const choose = (v: CgSelection) => {
     haptics.selection();
     setSel(v);
-    if (v === "map") setView("map");
   };
   /* Seat-dependent placement: content sits away from the inside toggle. */
   const place = seatPlacement(CG_CLOCK[sel] ?? 180);
@@ -157,7 +159,9 @@ export function CommunityFeed({
       <p className="cg-context">{"communi-g"}</p>
       <PerimeterToggle
         value={toStation(sel)}
-        onChange={(st) => { setSel(fromStation(st)); if (st === "map") setView("map"); }}
+        onChange={(st) => { if (st !== "back") setSel(fromStation(st)); }}
+        onBack={onExit ?? onClose}
+        backdrop={view === "map" ? <Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={onOpen} /></Suspense> : undefined}
         record={record}
         listening={listening}
         onHold={() => {
@@ -180,7 +184,6 @@ export function CommunityFeed({
           </div>
           <div className="cg-tools">
             <select aria-label="sort listings" value={sort} onChange={e => setSort(e.target.value as typeof sort)}><option value="latest">Latest</option><option value="oldest">Oldest</option><option value="nearest">Nearest</option></select>
-            <select aria-label="list or map" value={view} onChange={e => setView(e.target.value as View)}><option value="list">List</option><option value="map">Map</option></select>
             <select aria-label="nearby radius" value={radius ?? "all"} onChange={e => setRadius(e.target.value === "all" ? null : Number(e.target.value))}><option value="all">Any distance</option>{[2,5,10,25].map(km => <option key={km} value={km}>{km} km</option>)}</select>
             <Button variant="ghost" className="cg-filter" onClick={() => void allowLocation()}>near me</Button>
           </div>
@@ -222,7 +225,7 @@ export function CommunityFeed({
             </Button>
           ) : null}
           <div className="flex min-h-0 flex-1 flex-col" data-cg-results="" style={{justifyContent: view === "map" ? "flex-start" : sel === "wish" || sel === "give" || sel === "mine" ? "flex-start" : place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center"}}>
-          {view === "map" ? <Suspense fallback={<p className="g-body">opening map</p>}><CommunigyMap pins={pins} centre={centre} radiusKm={radius ?? 10} onOpen={onOpen} />{!pins.length ? <p className="g-meta">no matching listings with a shared approximate location.</p> : null}</Suspense> : null}<ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
+          {view === "map" ? <p className="cg-map-note g-meta">{pins.length ? `${pins.length} on the map · list below` : "no matching listings with a shared approximate location."}</p> : null}<ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li
                 key={i.id}

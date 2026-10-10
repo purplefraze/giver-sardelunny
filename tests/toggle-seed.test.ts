@@ -33,5 +33,5 @@ test("all six initial prompts match the current seat",()=>{
   for(const [seat,prompt] of Object.entries(expected)) expect(startSession(seat as keyof typeof expected).prompt).toBe(prompt);
 });
 
-test("landing record affordance waits 1.8 seconds",()=>expect(RECORD_AFFORDANCE_MS).toBe(1800));
+test("posting record affordance is immediate",()=>expect(RECORD_AFFORDANCE_MS).toBe(0));
 test("profile and community seats never seed a Wish",()=>{expect(hear(sessionForSeat("giver"),"change my bio").profile).toBe("bio");expect(hear(sessionForSeat("map"),"show community borrows").community).toBe("borrow");expect(hear(sessionForSeat("map"),"a ladder").action).toBeNull();});

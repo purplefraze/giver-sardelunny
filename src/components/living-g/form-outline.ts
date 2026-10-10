@@ -69,8 +69,10 @@ function roundedRadius(a:number,hw:number,hh:number,r:number) {
 }
 export function warpOutlinePoint(p:Point,t:number,pose:OutlinePose,w:number,h:number):Point {
   const a=Math.atan2(p.y-C.y,p.x-C.x),r=Math.hypot(p.x-C.x,p.y-C.y),b=measured(a);
-  const inner=roundedRadius(a,Math.max(1,w/2-10),Math.max(1,h/2-10),20);
-  const outer=roundedRadius(a,w/2,h/2,30);
+  const rx=Math.max(1,w*.64), ry=Math.max(1,h*.56);
+  const ellipse=(x:number,y:number)=>1/Math.sqrt((Math.cos(a)/x)**2+(Math.sin(a)/y)**2);
+  const outer=ellipse(rx,ry);
+  const inner=ellipse(Math.max(1,rx-17),Math.max(1,ry-17));
   const target=r<b.inner ? r/b.inner*inner : r<=b.outer ? inner+(r-b.inner)/(b.outer-b.inner)*(outer-inner) : outer+(r-b.outer)*pose.scale*1.3;
   const start={x:pose.x+p.x*pose.scale,y:pose.y+p.y*pose.scale};
   const end={x:w/2+Math.cos(a)*target,y:h/2+Math.sin(a)*target};

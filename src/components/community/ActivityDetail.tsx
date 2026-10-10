@@ -65,16 +65,18 @@ export function ActivityDetail({
   onNeedGive,
   onStartGive,
   onClose,
+  embedded = false,
 }: {
   itemId: string;
   onOpenConnection: (connectionId: string) => void;
   /** The person is always their own destination. */
-  onOpenProfile?: (ownerId: string) => void;
+  onOpenProfile?: ((ownerId: string) => void) | undefined;
   /** communi-g is visible; engaging still needs one active give. */
-  onNeedGive?: () => void;
+  onNeedGive?: (() => void) | undefined;
   /** The three-gives prompt's green circle: start a give. */
-  onStartGive?: () => void;
+  onStartGive?: (() => void) | undefined;
   onClose: () => void;
+  embedded?: boolean;
 }) {
   const items = useItems();
   const fund = useFund();
@@ -156,8 +158,9 @@ export function ActivityDetail({
   return (
     <div
       data-world="community"
-      className="g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"
-      style={{ background: "var(--world-bg)", color: "var(--giver-ink)" }}
+      data-community-detail={embedded ? "in-loop" : "standalone"}
+      className={embedded ? "cg-detail relative flex h-full min-h-0 w-full flex-col overflow-y-auto overscroll-contain" : "g-page g-page-top g-page-bottom relative flex h-full w-full flex-col overflow-y-auto"}
+      style={{ color: "var(--giver-ink)" }}
     >
       <BackArrow onClick={onClose} label="back" sticky />
       {problem ? <p className="g-body mb-4" style={{ color: fill }}>{problem}</p> : null}

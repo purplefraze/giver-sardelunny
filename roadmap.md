@@ -1,4 +1,10 @@
 # Communi-G track repair
+## Oct 10 19:45 current priorities (supersedes perimeter snap and delayed record)
+- [ ] Profile: deep upper-ring camera, thin connected rim, all real seat content in upper hollow, Photo-only backdrop and explicit-save birthday.
+- [ ] Community details replace lower-hollow content, not a floating rectangular depth panel.
+- [ ] Curved posting enclosure, large mode word, immediate posting Record/Stop; navigation seats remain navigation.
+- [ ] Main-app phone and regression verification, cancellation/return and draft safety; no real writes or publish.
+- [ ] Earlier canonical upward S trace, rounded-tail comparison and ambient exterior activity remain open until verified.
 ## Oct 10 16:50 lower follow-up
 - [x] Prefix-only category colours, stronger communi-g heading, hide account chrome inside community.
 - [x] Lower-only blue map entry, open top-to-Give gap, bounded counterclockwise navigation and consistent assembly tokens.

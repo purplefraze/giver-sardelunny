@@ -884,12 +884,12 @@ function Index() {
             overlay={
               <>
               {/* THE LOOP LABELS — always shown, one component for every seat. */}
-              <LoopLabels
+              {!recordAvailable(firstLand?.phase ?? null) ? <LoopLabels
                 seat={seat}
                 quiet={
                   talking_ ? ["top", "middle", "bottom"] : recordAvailable(firstLand?.phase ?? null) ? ["top", "middle", "bottom"] : firstLand ? ["top", "bottom"] : []
                 }
-              />
+              /> : null}
               {/* ONE TOGGLE: while the ceremony runs, it draws the only bead. */}
               {ceremony ? null : (
                 <EarSelector
@@ -905,14 +905,14 @@ function Index() {
                   /* TAP ON THE TOGGLE: enters the seat's action screen. */
                   onTap={tapToggle}
                   /* Landing reveals record; only tap starts, next tap stops. */
-                  {...(recordAvailable(firstLand?.phase ?? null) ? {
+                  {...(recordAvailable(firstLand?.phase ?? null) && seedOf(seat) ? {
                     recording: talk.mode !== "off",
                     onRecordStart: () => { haptics.light(); conversation.toggle(seat); },
                     onRecordEnd: () => { haptics.selection(); conversation.stopLocked(); },
                   } : {})}
                 />
               )}
-              {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} onNavigate={tapToggle} seat={seat} /> : null}
+              {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} onNavigate={enterSelectedWorld} seat={seat} /> : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}
@@ -1019,6 +1019,7 @@ function Index() {
             identical movement in reverse. No screen ever simply replaces the G.
           */}
           <GDepthStack
+            gestures={!myG && !browse}
             onPop={(id) => {
               if (id === "talking") setTalking(null);
               else if (id === "detail") setDetail(null);
@@ -1325,6 +1326,11 @@ function Index() {
                     {...(browse.highlight ? { highlightId: browse.highlight } : {})}
 
                     onOpen={(itemId) => setDetail(itemId)}
+                    detailId={detail}
+                    onCloseDetail={() => setDetail(null)}
+                    onOpenConnection={(id) => setTalking(id)}
+                    onNeedGive={() => { setDetail(null); setBrowse(null); setLocked(true); }}
+                    onStartGive={() => { setDetail(null); setBrowse(null); setSeat("give"); conversation.openForm("give"); }}
                     onOpenProfile={(ownerId) => {
                       setPersonFocus(null);
                       setPerson(ownerId);
@@ -1397,7 +1403,7 @@ function Index() {
               /* AN ITEM IS MORE OF THE SAME G: only the interior changes. */
               {
                 id: "detail",
-                open: detail !== null,
+                open: detail !== null && browse === null,
                 anchor: "middle",
                 world: activity ?? "others",
                 children: detail ? (

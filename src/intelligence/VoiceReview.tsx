@@ -107,7 +107,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       <div className="gv-sheet">
       <Button variant="ghost" type="button" className="gv-back sr-only focus:not-sr-only" aria-label="return to the Living G (keeps your draft)" onClick={back}>return to the G</Button>
       {guided ? <section className="gv-guided" data-guided-intake="">
-        <p className="g-meta">your {noun}</p>
+        <p className="g-meta">{noun}</p>
         <h1 className="gv-question">{c.timePending?.question || ask || ({give:"what would you like to give?",wish:"what are you wishing for?",borrow:"what would you like to borrow?",lend:"what can you lend?",trade:"what would you like to trade?",fund:"what are you raising funds for?"}[action])}</h1>
         <label className="gv-field"><span className="sr-only">your answer</span><textarea aria-label="your answer" rows={2} value={answer} onChange={e=>setAnswer(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(answer.trim()){conversation.answer(answer);setAnswer("");}}}} /></label>
         {listening && v.transcript?<p className="gv-heard" aria-live="polite">{v.transcript}</p>:null}

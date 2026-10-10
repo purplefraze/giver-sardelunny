@@ -33,6 +33,7 @@ import {
   arcPath,
   wedgePath,
 } from "@/components/living-g/g-path";
+import { Button } from "@/components/ui/button";
 import { seatCentre, toggleGeometry } from "@/components/living-g/EarSelector";
 
 /**
@@ -47,21 +48,21 @@ import { seatCentre, toggleGeometry } from "@/components/living-g/EarSelector";
  * tap = start/stop listening. Nothing saves without its own button.
  */
 
-type Bio = { username: string; about: string; byDay: string; byNight: string; weekend: string };
+type Bio = { username: string; about: string; byDay: string; byNight: string; weekend: string; birthday: string };
 
-const BLUE = "#1E7BFF";
-const PAPER = "#F7F4EF";
-const INK = "#1C1A17";
+const BLUE = "var(--mode-giver)";
+const PAPER = "var(--background)";
+const INK = "var(--foreground)";
 /* THE ACTUAL TOGGLE CIRCLE (Oct 9): the ring the main toggle wears when it
    sits on My G at 12:00. The bead rides THAT ring's track; the middle loop's
    upper curve stays in view below it so the origin is never lost. */
 const MID = LOOP_CENTRE.middle;
-const RING = toggleGeometry();
+const RING = toggleGeometry("middle");
 const C = seatCentre("giver");
 const RIM = RING.RING_MID;
 const OUTER = RING.EAR.outerR;
 /* Camera: ring outer diameter fills ~80% of the width, a little air above. */
-const FIT_W = (OUTER * 2) / 0.6;
+const FIT_W = OUTER * 1.65;
 const ENTRY_MS = 420;
 const HOLD_MS = 450;
 const SETTLE_MS = 200;
@@ -101,10 +102,10 @@ export function MyGRing({
 }) {
   const me = useMyProfile();
   const root = useRef<HTMLDivElement | null>(null);
-  const start: number = area ? areaById(area.id).at : 180;
+  const start: number = area ? areaById(area.id).at : 0;
   const [box, setBox] = useState({ w: 390, h: 700 });
   const [deg, setDeg] = useState<number>(start);
-  const [opened, setOpened] = useState<ProfileAreaId | null>(area && area.id !== "myg" ? area.id : null);
+  const [opened, setOpened] = useState<ProfileAreaId | null>(area && area.id !== "myg" ? area.id : "bio");
   const [span, setSpan] = useState(FIT_W);
   const [intro, setIntro] = useState(() => (reduced() ? 1 : 0));
   const [recMode, setRecMode] = useState(false);
@@ -219,6 +220,7 @@ export function MyGRing({
     byDay: me.byDay ?? "",
     byNight: me.byNight ?? "",
     weekend: me.weekend ?? "",
+    birthday: me.birthday ?? "",
   });
 
   /* ---- camera: the bead sits toward the screen edge, the area opens inward. */
@@ -228,9 +230,8 @@ export function MyGRing({
   const e = 1 - Math.pow(1 - intro, 3);
   const viewW = 778 + (span - 778) * e;
   const viewH = viewW * aspect;
-  const settledTop = C.y - OUTER - span * 0.12;
-  const targetCy = settledTop + viewH / 2;
   const cx = 272 + (C.x - 272) * e;
+  const targetCy = C.y + viewH * .04;
   const cy = 520 + (targetCy - 520) * e;
   const vx = cx - viewW / 2;
   const vy = cy - viewH / 2;
@@ -238,15 +239,12 @@ export function MyGRing({
     x: ((p.x - vx) / viewW) * box.w,
     y: ((p.y - vy) / viewH) * box.h,
   });
-  /* The area opens just below the circle, through its stem, inside the middle
-     loop's own hollow — the same column the community loop reads in. */
-  const hollow = toScreen({ x: MID.x, y: MID.y - 143 + 30 });
-  const place = seatPlacement(settledSeat.at);
-  const panelW = Math.min(310, box.w - 48);
-  const panelTop = Math.max(hollow.y, 12);
-  const panelMaxH = Math.max(box.h - panelTop - 20, 160);
-  /* Shift toward the seat's side; text-align follows (LTR words, never reversed). */
-  const panelLeft = (box.w - panelW) / 2 + place.x * Math.min(24, (box.w - panelW) / 2 - 20);
+  const hollow = toScreen(C);
+  const safeRadius = (RING.EAR.innerR / viewW) * box.w;
+  const panelW = Math.min(box.w - 64, safeRadius * 1.4);
+  const panelLeft = (box.w - panelW) / 2;
+  const panelTop = Math.max(24, hollow.y - safeRadius * .68);
+  const panelMaxH = Math.max(100, Math.min(safeRadius * 1.36, box.h - panelTop - 32));
 
   const pointerDeg = (e: { clientX: number; clientY: number }) => {
     const rect = root.current?.getBoundingClientRect();
@@ -295,7 +293,7 @@ export function MyGRing({
     if (nextSeat.at !== lastTick.current) {
       lastTick.current = nextSeat.at;
       dockedOnMyg.current = false;
-      setOpened(null);
+      setOpened(nextSeat.id === "myg" ? null : nextSeat.id);
       buzz(8);
     }
     put(degRef.current + turn(degRef.current, next));
@@ -311,6 +309,7 @@ export function MyGRing({
     if (d.moved >= 10) {
       lastTick.current = at.at;
       glideTo(at.at);
+      setOpened(at.id === "myg" ? null : at.id);
       buzz(16);
       dockedOnMyg.current = at.id === "myg";
       return;
@@ -337,10 +336,10 @@ export function MyGRing({
     const i = PROFILE_AREAS.findIndex((a) => a.id === settledSeat.id);
     if (e.key === "ArrowRight" || e.key === "ArrowDown") {
       e.preventDefault();
-      goTo(PROFILE_AREAS[(i + 1) % 8]!.id, false);
+      const next = PROFILE_AREAS[(i + 1) % 8]; if (next) goTo(next.id);
     } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault();
-      goTo(PROFILE_AREAS[(i + 7) % 8]!.id, false);
+      const next = PROFILE_AREAS[(i + 7) % 8]; if (next) goTo(next.id);
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       if (settledSeat.id === "myg") onClose();
@@ -360,7 +359,9 @@ export function MyGRing({
       tabIndex={0}
       role="application"
       aria-label={`my g profile loop, on ${seat.word}. arrow keys move, enter opens.`}
-      className="absolute inset-0 touch-none overflow-hidden outline-none"
+      data-profile-loop=""
+      data-profile-seat={seat.id}
+      className="absolute inset-0 overflow-hidden outline-none"
       style={{ background: PAPER, color: INK }}
       onKeyDown={onKey}
       onPointerDown={onPointerDown}
@@ -384,40 +385,24 @@ export function MyGRing({
       }}
       onTouchMove={(e) => {
         if (e.touches.length !== 2 || !pinch.current) return;
-        const a = e.touches[0];
-        const b = e.touches[1];
+        const a = e.touches[0], b = e.touches[1];
         if (!a || !b) return;
-        const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-        setSpan((s) => Math.min(FIT_W * 2.2, Math.max(FIT_W * 0.85, s / (dist / pinch.current))));
-        pinch.current = dist;
+        const ratio = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY)/pinch.current;
+        setSpan(FIT_W * Math.min(1.8, Math.max(1, 1/ratio)));
       }}
+      onTouchEnd={() => { if (pinch.current && span > FIT_W * 1.45) { voiceCapture.cancel(); onClose(); } else setSpan(FIT_W); pinch.current=0; }}
+      onTouchCancel={() => { pinch.current=0; setSpan(FIT_W); }}
       onWheel={(e) => {
         if ((e.target as HTMLElement).closest("[data-interior]")) return;
         setSpan((s) => Math.min(FIT_W * 2.2, Math.max(FIT_W * 0.85, s + e.deltaY * 0.1)));
       }}
     >
       <svg viewBox={`${vx} ${vy} ${viewW} ${viewH}`} className="h-full w-full overflow-visible" aria-hidden>
-        <defs>
-          <mask id="myg-earless" maskUnits="userSpaceOnUse">
-            <rect x="-400" y="-400" width="1400" height="2000" fill="#fff" />
-            <path d={wedgePath(MID, EAR_CUT.a0, EAR_CUT.a1, EAR_CUT.r0, EAR_CUT.r1)} fill="#000" />
-          </mask>
-        </defs>
-        {/* The same G, ear lifted off; the toggle circle sits at 12 on its stem. */}
-        <g mask="url(#myg-earless)">
-          <g transform={LIVING_G_TRANSFORM}>
-            <path d={LIVING_G_PATH} fill={BLUE} />
-          </g>
-        </g>
-        <path d={arcPath(MID, -128, RIM_PATCH.a1, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={RIM_PATCH.width + 4} />
-        <rect
-          x={C.x - RING.STEM_HALF}
-          y={C.y + OUTER - 4}
-          width={RING.STEM_HALF * 2}
-          height={MID.y - 196.5 + 12 - (C.y + OUTER - 4)}
-          fill={BLUE}
-        />
-        <circle cx={C.x} cy={C.y} r={RING.RING_MID} fill="none" stroke={BLUE} strokeWidth={RING.RING_W} />
+        <defs><clipPath id="profile-photo-hollow"><circle cx={C.x} cy={C.y} r={RING.EAR.innerR-4} /></clipPath></defs>
+        {seat.id === "photo" && me.photo ? <image data-profile-photo="" href={me.photo} x={C.x-RING.EAR.innerR} y={C.y-RING.EAR.innerR} width={RING.EAR.innerR*2} height={RING.EAR.innerR*2} preserveAspectRatio="xMidYMid slice" clipPath="url(#profile-photo-hollow)" /> : null}
+        <path d={arcPath(MID, -104, -76, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={8} vectorEffect="non-scaling-stroke" />
+        <line x1={C.x} y1={C.y+RIM} x2={C.x} y2={C.y+RIM+12} stroke={BLUE} strokeWidth={8} vectorEffect="non-scaling-stroke" />
+        <circle data-profile-rim="" cx={C.x} cy={C.y} r={RING.RING_MID} fill="none" stroke={BLUE} strokeWidth={17} vectorEffect="non-scaling-stroke" />
         {PROFILE_AREAS.map((item) => {
           const on = item.id === seat.id;
           const p = item.at === 90 ? { x: C.x + OUTER + 30, y: C.y } : item.at === 270 ? { x: C.x - OUTER - 30, y: C.y } : onRim(item.at, OUTER + 11);
@@ -428,10 +413,10 @@ export function MyGRing({
               y={p.y + 2.4}
               textAnchor={item.at === 90 ? "end" : item.at === 270 ? "start" : "middle"}
               fill={BLUE}
-              fontSize={on ? 7.4 : 6}
+              fontSize={on ? 9 : 8}
               fontWeight={on ? 900 : 700}
               opacity={on ? 1 : 0.5}
-              style={{ letterSpacing: "0.02em" }}
+              style={{ letterSpacing: 0 }}
             >
               {item.word}
             </text>
@@ -457,10 +442,10 @@ export function MyGRing({
         <div
           data-interior=""
           className="absolute overflow-y-auto overscroll-contain touch-auto px-1 pb-3 transition-opacity duration-200"
-          style={{ background: PAPER, left: panelLeft, top: place.y < 0 ? panelTop : place.y > 0 ? undefined : panelTop + panelMaxH * 0.12, bottom: place.y > 0 ? 20 : undefined, width: panelW, maxHeight: place.y === 0 ? panelMaxH * 0.88 : panelMaxH, color: INK, textAlign: place.align }}
+          style={{ left: panelLeft, top: panelTop, width: panelW, height: panelMaxH, color: INK, textAlign: "left" }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {settledSeat.ask ? <p className="g-name mb-3 text-[14px]" style={{ color: BLUE }}>{settledSeat.ask}</p> : null}
+          <h1 className="g-heading mb-5" style={{ color: BLUE }}>{seat.word}</h1>
           {recMode ? (
             <form
               className="mb-3 flex gap-2"
@@ -478,7 +463,7 @@ export function MyGRing({
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
               />
-              <button type="submit" className={btn} style={{ color: BLUE }}>go</button>
+              <Button variant="ghost" type="submit" className={btn} style={{ color: BLUE }}>go</Button>
             </form>
           ) : null}
           {opened ? (
@@ -559,9 +544,10 @@ function Area({
         {row("byDay", "by day")}
         {row("byNight", "by night")}
         {row("weekend", "weekends")}
+        <label className="mb-4 block"><span className="g-meta block">birthday · only you</span><input type="date" aria-label="birthday" className={field} value={d.birthday} onChange={e => set("birthday",e.target.value)} /></label>
         {age != null ? <p className="g-meta mb-3 opacity-60">{age}</p> : null}
         <div className="flex gap-4">
-          <button
+          <Button variant="ghost"
             type="button"
             className={btn}
             style={{ color: BLUE, opacity: dirty ? 1 : 0.4 }}
@@ -574,14 +560,15 @@ function Area({
                 byDay: (d.byDay ?? "").trim(),
                 byNight: (d.byNight ?? "").trim(),
                 weekend: (d.weekend ?? "").trim(),
+                birthday: d.birthday,
               });
               setBioDraft(null);
               buzz(16);
             }}
           >
             save
-          </button>
-          {dirty ? <button type="button" className={btn} onClick={() => setBioDraft(null)}>undo</button> : null}
+          </Button>
+          {dirty ? <Button variant="ghost" type="button" className={btn} onClick={() => setBioDraft(null)}>undo</Button> : null}
         </div>
       </div>
     );
@@ -590,13 +577,13 @@ function Area({
   if (id === "photo") {
     return (
       <div className="flex flex-col items-start gap-3">
-        {me.photo ? <img src={me.photo} alt="your profile photo" className="h-16 w-16 rounded-full object-cover" /> : <p className="g-body">no photo yet.</p>}
+        {!me.photo ? <p className="g-body">no photo yet.</p> : null}
         <div className="flex gap-4">
-          <button type="button" className={btn} style={{ color: BLUE }} onClick={() => void photo.choose()}>
+          <Button variant="ghost" type="button" className={btn} style={{ color: BLUE }} onClick={() => void photo.choose()}>
             {photo.loading ? "opening…" : me.photo ? "change photo" : "add a photo"}
-          </button>
+          </Button>
           {me.photoSource ? (
-            <button type="button" className={btn} onClick={() => photo.reposition(me.photoSource!, me.photoCrop)}>reposition</button>
+            <Button variant="ghost" type="button" className={btn} onClick={() => me.photoSource && photo.reposition(me.photoSource, me.photoCrop)}>reposition</Button>
           ) : null}
         </div>
         {photo.failed ? <p className="g-meta">that picture couldn't be read. try another.</p> : null}
@@ -631,10 +618,10 @@ function Area({
           const last = messagesOf(links, c.id).at(-1);
           return (
             <li key={c.id} className="mb-3">
-              <button type="button" className="w-full text-left" onClick={() => onTalk?.(c.id)}>
+              <Button variant="ghost" type="button" className="w-full text-left" onClick={() => onTalk?.(c.id)}>
                 <span className="g-name block text-[15px]">{who}</span>
                 <span className="g-meta block truncate opacity-60">{last?.text ?? "no messages yet"}</span>
-              </button>
+              </Button>
             </li>
           );
         })}
@@ -671,17 +658,17 @@ function Area({
       <div>
         <div className="mb-3 flex gap-4">
           {(["current", "past"] as const).map((t) => (
-            <button key={t} type="button" className={btn} style={{ color: t === tense ? BLUE : INK, opacity: t === tense ? 1 : 0.5 }} onClick={() => setTense(t)}>
+            <Button variant="ghost" key={t} type="button" className={btn} style={{ color: t === tense ? BLUE : INK, opacity: t === tense ? 1 : 0.5 }} onClick={() => setTense(t)}>
               {t}
-            </button>
+            </Button>
           ))}
         </div>
         {mine.length ? (
           mine.map((i) => (
-            <button key={i.id} type="button" className="mb-2 block w-full text-left" onClick={() => onDetail?.(i.id)}>
+            <Button variant="ghost" key={i.id} type="button" className="mb-2 block w-full text-left" onClick={() => onDetail?.(i.id)}>
               <span className="g-meta mr-2 opacity-60">{kind(i)}</span>
               <span className="g-body">{itemLine(i)}</span>
-            </button>
+            </Button>
           ))
         ) : (
           <p className="g-body">no {tense} gives, wishes, trades, borrows, lends or funds.</p>
@@ -709,13 +696,13 @@ function Area({
           >
             <input type="password" autoComplete="new-password" className={`${field} mb-2`} placeholder="new password" value={pass.a} onChange={(e) => setPass({ ...pass, a: e.target.value })} />
             <input type="password" autoComplete="new-password" className={`${field} mb-2`} placeholder="again" value={pass.b} onChange={(e) => setPass({ ...pass, b: e.target.value })} />
-            <button type="submit" className={btn} style={{ color: BLUE }}>change password</button>
+            <Button variant="ghost" type="submit" className={btn} style={{ color: BLUE }}>change password</Button>
             {pass.note ? <p className="g-meta mt-1">{pass.note}</p> : null}
           </form>
         ) : null}
         <div className="flex flex-col items-start gap-2">
-          <button type="button" className={btn} onClick={() => onAccount?.()}>account, birthday & privacy</button>
-          {session.userId ? <button type="button" className={btn} onClick={() => void supabase.auth.signOut()}>sign out</button> : null}
+          <Button variant="ghost" type="button" className={btn} onClick={() => onAccount?.()}>account, birthday & privacy</Button>
+          {session.userId ? <Button variant="ghost" type="button" className={btn} onClick={() => void supabase.auth.signOut()}>sign out</Button> : null}
         </div>
       </div>
     );

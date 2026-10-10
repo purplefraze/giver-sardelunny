@@ -2064,3 +2064,18 @@
 /* The underlying G stays mounted for the exact reverse pose, but may not peek
    outside a keyboard-sized form viewport. */
 html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
+
+/* Curved posting/profile chambers: no page-border snap or listing card. */
+.gv-review-content { inset: max(30px, 7%) 32px; border-radius:0; }
+.gv-sheet { padding:12px 0 24px; }
+.gv-rec-dock { background:transparent; padding:10px 0; min-height:76px; }
+.gv-mode-word { font:900 58px/1.05 var(--giver-font); letter-spacing:0; padding:0; height:auto; max-width:100%; white-space:normal; color:var(--world-g); }
+[data-profile-loop] [data-interior] { scrollbar-width:thin; touch-action:pan-y pinch-zoom; }
+[data-profile-loop] [data-interior] .g-body { font-size:18px; line-height:1.4; }
+[data-profile-loop] [data-interior] input, [data-profile-loop] [data-interior] textarea { font-size:18px; }
+[data-profile-loop] [data-interior] button { min-height:44px; white-space:normal; height:auto; }
+[data-profile-seat="photo"] [data-interior] { background:color-mix(in oklab,var(--background) 88%,transparent); }
+.cg-detail { background:transparent; padding:12px 4px 24px; touch-action:pan-y pinch-zoom; }
+.cg-detail .g-display { font-size:32px; overflow-wrap:anywhere; }
+.cg-detail .g-heading { font-size:22px; }
+.cg-detail button { min-height:44px; }

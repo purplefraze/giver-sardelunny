@@ -1,4 +1,7 @@
 # Communi-G track repair
+## Oct 10 21:50 creation keyboard regression
+- [ ] Remove creation-entry autofocus and freeze enclosure geometry through keyboard viewport changes.
+- [ ] Keep tapped fields/actions reachable above keyboard; verify all six modes, dismiss and pinch with mocked writes.
 ## Oct 10 21:47 urgent bio correction
 - [x] Remove obsolete bio fields from UI/draft/save; native birthday, strict calendar/18+ validation, no invented date.
 - [x] Verify isolated birthday save/reopen, invalid/underage rejection and small-phone circular fit; preserve earlier profile fixes. Physical iOS picker and signed-in Cloud persistence remain unverified; see docs/profile-birthday-verification-oct10.md.

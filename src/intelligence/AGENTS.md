@@ -1,0 +1,5 @@
+## Voice intelligence
+- The in-G voice conversation is one store (src/intelligence/voice-conversation.ts) over pure rules (voice-session.ts / voice-flow.ts); only VoiceReview's explicit share posts, so recording or reviewing can never publish.
+- My G profile areas and their voice phrases live in one pure table (src/intelligence/profile-areas.ts) read by both MyGRing touch seats and voice-session; this guarantees voice and touch land on the same area.
+- Contextual follow-up questions come from pure rules (src/intelligence/contextual-needs.ts); the AI gateway call (src/lib/followup.functions.ts) only fills empty, transcript-grounded details and rephrases the same next question, validated by those rules — so a model failure or hallucination can never invent facts, skip a needed detail, or publish.
+- Contextual lesson/service fields share the grounded follow-up validator with rides/groceries; meeting format, area and recurrence stay separate so physical collection/condition and invented dates cannot leak into a service offer.

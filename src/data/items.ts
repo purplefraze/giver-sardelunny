@@ -900,13 +900,16 @@ export const itemsStore = {
 
 
   /** EDIT ONE ITEM — every view that references it updates with it. */
-  patch(id: string, fields: Partial<Omit<Item, "id" | "ownerId" | "type">>) {
+  patch(id: string, fields: Partial<Omit<Item, "id" | "ownerId" | "type">>, remove: readonly ("note" | "offer" | "want" | "photos" | "details")[] = []) {
     const s = ensure();
     commit({
       ...s,
-      items: s.items.map((i) =>
-        i.id === id ? { ...i, ...fields, updatedAt: Date.now() } : i,
-      ),
+      items: s.items.map((i) => {
+        if (i.id !== id) return i;
+        const next: Item = { ...i, ...fields, updatedAt: Date.now() };
+        for (const k of remove) delete next[k];
+        return next;
+      }),
     });
   },
 

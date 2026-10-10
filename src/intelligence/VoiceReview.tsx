@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { GIVE_TYPES, type GiveType } from "@/data/give-lexicon";
-import { defaultExpiry, expiresAt } from "@/data/give-when";
-import { savePin } from "@/data/give-pins";
-import { itemsStore, type ItemDetails } from "@/data/items";
-import { myProfileStore } from "@/data/my-profile";
-import { ensureLiveSession } from "@/data/cloud/session";
-import { confirmItemSaved, pullItems } from "@/data/cloud/items-sync";
-import { prepareGivePhoto, uploadGivePhoto } from "@/lib/give-photo";
 import { haptics } from "@/lib/haptics";
-import { TOPIC_OF } from "@/components/give/GiveFlow";
 import { conversation } from "@/intelligence/voice-conversation";
+import { shareCoordinator } from "@/intelligence/share-live";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { canGoLive, fundTargetOf, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
 import { NOUN } from "@/intelligence/voice-session";
@@ -26,6 +19,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const [problem, setProblem] = useState<string | null>(null);
   const [remind, setRemind] = useState(false);
   const [busy, setBusy] = useState(false);
+  useSyncExternalStore(shareCoordinator.subscribe, shareCoordinator.version, shareCoordinator.version);
   /* One local record per draft: a retry re-confirms it, never re-creates it. */
   const [liveId, setLiveId] = useState<string | null>(null);
   const folding = useRef(false);
@@ -76,6 +70,8 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
 
   const share = async (skipPhoto = false) => {
     setProblem(null);
+    /* Everything the Share is about, captured NOW — before any await. */
+    const input = { draftId: s.draftId, action, fields: f, photo: c.photo, pin: c.pin };
     if (!canGoLive(action, f)) {
       haptics.warning();
       setProblem(f.what.trim().length < 2 ? "what is it?" : action === "fund" ? "how much are you raising? enter a goal, like 1200." : action === "give" && !f.kind ? "what kind of give is it?" : action === "trade" ? "what would you like for it?" : "where is it?");
@@ -87,87 +83,13 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     }
     setRemind(false);
     setBusy(true);
-    if ((await ensureLiveSession()) === "ended") {
-      setBusy(false);
-      return;
-    }
-    const extras: Record<string, string> = {};
-    if (f.kind) extras["kind"] = f.kind;
-    if (f.condition.trim()) extras["condition"] = f.condition.trim();
-    if (f.when.trim() && !f.context) extras["when"] = f.when.trim();
-    /* Request-specific details travel with the post; precise addresses never do. */
-    if (f.context) Object.assign(extras, publicExtras(f.ctx));
-    if (f.duration.trim()) extras["how long"] = f.duration.trim();
-    const details: ItemDetails = {
-      ...(service ? { where: f.ctx.format === "online" ? "online" : publicExtras(f.ctx)["area"] ?? "" } : f.where.trim() ? { where: publicPlace(f.where.trim()) } : {}),
-      ...(Object.keys(extras).length ? { extras } : {}),
-    };
-    const note = f.note.trim() || undefined;
-    const seatAt = conversation.seat();
-    let id = s.recordId ?? null;
-    if (id && !itemsStore.get().items.find((it) => it.id === id)) id = null;
-    if (!id) {
-      let result: ReturnType<typeof myProfileStore.addItem>;
-      if (action === "give") {
-        const kind = f.kind as GiveType;
-        details.topic = TOPIC_OF[kind];
-        details.expiresAt = expiresAt(defaultExpiry(kind), null).toISOString();
-        result = myProfileStore.addItem("give", f.what.trim(), undefined, note, { details });
-      } else if (action === "trade") {
-        result = myProfileStore.addItem("trade", f.what.trim(), { offer: f.what.trim(), want: f.want.trim() }, note, { details });
-      } else if (action === "borrow" || action === "lend") {
-        result = myProfileStore.addItem("borrow", f.what.trim(), undefined, note, { side: action, details });
-      } else {
-        if (action === "fund") {
-          const target = fundTargetOf(f);
-          /* Never a Wish fallback: an invalid goal creates no record at all. */
-          if (target === null) { setBusy(false); setProblem("how much are you raising? enter a goal, like 1200."); return; }
-          details.fundTarget = target;
-        }
-        result = myProfileStore.addItem("wish", f.what.trim(), undefined, note, { details });
-      }
-      if (!result.ok || !result.id) {
-        setBusy(false);
-        haptics.warning();
-        setProblem(result.reason === "account" ? (result.say ?? "finish your account in my g to share this.") : (result.say ?? "this couldn't be shared right now."));
-        return;
-      }
-      id = result.id;
-      if (c.pin) savePin(id, c.pin);
-      const exact = privatePlaces(f.ctx);
-      if (Object.keys(exact).length) {
-        try {
-          localStorage.setItem(`giver.private-places.${id}`, JSON.stringify(exact));
-        } catch {
-          /* storage unavailable — the public post already hides the address */
-        }
-      }
-      if (c.photo) {
-        if (action === "give") {
-          const prep = await prepareGivePhoto(c.photo.file);
-          const up = prep.ok ? await uploadGivePhoto(id, prep.photo) : null;
-          if (up) itemsStore.patch(id, { photos: [up.url], details: { ...details, photoPath: up.path } });
-        } else itemsStore.addPhoto(id, c.photo.url);
-      }
-      conversation.attachRecord(seatAt, id);
-    } else itemsStore.patch(id, { text: f.what.trim(), ...(note ? { note } : {}), details: { ...(itemsStore.get().items.find((it) => it.id === id)?.details ?? {}), ...details }, published: true });
-    if (!id) return;
-    /* LIVE ONLY AFTER THE SERVER HAS IT. A failed save keeps the draft here,
-       hides the local copy, and offers the same button again. */
-    const saved = await confirmItemSaved(id);
-    if (!saved) {
-      if (conversation.seat() !== seatAt) return;
-      itemsStore.patch(id, { published: false });
-      setBusy(false);
-      haptics.warning();
-      setProblem("couldn't save just now. your draft is kept — tap share to try again.");
-      return;
-    }
-    void pullItems().catch(() => {});
-    if (!conversation.confirmLive(seatAt, id)) return;
-    setLiveId(id);
-    setBusy(false);
-    haptics.light();
+    const out = await shareCoordinator.share(input);
+    const here = conversation.currentDraftId() === input.draftId;
+    if (here) setBusy(false);
+    if (out.kind === "busy" || out.kind === "ended") return;
+    if (out.kind === "invalid" || out.kind === "refused") { if (here) { haptics.warning(); setProblem(out.say); } return; }
+    if (out.kind === "failed") { if (out.visible) { haptics.warning(); setProblem("couldn't save just now. your draft is kept — tap share to try again."); } return; }
+    if (out.placement === "shown") { setLiveId(out.id); haptics.light(); }
   };
 
   const listening = c.mode !== "off" && v.state !== "error" && v.state !== "unsupported";
@@ -239,7 +161,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       ) : null}
       {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
       <div className="gv-taps gv-taps-row">
-        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy}>Share with communi-g</Button>
+        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>Share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
       </div>
       {noMic ? <p className="gv-problem" role="status">{noMic}</p> : null}

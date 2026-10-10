@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { ListingLine } from "./ListingLine";
+import { ActivityDetail } from "./ActivityDetail";
 import { Button } from "@/components/ui/button";
 import { askLocation, useMyLocation } from "@/data/my-location";
 import { pinFor, type Pin } from "@/data/give-pins";
@@ -54,6 +55,12 @@ export function CommunityFeed({
   onOpen,
   onClose,
   onExit,
+  detailId,
+  onCloseDetail,
+  onOpenConnection,
+  onOpenProfile,
+  onNeedGive,
+  onStartGive,
 }: {
   initialType?: ItemType | null;
   initialScope?: Scope;
@@ -68,6 +75,11 @@ export function CommunityFeed({
   onClose: () => void;
   /** The explicit back arrow: out to the full G. */
   onExit?: () => void;
+  detailId?: string | null;
+  onCloseDetail?: () => void;
+  onOpenConnection?: (id: string) => void;
+  onNeedGive?: () => void;
+  onStartGive?: () => void;
 }) {
   const [sel, setSel] = useState<CgSelection>(
     initialSelection ?? (initialScope === "mine" ? "mine" : initialType ? modeFor(initialType, initialSide) : "map"),
@@ -184,12 +196,12 @@ export function CommunityFeed({
       className="relative h-full w-full overflow-hidden"
       style={{ background: "var(--world-bg)", ["--cg-ink" as string]: ink }}
     >
-      <p className="cg-context">{"communi-g"}</p>
+      {!detailId ? <p className="cg-context">{"communi-g"}</p> : null}
       <PerimeterToggle
         value={toStation(sel)}
         onChange={(st) => { if (st !== "back") setSel(fromStation(st)); }}
         onBack={onExit ?? onClose}
-        backdrop={view === "map" ? <Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={onOpen} /></Suspense> : undefined}
+        backdrop={!detailId && view === "map" ? <Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={onOpen} /></Suspense> : undefined}
         record={record}
         listening={listening}
         onHold={() => {
@@ -203,7 +215,7 @@ export function CommunityFeed({
           else voiceCapture.start();
         }}
       >
-        <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align={place.align} style={{ textAlign: place.align }}>
+        {detailId ? <ActivityDetail itemId={detailId} embedded onClose={onCloseDetail ?? onClose} onOpenConnection={onOpenConnection ?? (() => {})} onOpenProfile={onOpenProfile} onNeedGive={onNeedGive} onStartGive={onStartGive} /> : <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align={place.align} style={{ textAlign: place.align }}>
           <div className="relative h-10 shrink-0">
             <BackArrow onClick={onExit ?? onClose} label="back to the living g" />
           </div>
@@ -278,7 +290,7 @@ export function CommunityFeed({
             {sel === "wish" ? <li className="pt-4"><WishMatch onOpen={onOpen} /></li> : null}
           </ul>}
           </div>
-        </div>
+        </div>}
       </PerimeterToggle>
     </div>
   );

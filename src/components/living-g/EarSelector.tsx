@@ -27,7 +27,7 @@ import { togglePath, type TrackPose } from "./toggle-path";
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
 /** Seat landing affordance; never activates the microphone. */
-export const RECORD_AFFORDANCE_MS = 1800;
+export const RECORD_AFFORDANCE_MS = 0;
 export type Mode = (typeof MODES)[number];
 
 /**
@@ -247,7 +247,7 @@ export function toggleGeometry(weight: GWeight = "normal") {
  * borrow · wish. The one table every toggle reads its title from.
  */
 export const SEAT_TITLE: Record<Seat, string> = {
-  giver: "my g",
+  giver: "Profile",
   give: "give",
   lend: "lend",
   trade: "trade",
@@ -430,7 +430,7 @@ export function EarSelector({
     setPeek(false);
   };
 
-  const [recordReady, setRecordReady] = useState(false);
+  const recordReady = Boolean(onRecordStart);
   useEffect(() => () => { if (peekTimer.current) clearTimeout(peekTimer.current); }, []);
   const activate = () => {
     if (recording) onRecordEnd?.(false);
@@ -443,12 +443,6 @@ export function EarSelector({
 
   const [angle, setAngle] = useState(restAngle);
   const angleRef = useRef(angle);
-  useEffect(() => {
-    setRecordReady(false);
-    if (!onRecordStart || dragging || recording || Math.abs(angle - SEAT_ANGLE[mode]) > .002) return;
-    const timer = setTimeout(() => setRecordReady(true), RECORD_AFFORDANCE_MS);
-    return () => clearTimeout(timer);
-  }, [mode, dragging, recording, angle, onRecordStart !== undefined]);
 
 
   // Rest and magnet targets live ON THE WIRE: the bead always travels the real

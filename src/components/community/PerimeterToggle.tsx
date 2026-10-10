@@ -30,6 +30,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
   const gesture = useRef<Gesture | null>(null);
   const raf = useRef(0);
   const previousValue = useRef(value);
+  const external = useRef(false);
   const callbacks = useRef({ onChange, onTap, onHold });
   callbacks.current = { onChange, onTap, onHold };
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,7 +48,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
     if (station === shownRef.current) return;
     shownRef.current = station; setShown(station);
     // Content changes at real station crossings; 12:00 is "my g" (mine), never an exit.
-    previousValue.current = station; callbacks.current.onChange(station);
+    if (!external.current) { previousValue.current = station; callbacks.current.onChange(station); }
   };
   const put = (next: number, tactile = false) => {
     const before = angleRef.current;
@@ -57,26 +58,27 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
     angleRef.current = next; setAngle(next);
   };
   const stop = () => { cancelAnimationFrame(raf.current); raf.current = 0; setSnapping(false); };
-  const settle = (station: CgStation, tactile: boolean) => {
+  const settle = (station: CgStation, tactile: boolean, programmatic = false) => {
+    external.current = programmatic;
     stop();
     const from = angleRef.current, delta = signedTurn(from, clockOf(station));
     const duration = settleDuration(delta, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     // Ask in the release gesture, not a later RAF; actual motor delivery is optional.
     if (tactile) haptics.light();
-    if (!duration || Math.abs(delta) < .001) { put(from + delta); show(station); return; }
+    if (!duration || Math.abs(delta) < .001) { put(from + delta); show(station); external.current=false; return; }
     setSnapping(true); const start = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
       put(from + delta * easeOut(t));
       if (t < 1) raf.current = requestAnimationFrame(step);
-      else { raf.current = 0; show(station); setSnapping(false); }
+      else { raf.current = 0; show(station); external.current=false; setSnapping(false); }
     };
     raf.current = requestAnimationFrame(step);
   };
   useEffect(() => {
     if (value === previousValue.current) return;
     previousValue.current = value;
-    if (!gesture.current) settle(value, false);
+    if (!gesture.current) settle(value, false, true);
   }, [value]);
   const finish = (e: PointerEvent<HTMLButtonElement>, cancel = false) => {
     const g = gesture.current;
@@ -105,7 +107,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
         const rect = stage.current?.getBoundingClientRect(); if (!rect) return;
-        e.preventDefault(); e.stopPropagation(); stop();
+        e.preventDefault(); e.stopPropagation(); stop(); external.current=false;
         const centre = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         const radii = { x: Math.max(1, rect.width / 2 - 54), y: Math.max(1, rect.height / 2 - 54) };
         gesture.current = { id: e.pointerId, centre, radii, raw: inputAngle({ x: e.clientX, y: e.clientY }, centre, radii), down: { x: e.clientX, y: e.clientY }, moved: false, target: e.currentTarget };

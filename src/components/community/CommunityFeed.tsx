@@ -37,7 +37,7 @@ export function feedFor(items: Item[], sel: CgSelection, term = "", keep?: strin
   const t = term.trim().toLowerCase();
   return items
     .filter((i) => i.status === "active" && i.published)
-    .filter((i) => (sel === "mine" ? i.ownerId === ME_ID : (i.ownerId !== ME_ID || i.id === keep) && inMode(i, sel)))
+    .filter((i) => sel === "mine" ? i.ownerId === ME_ID : inMode(i, sel))
     .filter((i) => !t || itemLine(i).toLowerCase().includes(t) || (i.note ?? "").toLowerCase().includes(t))
     .sort((a, b) => b.createdAt - a.createdAt || a.id.localeCompare(b.id));
 }
@@ -123,7 +123,7 @@ export function CommunityFeed({
   };
   /* Seat-dependent placement: content sits away from the inside toggle. */
   const place = seatPlacement(CG_CLOCK[sel] ?? 180);
-  const rowJustify = place.align === "left" ? "justify-start" : place.align === "right" ? "justify-end" : "justify-center";
+  
   const where = CG_FILTERS.find((f) => f.value === sel)?.word ?? "all";
 
   return (

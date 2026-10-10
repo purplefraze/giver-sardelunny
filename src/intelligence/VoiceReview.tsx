@@ -150,14 +150,14 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     <form className="gv-sheet" data-voice-review={action} onSubmit={(e) => { e.preventDefault(); void share(); }}>
       <p className="gv-title">your {noun}</p>
       <div className="gv-fields">
-        {field("what", action === "trade" ? "offering" : "what")}
+        {field("what", service || action === "trade" ? "offer" : "what")}
         {action === "trade" ? field("want", "for") : null}
         {action === "fund" ? field("amount", "raising", "amount") : null}
         {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
         {!service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
         {f.context
           ? FIELDS_OF[f.context]
-              .filter((k) => k !== "flexible" && k !== "subject" && (!service || !["level", "window", "lessonDuration", "date"].includes(k) || !!f.ctx[k as keyof typeof f.ctx] || (k === "date" && f.ctx.recurrence === "one-off")))
+              .filter((k) => k !== "flexible" && k !== "subject" && !(service && k === "day" && f.ctx.recurrence?.startsWith("every")) && (!service || !["level", "window", "lessonDuration", "date"].includes(k) || !!f.ctx[k as keyof typeof f.ctx] || (k === "date" && f.ctx.recurrence === "one-off")))
               .map((k) => (
                 <label key={k} className="gv-field">
                   <span>{CTX_LABEL[k]}</span>

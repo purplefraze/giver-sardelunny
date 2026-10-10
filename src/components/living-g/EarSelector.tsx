@@ -403,7 +403,7 @@ export function EarSelector({
   const dragging = drag !== null;
   const last = useRef<Seat>(mode);
   /** Tap vs drag: where the gesture started, and whether it ever travelled. */
-  const gesture = useRef<{ start: P; moved: boolean } | null>(null);
+  const gesture = useRef<{ start: P; screen: P; moved: boolean } | null>(null);
   /** The gesture's CONTINUOUS angle, so the ±180° seam is never a wall. */
   const dragRef = useRef<number | null>(null);
 
@@ -554,7 +554,7 @@ export function EarSelector({
     stopPeek();
     held.current = false;
     if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
-    else if (g && !g.moved && !wasHeld && !cancelled) activate();
+    else if (g && !g.moved && !wasHeld && !cancelled && (!e || Math.hypot(e.clientX-g.screen.x,e.clientY-g.screen.y) <= 5)) activate();
     gesture.current = null;
     dragRef.current = null;
     setDrag(null);
@@ -812,7 +812,7 @@ export function EarSelector({
           if (activeId.current !== null) return;
           activeId.current = e.pointerId;
           const grab = angleFrom(e);
-          gesture.current = { start: grab?.point ?? ear, moved: false };
+          gesture.current = { start: grab?.point ?? ear, screen: { x:e.clientX,y:e.clientY }, moved: false };
           startPeek();
 
           // CAPTURE ON THE ELEMENT THAT HANDLES THE GESTURE, so the drag keeps
@@ -831,7 +831,7 @@ export function EarSelector({
           const move = angleFrom(e);
           if (!move) return;
           const g = gesture.current;
-          if (g && !g.moved && dist(move.point, g.start) > 14) {
+          if (g && !g.moved && Math.hypot(e.clientX-g.screen.x,e.clientY-g.screen.y) > 5) {
             g.moved = true;
             /* A drag is a mode change, not a peek. */
             stopPeek();

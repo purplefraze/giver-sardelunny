@@ -166,7 +166,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     if (route.intent === "search") return { ...next, search: route.search.term };
     const d = route.draft;
     const ctxWish = ["ride", "groceries"].includes(contextOf(text) ?? "") && (s.action === "wish" || s.action === "borrow");
-    const action = ctxWish ? "wish" : route.intent !== "clarify" && d.action ? d.action : s.action;
+    const action = ctxWish ? "wish" : s.action;
     const fields = fieldsFromDraft({ ...d, action, clarification: null }, text);
     if (!fields.what && action !== "fund" && !fields.context) fields.what = text.replace(/^(?:a|an|my|some)\s+/i, "") ;
     return nextAsk({ ...next, action, fields, pending: null });

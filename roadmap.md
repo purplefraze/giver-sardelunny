@@ -55,3 +55,7 @@
 - [x] Oct 10 17:08: middle-loop tap opens every posting mode form in the unfolded G; bottom-centre in-form recorder shares the one draft.
 - [ ] Refine the unpretzel intermediate (filled-blob frame) and a reverse fold on return to the G.
 - [ ] Real iPhone microphone/Safari check of the in-form recorder.
+
+- [ ] Manual Fund requires valid positive goal (no Wish fallback)
+- [ ] Typed titles infer context/category in all modes incl. Trade; re-infer on title change
+- [ ] Morph: no blob, pinch reverses same movement

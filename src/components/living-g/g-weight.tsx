@@ -72,10 +72,16 @@ export const gBottom = (weight: GWeight = "normal") => LIVING_G_BOX.height - str
  * the same space (inside a LIVING_G_TRANSFORM group), or pass `transformed`
  * to draw it in viewBox space.
  */
-export function GThinMask({ id, weight, transformed = false }: { id: string; weight: GWeight; transformed?: boolean }) {
+export function GThinMask({ id, weight, transformed = false, middleWidth }: { id: string; weight: GWeight; transformed?: boolean; middleWidth?: number }) {
   const w = strokeInset(weight) * 2 * 10;
   const path = (
-    <path d={LIVING_G_PATH} fill="#fff" stroke="#000" strokeWidth={w} strokeLinejoin="round" />
+    <>
+      <path d={LIVING_G_PATH} fill="#fff" stroke="#000" strokeWidth={w} strokeLinejoin="round" />
+      {middleWidth !== undefined ? <>
+        <defs><clipPath id={`${id}-middle-band`}><rect x="-4000" y="5730" width="16000" height="10000" /></clipPath></defs>
+        <path d={LIVING_G_PATH} fill="none" stroke="#000" strokeWidth={(G_STROKE.normal - middleWidth) * 10} strokeLinejoin="round" clipPath={`url(#${id}-middle-band)`} />
+      </> : null}
+    </>
   );
   return transformed ? (
     <mask id={id} maskUnits="userSpaceOnUse" x={-400} y={-400} width={1600} height={2000}>

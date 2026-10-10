@@ -2169,3 +2169,8 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
   position:sticky; bottom:0; background:var(--world-bg); z-index:1;
 }
 .gv-field input,.gv-field textarea,.gv-field select { font-size:max(16px, calc(17px * var(--gv-fit))); }
+.gv-collection { min-width:0; }
+.gv-collection .gv-field { grid-template-columns:minmax(0,1fr); gap:2px; }
+.gv-collection .gv-answer-actions { margin:0; gap:8px; }
+.gv-collection-map { height:128px; width:100%; min-width:0; margin-block:6px; }
+.gv-collection-pin { border-radius:50%; background:var(--mode-give); border:3px solid var(--background); }

@@ -14,7 +14,8 @@ import { useConnections } from "@/hooks/use-connections";
 import { useLedger } from "@/hooks/use-ledger";
 import { useWall } from "@/hooks/use-wall";
 import { useProfilePhoto } from "@/components/profile/ProfilePhotoPicker";
-import { buzz } from "@/lib/haptics";
+import { buzz, haptics } from "@/lib/haptics";
+import { inputAngle, signedTurn, scaleOf, settleDuration, easeOut, type Point } from "@/components/community/perimeter-geometry";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { seatPlacement } from "@/intelligence/seat-placement";
 import {
@@ -65,7 +66,7 @@ const OUTER = RING.EAR.outerR;
 const FIT_W = OUTER * 1.65;
 const ENTRY_MS = 420;
 const HOLD_MS = 450;
-const SETTLE_MS = 200;
+const PROFILE_LENS = 0.90;
 
 const wrap = (d: number) => ((d % 360) + 360) % 360;
 const turn = (a: number, b: number) => {
@@ -115,7 +116,7 @@ export function MyGRing({
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const degRef = useRef(start);
   const anim = useRef(0);
-  const drag = useRef<{ id: number; onBead: boolean; moved: number; t: number; held: boolean } | null>(null);
+  const drag = useRef<{ id: number; onBead: boolean; moved: number; t: number; held: boolean; centre: Point; radii: Point; raw: number | null; down: Point } | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTick = useRef<number>(seatOf(start).at);
   const dockedOnMyg = useRef(start === 180);
@@ -159,13 +160,14 @@ export function MyGRing({
     cancelAnimationFrame(anim.current);
     const from = degRef.current;
     const delta = turn(from, target);
-    if (reduced() || Math.abs(delta) < 0.5) return put(target);
+    const duration = settleDuration(delta, reduced());
+    if (!duration || Math.abs(delta) < 0.5) return put(from + delta);
     const t0 = performance.now();
     const step = (now: number) => {
-      const k = Math.min(1, (now - t0) / SETTLE_MS);
-      put(from + delta * (1 - (1 - k) ** 3));
+      const k = Math.min(1, (now - t0) / duration);
+      put(from + delta * easeOut(k));
       if (k < 1) anim.current = requestAnimationFrame(step);
-      else put(target);
+      else put(from + delta);
     };
     anim.current = requestAnimationFrame(step);
   };
@@ -228,31 +230,40 @@ export function MyGRing({
   const aspect = box.h / Math.max(box.w, 1);
   /* Entry: one easeOut from the whole G into the toggle circle. */
   const e = 1 - Math.pow(1 - intro, 3);
-  const viewW = 778 + (span - 778) * e;
+  // Reuse communi-g's bounded angle lens; the original upper ring is unchanged.
+  const lens = scaleOf(deg) / scaleOf(0);
+  const targetW = span * PROFILE_LENS / lens;
+  const viewW = 778 + (targetW - 778) * e;
   const viewH = viewW * aspect;
-  const cx = 272 + (C.x - 272) * e;
-  const targetCy = C.y + viewH * .04;
+  const screenScale = box.w / targetW;
+  const a = rad(deg);
+  const ringPixels = RIM * screenScale;
+  const anchor = {
+    x: box.w / 2 + Math.cos(a) * Math.max(0, box.w / 2 - 44),
+    y: box.h / 2 + Math.sin(a) * Math.min(box.h / 2 - 64, ringPixels * .78),
+  };
+  // Camera follows the actual upper-ring bead, never a substitute lower path.
+  const targetCx = bead.x - (anchor.x - box.w / 2) / screenScale;
+  const targetCy = bead.y - (anchor.y - box.h / 2) / screenScale;
+  const cx = 272 + (targetCx - 272) * e;
   const cy = 520 + (targetCy - 520) * e;
   const vx = cx - viewW / 2;
   const vy = cy - viewH / 2;
-  const toScreen = (p: { x: number; y: number }) => ({
+  const toScreen = (p: Point) => ({
     x: ((p.x - vx) / viewW) * box.w,
     y: ((p.y - vy) / viewH) * box.h,
   });
   const hollow = toScreen(C);
   const safeRadius = (RING.EAR.innerR / viewW) * box.w;
-  const panelW = Math.min(box.w - 64, safeRadius * 1.4);
-  const panelLeft = (box.w - panelW) / 2;
-  const panelTop = Math.max(24, hollow.y - safeRadius * .68);
-  const panelMaxH = Math.max(100, Math.min(safeRadius * 1.36, box.h - panelTop - 32));
-
-  const pointerDeg = (e: { clientX: number; clientY: number }) => {
-    const rect = root.current?.getBoundingClientRect();
-    if (!rect) return degRef.current;
-    const x = vx + ((e.clientX - rect.left) / rect.width) * viewW;
-    const y = vy + ((e.clientY - rect.top) / rect.height) * viewH;
-    return wrap((Math.atan2(y - C.y, x - C.x) * 180) / Math.PI + 90);
-  };
+  const panelLeft = Math.max(20, hollow.x - safeRadius * .66);
+  const panelRight = Math.min(box.w - 20, hollow.x + safeRadius * .66);
+  const panelW = Math.max(100, panelRight - panelLeft);
+  const photoView = opened === "photo" && !recMode;
+  const panelTop = photoView
+    ? Math.min(box.h - 92, hollow.y + safeRadius + 12)
+    : Math.max(24, hollow.y - safeRadius * .68);
+  const panelMaxH = photoView ? box.h - panelTop - 12
+    : Math.max(100, Math.min(safeRadius * 1.36, box.h - panelTop - 32));
 
   const clearHold = () => {
     if (holdTimer.current) clearTimeout(holdTimer.current);
@@ -261,11 +272,16 @@ export function MyGRing({
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("[data-interior]")) return;
-    if (drag.current) return;
+    if (drag.current || !e.isPrimary || e.button !== 0) return;
     cancelAnimationFrame(anim.current);
     const onBead = Boolean((e.target as Element).closest("[data-bead]"));
+    if (!onBead) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centre = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    const radii = { x: Math.max(1, rect.width / 2 - 54), y: Math.max(1, rect.height / 2 - 54) };
+    const down = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: e.pointerId, onBead, moved: 0, t: Date.now(), held: false };
+    drag.current = { id: e.pointerId, onBead, moved: 0, t: Date.now(), held: false, centre, radii, down, raw: inputAngle(down, centre, radii) };
     if (onBead) {
       holdTimer.current = setTimeout(() => {
         const d = drag.current;
@@ -285,18 +301,22 @@ export function MyGRing({
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (!d || d.id !== e.pointerId || d.held) return;
-    d.moved += Math.abs(e.movementX) + Math.abs(e.movementY);
-    if (d.moved < 10) return;
-    clearHold();
-    const next = pointerDeg(e);
+    d.moved = Math.max(d.moved, Math.hypot(e.clientX - d.down.x, e.clientY - d.down.y));
+    const raw = inputAngle({ x: e.clientX, y: e.clientY }, d.centre, d.radii);
+    if (raw === null) { d.raw = null; return; }
+    const delta = d.raw === null ? 0 : signedTurn(d.raw, raw);
+    d.raw = raw;
+    if (d.moved > 6) clearHold();
+    if (!delta) return;
+    const next = degRef.current + delta;
     const nextSeat = seatOf(next);
     if (nextSeat.at !== lastTick.current) {
       lastTick.current = nextSeat.at;
       dockedOnMyg.current = false;
       setOpened(nextSeat.id === "myg" ? null : nextSeat.id);
-      buzz(8);
+      haptics.selection();
     }
-    put(degRef.current + turn(degRef.current, next));
+    put(next);
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -304,9 +324,10 @@ export function MyGRing({
     if (!d || d.id !== e.pointerId) return;
     drag.current = null;
     clearHold();
+    if (e.type === "pointercancel") { glideTo(seatOf(degRef.current).at); return; }
     if (d.held) return;
     const at = seatOf(degRef.current);
-    if (d.moved >= 10) {
+    if (d.moved > 6) {
       lastTick.current = at.at;
       glideTo(at.at);
       setOpened(at.id === "myg" ? null : at.id);
@@ -403,26 +424,7 @@ export function MyGRing({
         <path d={arcPath(MID, -104, -76, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={8} vectorEffect="non-scaling-stroke" />
         <line x1={C.x} y1={C.y+RIM} x2={C.x} y2={C.y+RIM+12} stroke={BLUE} strokeWidth={8} vectorEffect="non-scaling-stroke" />
         <circle data-profile-rim="" cx={C.x} cy={C.y} r={RING.RING_MID} fill="none" stroke={BLUE} strokeWidth={17} vectorEffect="non-scaling-stroke" />
-        {PROFILE_AREAS.map((item) => {
-          const on = item.id === seat.id;
-          const p = item.at === 90 ? { x: C.x + OUTER + 30, y: C.y } : item.at === 270 ? { x: C.x - OUTER - 30, y: C.y } : onRim(item.at, OUTER + 11);
-          return (
-            <text
-              key={item.id}
-              x={p.x}
-              y={p.y + 2.4}
-              textAnchor={item.at === 90 ? "end" : item.at === 270 ? "start" : "middle"}
-              fill={BLUE}
-              fontSize={on ? 9 : 8}
-              fontWeight={on ? 900 : 700}
-              opacity={on ? 1 : 0.5}
-              style={{ letterSpacing: 0 }}
-            >
-              {item.word}
-            </text>
-          );
-        })}
-        <g data-bead="" style={{ cursor: "pointer" }}>
+        <g data-bead="" style={{ cursor: "pointer", touchAction: "none" }}>
           <circle cx={bead.x} cy={bead.y} r={RING.RING_W / 2 + 3} fill={PAPER} stroke={BLUE} strokeWidth={3} />
           {recMode ? (
             <circle cx={bead.x} cy={bead.y} r={voice.state === "listening" ? 5 : 6.5} fill={BLUE} opacity={voice.state === "listening" ? 1 : 0.85}>
@@ -435,7 +437,22 @@ export function MyGRing({
           )}
         </g>
         {/* Bigger invisible grip so the small bead is easy to catch. */}
-        <circle data-bead="" cx={bead.x} cy={bead.y} r={RING.RING_W} fill="transparent" />
+        <circle data-bead="" cx={bead.x} cy={bead.y} r={Math.max(RING.RING_W, 22 * viewW / box.w)} fill="transparent" style={{ touchAction: "none" }} />
+      </svg>
+
+      <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${box.w} ${box.h}`} aria-hidden="true">
+        {PROFILE_AREAS.map(item => {
+          const on = item.id === seat.id;
+          const p = toScreen(onRim(item.at, OUTER + 11));
+          const size = on ? 22 : 18;
+          const half = item.word.length * size * .31;
+          return <text key={item.id} data-profile-label={item.id}
+            x={Math.max(half + 12, Math.min(box.w - half - 12, p.x))}
+            y={Math.max(26, Math.min(box.h - 18, p.y))}
+            textAnchor="middle" dominantBaseline="central" fill={BLUE}
+            fontSize={size} fontWeight={on ? 900 : 700} opacity={on ? 1 : .5}
+            style={{ fontFamily: "var(--giver-font)", letterSpacing: 0 }}>{item.word}</text>;
+        })}
       </svg>
 
       {showPanel && (opened || recMode) ? (
@@ -445,7 +462,7 @@ export function MyGRing({
           style={{ left: panelLeft, top: panelTop, width: panelW, height: panelMaxH, color: INK, textAlign: "left" }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <h1 className="g-heading mb-5" style={{ color: BLUE }}>{seat.word}</h1>
+          {!photoView ? <h1 className="g-heading mb-5" style={{ color: BLUE }}>{seat.word}</h1> : null}
           {recMode ? (
             <form
               className="mb-3 flex gap-2"
@@ -576,7 +593,7 @@ function Area({
 
   if (id === "photo") {
     return (
-      <div className="flex flex-col items-start gap-3">
+      <div className="flex flex-col items-center gap-3">
         {!me.photo ? <p className="g-body">no photo yet.</p> : null}
         <div className="flex gap-4">
           <Button variant="ghost" type="button" className={btn} style={{ color: BLUE }} onClick={() => void photo.choose()}>

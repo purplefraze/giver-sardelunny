@@ -2067,7 +2067,7 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 [data-profile-loop] [data-interior] .g-body { font-size:18px; line-height:1.4; }
 [data-profile-loop] [data-interior] input, [data-profile-loop] [data-interior] textarea { font-size:18px; }
 [data-profile-loop] [data-interior] button { min-height:44px; white-space:normal; height:auto; }
-[data-profile-seat="photo"] [data-interior] { background:color-mix(in oklab,var(--background) 88%,transparent); }
+
 
 /* ---------------------------------------------------------------
    OCT 10 REPAIR — lowercase, restrained, one screen per listing.

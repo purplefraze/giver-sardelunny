@@ -232,7 +232,10 @@ export function MyGRing({
   const e = 1 - Math.pow(1 - intro, 3);
   // Reuse communi-g's bounded angle lens; the original upper ring is unchanged.
   const lens = scaleOf(deg) / scaleOf(0);
-  const targetW = span * PROFILE_LENS / lens;
+  const photoNear = Math.max(0, 1 - Math.abs(turn(deg, 45)) / 45);
+  const photoFit = photoNear * photoNear * (3 - 2 * photoNear);
+  const closeW = span * PROFILE_LENS / lens;
+  const targetW = closeW + (OUTER * 2.25 * span / FIT_W - closeW) * photoFit;
   const viewW = 778 + (targetW - 778) * e;
   const viewH = viewW * aspect;
   const screenScale = box.w / targetW;
@@ -243,8 +246,10 @@ export function MyGRing({
     y: box.h / 2 + Math.sin(a) * Math.min(box.h / 2 - 64, ringPixels * .78),
   };
   // Camera follows the actual upper-ring bead, never a substitute lower path.
-  const targetCx = bead.x - (anchor.x - box.w / 2) / screenScale;
-  const targetCy = bead.y - (anchor.y - box.h / 2) / screenScale;
+  const followX = bead.x - (anchor.x - box.w / 2) / screenScale;
+  const followY = bead.y - (anchor.y - box.h / 2) / screenScale;
+  const targetCx = followX + (C.x - followX) * photoFit;
+  const targetCy = followY + (C.y + box.h * .06 / screenScale - followY) * photoFit;
   const cx = 272 + (targetCx - 272) * e;
   const cy = 520 + (targetCy - 520) * e;
   const vx = cx - viewW / 2;
@@ -453,7 +458,7 @@ export function MyGRing({
           return <text key={item.id} data-profile-label={item.id}
             x={Math.max(half + 12, Math.min(box.w - half - 12, p.x))}
             y={Math.max(26, Math.min(box.h - 26, p.y))}
-            textAnchor="middle" dominantBaseline="central" fill={BLUE}
+            textAnchor="middle" dominantBaseline="central" fill={BLUE} stroke={PAPER} strokeWidth={4} paintOrder="stroke"
             fontSize={size} fontWeight={on ? 900 : 700} opacity={on ? 1 : .5}
             style={{ fontFamily: "var(--giver-font)", letterSpacing: 0 }}>{item.word}</text>;
         })}
@@ -599,12 +604,12 @@ function Area({
     return (
       <div className="flex flex-col items-center gap-3">
         {!me.photo ? <p className="g-body">no photo yet.</p> : null}
-        <div className="flex gap-4">
-          <Button variant="ghost" type="button" className={btn} style={{ color: BLUE }} onClick={() => void photo.choose()}>
+        <div className="flex min-w-0 gap-4">
+          <Button variant="ghost" type="button" className={`${btn} hover:bg-transparent`} style={{ color: BLUE }} onClick={() => void photo.choose()}>
             {photo.loading ? "opening…" : me.photo ? "change photo" : "add a photo"}
           </Button>
           {me.photoSource ? (
-            <Button variant="ghost" type="button" className={btn} onClick={() => me.photoSource && photo.reposition(me.photoSource, me.photoCrop)}>reposition</Button>
+            <Button variant="ghost" type="button" className={`${btn} hover:bg-transparent`} onClick={() => me.photoSource && photo.reposition(me.photoSource, me.photoCrop)}>reposition</Button>
           ) : null}
         </div>
         {photo.failed ? <p className="g-meta">that picture couldn't be read. try another.</p> : null}

@@ -1,4 +1,8 @@
 # Communi-G track repair
+## Oct 10 22:19 onboarding keyboard regression
+- [ ] Remove sign-in keyboard scaling and email wrapping; retain canonical artwork and background composition.
+- [ ] Verify focus, varying lengths, autofill-style input, viewport contraction/panning and dismissal on phone bounds; regress other creation forms with mocked writes.
+- [ ] Physical iPhone Safari keyboard/autofill verification requires an actual device; desktop simulation is not proof.
 ## Oct 10 21:50 creation keyboard regression
 - [x] Replace warped form renderer with uniformly transformed canonical middle-loop artwork; restore mask tokens and one form warning; six-mode hidden/shown screenshots. Enlarged existing joins remain visible; see docs/form-keyboard-geometry-verification-oct10.md.
 - [x] Remove creation-entry autofocus and freeze enclosure geometry through simulated keyboard viewport changes.

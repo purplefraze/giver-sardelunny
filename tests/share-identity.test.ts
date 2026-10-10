@@ -95,13 +95,13 @@ describe("failed save → fold → reopen → edit → retry", () => {
     confirm = async () => null;
     const first = await sc.share(inputOf());
     const id = (first as { id: string }).id;
-    expect(items.get(id)!.details?.fundTarget).toBe(1500);
+    expect(items.get(id)!.details?.fundTarget).toBe(150000);
     conversation.closeForm(); conversation.openForm("fund");
     conversation.edit("amount", "900");
     confirm = async (i) => i;
     const second = await sc.share(inputOf());
     expect(second).toMatchObject({ kind: "live", id });
-    expect(items.get(id)!.details?.fundTarget).toBe(900);
+    expect(items.get(id)!.details?.fundTarget).toBe(90000);
     expect(addCalls).toBe(1);
     expect(reservations).toBe(1);
   });

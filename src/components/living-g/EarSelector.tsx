@@ -336,6 +336,9 @@ export function EarSelector({
   hideWord = false,
   weight = "normal",
   title = false,
+  onRecordStart,
+  onRecordEnd,
+  recording = false,
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;

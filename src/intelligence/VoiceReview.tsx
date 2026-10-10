@@ -105,27 +105,27 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     }}>
       <div className="gv-scroll">
       <div className="gv-sheet">
-      <Button variant="ghost" type="button" className="gv-back sr-only focus:not-sr-only" aria-label="return to the Living G (keeps your draft)" onClick={back}>return to the G</Button>
+      <Button variant="ghost" type="button" className="gv-back sr-only focus:not-sr-only" aria-label="return to the living g (keeps your draft)" onClick={back}>return to the g</Button>
       {guided ? <section className="gv-guided" data-guided-intake="">
         <p className="g-meta">{noun}</p>
         <h1 className="gv-question">{c.timePending?.question || ask || ({give:"what would you like to give?",wish:"what are you wishing for?",borrow:"what would you like to borrow?",lend:"what can you lend?",trade:"what would you like to trade?",fund:"what are you raising funds for?"}[action])}</h1>
-        <label className="gv-field"><span className="sr-only">your answer</span><textarea aria-label="your answer" rows={2} value={answer} onChange={e=>setAnswer(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(answer.trim()){conversation.answer(answer);setAnswer("");}}}} /></label>
-        {listening && v.transcript?<p className="gv-heard" aria-live="polite">{v.transcript}</p>:null}
+        <label className="gv-field"><span className="sr-only">your answer</span><textarea aria-label="your answer" autoCapitalize="none" rows={2} value={answer} onChange={e=>setAnswer(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(answer.trim()){conversation.answer(answer);setAnswer("");}}}} /></label>
+        {listening || v.transcript || v.state==="error" ? <div className="gv-live" aria-live="polite" data-form-listening=""><p className="g-meta" role="status">{v.state==="listening"?"listening…":v.state==="processing"?"got it…":v.state==="error"?(v.error??"listening stopped. type instead."):listening?"starting…":"heard"}</p>{v.transcript?<p className="gv-heard" data-form-heard="">{v.transcript}</p>:null}</div> : null}
         {s.choices?.length?<div className="gv-answer-choices">{s.choices.map(choice=><Button variant="ghost" type="button" key={choice} onClick={()=>conversation.answer(choice)}>{choice}</Button>)}</div>:null}
         {temporal ? <div className="gv-date-answer">
           <Popover><PopoverTrigger asChild><Button variant="ghost" type="button" aria-label="choose a collection or availability date"><CalendarDays />{date||"choose a date"}</Button></PopoverTrigger><PopoverContent className="w-auto p-0 pointer-events-auto"><Calendar mode="single" selected={parseDateOnly(date)??undefined} onSelect={d=>{if(d)setDate(toDateOnly(d));}} className="pointer-events-auto" /></PopoverContent></Popover>
           <label className="gv-field"><span>time (optional)</span><input type="time" aria-label="availability time" value={time} onChange={e=>setTime(e.target.value)} /></label>
           {date?<><p className="g-body">{pickedAnswerTime(date,time)?.label}</p><Button variant="ghost" type="button" onClick={()=>{const value=pickedAnswerTime(date,time);if(value){conversation.setTiming(value);setDate("");setTime("");}}}>use this date{time?" and time":""}</Button></>:null}
         </div>:null}
-        <div className="gv-answer-actions"><Button variant="ghost" type="button" disabled={!answer.trim()} onClick={()=>{conversation.answer(answer);setAnswer("");}}>Next →</Button><Button variant="ghost" type="button" onClick={()=>conversation.inspect()}>review draft</Button></div>
+        <div className="gv-answer-actions"><Button variant="ghost" type="button" disabled={!answer.trim()} onClick={()=>{conversation.answer(answer);setAnswer("");}}>next →</Button><Button variant="ghost" type="button" onClick={()=>conversation.inspect()}>review draft</Button></div>
         {c.understanding?<p className="g-meta" role="status">understanding…</p>:null}
-        {c.understandingError?<p className="g-meta" role="status">{c.understandingError}</p>:null}
+        {c.understandingError?<p className="g-meta" role="status">{c.understandingError.toLowerCase()}</p>:null}
       </section> : <>
       <p className="gv-title">your {noun}</p>
       {ask || listening || v.transcript ? (
         <div className="gv-live" aria-live="polite" data-form-prompt="">
           {ask ? <p className="gv-ask">{ask}</p> : null}
-          {listening && v.transcript ? <p className="gv-heard" data-form-heard="">{v.transcript}</p> : null}
+          {listening ? <p className="g-meta" role="status">{v.state==="listening"?"listening…":"starting…"}</p> : null}{v.transcript ? <p className="gv-heard" data-form-heard="">{v.transcript}</p> : null}
         </div>
       ) : null}
       <div className="gv-fields">
@@ -179,7 +179,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       ) : null}
       {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
       <div className="gv-taps gv-actions">
-        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>Share with communi-g</Button>
+        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
       </div>
       {!canGoLive(action,f)||s.stage==="talk"?<Button variant="ghost" type="button" onClick={()=>conversation.continueQuestions()}>continue questions</Button>:null}

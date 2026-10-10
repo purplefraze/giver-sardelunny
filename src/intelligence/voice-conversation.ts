@@ -133,7 +133,7 @@ async function refine() {
       if(v){if(!fields.what&&v.subject&&!snap.edited.includes("what"))fields.what=v.subject;if(v.title&&!snap.edited.includes("title"))fields.title=v.title;if(v.category&&!snap.edited.includes("kind"))fields.kind=v.category;if(v.want&&!fields.want&&!snap.edited.includes("want"))fields.want=v.want;if(v.amount&&!fields.amount&&!snap.edited.includes("amount"))fields.amount=v.amount;}
       const next=nextAsk({...cur,fields});
       set({understanding:false,understandingError:result.error,session:snap.timePending?{...next,prompt:snap.timePending.question,asking:"when",choices:snap.timePending.choices,stage:"talk"}:next});
-    }catch {if(snap.session?.draftId===draft&&revision===turn)set({understanding:false,understandingError:"You can keep typing or review your draft."});}
+    }catch {if(snap.session?.draftId===draft&&revision===turn)set({understanding:false,understandingError:"understanding is unavailable. you can keep typing or review your draft."});}
     return;
   }
   if (s.stage !== "talk" && s.stage !== "anything") return;

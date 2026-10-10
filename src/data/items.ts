@@ -702,8 +702,33 @@ function seedItems(): Item[] {
       });
     });
   });
+  /* DEMO LENDS — sample members offering things to borrow (borrow + side lend). */
+  DEMO_LENDS.forEach(([memberId, text, i]) => {
+    const mi = Math.max(0, MEMBERS.findIndex((m) => m.id === memberId));
+    const member = MEMBERS[mi];
+    if (!member) return;
+    const km = parseKm(member.distance);
+    const id = `seed-${memberId}-lend-${i}`;
+    out.push({
+      id, ownerId: memberId, type: "borrow", side: "lend", text,
+      status: "active", priority: i, published: true,
+      createdAt: now - (i * MEMBERS.length + mi + 2) * 3600000,
+      updatedAt: now - (i * MEMBERS.length + mi + 2) * 3600000,
+      ...(km === undefined ? {} : { distanceKm: km }),
+      details: detailsFor(id, text, mi, i),
+      boostCount: 0,
+    });
+  });
   return out.map(reviseFundFixture);
 }
+
+/** Sample lends only (demo pool, like every seed-* record). */
+export const DEMO_LENDS: [memberId: string, text: string, index: number][] = [
+  ["marcus", "a bicycle for the weekend", 0],
+  ["robin", "an extension ladder", 0],
+  ["giulia", "a pasta strainer", 0],
+  ["sofia", "a folding table for parties", 0],
+];
 
 /**
  * OLDER SAMPLE ITEMS PREDATE STRUCTURED DETAILS. They are the same items, so

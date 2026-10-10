@@ -912,7 +912,7 @@ function Index() {
                   } : {})}
                 />
               )}
-              {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} onNavigate={enterSelectedWorld} seat={seat} /> : null}
+              {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} onNavigate={enterSelectedWorld} seat={seat} quietMiddle={!!firstLand} /> : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}
@@ -1328,6 +1328,8 @@ function Index() {
                     onOpen={(itemId) => setDetail(itemId)}
                     detailId={detail}
                     onCloseDetail={() => setDetail(null)}
+                    /* A NEW SECTION: no stale listing, nested profile or its focus survives. */
+                    onSectionChange={() => { setDetail(null); setPersonFocus(null); setPerson(null); }}
                     onOpenConnection={(id) => setTalking(id)}
                     onNeedGive={() => { setDetail(null); setBrowse(null); setLocked(true); }}
                     onStartGive={() => { setDetail(null); setBrowse(null); setSeat("give"); conversation.openForm("give"); }}

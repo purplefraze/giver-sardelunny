@@ -25,4 +25,4 @@ export const lowerAngle = (value: CgStation) => LOWER_STATIONS.find(s => s.value
 export const nearestLower = (angle: number): CgStation => LOWER_STATIONS.reduce((best, s) =>
   Math.abs(clampLower(angle) - s.angle) < Math.abs(clampLower(angle) - lowerAngle(best)) ? s.value : best, "map" as CgStation);
 export const lowerToken = (value: CgStation) => `--mode-${value === "map" ? "giver" : value === "everything" || value === "back" ? "communigy" : value}`;
-export const lowerWord = (value: CgStation) => value === "back" ? "My G" : value === "everything" ? "all" : value;
+export const lowerWord = (value: CgStation) => value === "back" ? "my g" : value === "everything" ? "all" : value;

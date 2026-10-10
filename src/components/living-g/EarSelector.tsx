@@ -247,7 +247,7 @@ export function toggleGeometry(weight: GWeight = "normal") {
  * borrow · wish. The one table every toggle reads its title from.
  */
 export const SEAT_TITLE: Record<Seat, string> = {
-  giver: "Profile",
+  giver: "profile",
   give: "give",
   lend: "lend",
   trade: "trade",

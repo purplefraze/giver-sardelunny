@@ -22,7 +22,7 @@ export type VoiceSession = {
   /** The one question currently in the middle loop. */
   prompt: string;
   /** Which field the question is waiting on (so "here" → location). */
-  asking: keyof VoiceFields | "intent" | `ctx:${string}` | null;
+  asking: keyof VoiceFields | "intent" | "seed" | `ctx:${string}` | null;
   /** Everything said this session, in order (the model reads the whole talk). */
   said: string[];
   choices: readonly string[];

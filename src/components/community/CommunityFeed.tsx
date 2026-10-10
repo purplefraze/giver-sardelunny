@@ -100,6 +100,33 @@ export function CommunityFeed({
   useEffect(() => () => { voiceCapture.cancel(); }, []);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => { const el = root.current; if (!el) return; const leave = () => (onExit ?? onClose)(); el.addEventListener("giver:community-return", leave); return () => el.removeEventListener("giver:community-return", leave); }, [onExit, onClose]);
+  /* PINCH TO RETURN: two fingers inward, both OUTSIDE the map (map pinch stays
+     map zoom), contracts the expanded world; past ~45% it returns to the whole
+     G, otherwise it springs back. Recording stops as the pinch begins. */
+  const exitRef = useRef(onExit ?? onClose);
+  exitRef.current = onExit ?? onClose;
+  useEffect(() => {
+    const el = root.current; if (!el) return;
+    let d0 = 0, p = 0, active = false, raf = 0;
+    const onMap = (t: Touch) => !!(t.target as Element | null)?.closest?.(".leaflet-container");
+    const dist = (e: TouchEvent) => Math.hypot(e.touches[0]!.clientX - e.touches[1]!.clientX, e.touches[0]!.clientY - e.touches[1]!.clientY);
+    const paint = (k: number) => { el.style.transform = k ? `scale(${1 - 0.55 * k})` : ""; el.style.opacity = k ? String(1 - 0.6 * k) : ""; el.dataset.cgPinch = k.toFixed(2); };
+    const start = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || active || onMap(e.touches[0]!) || onMap(e.touches[1]!)) return;
+      active = true; d0 = dist(e) || 1; p = 0; cancelAnimationFrame(raf);
+      voiceCapture.cancel(); setRecord(false);
+    };
+    const move = (e: TouchEvent) => { if (!active || e.touches.length < 2) return; e.preventDefault(); p = Math.max(0, Math.min(1, (d0 - dist(e)) / (d0 * .55))); paint(p); };
+    const end = (e: TouchEvent) => {
+      if (!active || e.touches.length >= 2) return; active = false;
+      const to = p > .45 ? 1 : 0, from = p, t0 = performance.now(), reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches, ms = reduced ? 0 : 240;
+      const step = (now: number) => { const k = ms ? Math.min(1, (now - t0) / ms) : 1; p = from + (to - from) * (1 - (1 - k) ** 3); paint(p); if (k < 1) raf = requestAnimationFrame(step); else if (to === 1) exitRef.current(); else paint(0); };
+      raf = requestAnimationFrame(step);
+    };
+    el.addEventListener("touchstart", start, { passive: true }); el.addEventListener("touchmove", move, { passive: false });
+    el.addEventListener("touchend", end); el.addEventListener("touchcancel", end);
+    return () => { cancelAnimationFrame(raf); el.removeEventListener("touchstart", start); el.removeEventListener("touchmove", move); el.removeEventListener("touchend", end); el.removeEventListener("touchcancel", end); };
+  }, []);
   const allowLocation = async () => { const result = await askLocation(); if (!result.ok) setLocationProblem(result.reason === "denied" ? "location isn't allowed. choose a map centre below." : "location isn't available. choose a map centre below."); else setLocationProblem(""); };
 
 

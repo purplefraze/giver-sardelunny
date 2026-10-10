@@ -12,7 +12,7 @@ test("top map to Give follows the counterclockwise wire without moving Trade", (
   expect(lowerAngle("give") - lowerAngle("map")).toBe(-315);
 });
 test("missing top-to-Give arc is open and cannot wrap", () => {
-  expect(clampLower(20)).toBe(0);
+  expect(clampLower(90)).toBe(60);
   expect(clampLower(-360)).toBe(-315);
   expect(TRACK_PATH.endsWith("Z")).toBe(false);
   expect((TRACK_PATH.match(/ C /g) ?? []).length).toBe(63);

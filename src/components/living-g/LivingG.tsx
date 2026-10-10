@@ -421,7 +421,7 @@ export function LivingG({
             stroke="none"
             role="button"
             tabIndex={0}
-            aria-label={region.label ?? key}
+            aria-label={region.label || (region.panelTitle ? `${key} loop: ${region.panelTitle}` : key)}
             className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
             style={{ cursor: "pointer", outline: "none" }}
 

@@ -176,7 +176,7 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
   /** Measured from the CURRENT viewport, so rotation/resizes stay correct. */
   const measure = (): Fit | null => {
     const el = source.current, box = frame.current?.getBoundingClientRect();
-    const m = el?.getScreenCTM();
+    const m = el?.ownerSVGElement?.getScreenCTM();
     if (!m || !box) return null;
     const pt = (x: number, y: number) => new DOMPoint(x, y).matrixTransform(m);
     const tl = pt(HOLLOW.left, HOLLOW.top), br = pt(HOLLOW.right, HOLLOW.bottom);

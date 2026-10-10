@@ -1261,6 +1261,8 @@
    --------------------------------------------------------------- */
 .signin {
   --seat: var(--mode-give);
+  --signin-field-rule: #ece9e4;
+  --signin-placeholder: #b8b3ab;
   /* The Living G / EarSelector read the world pair: here it is the seat. */
   --world-g: var(--seat);
   --world-bg: var(--seat-bg);
@@ -1332,24 +1334,11 @@
   }
 }
 
-/* THE STAGE — one wrapper over the whole screen, scaled as ONE about its
-   top-left corner (use-keyboard-fit.ts supplies translate + scale), eased
-   with the keyboard. The probe is the same GStage, unscaled and invisible. */
+/* Stable local canvas: no keyboard transform, probe or scale feedback. */
 .signin-stage {
   position: absolute;
   inset: 0;
   z-index: 10;
-  transform-origin: 0 0;
-  will-change: transform;
-}
-.signin-probe {
-  position: absolute;
-  inset: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .signin-stage { transition: none !important; }
 }
 
 /* THE TWO LOOPS' COPY BOXES — UPPER over the white inside the ring (drawn in
@@ -1478,61 +1467,48 @@
   color: #b8b3ab;
   opacity: 1;
 }
-/* THE EMAIL FIELD (SignInView EmailField) — the whole address, always. The
-   underline spans the loop's white at the field's height (84cqw, clear of the
-   stroke at 320 and 390); the control keeps the field's face, tracking and
-   colour at 17px (no iOS focus zoom) and is shrunk by a transform, anchored
-   on the underline, down to 13px on screen; past that it wraps and grows. */
+/* Native one-line email; fixed readable type and horizontal caret scrolling. */
 .signin-email {
   position: absolute;
   left: 50%;
   top: var(--field);
   transform: translateX(-50%);
   width: 84cqw;
-  border-bottom: 1px solid #ece9e4;
+  min-width: 0;
+  height: 24px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--signin-field-rule);
 }
-.signin-email-input,
-.signin-email-ruler {
+.signin-email-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
   font-family: var(--giver-font);
   font-weight: 400;
   font-size: 17px;
   line-height: 20px;
-  letter-spacing: -0.003em;
-}
-.signin-email-input {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  display: block;
-  margin: 0;
-  transform-origin: 50% 100%;
+  letter-spacing: 0;
   text-align: center;
-  color: #3a3733;
+  color: var(--form-ink);
   caret-color: var(--seat);
   background: transparent;
   border: 0;
   border-radius: 0;
   padding: 0 0 4px;
   outline: none;
-  resize: none;
-  overflow: hidden;
-  white-space: pre-wrap;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overflow-wrap: normal;
   word-break: normal;
-  overflow-wrap: anywhere;
   -webkit-appearance: none;
   appearance: none;
 }
 .signin-email-input::placeholder {
-  color: #b8b3ab;
+  color: var(--signin-placeholder);
   opacity: 1;
-}
-.signin-email-ruler {
-  position: absolute;
-  left: 0;
-  top: 0;
-  visibility: hidden;
-  white-space: pre;
-  pointer-events: none;
 }
 .signin-field--code {
   letter-spacing: 0.42em;
@@ -1561,12 +1537,10 @@
   --inner-mid: 51.423%;
   --nudge: 2.658%;
   --tail: 0px;
-  /* A wrapped email address (EmailField) grows the field by this much. */
-  --field-extra: 0px;
-  --stack: calc(26px + 33px + var(--send) + var(--tail) + var(--field-extra));
+  --stack: calc(26px + 33px + var(--send) + var(--tail));
   --ask: calc(var(--inner-mid) - var(--nudge) - var(--stack) / 2);
   --field: calc(var(--ask) + 26px);
-  --send-top: calc(var(--field) + 33px + var(--field-extra));
+  --send-top: calc(var(--field) + 33px);
 }
 /* The code step's stack includes its two quiet links under the send circle
    (6px gap + two 12px × 1.35 lines + 2px gap). */

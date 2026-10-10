@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { GStage } from "@/components/living-g/GStage";
 import { LivingG } from "@/components/living-g/LivingG";
@@ -16,7 +16,7 @@ import {
   OTP_LENGTH,
   type OtpSignIn,
 } from "@/components/onboarding/use-otp-sign-in";
-import { useKeyboardFit } from "@/components/onboarding/use-keyboard-fit";
+import { useSignInCanvas } from "@/components/onboarding/use-keyboard-fit";
 import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
 import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
 
@@ -52,7 +52,7 @@ import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
  *           beside it with the toggle as the i's dot, and the in-loop "giver"
  *           gives way to it (both follow the toggle's angle — no jump)
  *
- * KEYBOARD: the whole stage scales as ONE (use-keyboard-fit.ts).
+ * KEYBOARD: the sign-in canvas retains its resting size (use-keyboard-fit.ts).
  *
  * COLOUR + EMPHASIS follow the toggle's angle every frame, as CSS custom
  * properties on this root (signin-emphasis.ts): --seat is the nearest seat's
@@ -262,131 +262,16 @@ function Feed() {
   );
 }
 
-/**
- * THE EMAIL FIELD — THE WHOLE ADDRESS, ALWAYS (Frazer, 28 Sep 2026). The
- * address is never clipped, never scrolled, its start never hidden:
- *
- *   WIDTH    the underline spans as much of the bottom loop's white as the
- *            circle allows at the field's height (.signin-email, 84cqw).
- *   SHRINK   a longer address is set smaller until it fits on one line, down
- *            to a legible EMAIL_MIN_PX (13px as seen on screen — with the
- *            keyboard up the whole stage is scaled by `scale`, so the floor is
- *            13 / scale in the stage's own px).
- *   WRAP     only an address that still will not fit at the floor wraps onto
- *            a second line (a one-row textarea that grows): right after the
- *            "@" when both halves fit, otherwise at the last letter that
- *            fits. The send circle and the quiet lines move down with it
- *            (--field-extra) and the stack stays centred in the loop.
- *   NO ZOOM  the control's own font-size stays EMAIL_PX (17px, over iOS's
- *            16px focus-zoom threshold); the shrink is a transform on it, so
- *            iOS never zooms in on focus.
- *
- * Same face, weight, tracking, colour and underline as before.
- */
-const EMAIL_PX = 17;
-const EMAIL_MIN_PX = 13;
-/** One line at EMAIL_PX (line-height 20 + the 4px padding above the underline). */
-const EMAIL_ROW = 24;
-/** The address the browser's own type="email" would accept (WHATWG). */
-const EMAIL_OK =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-const EMAIL_PLACEHOLDER = "email";
-
-function EmailField({
-  value,
-  onChange,
-  scale,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  /** The stage's keyboard scale (useKeyboardFit), 1 with no keyboard. */
-  scale: number;
-}) {
-  const box = useRef<HTMLDivElement | null>(null);
-  const area = useRef<HTMLTextAreaElement | null>(null);
-  const ruler = useRef<HTMLSpanElement | null>(null);
-  /** f: the shrink (transform); w: the control's width in its own 17px space; h: its height. */
-  const [set, setSet] = useState({ f: 1, w: 0, h: EMAIL_ROW });
-
-  useLayoutEffect(() => {
-    const b = box.current;
-    const r = ruler.current;
-    const a = area.current;
-    if (!b || !r || !a) return;
-    const measure = () => {
-      const W = b.offsetWidth;
-      if (W <= 0) return;
-      /* Screen px per layout px (the keyboard scale and any other transform). */
-      const k = b.getBoundingClientRect().width / W || 1;
-      const px = (t: string) => {
-        r.textContent = t;
-        return r.getBoundingClientRect().width / k;
-      };
-      const text = a.value || EMAIL_PLACEHOLDER;
-      const lo = EMAIL_MIN_PX / Math.min(1, Math.max(0.1, scale)) / EMAIL_PX;
-      const hi = Math.max(1, lo);
-      const t = px(text);
-      /* 2px of air so a rounding error can never push the last letter over. */
-      const fit = (W - 2) / t;
-      let f: number;
-      let w: number;
-      if (fit >= lo) {
-        f = Math.min(hi, fit);
-        w = W / f;
-      } else {
-        f = lo;
-        w = W / f;
-        const at = text.lastIndexOf("@");
-        if (at > 0) {
-          const head = px(text.slice(0, at + 1));
-          const tail = px(text.slice(at + 1));
-          /* Break right after the "@": the control is exactly as wide as
-             "name@", so the domain starts the second line. */
-          if (head + 2 <= w && tail <= head) w = head + 2;
-        }
-      }
-      a.style.width = `${w}px`;
-      a.style.height = "0px";
-      const h = Math.max(EMAIL_ROW, a.scrollHeight);
-      a.style.height = `${h}px`;
-      const extra = Math.max(0, h * f - EMAIL_ROW);
-      b.parentElement?.style.setProperty("--field-extra", `${extra.toFixed(2)}px`);
-      setSet((s) =>
-        Math.abs(s.f - f) < 1e-4 && Math.abs(s.w - w) < 0.01 && s.h === h ? s : { f, w, h },
-      );
-    };
-    measure();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
-    ro?.observe(b);
-    let live = true;
-    void document.fonts?.ready.then(() => live && measure());
-    return () => {
-      live = false;
-      ro?.disconnect();
-    };
-  }, [value, scale]);
-
-  /* type="email"'s check, kept on the textarea. */
-  useEffect(() => {
-    const v = value.trim();
-    area.current?.setCustomValidity(!v || EMAIL_OK.test(v) ? "" : "enter an email address");
-  }, [value]);
-
+/** Native single-line email editing; long values scroll without resizing the loop. */
+function EmailField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div ref={box} className="signin-email" style={{ height: Math.max(EMAIL_ROW, set.h * set.f) }}>
-      <span ref={ruler} className="signin-email-ruler" aria-hidden="true" />
-      <textarea
-        ref={area}
-        rows={1}
+    <div className="signin-email">
+      <input
+        type="email"
         required
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\s+/g, ""))}
-        onKeyDown={(e) => {
-          if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
-          e.preventDefault();
-          e.currentTarget.form?.requestSubmit();
-        }}
-        placeholder={EMAIL_PLACEHOLDER}
+        placeholder="email"
         aria-label="email"
         name="email"
         autoCapitalize="none"
@@ -396,13 +281,6 @@ function EmailField({
         inputMode="email"
         enterKeyHint="send"
         className="signin-email-input"
-        data-email-scale={set.f.toFixed(4)}
-        style={{
-          width: set.w || undefined,
-          height: set.h,
-          marginLeft: set.w ? -set.w / 2 : undefined,
-          transform: `scale(${set.f})`,
-        }}
       />
     </div>
   );
@@ -428,8 +306,7 @@ function SendCircle({ label, busy }: { label: string; busy: boolean }) {
 export function SignInView({ otp }: { otp: OtpSignIn }) {
   const codeRef = useRef<HTMLInputElement | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
-  const probe = useRef<HTMLDivElement | null>(null);
-  const fit = useKeyboardFit(root, probe);
+  useSignInCanvas(root);
   /* THE FLIP: the lower loop stays quiet, then the sign-up fades in. */
   const [flipped, setFlipped] = useState(false);
   useEffect(() => {
@@ -449,24 +326,8 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
     <div ref={root} className="signin relative h-full min-h-full w-full overflow-hidden lowercase">
       <Feed />
 
-      {/* THE PROBE — an unscaled, invisible copy of the stage, read by the
-          keyboard rule for the G's resting pose (never transformed). */}
-      <div className="signin-probe" aria-hidden="true">
-        <GStage>
-          <div ref={probe} className="h-full w-full" />
-        </GStage>
-      </div>
-
-      {/* THE STAGE — ONE wrapper, ONE uniform scale: the G, the ring, the
-          toggle and both loops' copy move and scale together with the keyboard. */}
-      <div
-        className="signin-stage"
-        data-signin-scale={fit.s.toFixed(4)}
-        style={{
-          transform: `translate3d(${fit.tx}px, ${fit.ty}px, 0) scale(${fit.s})`,
-          transition: `transform ${fit.ease}`,
-        }}
-      >
+      {/* Keyboard viewport changes never transform or resize the artwork. */}
+      <div className="signin-stage">
         <GStage>
           {/* The lower loop's white: the feed feathers out under the G. */}
           <div className="signin-lower-fade" style={LOWER_FADE} aria-hidden="true" />
@@ -497,7 +358,7 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
                 inert={!lower}
               >
                 <p className="signin-ask">are you a giver?</p>
-                <EmailField value={otp.email} onChange={otp.setEmail} scale={fit.s} />
+                <EmailField value={otp.email} onChange={otp.setEmail} />
                 <SendCircle
                   label={otp.busy ? "sending" : EMAIL_HAS_CODE ? "send code" : "send link"}
                   busy={otp.busy}

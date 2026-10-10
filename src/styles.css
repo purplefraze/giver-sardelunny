@@ -2042,3 +2042,7 @@
 @keyframes gv-rec-pulse { 50% { opacity:.45; } }
 @media(prefers-reduced-motion:reduce) { .gv-rec-dot { animation:none !important; } }
 .gv-rec:focus-visible { outline:3px solid var(--world-g); outline-offset:3px; }
+
+.gv-back { align-self:flex-start; min-height:44px; min-width:44px; margin:-8px 0 -8px -10px; padding:0 10px; font:700 15px var(--giver-font); color:var(--world-g); }
+.gv-back:focus-visible { outline:3px solid var(--world-g); outline-offset:2px; }
+.gv-frame[data-folding="1"] { transition:transform 280ms cubic-bezier(.5,0,.72,.32), opacity 280ms ease-in; transform:scale(.4); opacity:0; }

@@ -59,3 +59,4 @@
 - [ ] Manual Fund requires valid positive goal (no Wish fallback)
 - [ ] Typed titles infer context/category in all modes incl. Trade; re-infer on title change
 - [ ] Morph: no blob, pinch reverses same movement
+- [ ] Whole lower loop = full-colour map; ambient outside-radius activity backdrop with tap/magnifier (Frazer Oct 10 17:36)

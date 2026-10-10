@@ -43,7 +43,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   useLayoutEffect(() => {
     const el = sheet.current;
     if (!el || keyboard) return;
-    if (el.scrollHeight > el.clientHeight + 1 && level < 3) setLevel(l => l + 1);
+    if (el.scrollHeight > el.clientHeight + 1 && level < 4) setLevel(l => l + 1);
   });
   useEffect(() => {
     const el = sheet.current;
@@ -89,7 +89,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const field = (key: keyof VoiceFields, label: string, placeholder = "") => (
     <label className={key === "what" || key === "title" || key === "note" || key === "want" ? "gv-field gv-field-wide" : "gv-field"}>
       <span>{label}</span>
-      {key === "what" || key === "title" || key === "note" || key === "want" ? <textarea rows={key === "note" ? 2 : 2} value={String(f[key] ?? "")} placeholder={placeholder} maxLength={key === "note" ? 100 : 60} onChange={e => conversation.edit(key, e.target.value)} /> : <input value={String(f[key] ?? "")} placeholder={placeholder} inputMode={key === "amount" ? "decimal" : undefined} maxLength={80} onChange={e => conversation.edit(key, e.target.value)} />}
+      {key === "what" || key === "title" || key === "note" || key === "want" ? <textarea rows={String(f[key] ?? "").length > 26 ? 2 : 1} value={String(f[key] ?? "")} placeholder={placeholder} maxLength={key === "note" ? 100 : 60} onChange={e => conversation.edit(key, e.target.value)} /> : <input value={String(f[key] ?? "")} placeholder={placeholder} inputMode={key === "amount" ? "decimal" : undefined} maxLength={80} onChange={e => conversation.edit(key, e.target.value)} />}
     </label>
   );
 
@@ -122,7 +122,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const ask = s.stage === "talk" || s.stage === "anything" ? s.prompt : null;
 
   return (
-    <form className="gv-form" data-voice-review={action} data-listening={listening ? "1" : "0"} data-keyboard={keyboard ? "1" : "0"} data-dense={level >= 3 ? "1" : "0"} style={{ ["--gv-fit" as string]: [1, 0.94, 0.88, 0.88][level] }} onSubmit={(e) => {
+    <form className="gv-form" data-voice-review={action} data-listening={listening ? "1" : "0"} data-keyboard={keyboard ? "1" : "0"} data-dense={level >= 3 ? "1" : "0"} data-overflow={level >= 4 ? "1" : "0"} style={{ ["--gv-fit" as string]: [1, 0.94, 0.88, 0.88, 0.88][level] }} onSubmit={(e) => {
       e.preventDefault();
       /* Only the Share button itself submits — never Enter in a field. */
       const by = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;

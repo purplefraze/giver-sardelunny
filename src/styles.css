@@ -2176,3 +2176,9 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 [data-cg-bead-flow="left"] .cg-detail .cg-flow-a, [data-cg-bead-flow="left"] .cg-detail .cg-flow-b { float:left; }
 [data-cg-bead-flow="right"] .cg-detail .cg-flow-a, [data-cg-bead-flow="right"] .cg-detail .cg-flow-b { float:right; }
 [data-cg-bead-flow] .cg-detail .cg-flow-b { clear:both; }
+/* Last resort only: if even the dense review cannot fit, it scrolls inside its
+   own area rather than ever sliding under the record button. */
+.gv-form[data-overflow="1"] .gv-scroll { overflow-y:auto; }
+.gv-field textarea { min-height:0; }
+.gv-form[data-dense="1"] .gv-field { padding-block:5px; }
+.gv-form[data-dense="1"] .gv-title { margin-bottom:2px; }

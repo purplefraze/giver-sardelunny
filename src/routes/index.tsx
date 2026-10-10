@@ -916,7 +916,7 @@ function Index() {
                   } : {})}
                 />
               )}
-              {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} seat={seat} /> : null}
+              {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} onNavigate={tapToggle} seat={seat} /> : null}
               {firstLand ? (
                 <FirstLandArt
                   phase={firstLand.phase}

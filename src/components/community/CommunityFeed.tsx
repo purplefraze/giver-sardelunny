@@ -81,6 +81,8 @@ export function CommunityFeed({
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
   const [radius, setRadius] = useState<number | null>(null);
   const [manual, setManual] = useState<Pin | null>(null);
+  const [area, setArea] = useState("");
+  const [areaBusy, setAreaBusy] = useState(false);
   const [coordinates, setCoordinates] = useState({ lat: "", lng: "" });
   const [locationProblem, setLocationProblem] = useState("");
   const centre = manual ?? location?.pin ?? null;
@@ -117,6 +119,18 @@ export function CommunityFeed({
     };
   }, [record]);
 
+  const findArea = async () => {
+    if (!area.trim() || areaBusy) return;
+    setAreaBusy(true); setLocationProblem("");
+    try {
+      const response=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(area.trim())}`,{headers:{Accept:"application/json"}});
+      if (!response.ok) throw new Error("area search unavailable");
+      const results=await response.json() as {lat:string;lon:string}[]; const first=results[0];
+      if (!first) setLocationProblem("no area found. try neighbourhood and city.");
+      else setManual({lat:Number(first.lat),lng:Number(first.lon)});
+    } catch { setLocationProblem("area search isn't available. allow location or enter a centre below."); }
+    finally { setAreaBusy(false); }
+  };
   const choose = (v: CgSelection) => {
     haptics.selection();
     setSel(v);
@@ -165,11 +179,12 @@ export function CommunityFeed({
           </div>
           {(view === "map" || radius !== null || sort === "nearest") && !centre ? <div className="cg-location">
             <p>{locationProblem || "allow approximate location, or choose a map centre."}</p>
-            <form onSubmit={e => { e.preventDefault(); const lat = Number(coordinates.lat), lng = Number(coordinates.lng); if (!coordinates.lat || !coordinates.lng || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat)>90 || Math.abs(lng)>180) { setLocationProblem("enter valid latitude and longitude for your area."); return; } setManual({lat,lng}); setLocationProblem(""); }}>
+            <form onSubmit={e=>{e.preventDefault();void findArea();}}><input aria-label="neighbourhood and city" placeholder="neighbourhood and city" value={area} onChange={e=>setArea(e.target.value)} className="w-full bg-transparent border-b py-1" /><Button variant="ghost" type="submit" className="cg-filter" disabled={areaBusy}>find area</Button></form>
+            <details><summary>choose coordinates instead</summary><form onSubmit={e => { e.preventDefault(); const lat = Number(coordinates.lat), lng = Number(coordinates.lng); if (!coordinates.lat || !coordinates.lng || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat)>90 || Math.abs(lng)>180) { setLocationProblem("enter valid latitude and longitude for your area."); return; } setManual({lat,lng}); setLocationProblem(""); }}>
               <input aria-label="area latitude" placeholder="area latitude" inputMode="decimal" value={coordinates.lat} onChange={e => setCoordinates(c => ({...c,lat:e.target.value}))} className="w-full bg-transparent border-b py-1" />
               <input aria-label="area longitude" placeholder="area longitude" inputMode="decimal" value={coordinates.lng} onChange={e => setCoordinates(c => ({...c,lng:e.target.value}))} className="w-full bg-transparent border-b py-1" />
               <Button variant="ghost" type="submit" className="cg-filter">use this centre</Button>
-            </form>
+            </form></details>
           </div> : null}
           {record ? (
             <form
@@ -199,8 +214,8 @@ export function CommunityFeed({
               “{term}” · clear
             </Button>
           ) : null}
-          <div className="flex min-h-0 flex-1 flex-col">
-          {view === "map" && centre ? <Suspense fallback={<p className="g-body">opening map</p>}><CommunigyMap pins={pins} centre={centre} radiusKm={radius ?? 10} onOpen={onOpen} />{!pins.length ? <p className="g-meta">no matching listings with a shared approximate location.</p> : null}</Suspense> : <ul className="cg-list" data-cg-feed={sel} data-place-y={place.y}>
+          <div className="flex min-h-0 flex-1 flex-col" style={{justifyContent: sel === "wish" || sel === "give" || sel === "mine" ? "flex-start" : place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center"}}>
+          {view === "map" && centre ? <Suspense fallback={<p className="g-body">opening map</p>}><CommunigyMap pins={pins} centre={centre} radiusKm={radius ?? 10} onOpen={onOpen} />{!pins.length ? <p className="g-meta">no matching listings with a shared approximate location.</p> : null}</Suspense> : <ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li
                 key={i.id}

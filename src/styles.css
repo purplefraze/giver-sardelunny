@@ -2013,3 +2013,6 @@
 .cg-list [data-cg-item] { display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; white-space:normal; height:auto; padding:4px 0; }
 .cg-context { background:var(--world-bg); padding:2px 4px; }
 [data-cg-mode="give"] [data-cg-interior-page] > .cg-filters, [data-cg-mode="wish"] [data-cg-interior-page] > .cg-filters { margin-top:24px; }
+
+.cg-list { flex:0 1 auto; max-height:100%; }
+.cg-list-fill { flex:1 1 auto; }

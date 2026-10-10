@@ -78,3 +78,9 @@
 - [ ] Ordinary-object grounded AI interpretation/title suggestions through existing authenticated gateway; validated fallback and stale-edit protection.
 - [ ] Local-clock calendar/time answers and ambiguity confirmation carried into review/post payload.
 - [ ] Production-path isolated tests plus main-app phone interaction/animation verification; no real writes or publish.
+
+## Oct 10 18:50 latest corrections
+- [ ] Magnetic continuous canonical G contour, rounded bands, reverse/cancellation and keyboard endpoints.
+- [ ] Actual upward canonical S route beyond lower map, outside-right My G return (whole G, not Profile).
+- [ ] Main giver seat label/accessibility Profile; readable word-fitted toggle labels at 320/390/430.
+- [ ] Actual main/community browser verification, rendered font sizes and preview commit; no real writes/publish.

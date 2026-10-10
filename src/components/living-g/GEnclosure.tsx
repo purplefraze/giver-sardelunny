@@ -189,12 +189,13 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
     const box=el.getBoundingClientRect();
     const pose:OutlinePose=matrix ? {x:matrix.e-box.left,y:matrix.f-box.top,scale:matrix.a} : {x:0,y:0,scale:1};
     setGeometry({pose,width:box.width,height:box.height});
+    document.documentElement.dataset["giverForm"]="1";
     animate(1,760);
     const observer=new ResizeObserver(()=>{
       const b=el.getBoundingClientRect();
       setGeometry(g=>g?{...g,width:b.width,height:b.height}:g);
     }); observer.observe(el);
-    return ()=>{cancelAnimationFrame(raf.current);observer.disconnect();};
+    return ()=>{cancelAnimationFrame(raf.current);observer.disconnect();delete document.documentElement.dataset["giverForm"];};
     // Only mounting enters; mode edits do not restart the opening animation.
   }, []);
   useEffect(()=>{

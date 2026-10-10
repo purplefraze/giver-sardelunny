@@ -18,7 +18,8 @@ export function listingTitle(action:GiverAction, subject:string):string {
   const clean=subject.replace(/^(?:a|an|the)\s+/i,"").trim();
   if(!clean||incompleteLead(clean))return "";
   const prefix={give:"Giving away",wish:"Looking for",borrow:"Looking to borrow",lend:"Available to lend:",trade:"Offering to trade:",fund:"Raising funds for"}[action];
-  return `${prefix} ${clean}`;
+  const noun=/^(?:a|an|the|some)\s/i.test(subject)?subject.trim():/^(?:table|box of|chair|bike|ladder|desk|fridge)\b/i.test(clean)?`${/^[aeiou]/i.test(clean)?"an":"a"} ${clean}`:clean;
+  return `${prefix} ${noun}`;
 }
 /** Model is a grounded second reading, never an authority over user facts. */
 export function validateDraftSuggestion(value:unknown,action:GiverAction,f:VoiceFields,said:readonly string[]):DraftReading|null {
@@ -31,7 +32,7 @@ export function validateDraftSuggestion(value:unknown,action:GiverAction,f:Voice
   if(v.category&&v.category!==(inferGiveType(subject)||v.category))return null;
   // Unknown categories need explicit grounded service/item evidence, not guesses.
   if(v.category&&!inferGiveType(subject)&&!grounded(v.category,text))v.category=null;
-  const allowed=`${text} ${listingTitle(action,subject)} up for grabs giving away available to lend offering to trade looking for looking to borrow raising funds`;
-  if(v.title&&(!grounded(v.title,allowed)||!grounded(v.title,`${subject} ${listingTitle(action,subject)} up for grabs`)))v.title=null;
+  const allowed=`a an the some ${text} ${listingTitle(action,subject)} up for grabs giving away available to lend offering to trade looking for looking to borrow raising funds`;
+  if(v.title&&(!grounded(v.title,allowed)||!grounded(v.title,`a an the some ${subject} ${listingTitle(action,subject)} up for grabs`)))v.title=null;
   return v;
 }

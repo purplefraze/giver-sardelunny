@@ -114,7 +114,7 @@ export const readyAsk = (a: GiverAction) => `ready to review your ${NOUN[a]}?`;
  */
 export function nextAsk(s: VoiceSession): VoiceSession {
   if (!s.action) return s;
-  if (!s.fields.what.trim() || incompleteLead(s.fields.what)) return { ...s, stage: "talk", asking: "what", prompt: s.action === "give" ? "what are you giving?" : "what is it?", choices: [] };
+  if (!s.fields.what.trim() || incompleteLead(s.fields.what)) return { ...s, stage: "talk", asking: "what", prompt: ({give:"what would you like to give?",wish:"what are you wishing for?",borrow:"what would you like to borrow?",lend:"what can you lend?",trade:"what would you like to trade?",fund:"what are you raising funds for?"})[s.action], choices: [] };
   const kind = s.fields.context;
   const need = kind ? nextNeed(kind, s.fields.ctx) : null;
   if (need) return { ...s, stage: "talk", prompt: need.ask, asking: `ctx:${need.field}`, choices: need.field === "recurrence" ? ["this Tuesday", "every Tuesday"].map(x => x.replace("Tuesday", s.fields.ctx.day ?? "Tuesday")) : [] };

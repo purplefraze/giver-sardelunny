@@ -2060,3 +2060,7 @@
 @media(max-width:350px) { .gv-question { font-size:34px; } }
 
 .gv-guided > .gv-field { grid-template-columns:minmax(0,1fr); }
+
+/* The underlying G stays mounted for the exact reverse pose, but may not peek
+   outside a keyboard-sized form viewport. */
+html[data-giver-form="1"] [data-living-g] { visibility:hidden; }

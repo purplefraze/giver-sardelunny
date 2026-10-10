@@ -88,6 +88,10 @@ const advance = (words: string) => {
   }
   let after = keepEdits(before, hear(before, input));
   if(after.action && after.fields.what && !snap.edited.includes("title")) after={...after,fields:{...after.fields,title:listingTitle(after.action,after.fields.what)}};
+  if(/^(?:actually|i meant|instead)\b/i.test(input)&&!snap.edited.includes("what")&&after.action){
+    const correction=input.replace(/^(?:actually|i meant|instead)\s*/i,"");
+    if(inferGiveType(correction)&&!contextOf(correction))after={...after,fields:{...after.fields,what:correction.replace(/^(?:a|an|the)\s+/i,""),kind:after.action==="give"&&!snap.edited.includes("kind")?inferGiveType(correction):after.fields.kind,title:!snap.edited.includes("title")?listingTitle(after.action,correction):after.fields.title??""}};
+  }
   const isTime=(!after.fields.context||after.fields.context==="lesson"||after.fields.context==="service")&&(before.asking==="when"||pending||/\b(today|tomorrow|tuesday|wednesday|thursday|friday|saturday|sunday|monday|at \d)\b/i.test(input));
   if(isTime&&!snap.edited.includes("when")) {
     const reading=readAnswerTime(input);
@@ -260,6 +264,7 @@ export const conversation = {
     const s = snap.session;
     if (!s) return;
     let next = editField(s, field, value);
+    if(field==="when"){const fields={...next.fields};delete fields.timing;next={...next,fields};}
     /* A typed title gets the same grounded context as voice, in every mode;
        a title that turns back into a physical thing drops stale lesson labels. */
     if (field === "what" && !snap.edited.includes("context")) {

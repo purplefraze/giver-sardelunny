@@ -12,12 +12,12 @@ test("whole and fragmented ordinary Give keep subject, category and no invented 
   for(const lines of [["I would like to give a table"],["I would like to give","A table"],["I'd like to give a table"]]){
     conversation.close();conversation.openForm("give");for(const line of lines)conversation.type(line);
     const f=conversation.get().session?.fields;
-    expect(f?.what).toBe("table");expect(f?.kind).toBe("a thing");expect(f?.title).toBe("Giving away table");expect(f?.where).toBe("");expect(f?.when).toBe("");
+    expect(f?.what).toBe("table");expect(f?.kind).toBe("a thing");expect(f?.title).toBe("Giving away a table");expect(f?.where).toBe("");expect(f?.when).toBe("");
   }
 });
 test("disposal phrasing preserves box of records specificity",()=>{
   conversation.openForm("give");conversation.type("I'm getting rid of a box of records");
-  expect(conversation.get().session?.fields.what).toBe("box of records");expect(conversation.get().session?.fields.title).toBe("Giving away box of records");
+  expect(conversation.get().session?.fields.what).toBe("box of records");expect(conversation.get().session?.fields.title).toBe("Giving away a box of records");
 });
 test("unfinished lead never completes subject",()=>{
   conversation.openForm("give");conversation.type("I would like to give");expect(conversation.get().session?.fields.what).toBe("");expect(conversation.get().session?.asking).toBe("what");

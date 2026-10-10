@@ -81,7 +81,7 @@ describe("failed save → fold → reopen → edit → retry", () => {
     expect(second).toMatchObject({ kind: "live", id });
     expect(addCalls).toBe(1);
     const it = items.get(id)!;
-    expect(it.text).toBe("Offering to trade: red bike");
+    expect(it.text).toBe("Offering to trade: a red bike");
     expect(it.offer).toBe("a red bike");
     expect(it.want).toBe("a drum kit");
     expect(it.note).toBeUndefined();

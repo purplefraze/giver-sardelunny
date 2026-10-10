@@ -1,7 +1,7 @@
 # Communi-G track repair
 ## Oct 10 21:41 focused My G repair
-- [ ] Repair only profile camera/drag, viewport-safe neighboring labels and circular Photo presentation using existing communi-g helpers.
-- [ ] Verify all eight profile seats, narrow-phone photo and navigation without cloud mutations; preserve other app files and report device limits.
+- [x] Repair only profile camera/drag, viewport-safe neighboring labels and circular Photo presentation using existing communi-g helpers.
+- [x] Verify all eight profile seats, narrow-phone photo and navigation without cloud mutations; see docs/profile-loop-verification-oct10.md for component checks and device/main-entry limits.
 ## Oct 10 19:45 current priorities (supersedes perimeter snap and delayed record)
 - [ ] Profile: deep upper-ring camera, thin connected rim, all real seat content in upper hollow, Photo-only backdrop and explicit-save birthday.
 - [ ] Community details replace lower-hollow content, not a floating rectangular depth panel.

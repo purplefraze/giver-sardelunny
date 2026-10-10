@@ -260,10 +260,10 @@ export function MyGRing({
   });
   const hollow = toScreen(C);
   const safeRadius = (RING.EAR.innerR / viewW) * box.w;
-  const panelLeft = Math.max(20, hollow.x - safeRadius * .66);
-  const panelRight = Math.min(box.w - 20, hollow.x + safeRadius * .66);
-  const panelW = Math.max(100, panelRight - panelLeft);
   const photoView = opened === "photo" && !recMode;
+  const panelLeft = photoView ? 20 : Math.max(20, hollow.x - safeRadius * .66);
+  const panelRight = photoView ? box.w - 20 : Math.min(box.w - 20, hollow.x + safeRadius * .66);
+  const panelW = Math.max(100, panelRight - panelLeft);
   const panelTop = photoView
     ? Math.min(box.h - 104, hollow.y + safeRadius + 32)
     : Math.max(24, hollow.y - safeRadius * .68);
@@ -604,12 +604,12 @@ function Area({
     return (
       <div className="flex flex-col items-center gap-3">
         {!me.photo ? <p className="g-body">no photo yet.</p> : null}
-        <div className="flex min-w-0 gap-4">
-          <Button variant="ghost" type="button" className={`${btn} hover:bg-transparent`} style={{ color: BLUE }} onClick={() => void photo.choose()}>
+        <div className="grid w-full min-w-0 grid-cols-2 gap-2">
+          <Button variant="ghost" type="button" className="g-body min-w-0 p-1 underline underline-offset-4 hover:bg-transparent" style={{ color: BLUE }} onClick={() => void photo.choose()}>
             {photo.loading ? "opening…" : me.photo ? "change photo" : "add a photo"}
           </Button>
           {me.photoSource ? (
-            <Button variant="ghost" type="button" className={`${btn} hover:bg-transparent`} onClick={() => me.photoSource && photo.reposition(me.photoSource, me.photoCrop)}>reposition</Button>
+            <Button variant="ghost" type="button" className="g-body min-w-0 p-1 underline underline-offset-4 hover:bg-transparent" onClick={() => me.photoSource && photo.reposition(me.photoSource, me.photoCrop)}>reposition</Button>
           ) : null}
         </div>
         {photo.failed ? <p className="g-meta">that picture couldn't be read. try another.</p> : null}

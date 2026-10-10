@@ -46,7 +46,7 @@ export const GIVE_LEXICON: Record<GiveType, string[]> = {
     "cake*", "cookie*", "muffin*", "pie", "pies", "bak*", "jam", "jams", "preserve*",
     "honey", "egg", "eggs", "veg*", "vegetable*", "fruit*", "apple*", "tomato*",
     "zucchini", "herb*", "produce", "leftover*", "groceries", "homemade", "coffee",
-    "tea", "chili", "dumpling*", "rice", "beans", "snack*", "starter",
+    "tea", "chili", "dumpling*", "rice", "beans", "snack*", "starter", "turkey", "cooked chicken",
   ],
   clothes: [
     "cloth*", "shirt*", "t-shirt*", "tee*", "jean*", "pants", "trouser*", "shorts",

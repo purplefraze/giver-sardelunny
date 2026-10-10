@@ -2061,7 +2061,7 @@
 html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 
 /* Curved posting/profile chambers: no page-border snap or listing card. */
-.gv-review-content { inset: max(30px, 7%) 32px; border-radius:0; }
+.gv-review-content { inset: max(90px, 12%) 32px max(64px, 10%); border-radius:0; }
 .gv-sheet { padding:12px 0 24px; }
 .gv-rec-dock { background:transparent; padding:10px 0; min-height:76px; }
 [data-profile-loop] [data-interior] { scrollbar-width:thin; touch-action:pan-y pinch-zoom; }
@@ -2186,7 +2186,7 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 
 /* Keyboard changes content only; the captured G box/contour stays fixed. */
 .gv-morph-frame[data-keyboard="1"] .gv-review-content {
-  top:max(72px, calc(var(--gv-keyboard-top, 0px) + 12px));
+  top:max(100px, calc(var(--gv-keyboard-top, 0px) + 12px));
   bottom:calc(var(--gv-keyboard-bottom, 0px) + 12px);
 }
 .gv-morph-frame[data-keyboard="1"] .gv-scroll { overflow-y:auto; }

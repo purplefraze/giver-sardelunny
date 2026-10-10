@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { hear, startSession } from "@/intelligence/voice-session";
+import { RECORD_AFFORDANCE_MS } from "@/components/living-g/EarSelector";
+import { hear, startSession, sessionForSeat } from "@/intelligence/voice-session";
 
-describe("hold on the toggle seeds the selected mode", () => {
+describe("the toggle seeds the selected mode", () => {
   test("Give seat skips the 'which mode?' question", () => {
     const s = startSession("give");
     expect(s.action).toBe("give");
@@ -31,3 +32,6 @@ test("all six initial prompts match the current seat",()=>{
   const expected={give:"give something",wish:"make a wish",lend:"what are you lending?",borrow:"what do you need to borrow?",trade:"make a trade",fund:"what needs funding?"};
   for(const [seat,prompt] of Object.entries(expected)) expect(startSession(seat as keyof typeof expected).prompt).toBe(prompt);
 });
+
+test("landing record affordance waits 1.8 seconds",()=>expect(RECORD_AFFORDANCE_MS).toBe(1800));
+test("profile and community seats never seed a Wish",()=>{expect(hear(sessionForSeat("giver"),"change my bio").profile).toBe("bio");expect(hear(sessionForSeat("map"),"show community borrows").community).toBe("borrow");expect(hear(sessionForSeat("map"),"a ladder").action).toBeNull();});

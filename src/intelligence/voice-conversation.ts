@@ -85,7 +85,8 @@ async function refine() {
   if (r.ask && r.field && next.asking === `ctx:${r.field}` && (unspoken || next.asking !== cur.asking)) next = { ...next, prompt: r.ask };
   if (next.asking === cur.asking && next.prompt === cur.prompt && JSON.stringify(ctx) === JSON.stringify(cur.fields.ctx)) return;
   set({ session: next });
-  if (snap.mode === "locked") speakIfNew();
+  if (next.stage === "review") { set({mode:"off"}); voiceCapture.stop(); }
+  else if (snap.mode === "locked") speakIfNew();
 }
 
 async function locate() {

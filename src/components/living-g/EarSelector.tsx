@@ -431,12 +431,6 @@ export function EarSelector({
   };
 
   const [recordReady, setRecordReady] = useState(false);
-  useEffect(() => {
-    setRecordReady(false);
-    if (!onRecordStart || dragging || recording) return;
-    const timer = setTimeout(() => setRecordReady(true), RECORD_AFFORDANCE_MS);
-    return () => clearTimeout(timer);
-  }, [mode, dragging, recording, onRecordStart !== undefined]);
   useEffect(() => () => { if (peekTimer.current) clearTimeout(peekTimer.current); }, []);
   const activate = () => {
     if (recording) onRecordEnd?.(false);
@@ -449,6 +443,13 @@ export function EarSelector({
 
   const [angle, setAngle] = useState(restAngle);
   const angleRef = useRef(angle);
+  useEffect(() => {
+    setRecordReady(false);
+    if (!onRecordStart || dragging || recording || Math.abs(angle - SEAT_ANGLE[mode]) > .002) return;
+    const timer = setTimeout(() => setRecordReady(true), RECORD_AFFORDANCE_MS);
+    return () => clearTimeout(timer);
+  }, [mode, dragging, recording, angle, onRecordStart !== undefined]);
+
 
   // Rest and magnet targets live ON THE WIRE: the bead always travels the real
   // stroke between two seats, however far round the loop that is.

@@ -30,7 +30,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   const created = useRef<string | null>(null);
   const [liveId, setLiveId] = useState<string | null>(null);
   const s = c.session;
-  if (!s?.action || (s.stage !== "review" && s.stage !== "live")) return null;
+  if (!s?.action || (!c.form && s.stage !== "live")) return null;
   const action = s.action;
   const f = s.fields;
   const noun = NOUN[action];
@@ -144,11 +144,24 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     conversation.live();
   };
 
-  const listening = c.mode !== "off";
+  const listening = c.mode !== "off" && v.state !== "error" && v.state !== "unsupported";
+  const noMic = v.state === "unsupported" ? "voice isn't available here — type into the fields." : v.state === "error" ? (v.error ?? "listening stopped. type instead, or try again.") : null;
+  const ask = s.stage === "talk" || s.stage === "anything" ? s.prompt : null;
 
   return (
-    <form className="gv-sheet" data-voice-review={action} onSubmit={(e) => { e.preventDefault(); void share(); }}>
+    <form className="gv-sheet gv-form" data-voice-review={action} data-listening={listening ? "1" : "0"} onSubmit={(e) => {
+      e.preventDefault();
+      /* Only the Share button itself submits — never Enter in a field. */
+      const by = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+      if (by?.dataset["share"] === "1") void share();
+    }}>
       <p className="gv-title">your {noun}</p>
+      {ask || listening || v.transcript ? (
+        <div className="gv-live" aria-live="polite" data-form-prompt="">
+          {ask ? <p className="gv-ask">{ask}</p> : null}
+          {listening && v.transcript ? <p className="gv-heard" data-form-heard="">{v.transcript}</p> : null}
+        </div>
+      ) : null}
       <div className="gv-fields">
         {field("what", service || action === "trade" ? "offer" : "what")}
         {action === "trade" ? field("want", "for") : null}
@@ -188,7 +201,6 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           )}
         </div>
       </div>
-      <Button variant="ghost" className="gv-tap" aria-label="return to recording" onClick={() => conversation.resume()}>return to recording</Button>
       {remind ? (
         <div className="gv-remind" role="alert">
           <p>a photo helps people say yes.</p>
@@ -200,8 +212,28 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       ) : null}
       {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
       <div className="gv-taps gv-taps-row">
-        <Button variant="ghost" type="submit" className="gv-share" disabled={busy}>Share with communi-g</Button>
-        <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>cancel</Button>
+        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy}>Share with communi-g</Button>
+        <Button variant="ghost" type="button" className="gv-tap" onClick={() => { haptics.selection(); conversation.closeForm(); }}>back to the G</Button>
+        <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
+      </div>
+      {noMic ? <p className="gv-problem" role="status">{noMic}</p> : null}
+      <div className="gv-rec-clear" aria-hidden="true" />
+      <div className="gv-rec-dock">
+        <button
+          type="button"
+          className="gv-rec"
+          data-form-record={listening ? "stop" : "record"}
+          aria-pressed={listening}
+          aria-label={listening ? "stop recording" : "record into this form"}
+          onClick={() => {
+            /* Synchronous from the tap (Safari activation). Next tap stops. */
+            if (listening) { haptics.selection(); conversation.stopLocked(); }
+            else { haptics.light(); conversation.toggle(action); }
+          }}
+        >
+          <span className="gv-rec-dot" aria-hidden="true" />
+          <span className="gv-rec-word">{listening ? "stop" : "record"}</span>
+        </button>
       </div>
     </form>
   );

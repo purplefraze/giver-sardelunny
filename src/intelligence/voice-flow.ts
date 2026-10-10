@@ -1,8 +1,10 @@
 import { parseAmount, validTarget } from "@/data/fund-rules";
-import type { GiveType } from "@/data/give-lexicon";
+import { inferGiveType, type GiveType } from "@/data/give-lexicon";
 import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance } from "@/intelligence/bind";
 import { contextOf, extractCtx, type ContextKind, type Ctx } from "@/intelligence/contextual-needs";
+import { incompleteLead, itemOf, leadIntent } from "@/intelligence/lead-intent";
+import type { AnswerTime } from "./answer-time";
 
 /**
  * THE IN-G VOICE SEQUENCE — pure rules only (no DOM, no network, no write).
@@ -22,6 +24,9 @@ export const SEAT_OF_ACTION: Record<GiverAction, "give" | "wish" | "trade" | "bo
 };
 
 export type VoiceFields = {
+  /** Public wording stays distinct from raw speech and extracted subject. */
+  title?: string;
+  timing?: AnswerTime;
   what: string;
   want: string;
   kind: GiveType | null;
@@ -79,10 +84,10 @@ export function fieldsFromDraft(draft: ActionDraft, raw: string): VoiceFields {
     ctx,
     what: service && ctx.subject ? `${draft.action === "wish" || draft.action === "borrow" ? "Seeking" : "Offering"} ${ctx.subject}` : draft.action === "trade" ? (e.offer ?? e.item ?? "") : (context === "ride" ? "a ride" : context === "groceries" ? "help with groceries" : (e.item ?? "")),
     want: draft.action === "trade" ? (e.want ?? "") : "",
-    kind: service ? context === "lesson" ? "a skill" : "a hand" : (e.category as GiveType | null) ?? null,
+    kind: service ? context === "lesson" ? "a skill" : "a hand" : draft.action === "give" ? inferGiveType(e.item ?? "") ?? (e.category as GiveType | null) ?? null : (e.category as GiveType | null) ?? null,
     when: e.availability ?? e.date ?? (whenM ? whenM[1] ?? "" : ""),
     where: service ? ctx.format === "online" ? "online" : ctx.area ?? "" : whereText,
-    condition: service ? "" : e.condition ?? "",
+    condition: service ? "" : e.condition ?? lower.match(/\b(good condition|like new|used|worn|needs repair|broken|new condition)\b/)?.[0] ?? "",
     amount: draft.action === "fund" ? money(e.amountCents) : "",
     duration: draft.action === "borrow" || draft.action === "lend" ? durationOf(lower) : "",
   };
@@ -93,22 +98,24 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
   const out: { field: keyof VoiceFields; ask: string }[] = [];
   const service = f.context === "lesson" || f.context === "service";
   const tangible = f.kind === "a thing" || f.kind === "clothes" || f.kind === "food" || f.kind === null;
-  if (!f.what.trim()) out.push({ field: "what", ask: action === "give" ? "what are you giving?" : "what is it?" });
+  if (!f.what.trim() || incompleteLead(f.what)) out.push({ field: "what", ask: action === "give" ? "what are you giving?" : "what is it?" });
   if (action === "trade" && !f.want.trim()) out.push({ field: "want", ask: "what would you like for it?" });
   if (action === "fund" && !f.amount.trim()) out.push({ field: "amount", ask: "how much are you raising?" });
   if (!service && (action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? (tangible ? "where can someone collect it?" : "where are you based? an area is fine.") : "where is it?" });
   if (!service && action === "give" && !f.when.trim())
-    out.push({ field: "when", ask: tangible ? "when?" : "when are you free?" });
+    out.push({ field: "when", ask: tangible ? "when can it be collected?" : "when are you free?" });
+  if (action === "give" && f.what.trim() && !f.kind) out.push({field:"kind",ask:"is it a thing, or something you can do?"});
   if (!service && (action === "borrow" || action === "lend") && !f.when.trim())
     out.push({ field: "when", ask: action === "borrow" ? "when do you need it?" : "when is it free to borrow?" });
   if ((action === "borrow" || action === "lend") && !f.context && !f.duration.trim())
     out.push({ field: "duration", ask: action === "borrow" ? "how long do you need it for?" : "how long can they keep it?" });
+  if(!service&&action==="give"&&tangible&&!f.condition.trim())out.push({field:"condition",ask:"what condition is it in?"});
   return out;
 }
 
 /** Required to go live — mirrors the existing forms' minimums. */
 export function canGoLive(action: GiverAction, f: VoiceFields): boolean {
-  if (f.what.trim().length < 2) return false;
+  if (f.what.trim().length < 2 || incompleteLead(f.what)) return false;
   if (action === "give") return f.kind !== null && (f.context === "lesson" || f.context === "service" ? f.ctx.format === "online" || !!f.ctx.area : f.where.trim().length > 0);
   if (action === "trade") return f.want.trim().length > 0;
   if (action === "fund") return fundTargetOf(f) !== null;
@@ -131,6 +138,17 @@ export function mergeFollowUp(action: GiverAction, f: VoiceFields, raw: string):
   if (!text) return f;
   const lower = text.toLowerCase();
   const next = { ...f };
+  if (incompleteLead(next.what)) next.what = "";
+  if (incompleteLead(text)) return next;
+  /* The noun may arrive in the next final recognition segment. Parse it as
+     an item before any place/time handling; supplied details remain separate. */
+  if (!next.what.trim() && action !== "fund" && action !== "trade") {
+    const lead = leadIntent(text);
+    const b = lead ?? bindUtterance(text);
+    const parsed = fieldsFromDraft({ ...b, action }, text);
+    const what = parsed.what || itemOf(lower);
+    if (what) return { ...next, ...parsed, what, where: next.where || parsed.where, when: next.when || parsed.when, kind: action === "give" ? inferGiveType(what) ?? parsed.kind : next.kind, note: next.note, want: next.want, amount: next.amount };
+  }
   let used = false;
   const dur = action === "borrow" || action === "lend" ? durationOf(lower) : "";
   if (dur && !next.duration.trim()) {
@@ -148,13 +166,15 @@ export function mergeFollowUp(action: GiverAction, f: VoiceFields, raw: string):
     used = true;
   }
   const b = bindUtterance(text);
-  if (b.entities.condition && !next.condition.trim()) {
-    next.condition = b.entities.condition;
+  const condition=b.entities.condition ?? lower.match(/\b(good condition|like new|used|worn|needs repair|broken|new condition)\b/)?.[0];
+  if (condition && !next.condition.trim()) {
+    next.condition = condition;
     used = true;
   }
   if (used) return next;
-  const open = missingAsks(action, f)[0];
-  if (open && open.field !== "kind") {
+  const open = missingAsks(action, next)[0];
+  if(open?.field==="kind") {if(/thing|object|item/i.test(text))next.kind="a thing";else next.kind=inferGiveType(text);return next;}
+  if (open) {
     (next as Record<string, unknown>)[open.field] = text;
     return next;
   }

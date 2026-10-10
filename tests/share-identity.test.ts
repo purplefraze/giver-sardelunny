@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 /* Isolated: no model, no location, no network, no writes. The real
    conversation store + the real share coordinator, with every outside
    dependency (auth, addItem/reservation, photo upload, server confirm) mocked. */
-mock.module("@/lib/followup.functions", () => ({ followUp: async () => ({ source: "rules", ctx: {} }) }));
+mock.module("@/lib/followup.functions", () => ({ interpretDraft:async()=>({reading:null,error:null}), followUp: async () => ({ source: "rules", ctx: {} }) }));
 mock.module("@/data/my-location", () => ({ askLocation: async () => ({ ok: false }) }));
 
 const { conversation } = await import("../src/intelligence/voice-conversation");
@@ -81,7 +81,7 @@ describe("failed save → fold → reopen → edit → retry", () => {
     expect(second).toMatchObject({ kind: "live", id });
     expect(addCalls).toBe(1);
     const it = items.get(id)!;
-    expect(it.text).toBe("a red bike");
+    expect(it.text).toBe("Offering to trade: red bike");
     expect(it.offer).toBe("a red bike");
     expect(it.want).toBe("a drum kit");
     expect(it.note).toBeUndefined();

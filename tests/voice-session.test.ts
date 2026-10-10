@@ -10,15 +10,16 @@ test("fridge conversation asks where, then when, then stops at review — no 'an
   expect(s.prompt).toBe("where can someone collect it?");
   s = hear(s, "in Leith");
   expect(s.fields.where).toBe("leith");
-  expect(s.prompt).toBe("when?");
+  expect(s.asking).toBe("when");
   s = hear(s, "Tuesday");
+  s = hear(s, "good condition");
   expect(s.fields.when).toBe("tuesday");
   expect(s.stage).toBe("review");
   expect(s.prompt).not.toMatch(/anything else/);
 });
 
 test("details already said are not asked again", () => {
-  const s = say("I'm giving away a fridge tomorrow in Leith");
+  const s = say("I'm giving away a fridge tomorrow in Leith, good condition");
   expect(s.stage).toBe("review");
 });
 

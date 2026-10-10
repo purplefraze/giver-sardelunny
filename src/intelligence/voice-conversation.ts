@@ -3,10 +3,13 @@ import type { Pin } from "@/data/give-pins";
 import { pickImages, readImage, shrinkImage } from "@/lib/pick-image";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { editField, hear, isEcho, nextAsk, startSession, sessionForSeat, type VoiceSession } from "@/intelligence/voice-session";
-import { followUp } from "@/lib/followup.functions";
+import { followUp, interpretDraft } from "@/lib/followup.functions";
 import type { VoiceFields } from "@/intelligence/voice-flow";
 import type { GiverAction } from "@/intelligence/action-draft";
 import { contextOf } from "@/intelligence/contextual-needs";
+import { inferGiveType } from "@/data/give-lexicon";
+import { listingTitle, validateDraftSuggestion } from "./draft-understanding";
+import { readAnswerTime, type AnswerTime } from "./answer-time";
 
 /**
  * THE ONE VOICE CONVERSATION — lives while the G stays intact.
@@ -28,9 +31,13 @@ export type Conversation = {
   form: boolean;
   /** Fields the person typed; voice and the model never overwrite them. */
   edited: string[];
+  inspected?: boolean;
+  understanding?: boolean;
+  understandingError?: string | null;
+  timePending?: {raw:string;question:string;choices:string[]} | null;
 };
 
-const BLANK = { photo: null, pin: null, picking: false, form: false, edited: [] as string[] };
+const BLANK = { photo: null, pin: null, picking: false, form: false, edited: [] as string[], inspected:false, understanding:false, understandingError:null, timePending:null };
 let snap: Conversation = { session: null, mode: "off", ...BLANK };
 const subs = new Set<() => void>();
 let spokenPrompt = "";
@@ -73,7 +80,26 @@ const advance = (words: string) => {
   if (!snap.session) return;
   if (isEcho(words, spokenPrompt)) return;
   const before = snap.session;
-  set({ session: keepEdits(before, hear(before, words)) });
+  const pending=snap.timePending;
+  let input=words;
+  if(pending) {
+    const day=pending.raw.match(/\b(?:sun|mon|tues|wednes|thurs|fri|satur)day\b/i)?.[0];
+    input=day && /\b(this|next|every)\b/i.test(words) ? pending.raw.replace(day,words) : pending.raw.replace(/\bat\s+\d{1,2}(?::\d{2})?\b/i,words);
+  }
+  let after = keepEdits(before, hear(before, input));
+  if(after.action && after.fields.what && !snap.edited.includes("title")) after={...after,fields:{...after.fields,title:listingTitle(after.action,after.fields.what)}};
+  const isTime=(!after.fields.context||after.fields.context==="lesson"||after.fields.context==="service")&&(before.asking==="when"||pending||/\b(today|tomorrow|tuesday|wednesday|thursday|friday|saturday|sunday|monday|at \d)\b/i.test(input));
+  if(isTime&&!snap.edited.includes("when")) {
+    const reading=readAnswerTime(input);
+    if(reading.question) {set({timePending:{raw:input,question:reading.question,choices:reading.choices},session:{...after,stage:"talk",asking:"when",prompt:reading.question,choices:reading.choices}});void refine();return;}
+    if(reading.value) {
+      const value=reading.value,service=after.fields.context==="lesson"||after.fields.context==="service";
+      const ctx={...after.fields.ctx,...(value.date?{date:value.date}:{}),...(value.time?{window:value.time}:{}),...(value.recurrence?{recurrence:value.recurrence}:{}),day:value.label};delete ctx.__weekday;delete ctx.__ambig;
+      after={...after,fields:{...after.fields,timing:value,when:value.label,...(service?{ctx}:{})}};
+    }
+    set({timePending:null});
+  }
+  set({ session: after.action && after.stage !== "live" ? nextAsk(after) : after });
   if (snap.session?.stage === "review" && !snap.form) { set({ mode: "off" }); voiceCapture.stop(); return; }
   void locate();
   void refine();
@@ -90,7 +116,23 @@ const advance = (words: string) => {
 async function refine() {
   const s = snap.session;
   const kind = s?.fields.context;
-  if (!s || !kind || (s.stage !== "talk" && s.stage !== "anything")) return;
+  if (!s?.action || s.stage === "live") return;
+  if(!kind) {
+    const turn=revision,draft=s.draftId;
+    set({understanding:true,understandingError:null});
+    try {
+      const result=await interpretDraft({data:{action:s.action,fields:s.fields,said:s.said.slice(-30)}});
+      const cur=snap.session;
+      if(!cur||cur.draftId!==draft||revision!==turn)return;
+      const v=result.reading?validateDraftSuggestion(result.reading,cur.action??s.action,cur.fields,cur.said):null;
+      let fields={...cur.fields};
+      if(v){if(!fields.what&&v.subject&&!snap.edited.includes("what"))fields.what=v.subject;if(v.title&&!snap.edited.includes("title"))fields.title=v.title;if(v.category&&!snap.edited.includes("kind"))fields.kind=v.category;if(v.want&&!fields.want&&!snap.edited.includes("want"))fields.want=v.want;if(v.amount&&!fields.amount&&!snap.edited.includes("amount"))fields.amount=v.amount;}
+      const next=nextAsk({...cur,fields});
+      set({understanding:false,understandingError:result.error,session:snap.timePending?{...next,prompt:snap.timePending.question,asking:"when",choices:snap.timePending.choices,stage:"talk"}:next});
+    }catch {if(snap.session?.draftId===draft&&revision===turn)set({understanding:false,understandingError:"You can keep typing or review your draft."});}
+    return;
+  }
+  if (s.stage !== "talk" && s.stage !== "anything") return;
   const turn = revision;
   let r: Awaited<ReturnType<typeof followUp>>;
   try {
@@ -227,17 +269,37 @@ export const conversation = {
       if (svc) next = { ...next, fields: { ...next.fields, context: k } };
       else if (was) next = { ...next, fields: { ...next.fields, context: null, ctx: {} } };
       if (s.action === "give" && !snap.edited.includes("kind")) {
-        const auto = next.fields.kind === null || next.fields.kind === "a skill" || next.fields.kind === "a hand";
-        if (auto) next = { ...next, fields: { ...next.fields, kind: svc ? (k === "lesson" ? "a skill" : "a hand") : was ? null : next.fields.kind } };
+        next = { ...next, fields: { ...next.fields, kind: svc ? (k === "lesson" ? "a skill" : "a hand") : inferGiveType(value) } };
       }
     }
     const kind = next.fields.context;
     if (field === "what" && (kind === "lesson" || kind === "service") && !snap.edited.includes("ctx:subject"))
       next = { ...next, fields: { ...next.fields, ctx: { ...next.fields.ctx, subject: value.trim() } } };
     if (next.asking === "seed") next = { ...next, asking: null };
+    if(field==="what"&&next.action&&!snap.edited.includes("title"))next={...next,fields:{...next.fields,title:listingTitle(next.action,value)}};
     /* The on-screen question follows what's actually still missing. */
     if (snap.form && next.action && (next.stage === "talk" || next.stage === "anything")) next = nextAsk(next);
     set({ edited: mark(field), session: next });
+  },
+  /** Deliberate typed answer advances once; typing alone never advances. */
+  answer(words:string) {
+    const before=snap.session;
+    if(!before||!words.trim())return;
+    conversation.type(words);
+    const after=snap.session;
+    if(!after)return;
+    const changed=(Object.keys(after.fields) as (keyof VoiceFields)[]).filter(k=>!["title","ctx","context","when","timing"].includes(k)&&after.fields[k]!==before.fields[k]);
+    const ctxChanged=Object.keys(after.fields.ctx).filter(k=>!k.startsWith("__")&&after.fields.ctx[k as keyof VoiceFields["ctx"]]!==before.fields.ctx[k as keyof VoiceFields["ctx"]]).map(k=>`ctx:${k}`);
+    set({edited:[...new Set([...snap.edited,...changed,...ctxChanged])]});
+  },
+  inspect() { conversation.stopLocked();set({inspected:true}); },
+  continueQuestions() {const s=snap.session;if(s?.action)set({inspected:false,session:nextAsk(s)});},
+  setTiming(value:AnswerTime) {
+    const s=snap.session;if(!s?.action)return;
+    const service=s.fields.context==="lesson"||s.fields.context==="service";
+    const fields={...s.fields,timing:value,when:value.label,...(service?{ctx:{...s.fields.ctx,...(value.date?{date:value.date}:{}),day:value.label,...(value.time?{window:value.time}:{}),...(value.recurrence?{recurrence:value.recurrence}:{})}}:{})};
+    delete fields.ctx.__weekday;delete fields.ctx.__ambig;
+    set({timePending:null,edited:mark("when"),session:nextAsk({...s,fields})});
   },
   /**
    * MIDDLE-LOOP TAP: the selected mode's editable form, now — no recording
@@ -248,7 +310,7 @@ export const conversation = {
     if (!(["give", "wish", "trade", "borrow", "lend", "fund"] as const).includes(seat as GiverAction)) return;
     if (currentSeat !== seat || !snap.session) conversation.selectSeat(seat);
     if (!snap.session?.action) set({ session: sessionForSeat(seat) });
-    set({ form: true });
+    set({ form: true, ...(snap.session?.stage!=="review"&&!snap.timePending?{session:nextAsk(snap.session as VoiceSession)}:{}) });
   },
   /** The form's own bottom record button: same draft, same capture. */
   recordInForm() {

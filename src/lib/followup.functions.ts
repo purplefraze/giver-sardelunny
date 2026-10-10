@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { FIELDS_OF, nextNeed, validateModel, type ContextKind, type Ctx } from "@/intelligence/contextual-needs";
+import { interpretOrdinaryDraft } from "./draft-interpret.server";
+import type { VoiceFields } from "@/intelligence/voice-flow";
 
 /**
  * CONTEXTUAL FOLLOW-UP through the Lovable AI Gateway. The model reads the
@@ -107,4 +109,14 @@ export const followUp = createServerFn({ method: "POST" })
     } catch {
       return rules("unreachable");
     }
+  });
+
+/** Ordinary objects use the same configured model and authenticated boundary. */
+export const interpretDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ action: z.enum(["give","wish","trade","borrow","lend","fund"]), fields: z.custom<VoiceFields>((v)=>!!v&&typeof v==="object"&&"what" in v&&typeof v.what==="string"), said:z.array(z.string().max(400)).max(30) }).parse(d))
+  .handler(async ({data}) => {
+    const key=process.env["LOVABLE_API_KEY"];
+    if(!key)return {reading:null,error:"Understanding is unavailable. You can keep typing or review your draft."};
+    try{return await interpretOrdinaryDraft(data,key,FOLLOWUP_MODEL);}catch{return {reading:null,error:"Understanding is unavailable. Your draft is kept."};}
   });

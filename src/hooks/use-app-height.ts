@@ -43,6 +43,15 @@ export function useAppHeight() {
       const keyboard = stable > 0 && h < stable - 120 && typing();
       if (!keyboard) stable = h;
 
+      // Forms follow the *visible* viewport independently of the stable G.
+      // Do not react to accessibility pinch zoom by resizing the layout.
+      if (!vv || Math.abs(vv.scale - 1) < .01) {
+        root.style.setProperty("--form-h", `${h}px`);
+        root.style.setProperty("--form-top", `${Math.round(vv?.offsetTop ?? 0)}px`);
+        root.style.setProperty("--form-left", `${Math.round(vv?.offsetLeft ?? 0)}px`);
+        root.style.setProperty("--form-w", `${w}px`);
+      }
+
       root.style.setProperty("--app-h", `${stable}px`);
       if (w > 0) root.style.setProperty("--app-w", `${w}px`);
     };

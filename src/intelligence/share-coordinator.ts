@@ -68,8 +68,8 @@ export function buildPayload(action: GiverAction, f: VoiceFields, giveMeta: Shar
   if (f.context) Object.assign(extras, publicExtras(f.ctx));
   if (f.duration.trim()) extras["how long"] = f.duration.trim();
   const where = service ? (f.ctx.format === "online" ? "online" : publicExtras(f.ctx)["area"] ?? "") : f.where.trim() ? publicPlace(f.where.trim()) : "";
-  const details: ItemDetails = { ...(where ? { where } : {}), ...(Object.keys(extras).length ? { extras } : {}) };
-  const text = f.what.trim();
+  const details: ItemDetails = { ...(where ? { where } : {}), ...(Object.keys(extras).length ? { extras } : {}), ...(f.timing?.date?{date:f.timing.date}:{}), ...(f.timing?.time?{startTime:f.timing.time,time:f.timing.time}:{}), ...(f.timing?.recurrence?{cadence:f.timing.recurrence}:{}) };
+  const text = (f.title || f.what).trim();
   const note = f.note.trim() || undefined;
   const base = { text, ...(note ? { note } : {}) };
   if (action === "give") {
@@ -78,7 +78,7 @@ export function buildPayload(action: GiverAction, f: VoiceFields, giveMeta: Shar
     details.expiresAt = m.expiresAt;
     return { category: "give", ...base, details };
   }
-  if (action === "trade") return { category: "trade", ...base, parts: { offer: text, want: f.want.trim() }, details };
+  if (action === "trade") return { category: "trade", ...base, parts: { offer: f.what.trim(), want: f.want.trim() }, details };
   if (action === "borrow" || action === "lend") return { category: "borrow", ...base, side: action, details };
   if (action === "fund") {
     const target = fundTargetOf(f);

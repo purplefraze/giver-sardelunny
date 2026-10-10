@@ -2,7 +2,7 @@ import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance, resolveChoice } from "@/intelligence/bind";
 import { EMPTY_FIELDS, fieldsFromDraft, mergeFollowUp, missingAsks, type VoiceFields } from "@/intelligence/voice-flow";
 import { routeVoice } from "@/intelligence/voice-router";
-import { leadIntent } from "@/intelligence/lead-intent";
+import { incompleteLead, itemOf, leadIntent } from "@/intelligence/lead-intent";
 import { contextOf, extractCtx, nextNeed } from "@/intelligence/contextual-needs";
 import { communityFilterOf, type CgSelection } from "@/intelligence/community-filter";
 import { profileAreaOf, type ProfileAreaId } from "@/intelligence/profile-areas";
@@ -114,6 +114,7 @@ export const readyAsk = (a: GiverAction) => `ready to review your ${NOUN[a]}?`;
  */
 export function nextAsk(s: VoiceSession): VoiceSession {
   if (!s.action) return s;
+  if (!s.fields.what.trim() || incompleteLead(s.fields.what)) return { ...s, stage: "talk", asking: "what", prompt: s.action === "give" ? "what are you giving?" : "what is it?", choices: [] };
   const kind = s.fields.context;
   const need = kind ? nextNeed(kind, s.fields.ctx) : null;
   if (need) return { ...s, stage: "talk", prompt: need.ask, asking: `ctx:${need.field}`, choices: need.field === "recurrence" ? ["this Tuesday", "every Tuesday"].map(x => x.replace("Tuesday", s.fields.ctx.day ?? "Tuesday")) : [] };
@@ -175,7 +176,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     const ctxWish = ["ride", "groceries"].includes(contextOf(text) ?? "") && (s.action === "wish" || s.action === "borrow");
     const action = ctxWish ? "wish" : s.action;
     const fields = fieldsFromDraft({ ...d, action, clarification: null }, text);
-    if (!fields.what && action !== "fund" && !fields.context) fields.what = text.replace(/^(?:a|an|my|some)\s+/i, "") ;
+    if (!fields.what && action !== "fund" && !fields.context && !incompleteLead(text)) fields.what = itemOf(text.toLowerCase());
     return nextAsk({ ...next, action, fields, pending: null });
   }
 

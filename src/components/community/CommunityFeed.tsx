@@ -84,6 +84,7 @@ export function CommunityFeed({
      seat is a list. No independent view state can carry a map elsewhere. */
   void initialView;
   const view: View = sel === "map" ? "map" : "list";
+  const [mapList, setMapList] = useState(false);
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
   const [radius, setRadius] = useState<number | null>(null);
   const [manual, setManual] = useState<Pin | null>(null);
@@ -225,7 +226,7 @@ export function CommunityFeed({
             </Button>
           ) : null}
           <div className="flex min-h-0 flex-1 flex-col" data-cg-results="" style={{justifyContent: view === "map" ? "flex-start" : sel === "wish" || sel === "give" || sel === "mine" ? "flex-start" : place.y < 0 ? "flex-start" : place.y > 0 ? "flex-end" : "center"}}>
-          {view === "map" ? <p className="cg-map-note g-meta">{pins.length ? `${pins.length} on the map · list below` : "no matching listings with a shared approximate location."}</p> : null}<ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
+          {view === "map" ? <div className="cg-map-note"><span className="g-meta">{pins.length ? `${pins.length} on the map` : "no matching listings with a shared approximate location."}</span> <Button variant="ghost" type="button" className="cg-filter" aria-expanded={mapList} onClick={() => setMapList(v => !v)}>{mapList ? "hide list" : "show list"}</Button></div> : null}{view === "map" && !mapList ? null : <ul className={sel === "wish" || sel === "give" || sel === "mine" ? "cg-list cg-list-fill" : "cg-list"} data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li
                 key={i.id}
@@ -248,7 +249,7 @@ export function CommunityFeed({
               </li>
             ) : null}
             {sel === "wish" ? <li className="pt-4"><WishMatch onOpen={onOpen} /></li> : null}
-          </ul>
+          </ul>}
           </div>
         </div>
       </PerimeterToggle>

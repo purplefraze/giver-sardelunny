@@ -174,7 +174,8 @@ export function VoiceEnclosure({ seat, children }: { seat: string; children: Rea
       };
       points.push(...rounded(0,30),...rounded(10,20,true));
       const local = points.map(p => new DOMPoint(p.x,p.y).matrixTransform(inverse));
-      const target = `M${local.map(p=>`${p.x},${p.y}`).join("L")}Z`;
+      const outer=local.slice(0,40), inner=local.slice(40);
+      const target = `M${outer.map(p=>`${p.x},${p.y}`).join("L")}Z M${inner.map(p=>`${p.x},${p.y}`).join("L")}Z`;
       const morph = interpolate(LIVING_G_PATH, target, {maxSegmentLength:80});
       const start = performance.now();
       const step = (now:number) => { if(dead) return; const t=Math.min(1,(now-start)/1150); setMorphed(morph(t*t*(3-2*t))); if(t<1) raf=requestAnimationFrame(step); else setReady(true); };

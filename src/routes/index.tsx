@@ -313,14 +313,16 @@ function Index() {
   /* A spoken search leaves the conversation for communi-g's own listings. */
   useEffect(() => {
     if (!talk.session?.search) return;
+    const term = talk.session.search;
+    const selection = talk.session.community ?? "everything";
     conversation.close();
-    setBrowse({ type: null });
+    setBrowse({ type: null, selection, term });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [talk.session?.search]);
   /* "show community borrows" from any seat: the lower loop on that filter. */
   useEffect(() => {
     const cg = talk.session?.community;
-    if (!cg) return;
+    if (!cg || talk.session?.search) return;
     conversation.close();
     setBrowse({ type: null, selection: cg });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -454,6 +456,7 @@ function Index() {
     side?: BorrowSide;
     /** Voice/filter arrival: the exact lower-loop selection. */
     selection?: CgSelection;
+    term?: string;
     /** A post just shared: marked and scrolled to on arrival. */
     highlight?: string;
   } | null>(null);

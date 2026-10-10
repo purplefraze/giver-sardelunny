@@ -48,6 +48,7 @@ export function CommunityFeed({
   initialSide,
   initialScope,
   initialSelection,
+  initialTerm = "",
   highlightId,
   onOpen,
   onClose,
@@ -58,6 +59,7 @@ export function CommunityFeed({
   initialView?: View;
   initialSide?: BorrowSide;
   initialSelection?: CgSelection;
+  initialTerm?: string;
   highlightId?: string;
   onOpen: (itemId: string) => void;
   onOpenProfile?: (ownerId: string) => void;
@@ -70,7 +72,7 @@ export function CommunityFeed({
     initialSelection ?? (initialScope === "mine" ? "mine" : modeFor(initialType, initialSide)),
   );
   const [record, setRecord] = useState(false);
-  const [term, setTerm] = useState("");
+  const [term, setTerm] = useState(initialTerm);
   const [typed, setTyped] = useState("");
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const items = useItems();

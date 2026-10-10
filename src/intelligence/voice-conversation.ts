@@ -5,6 +5,7 @@ import { voiceCapture } from "@/intelligence/voice-capture";
 import { editField, hear, isEcho, nextAsk, startSession, type VoiceSession } from "@/intelligence/voice-session";
 import { followUp } from "@/lib/followup.functions";
 import type { VoiceFields } from "@/intelligence/voice-flow";
+import type { GiverAction } from "@/intelligence/action-draft";
 
 /**
  * THE ONE VOICE CONVERSATION — lives while the G stays intact.
@@ -123,11 +124,11 @@ export const conversation = {
   getServer: () => snap,
 
   /** Finger down on the record button. Synchronous (Safari activation). */
-  press() {
+  press(seed: GiverAction | null = null) {
     wire();
     if (!snap.session) {
       spokenPrompt = "";
-      set({ session: startSession() });
+      set({ session: startSession(seed) });
     }
     set({ mode: "hold" });
     voiceCapture.start();
@@ -138,6 +139,11 @@ export const conversation = {
       set({ mode: "locked" });
       return;
     }
+    set({ mode: "off" });
+    voiceCapture.stop();
+  },
+  /** The toggle hold was cancelled / lost capture: stop cleanly, keep the draft. */
+  abortHold() {
     set({ mode: "off" });
     voiceCapture.stop();
   },

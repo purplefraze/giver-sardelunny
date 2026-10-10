@@ -24,13 +24,17 @@ import { GiveFlow } from "@/components/give/GiveFlow";
 import { IntentIntake } from "@/intelligence/IntentIntake";
 import { VoiceIntake } from "@/intelligence/VoiceIntake";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { VoiceMic } from "@/components/living-g/VoiceMic";
 import { VoiceLoops } from "@/intelligence/VoiceLoops";
 import { VoiceReview } from "@/intelligence/VoiceReview";
 import { conversation } from "@/intelligence/voice-conversation";
 import type { ProfileAreaId } from "@/intelligence/profile-areas";
 import type { CgSelection } from "@/intelligence/community-filter";
 import { SEAT_OF_ACTION } from "@/intelligence/voice-flow";
+import type { GiverAction } from "@/intelligence/action-draft";
+
+/** The main toggle seat that seeds a voice draft (profile/community seats route by words). */
+const seedOf = (seat: string): GiverAction | null =>
+  (["give", "wish", "trade", "borrow", "lend", "fund"] as const).find((a) => a === seat) ?? null;
 import { reviewBeep } from "@/lib/beep";
 import { recordAvailable } from "@/intelligence/record-availability";
 import { handoffOf, type FormSeed } from "@/intelligence/handoff";
@@ -906,24 +910,23 @@ function Index() {
                   {...(!firstArrival && me.built && unread ? { badge: unread } : {})}
                   /* TAP ON THE TOGGLE: enters the seat's action screen. */
                   onTap={tapToggle}
+                  /* HOLD THE SAME TOGGLE TO RECORD for the selected seat. */
+                  {...(recordAvailable(firstLand?.phase ?? null)
+                    ? {
+                        recording: talk.mode !== "off",
+                        onRecordStart: () => {
+                          haptics.light();
+                          conversation.press(seedOf(seat));
+                        },
+                        onRecordEnd: (cancelled: boolean) => {
+                          haptics.selection();
+                          if (cancelled) conversation.abortHold();
+                          else conversation.release("stop");
+                        },
+                      }
+                    : {})}
                 />
               )}
-              {/* THE MIC in the open S-curve: speak to create. Listening starts on this tap. */}
-              {recordAvailable(firstLand?.phase ?? null) ? (
-                <VoiceMic
-                  seat={seat}
-                  state={talk.mode === "off" ? "idle" : talk.mode}
-                  onDown={() => {
-                    haptics.light();
-                    conversation.press();
-                  }}
-                  onRelease={(out) => conversation.release(out)}
-                  onStop={() => {
-                    haptics.selection();
-                    conversation.stopLocked();
-                  }}
-                />
-              ) : null}
               {talking_ ? <VoiceLoops onReview={enterReview} seatDeg={(SEAT_ANGLE[seat] * 180) / Math.PI + 90} /> : null}
               {firstLand ? (
                 <FirstLandArt

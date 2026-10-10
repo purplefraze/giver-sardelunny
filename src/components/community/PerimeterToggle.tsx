@@ -1,18 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type PointerEvent } from "react";
-import { SEAT_ANGLE, SEAT_TITLE, type Seat } from "@/components/living-g/EarSelector";
+import { LOWER_STATIONS, clampLower, lowerAngle, lowerToken, lowerWord, nearestLower, type CgStation } from "./lower-stations";
+export type { CgStation } from "./lower-stations";
 import { Button } from "@/components/ui/button";
-import type { CgMode } from "@/data/communigy";
 import { haptics } from "@/lib/haptics";
 import { ARM_LENGTH, SNAP_MS, TRACK_PATH, TRACK_WIDTH, armPath, crossings, easeOut, frameOf, inputAngle, settleDuration, signedTurn, wrap, type Point } from "./perimeter-geometry";
 
-export type CgStation = CgMode | "exit";
-const STATION_SEAT: Record<CgStation, Seat> = { exit: "giver", give: "give", lend: "lend", trade: "trade", everything: "map", fund: "fund", borrow: "borrow", wish: "wish" };
-const clockOf = (s: CgStation) => wrap(SEAT_ANGLE[STATION_SEAT[s]] * 180 / Math.PI + 90);
-const STATIONS = (Object.keys(STATION_SEAT) as CgStation[]).sort((a, b) => clockOf(a) - clockOf(b));
-const LABELED = STATIONS.map(value => ({ value, angle: clockOf(value) }));
-const DETENTS = Array.from({ length: 32 }, (_, i) => ({ angle: i * 11.25, value: i }));
-const nearest = (angle: number) => STATIONS.reduce((a, b) => Math.abs(signedTurn(angle, clockOf(a))) <= Math.abs(signedTurn(angle, clockOf(b))) ? a : b, "everything");
-const ink = (s: CgStation) => `var(--mode-${s === "exit" ? "giver" : s === "everything" ? "communigy" : s})`;
+const clockOf = lowerAngle;
+const STATIONS = LOWER_STATIONS.map(s => s.value);
+const LABELED = LOWER_STATIONS;
+const DETENTS = Array.from({ length: 29 }, (_, i) => ({ angle: -i * 11.25, value: i }));
+const nearest = nearestLower;
+const ink = (s: CgStation) => `var(${lowerToken(s)})`;
 type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; down: Point; moved: boolean; target: HTMLButtonElement };
 
 /** ONE angle → one paint. Only release owns an animation; no camera timer.
@@ -47,13 +45,14 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
   const show = (station: CgStation) => {
     if (station === shownRef.current) return;
     shownRef.current = station; setShown(station);
-    // Content changes at real station crossings; 12:00 is "my g" (mine), never an exit.
+    // Content changes at real station crossings; 12:00 is the all-types map; no wrapped station crossings.
     if (!external.current) { previousValue.current = station; callbacks.current.onChange(station); }
   };
   const put = (next: number, tactile = false) => {
+    next = clampLower(next);
     const before = angleRef.current;
     const events = crossings(before, next, LABELED);
-    for (const station of events) show(station);
+    if (!external.current) for (const station of events) show(station);
     if (tactile && crossings(before, next, DETENTS).length > 0) haptics.selection();
     angleRef.current = next; setAngle(next);
   };
@@ -61,7 +60,8 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
   const settle = (station: CgStation, tactile: boolean, programmatic = false) => {
     external.current = programmatic;
     stop();
-    const from = angleRef.current, delta = signedTurn(from, clockOf(station));
+    if (programmatic) show(station);
+    const from = angleRef.current, delta = clockOf(station) - from;
     const duration = settleDuration(delta, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     // Ask in the release gesture, not a later RAF; actual motor delivery is optional.
     if (tactile) haptics.light();
@@ -90,11 +90,11 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
     settle(nearest(angleRef.current), !cancel && g.moved);
   };
   const frame = frameOf(size.w, size.h, angle);
-  const colour = ink(shown), word = shown === "exit" ? "communi-g" : SEAT_TITLE[STATION_SEAT[shown]];
+  const colour = ink(shown), word = lowerWord(shown);
   // Smooth interior clearance; no threshold-based page jumps as the camera rides.
   const a = angle * Math.PI / 180;
   const left = 16 + Math.max(0, -Math.sin(a)) * 98, right = 16 + Math.max(0, Math.sin(a)) * 98;
-  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "exit" ? 90 : shown === "wish" || shown === "give" ? 180 : 290), bottom = 16 + Math.max(0, -Math.cos(a)) * 98;
+  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "map" ? 118 : shown === "wish" || shown === "give" ? 180 : 290), bottom = shown === "map" ? 118 : 16 + Math.max(0, -Math.cos(a)) * 98;
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">
@@ -103,7 +103,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
       <path d={armPath(frame.tip, frame.root, frame.normal)} fill={colour} data-cg-stem-arm="" />
     </svg>
     {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left, right, top, bottom }} data-cg-interior=""><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
-    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={0} aria-valuemax={360} aria-valuenow={wrap(angle)} aria-valuetext={shown === "exit" ? "communi-g" : shown} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
+    <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={0} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
         const rect = stage.current?.getBoundingClientRect(); if (!rect) return;
@@ -136,14 +136,15 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, record = false
         const index = STATIONS.indexOf(shownRef.current);
         if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) {
           e.preventDefault(); const dir = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
-          const next = STATIONS[(index + dir + STATIONS.length) % STATIONS.length]; if (next) settle(next, true);
+          const next = STATIONS[Math.max(0, Math.min(STATIONS.length - 1, index + dir))]; if (next) settle(next, true);
         } else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); callbacks.current.onTap?.(); }
+        else if (e.key === "Escape") { e.preventDefault(); stage.current?.dispatchEvent(new CustomEvent("giver:community-return", { bubbles:true })); }
         else if (e.key === "r" || e.key === "R") { e.preventDefault(); callbacks.current.onHold?.(); }
       }}>
       <svg width={64} height={64} viewBox="-32 -32 64 64" aria-hidden="true" data-cg-bead-shape="circle-arm">
         <circle r={24.5} fill="var(--world-bg)" />
-        <circle r={28.4} fill="none" stroke={colour} strokeWidth={7.2} data-cg-ring="" />
-        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} style={{ fontFamily: "var(--giver-font)", fontSize: word === "communi-g" ? 8.2 : word.length > 5 ? 9.5 : 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
+        <circle r={28.4} fill="none" stroke={colour} style={{ stroke: colour }} strokeWidth={7.2} data-cg-ring="" />
+        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} data-cg-seat-label="" style={{ fontFamily: "var(--giver-font)", fontSize: word.length > 5 ? 9.5 : 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
       </svg>
     </Button>
   </div>;

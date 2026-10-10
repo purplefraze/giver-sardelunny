@@ -3,6 +3,7 @@
  * SVG paint, arm normal, and camera all consume this same differentiable curve.
  * Full Living G artwork is untouched. */
 export type Point = { x: number; y: number };
+import { LOWER_MIN, LOWER_MAX } from "./lower-stations";
 const RAD = Math.PI / 180;
 const COEFFICIENTS = [248.6643094065, -6.1074666129, .6760043650, 7.2934463149, -.4864824929, -.5014184058, -.1502362108, .4579759233, -.0198162384];
 export const TRACK_WIDTH = 17;
@@ -37,13 +38,13 @@ export function trackPose(angle: number) {
 /** Cubic Hermite segments share exact endpoint derivatives: no polygon corners,
  * ray quantisation, mask seams, or separate attachment approximation. */
 export const TRACK_PATH = (() => {
-  const start = trackPose(0).point;
+  const start = trackPose(LOWER_MAX).point;
   let path = `M ${start.x} ${start.y}`;
-  for (let a = 0; a < 360; a += 5) {
-    const p = trackPose(a), q = trackPose(a + 5), dt = 5 * RAD / 3;
+  for (let a = LOWER_MAX; a > LOWER_MIN; a -= 5) {
+    const p = trackPose(a), q = trackPose(a - 5), dt = -5 * RAD / 3;
     path += ` C ${p.point.x + p.tangent.x * dt} ${p.point.y + p.tangent.y * dt} ${q.point.x - q.tangent.x * dt} ${q.point.y - q.tangent.y * dt} ${q.point.x} ${q.point.y}`;
   }
-  return `${path} Z`;
+  return path;
 })();
 export function frameOf(width: number, height: number, angle: number) {
   const pose = trackPose(angle);

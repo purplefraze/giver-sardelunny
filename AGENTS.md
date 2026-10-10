@@ -18,7 +18,10 @@
 - Main attached toggle reveals an idle record symbol after its landing label; only deliberate tap starts hands-free browser speech and the next tap stops. Pointerdown, holds, drags, timers and review never activate recording; this preserves activation and explicit consent without a separate recorder.
 - The in-G voice conversation is one store (src/intelligence/voice-conversation.ts) over pure rules (voice-session.ts / voice-flow.ts); only VoiceReview's explicit share posts, so recording or reviewing can never publish.
 - My G profile areas and their voice phrases live in one pure table (src/intelligence/profile-areas.ts) read by both MyGRing touch seats and voice-session; this guarantees voice and touch land on the same area.
-- The lower loop keeps ONE selection (src/intelligence/community-filter.ts) shared by the inside toggle, filter row and feed; its 12:00 seat is "mine", never an exit, and only the back arrow leaves communi-g.
+- The lower loop shares one selection through community-filter, toggle, filters and feed; its lower-only stations module owns bounded unwrapped travel and token lookup so map entry cannot wrap across the opening or inherit upper-seat colours.
+- ListingLine renders explicit schema-derived prefixes with neutral descriptions in feed/map results; this keeps Fund and lending unambiguous without colouring entire titles.
+- Revise only the unedited Fund fixture through the pure fund-fixture helper; this heals cached demo titles without converting real or deliberately edited records.
+- The requested S-curve return requires an approved measured connected centreline and attachment normals; retain the explicit accessible return until those exist rather than fabricate a hidden connector.
 - Profile birthday, gender, answers and sparks are owner-only by column grants; the owner reads its full row via `my_profile()` and the directory selects public columns only — UI privacy alone can be bypassed.
 - My G zooms into the actual toggle circle at 12 (bead on the ring's track, middle-loop curve kept in view, area content in the middle loop's hollow); this keeps origin and continuity instead of a detached profile page.
 - Expanded profile/community use the shared seat-placement table; the full Living G voice prompt/controls are always centred in the actual middle hollow, keeping dialogue readable independent of the selector.

@@ -39,7 +39,7 @@ export function factLine(item: Item, extra: string[] = []): string {
 
 /** The word this item calls itself, plus the side of a borrow. */
 export const itemKindWord = (item: Item) =>
-  item.type === "borrow" && item.side === "lend"
+  item.type === "wish" && item.details?.fundTarget ? "fund" : item.type === "borrow" && item.side === "lend"
     ? "lending"
     : item.type === "borrow"
       ? "wants to borrow"

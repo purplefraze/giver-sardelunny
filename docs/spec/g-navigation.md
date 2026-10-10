@@ -2,7 +2,17 @@
 
 **Status:** Approved by Frazer, 27 Sep 2026. Communi-g spatial nav (sections 2 to 5) updated 29 Sep 2026: the phone rectangle rides the lower loop's arc; the toggle stays fixed at 12:00 on the rectangle; snap on midpoint.
 
-This document is the design source of truth for G navigation and G colour.
+This document preserves historical approved decisions. The October 10 16:50 lower-loop section below supersedes conflicting lower-loop entries; full-G and upper-profile geometry are unchanged.
+
+## Current lower-loop authority — October 10, 16:50 UTC
+- Entry from middle communi-g opens lower blue map at 12:00, with all types and genuine coordinates; list alternative remains. Own posts stay in My G activity.
+- Open lower track excludes 12→1:30. Bounded counterclockwise travel: map → wish → borrow → fund → all (6) → trade (4:30) → lend → give. Reversal is allowed; no wrap or shortest-path jump across the gap.
+- Existing authoritative seat tokens colour ring, arm and upright seat label together. Track stays red. Listing descriptions are neutral; only explicit category-colon prefixes are coloured.
+- Heading is lowercase communi-g; account chrome is hidden within it, genuine authors remain.
+- Synthetic unedited Fund is a dentures cause using its existing Wish/fundTarget and existing demo pledges; no real donations or payments.
+- Requested S-curve midpoint return is unresolved: the spark rail joins lower ink at clock 6° (BOT_FROM −84°), while the smooth lower wire ends at clock 0°, with a different measured radius. It cannot be attached without an approved continuous join/normal mapping. Explicit back/Escape and existing depth retreat remain available; no fake connector is drawn.
+
+## Historical September specification (superseded where conflicting)
 
 Spellings are exact: **Communi-g** is the place; **Communi-G Wishes** and **Communi-G Borrows** are the names of the Wish and Borrow stops.
 
@@ -72,7 +82,7 @@ Frazer + Luna locked geometry, 29 Sep 2026. Matches `/workspace/mocks/communi-g-
 - Counter-clockwise is primary.
 - Clockwise is allowed inside Communi-g.
 - **Full G.** The middle loop is always drawn closed. The bottom loop is always drawn open (gapped): keep that negative space.
-- **Inside Communi-g.** The lower loop is treated as closed (a full circle), so the rectangle can travel all the way round it in either direction. The living G and the red track stay put behind the page.
+- **Inside Communi-g (SUPERSEDED October 10).** The lower loop was treated as closed (a full circle). It is now open and bounded; the rectangle cannot cross the gap. The living G and the red track stay put behind the page.
 - The traced G path data is never edited to open or close a loop; the closed middle loop is achieved at render time.
 
 ## 5. Colour (critical)

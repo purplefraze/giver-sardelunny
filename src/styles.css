@@ -2002,7 +2002,7 @@
 .cg-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; flex-shrink:0; padding:6px 0 12px; font:450 14px var(--giver-font); }
 .cg-tools select { min-width:0; max-width:100%; background:var(--background); color:var(--foreground); border:0; font:inherit; }
 .cg-location { font:450 14px/1.4 var(--giver-font); padding:10px 0; }
-.cg-context { position:absolute; top:max(14px,env(safe-area-inset-top)); left:24px; z-index:6; font:700 14px var(--giver-font); color:var(--cg-ink); }
+.cg-context { position:absolute; top:max(14px,env(safe-area-inset-top)); left:16px; max-width:150px; z-index:6; font:900 26px/1.1 var(--giver-font); color:var(--foreground); }
 .cg-list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; touch-action:pan-y; }
 
 .gv-morph-frame[data-unfold-ready="0"] { border-color:transparent; }
@@ -2016,3 +2016,15 @@
 
 .cg-list { flex:0 1 auto; max-height:100%; }
 .cg-list-fill { flex:1 1 auto; }
+
+/* Lower-only assembly tokens cannot inherit an upper selector's seat. */
+[data-cg-stage] [data-cg-ring] { transition:none; }
+.cg-listing-line { color:var(--foreground); overflow-wrap:anywhere; }
+[data-cg-description] { color:var(--foreground); }
+[data-cg-interior-page] .cg-map-wrap { flex:none; height:240px; min-height:240px; width:100%; border-radius:0; }
+[data-cg-view="map"] [data-cg-results] { overflow-y:auto; justify-content:flex-start; }
+[data-cg-view="map"] .cg-list { flex:none; max-height:none; overflow:visible; }
+
+.cg-list [data-cg-item] { min-width:0; max-width:100%; }
+.cg-list [data-cg-item] > span { width:100%; min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.cg-location { flex-shrink:0; }

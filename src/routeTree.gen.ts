@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as DevCommuniGRouteImport } from './routes/dev.communi-g'
 import { Route as DevMiddleLoopRouteImport } from './routes/dev.middle-loop'
+import { Route as DevMorphCheckRouteImport } from './routes/dev.morph-check'
 import { Route as DevMyGRouteImport } from './routes/dev.my-g'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 
@@ -48,6 +49,11 @@ const DevMiddleLoopRoute = DevMiddleLoopRouteImport.update({
   path: '/dev/middle-loop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevMorphCheckRoute = DevMorphCheckRouteImport.update({
+  id: '/dev/morph-check',
+  path: '/dev/morph-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevMyGRoute = DevMyGRouteImport.update({
   id: '/dev/my-g',
   path: '/dev/my-g',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/dev/communi-g': typeof DevCommuniGRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
+  '/dev/morph-check': typeof DevMorphCheckRoute
   '/dev/my-g': typeof DevMyGRoute
   '/invite/$token': typeof InviteTokenRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/dev/communi-g': typeof DevCommuniGRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
+  '/dev/morph-check': typeof DevMorphCheckRoute
   '/dev/my-g': typeof DevMyGRoute
   '/invite/$token': typeof InviteTokenRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/dev/communi-g': typeof DevCommuniGRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
+  '/dev/morph-check': typeof DevMorphCheckRoute
   '/dev/my-g': typeof DevMyGRoute
   '/invite/$token': typeof InviteTokenRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dev/communi-g'
     | '/dev/middle-loop'
+    | '/dev/morph-check'
     | '/dev/my-g'
     | '/invite/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dev/communi-g'
     | '/dev/middle-loop'
+    | '/dev/morph-check'
     | '/dev/my-g'
     | '/invite/$token'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dev/communi-g'
     | '/dev/middle-loop'
+    | '/dev/morph-check'
     | '/dev/my-g'
     | '/invite/$token'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   DevCommuniGRoute: typeof DevCommuniGRoute
   DevMiddleLoopRoute: typeof DevMiddleLoopRoute
+  DevMorphCheckRoute: typeof DevMorphCheckRoute
   DevMyGRoute: typeof DevMyGRoute
   InviteTokenRoute: typeof InviteTokenRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevMiddleLoopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/morph-check': {
+      id: '/dev/morph-check'
+      path: '/dev/morph-check'
+      fullPath: '/dev/morph-check'
+      preLoaderRoute: typeof DevMorphCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/my-g': {
       id: '/dev/my-g'
       path: '/dev/my-g'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   DevCommuniGRoute: DevCommuniGRoute,
   DevMiddleLoopRoute: DevMiddleLoopRoute,
+  DevMorphCheckRoute: DevMorphCheckRoute,
   DevMyGRoute: DevMyGRoute,
   InviteTokenRoute: InviteTokenRoute,
 }

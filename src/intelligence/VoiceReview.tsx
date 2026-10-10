@@ -175,9 +175,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       const by = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
       if (by?.dataset["share"] === "1") void share();
     }}>
-      <Button variant="ghost" type="button" className="gv-back" aria-label="back to the Living G (keeps your draft)" onClick={back}>
-        <span aria-hidden="true">←</span> back
-      </Button>
+      <Button variant="ghost" type="button" className="gv-back sr-only focus:not-sr-only" aria-label="return to the Living G (keeps your draft)" onClick={back}>return to the G</Button>
       <p className="gv-title">your {noun}</p>
       {ask || listening || v.transcript ? (
         <div className="gv-live" aria-live="polite" data-form-prompt="">

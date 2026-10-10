@@ -825,7 +825,7 @@ function Index() {
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
       {entered && !chromeQuiet && !reviewing ? <DevControls /> : null}
       {reviewing ? (
-        <VoiceEnclosure seat={talk.session?.action ?? seat}>
+        <VoiceEnclosure seat={talk.session?.action ?? seat} onFold={() => conversation.closeForm()}>
           <VoiceReview
             onDone={() => conversation.close()}
             onSeeInCommunity={(itemId) => {

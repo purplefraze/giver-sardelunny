@@ -152,39 +152,102 @@ export function GEnclosure({
   );
 }
 
-/** The canonical filled G visibly unthreads into the review's rounded rim. */
-export function VoiceEnclosure({ seat, children }: { seat: string; children: React.ReactNode }) {
+/** The canonical filled G visibly unthreads into the review's rounded rim;
+ * a two-finger inward pinch drives the same morph backwards (repretzel). */
+export function VoiceEnclosure({ seat, children, onFold }: { seat: string; children: React.ReactNode; onFold?: () => void }) {
   const source = useRef<SVGPathElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const [morphed, setMorphed] = useState<string | null>(null);
+  /* 1 = form open, 0 = full G. Drives both the outline and the content. */
+  const [t, setT] = useState(0);
   const [ready, setReady] = useState(false);
+  const morphRef = useRef<((t: number) => string) | null>(null);
+  const foldRef = useRef(onFold);
+  foldRef.current = onFold;
+
+  /** Built from the CURRENT viewport, so rotation/resizes stay correct. */
+  const build = async () => {
+    const { interpolate } = await import("flubber");
+    const matrix = source.current?.getScreenCTM();
+    if (!matrix) return null;
+    const inverse = matrix.inverse();
+    const w = window.innerWidth, h = window.innerHeight;
+    const rounded = (inset:number, radius:number, reverse=false) => {
+      const corners = [{x:w-inset-radius,y:inset+radius,start:-90},{x:w-inset-radius,y:h-inset-radius,start:0},{x:inset+radius,y:h-inset-radius,start:90},{x:inset+radius,y:inset+radius,start:180}];
+      const ring = corners.flatMap(c => Array.from({length:10},(_,i) => {const a=(c.start+i*90/9)*Math.PI/180;return {x:c.x+radius*Math.cos(a),y:c.y+radius*Math.sin(a)};}));
+      return reverse ? ring.reverse() : ring;
+    };
+    const local = [...rounded(0,30),...rounded(10,20,true)].map(p => new DOMPoint(p.x,p.y).matrixTransform(inverse));
+    const outer=local.slice(0,40), inner=local.slice(40);
+    const target = `M${outer.map(p=>`${p.x},${p.y}`).join("L")}Z M${inner.map(p=>`${p.x},${p.y}`).join("L")}Z`;
+    return interpolate(LIVING_G_PATH, target, {maxSegmentLength:80});
+  };
+
   useEffect(() => {
     let dead = false, raf = 0;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) { setReady(true); return; }
-    void import("flubber").then(({ interpolate }) => {
-      const matrix = source.current?.getScreenCTM();
-      if (!matrix || dead) return;
-      const inverse = matrix.inverse();
-      const w = window.innerWidth, h = window.innerHeight;
-      const points: {x:number;y:number}[] = [];
-      const rounded = (inset:number, radius:number, reverse=false) => {
-        const corners = [{x:w-inset-radius,y:inset+radius,start:-90},{x:w-inset-radius,y:h-inset-radius,start:0},{x:inset+radius,y:h-inset-radius,start:90},{x:inset+radius,y:inset+radius,start:180}];
-        const ring = corners.flatMap(c => Array.from({length:10},(_,i) => {const a=(c.start+i*90/9)*Math.PI/180;return {x:c.x+radius*Math.cos(a),y:c.y+radius*Math.sin(a)};}));
-        return reverse ? ring.reverse() : ring;
-      };
-      points.push(...rounded(0,30),...rounded(10,20,true));
-      const local = points.map(p => new DOMPoint(p.x,p.y).matrixTransform(inverse));
-      const outer=local.slice(0,40), inner=local.slice(40);
-      const target = `M${outer.map(p=>`${p.x},${p.y}`).join("L")}Z M${inner.map(p=>`${p.x},${p.y}`).join("L")}Z`;
-      const morph = interpolate(LIVING_G_PATH, target, {maxSegmentLength:80});
+    if (reduced) { setT(1); setReady(true); return; }
+    void build().then((morph) => {
+      if (!morph || dead) return;
+      morphRef.current = morph;
       const start = performance.now();
-      const step = (now:number) => { if(dead) return; const t=Math.min(1,(now-start)/1150); setMorphed(morph(t*t*(3-2*t))); if(t<1) raf=requestAnimationFrame(step); else setReady(true); };
+      const step = (now:number) => { if(dead) return; const k=Math.min(1,(now-start)/1150); const e=k*k*(3-2*k); setT(e); setMorphed(morph(e)); if(k<1) raf=requestAnimationFrame(step); else setReady(true); };
       raf=requestAnimationFrame(step);
     });
-    return () => { dead=true; cancelAnimationFrame(raf); };
+    const resize = () => { morphRef.current = null; };
+    window.addEventListener("resize", resize);
+    return () => { dead=true; cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
-  return <div className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready ? "1":"0"}>
-    {!ready ? <div className="absolute inset-0 pointer-events-none" data-g-unpretzel=""><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={morphed ?? LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div> : null}
-    <div className="gv-review-content">{children}</div>
+
+  /* PINCH TO FOLD — two fingers only; one finger scrolls/types as normal. */
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    let startDist = 0, p = 0, active = false, raf = 0;
+    const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const dist = (e: TouchEvent) => { const [a, b] = [e.touches[0]!, e.touches[1]!]; return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); };
+    const paint = (k: number) => { setT(1 - k); const m = morphRef.current; if (m) setMorphed(m(1 - k)); };
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || active) return;
+      active = true; startDist = dist(e) || 1; p = 0;
+      cancelAnimationFrame(raf);
+      /* Leaving begins: mic off now, no auto-restart, draft kept. */
+      foldRef.current && (globalThis as { __giverStopMic?: () => void }).__giverStopMic?.();
+      setReady(false);
+      if (!morphRef.current) void build().then((m) => { if (m) morphRef.current = m; });
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!active || e.touches.length < 2) return;
+      e.preventDefault();
+      p = Math.max(0, Math.min(1, (startDist - dist(e)) / (startDist * 0.55)));
+      if (!reduced()) paint(p);
+    };
+    const settle = (to: 0 | 1) => {
+      const from = p, t0 = performance.now(), ms = reduced() ? 0 : 220 * Math.abs(to - from) + 60;
+      const step = (now: number) => {
+        const k = ms ? Math.min(1, (now - t0) / ms) : 1;
+        p = from + (to - from) * (1 - (1 - k) ** 3);
+        if (!reduced()) paint(p);
+        if (k < 1) raf = requestAnimationFrame(step);
+        else if (to === 1) foldRef.current?.();
+        else { setT(1); setReady(true); }
+      };
+      raf = requestAnimationFrame(step);
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!active || e.touches.length >= 2) return;
+      active = false;
+      settle(p > 0.45 ? 1 : 0);
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => { cancelAnimationFrame(raf); el.removeEventListener("touchstart", onStart); el.removeEventListener("touchmove", onMove); el.removeEventListener("touchend", onEnd); el.removeEventListener("touchcancel", onEnd); };
+  }, []);
+
+  return <div ref={frame} className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready ? "1":"0"} data-fold={(1 - t).toFixed(2)}>
+    <div className="absolute inset-0 pointer-events-none" data-g-unpretzel="" style={{ visibility: ready ? "hidden" : "visible" }}><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={morphed ?? LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div>
+    <div className="gv-review-content" style={ready ? undefined : { opacity: Math.max(0, (t - 0.6) / 0.4) }}>{children}</div>
   </div>;
 }

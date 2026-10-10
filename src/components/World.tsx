@@ -6,6 +6,8 @@ import { Panel } from "@/components/Panel";
 
 export type RegionSpec = {
   label: string;
+  /** Spoken name when the visible label is drawn by the overlay. */
+  ariaLabel?: string;
   panelTitle: string;
   panelBody: React.ReactNode;
   render?: (a: { x: number; y: number }) => React.ReactNode;
@@ -138,9 +140,10 @@ export function World({
           overlay={overlay}
           earCut={earCut}
           regions={{
-            top: { label: regions.top.label, onPress: press("top"), render: regions.top.render },
+            top: { label: regions.top.label, ...(regions.top.ariaLabel ? { ariaLabel: regions.top.ariaLabel } : {}), onPress: press("top"), render: regions.top.render },
             middle: {
               label: regions.middle.label,
+              ...(regions.middle.ariaLabel ? { ariaLabel: regions.middle.ariaLabel } : {}),
               onPress: press("middle"),
               render: regions.middle.render,
             },

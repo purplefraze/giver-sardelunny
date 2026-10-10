@@ -20,17 +20,6 @@ export const SEAT_OF_ACTION: Record<GiverAction, "give" | "wish" | "trade" | "bo
   fund: "fund",
 };
 
-/** Slide this far right (SVG units) and the record button locks hands-free. */
-export const LOCK_TRAVEL = 16;
-export const LOCK_AT = 9;
-/** A release this quick, without sliding, is a tap — treated as hands-free. */
-export const TAP_MS = 220;
-
-export type MicRelease = "stop" | "keep";
-/** Hold-and-release stops; a slide past LOCK_AT (or a quick tap) keeps listening. */
-export const releaseOutcome = (slid: number, heldMs: number): MicRelease =>
-  slid >= LOCK_AT || (heldMs < TAP_MS && slid < 3) ? "keep" : "stop";
-
 export type VoiceFields = {
   what: string;
   want: string;

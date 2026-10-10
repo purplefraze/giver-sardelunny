@@ -1,7 +1,11 @@
+# Oct 10 preview verification
+
+Latest interaction supersedes the historical pocket/hold checks below: main toggle labels its landing seat, then reveals an idle record dot after 1800ms. Only explicit tap starts hands-free listening; next tap stops. Full middle voice is centred at every seat. Typing and voice use the selected seat.
+
 # Record control: Oct 8 preview verification
 
 ## Where to find it
-Return to the whole Living G. Press and hold the main toggle still (about half a second): its ring shows a record button and listening starts for the selected seat. Release to stop. A short tap still opens the seat; a drag still changes the seat. There is no separate S-curve record button any more. Published site unchanged until a publish.
+Return to the whole Living G. Drag selects a seat. The label displays for 1800ms then becomes an idle record dot. Tap the dot to start, lift without stopping, tap the stop square to stop. During the label interval a tap opens the seat. Existing loop targets retain profile/community navigation. No separate recorder. Production unchanged.
 
 ## Root causes and repairs
 - The route previously suppressed the SVG record control whenever `firstLand` existed, including its settled welcome state. Only the active ceremony now suppresses it, with a regression test.

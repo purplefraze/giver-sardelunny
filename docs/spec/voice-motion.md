@@ -1,6 +1,6 @@
-# Voice Mode motion — proposed next phase (PLAN ONLY, not built)
+# Voice destination choreography and current review unfolding
 
-Status: PROPOSAL. No geometry, GStage, EarSelector or PerimeterToggle code changes yet.
+Status: destination contract/swing/expand sequence remains PROPOSAL. The full voice review now uses VoiceEnclosure in GEnclosure.tsx: canonical filled G interpolates into its mode-coloured rounded border over 1150ms, content appears afterward; reduced motion reveals the border immediately.
 
 ## Choreography (owner direction, Oct 8 2026)
 Every voice DESTINATION CHANGE runs, in order, with no overlap:
@@ -28,7 +28,7 @@ moves to the seat (skipping the orbit sweep).
 - Contract/expand: GDepthStack + g-depth.ts already own portal entry. Add a phase controller
   that calls those existing open/close transitions; do not add a second G.
 - Destination content: the existing editor/browse/detail panels in src/routes/index.tsx.
-- Recording is a stationary hold on the main toggle (record button inside the ring); no separate mic control.
+- Main toggle landing label becomes an idle record dot; explicit tap starts hands-free recognition, second tap stops. Holds/drags/timers never activate it. Expanded profile/community retain their existing voice controls.
 - Context: voice draft/search state lives in voice-capture + VoiceIntake state; lift it to a small
   store so it survives phase changes and back navigation.
 

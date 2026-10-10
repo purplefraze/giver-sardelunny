@@ -9,8 +9,9 @@ import type { GiverAction } from "@/intelligence/action-draft";
 
 /**
  * THE ONE VOICE CONVERSATION — lives while the G stays intact.
- * Mic mode: "hold" records until release; "locked" stays hands-free across
- * answers (listening pauses while Giver speaks); "off" keeps the draft.
+ * Main toggle tap starts/stops hands-free listening; "off" keeps the draft.
+ * The legacy hold adapter is only for the existing profile/review controls.
+ * Listening pauses while Giver speaks; review always stops it.
  * Nothing here publishes.
  */
 export type MicMode = "off" | "hold" | "locked";
@@ -27,7 +28,7 @@ let snap: Conversation = { session: null, mode: "off", photo: null, pin: null, p
 const subs = new Set<() => void>();
 let spokenPrompt = "";
 let revision = 0;
-const parked = new Map<string, VoiceSession>();
+const parked = new Map<string, Conversation>();
 let currentSeat = "";
 let wired = false;
 
@@ -129,10 +130,10 @@ export const conversation = {
 
   selectSeat(seat: string) {
     if (seat === currentSeat) return;
-    if (snap.session && currentSeat) parked.set(currentSeat, snap.session);
+    if (snap.session && currentSeat) parked.set(currentSeat, snap);
     currentSeat = seat;
     spokenPrompt = "";
-    set({ mode: "off", session: parked.get(seat) ?? sessionForSeat(seat) });
+    set({ ...(parked.get(seat) ?? { session:sessionForSeat(seat), photo:null, pin:null, picking:false }), mode:"off" });
     voiceCapture.cancel();
   },
   toggle(seat: string) {

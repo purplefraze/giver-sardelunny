@@ -129,7 +129,7 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
     return s.action ? { ...s, said, heard: text, fields: withCtx(mergeFollowUp(s.action, s.fields, text), null) } : s;
   const lower = text.toLowerCase();
   let next: VoiceSession = { ...s, said, heard: text };
-  if (CANCEL.test(lower)) return { ...(s.routeSeat ? sessionForSeat(s.routeSeat) : startSession(s.action)), said, heard:text, prompt:`ok, cleared. ${s.routeSeat ? sessionForSeat(s.routeSeat).prompt : s.action ? SEED_OPENING[s.action] : OPENING}` };
+  if (CANCEL.test(lower)) return { ...startSession(), said, heard:text, prompt:`ok, cleared. ${OPENING}` };
 
   if (PHOTO.test(lower)) {
     next.wantsPhoto = true;

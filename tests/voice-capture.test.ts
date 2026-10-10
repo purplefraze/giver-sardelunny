@@ -35,7 +35,7 @@ test("interim words stay raw and final subscribers receive them after transcript
 });
 test("cancelled speech cannot run its stale restart callback",()=>{
   setup();let utterance:{onend?:()=>void}|null=null;let restarts=0;
-  const win=globalThis.window as unknown as {speechSynthesis:unknown};win.speechSynthesis={cancel(){},speak(u: {onend?:()=>void}){utterance=u}};
+  const win=globalThis.window as unknown as {speechSynthesis:unknown;setTimeout:()=>number};win.setTimeout=()=>0;win.speechSynthesis={cancel(){},speak(u: {onend?:()=>void}){utterance=u}};
   Object.defineProperty(globalThis,"SpeechSynthesisUtterance",{configurable:true,value:class {onend?:()=>void;onerror?:()=>void;rate=1;constructor(public text:string){}}});
   voiceCapture.speak("online or in person?",()=>restarts++);voiceCapture.cancel();(utterance as {onend?:()=>void}|null)?.onend?.();expect(restarts).toBe(0);Reflect.deleteProperty(globalThis,"SpeechSynthesisUtterance");
 });

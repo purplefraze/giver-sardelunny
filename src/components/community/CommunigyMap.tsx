@@ -56,7 +56,7 @@ export function CommunigyMap({
       if (dead || !box.current) return;
       L.current = lib;
       const m = lib
-        .map(box.current, { zoomControl: false, attributionControl: false })
+        .map(box.current, { zoomControl: false, attributionControl: false, zoomAnimation:false, fadeAnimation:false, markerZoomAnimation:false })
         .setView(centre ? [centre.lat, centre.lng] : [0, 0], centre ? 13 : 1);
       lib.control.attribution({ position: "bottomright", prefix: false }).addTo(m);
       lib
@@ -73,6 +73,7 @@ export function CommunigyMap({
     })();
     return () => {
       dead = true;
+      map.current?.stop();
       map.current?.remove();
       map.current = null;
     };

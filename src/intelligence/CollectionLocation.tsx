@@ -5,7 +5,7 @@ import { collectionLabelSchema, coarseCollectionPin, type CollectionLocation as 
 import { conversation } from "./voice-conversation";
 const CollectionMap = lazy(() => import("./CollectionMap").then(m => ({ default: m.CollectionMap })));
 
-export function CollectionLocation({ draftId, value, location }: { draftId: string; value: string; location?: Location }) {
+export function CollectionLocation({ draftId, value, location }: { draftId: string; value: string; location?: Location | undefined }) {
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(!location);

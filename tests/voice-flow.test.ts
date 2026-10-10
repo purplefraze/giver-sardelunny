@@ -31,7 +31,8 @@ test("a follow-up answer merges without overwriting edits", () => {
 
 test("a give needs a place before it can go live", () => {
   expect(canGoLive("give", { ...EMPTY_FIELDS, what: "fridge", kind: "a thing" })).toBe(false);
-  expect(canGoLive("give", { ...EMPTY_FIELDS, what: "fridge", kind: "a thing", where: "leith" })).toBe(true);
+  expect(canGoLive("give", { ...EMPTY_FIELDS, what: "fridge", kind: "a thing", where: "leith" })).toBe(false);
+  expect(canGoLive("give", { ...EMPTY_FIELDS, what: "fridge", kind: "a thing", where: "leith", collectionLocation: { label: "leith", pin: { lat: 55.97, lng: -3.17 }, source: "place" } })).toBe(true);
 });
 
 test("photo reminder for a tangible give, not for giving time", () => {

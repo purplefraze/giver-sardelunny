@@ -58,7 +58,7 @@ export function MiddleLoopClose({
 }: {
   weight?: keyof typeof CLOSE_WIDTH;
   fill?: string;
-  strokeWidth?: number;
+  strokeWidth?: number | undefined;
 }) {
   return (
     <path

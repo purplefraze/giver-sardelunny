@@ -72,7 +72,7 @@ export const gBottom = (weight: GWeight = "normal") => LIVING_G_BOX.height - str
  * the same space (inside a LIVING_G_TRANSFORM group), or pass `transformed`
  * to draw it in viewBox space.
  */
-export function GThinMask({ id, weight, transformed = false, middleWidth }: { id: string; weight: GWeight; transformed?: boolean; middleWidth?: number }) {
+export function GThinMask({ id, weight, transformed = false, middleWidth }: { id: string; weight: GWeight; transformed?: boolean; middleWidth?: number | undefined }) {
   const w = strokeInset(weight) * 2 * 10;
   const path = (
     <>

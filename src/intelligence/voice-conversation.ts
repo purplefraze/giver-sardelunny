@@ -237,6 +237,14 @@ export const conversation = {
     if (!snap.session?.action) set({ session: sessionForSeat(seat) });
     set({ form: true });
   },
+  /** The form's own bottom record button: same draft, same capture. */
+  recordInForm() {
+    wire();
+    if (!snap.form || !snap.session || snap.session.stage === "live") return;
+    if (snap.mode !== "off") { conversation.stopLocked(); return; }
+    set({ mode: "locked" });
+    voiceCapture.start();
+  },
   /** Back to the Living G: listening stops, the unshared draft stays parked. */
   closeForm() {
     voiceCapture.stop();

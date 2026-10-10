@@ -163,7 +163,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         </div>
       ) : null}
       <div className="gv-fields">
-        {field("what", service || action === "trade" ? "offer" : "what")}
+        {field("what", service || action === "trade" ? "offer" : action === "fund" ? "cause" : action === "borrow" ? "need" : "what")}
         {action === "trade" ? field("want", "for") : null}
         {action === "fund" ? field("amount", "raising", "amount") : null}
         {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
@@ -228,7 +228,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           onClick={() => {
             /* Synchronous from the tap (Safari activation). Next tap stops. */
             if (listening) { haptics.selection(); conversation.stopLocked(); }
-            else { haptics.light(); conversation.toggle(action); }
+            else { haptics.light(); conversation.recordInForm(); }
           }}
         >
           <span className="gv-rec-dot" aria-hidden="true" />

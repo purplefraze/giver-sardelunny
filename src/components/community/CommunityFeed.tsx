@@ -110,7 +110,7 @@ export function CommunityFeed({
     let d0 = 0, p = 0, active = false, raf = 0;
     const onMap = (t: Touch) => !!(t.target as Element | null)?.closest?.(".leaflet-container");
     const dist = (e: TouchEvent) => Math.hypot(e.touches[0]!.clientX - e.touches[1]!.clientX, e.touches[0]!.clientY - e.touches[1]!.clientY);
-    const paint = (k: number) => { el.style.transform = k ? `scale(${1 - 0.55 * k})` : ""; el.style.opacity = k ? String(1 - 0.6 * k) : ""; el.dataset.cgPinch = k.toFixed(2); };
+    const paint = (k: number) => { el.style.transform = k ? `scale(${1 - 0.55 * k})` : ""; el.style.opacity = k ? String(1 - 0.6 * k) : ""; el.dataset["cgPinch"] = k.toFixed(2); };
     const start = (e: TouchEvent) => {
       if (e.touches.length !== 2 || active || onMap(e.touches[0]!) || onMap(e.touches[1]!)) return;
       active = true; d0 = dist(e) || 1; p = 0; cancelAnimationFrame(raf);

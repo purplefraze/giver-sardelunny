@@ -13,6 +13,7 @@ test.each([
 test("inside communi-g a plain filter phrase works", () => {
   expect(communityFilterOf("show lends", true)).toBe("lend");
   expect(communityFilterOf("show all", true)).toBe("everything");
+  expect(communityFilterOf("show map", true)).toBe("map");
 });
 
 test("creation words are never a filter", () => {

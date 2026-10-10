@@ -19,7 +19,7 @@ export function VoiceLoops({ onReview, onNavigate, seat = "wish" }: { onReview: 
   const status = v.state === "listening" ? "listening · tap the toggle to stop" : v.state === "speaking" ? "giver is asking" : v.state === "processing" ? "finishing your words" : v.state === "error" ? v.error : v.state === "unsupported" ? "speech isn't available here · type instead" : "tap the record dot, or type";
   return <g data-voice-loops="" onPointerDown={stop} onClick={stop}>
     <foreignObject x={m.x - 112} y={m.y - 110} width={224} height={220}>
-      <div className="gv-loop gv-loop-main" data-voice-ask={s.asking ?? s.stage}>
+      <div className="gv-loop gv-loop-main" data-voice-ask={s.asking ?? s.stage} onClick={(e)=>{if((e.target as Element).closest("button,input,textarea,select"))return;onNavigate?.();}}>
         <p className="gv-ask" aria-live="polite">{s.prompt}</p>
         {(seat === "giver" || seat === "map") && !c.session ? <Button variant="ghost" className="gv-tap" onClick={onNavigate}>{seat === "giver" ? "open my g" : "open communi-g"}</Button> : null}
         {s.choices.length ? <div className="gv-taps">{s.choices.map(ch => <Button variant="ghost" key={ch} className="gv-tap" onClick={() => conversation.choose(ch)}>{ch}</Button>)}</div> : null}

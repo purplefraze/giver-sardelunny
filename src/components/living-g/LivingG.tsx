@@ -241,6 +241,7 @@ export function LivingG({
 
   return (
     <svg
+      data-living-g=""
       viewBox={LIVING_G_VIEWBOX}
       className={cn("h-full w-full select-none overflow-visible", className)}
       // DIRECT MANIPULATION SURFACE. The G is dragged, not scrolled: the browser

@@ -65,3 +65,22 @@
 - [x] Toggle continues from 12 along S to outside horizontal back (tap returns)
 - [x] Inward pinch returns from expanded community
 - [x] Share identity in session (no dup on fold/reopen retry); live pinch returns + retires draft; touchcancel never commits; no pinch during opening
+
+## Oct 10 18:22 focused form correction
+- [ ] Grounded whole/segmented Give speech through the shared conversation; preserve typed edits.
+- [ ] Separate recorder dock from scrolling actions and anchor frame to visual viewport.
+- [ ] Replace stretch/crossfade with continuous derived G contour movement, shared reverse/pinch owner.
+- [ ] Main-app phone-size speech, controls and intermediate-frame verification; regressions; preview only.
+- [ ] Earlier community real S trace/rounded-tail comparison/ambient background remain unfinished (outside this correction).
+
+## Oct 10 18:32 guided intake addition
+- [ ] One large question with deliberate typed Next/Enter; quiet fields, early review, six modes and retained drafts.
+- [ ] Ordinary-object grounded AI interpretation/title suggestions through existing authenticated gateway; validated fallback and stale-edit protection.
+- [ ] Local-clock calendar/time answers and ambiguity confirmation carried into review/post payload.
+- [ ] Production-path isolated tests plus main-app phone interaction/animation verification; no real writes or publish.
+
+## Oct 10 18:50 latest corrections
+- [ ] Magnetic continuous canonical G contour, rounded bands, reverse/cancellation and keyboard endpoints.
+- [ ] Actual upward canonical S route beyond lower map, outside-right My G return (whole G, not Profile).
+- [ ] Main giver seat label/accessibility Profile; readable word-fitted toggle labels at 320/390/430.
+- [ ] Actual main/community browser verification, rendered font sizes and preview commit; no real writes/publish.

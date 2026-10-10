@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
 /* Isolated: no model, no location, no network, no writes. */
-mock.module("@/lib/followup.functions", () => ({ followUp: async () => ({ source: "rules", ctx: {} }) }));
+mock.module("@/lib/followup.functions", () => ({ interpretDraft:async()=>({reading:null,error:null}), followUp: async () => ({ source: "rules", ctx: {} }) }));
 mock.module("@/data/my-location", () => ({ askLocation: async () => ({ ok: false }) }));
 
 const { conversation } = await import("../src/intelligence/voice-conversation");
@@ -42,6 +42,6 @@ describe("typed titles get grounded context in every mode", () => {
     conversation.edit("what", "a wooden chair");
     const f = conversation.get().session!.fields;
     expect(f.context).toBe(null);
-    expect(f.kind).toBe(null);
+    expect(f.kind).toBe("a thing");
   });
 });

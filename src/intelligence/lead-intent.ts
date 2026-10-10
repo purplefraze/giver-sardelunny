@@ -8,6 +8,7 @@ import { bindUtterance } from "@/intelligence/bind";
  * binder/router unchanged. Pure; the item is only words the person said.
  */
 const LEADS: [RegExp, GiverAction][] = [
+  [/^(?:i (?:would like|want|am happy|'?m happy) to|i'd like to|happy to) (?:give(?: away)?|donate)\b\s*(.*)/, "give"],
   [/\b(?:i want to|i'd like to|i'?m looking to|happy to|i'?ll) (?:trade|swap) (.+)/, "trade"],
   [/\b(?:i'?m |we'?re |i am )?(?:raising|fundraising|crowdfunding|help(?:ing)? (?:to )?fund|collecting money)\b(.*)/, "fund"],
   [/\bi(?: can|'?m happy to|'?d be happy to| could) ((?:walk|help|tutor|teach|fix|mow|clean|cook|babysit|dog ?sit|paint)\b.+)/, "give"],
@@ -61,9 +62,15 @@ export function leadIntent(raw: string): ActionDraft | null {
     }
     const service = /^(?:walk|help|tutor|teach|fix|mow|clean|cook|babysit|dog ?sit|paint)\b|tutoring|lessons?\b/.test(m[1] ?? "");
     const item = service ? (m[1] ?? "").replace(/[.?!]+$/, "").trim() : itemOf(m[1] ?? "");
-    if (item.length < 2) continue;
+    if (item.length < 2 && action !== "give") continue;
     if (service) e.category = /tutor|teach|lesson/.test(item) ? "a skill" : "a hand";
     return { ...base, action, confidence: 0.95, entities: { ...e, item }, clarification: null };
   }
   return null;
+}
+
+/** A recogniser may finalise the lead before the noun. It is not an item. */
+export function incompleteLead(raw: string): boolean {
+  const lead = leadIntent(raw);
+  return lead?.action === "give" && !lead.entities.item?.trim();
 }

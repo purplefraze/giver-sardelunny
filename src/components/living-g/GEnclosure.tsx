@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX, G_ANCHORS, LIVING_G_FRAME } from "./g-path";
 import { haptics } from "@/lib/haptics";
+import { formOutline, movingEar, type OutlinePose } from "./form-outline";
+import { SEAT_ANGLE, type Seat } from "./EarSelector";
 
 /**
  * GOING INSIDE A LIVING G.
@@ -152,121 +154,83 @@ export function GEnclosure({
   );
 }
 
-/** The middle loop's measured hollow in viewBox space (isPointInFill scan). */
-const HOLLOW = { left: 129, right: 417, top: 156, bottom: 448 } as const;
-type Fit = { ax: number; ay: number; sx: number; sy: number };
-
-/** THE SAME G EXPANDS INTO THE RIM. No shape interpolation (which collapsed the
- * hollows into a solid blob): the canonical artwork is only stretched about its
- * middle loop until that hollow is the screen and its band is the rim. Every
- * frame keeps the G's real holes and stroke. A two-finger inward pinch drives
- * the very same transform backwards (repretzel). */
+/** One contour/progress owner for opening, pinch, Escape and focusable return. */
 export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: string; children: React.ReactNode; onFold?: () => void; onFoldStart?: () => void }) {
-  const source = useRef<SVGPathElement>(null);
   const frame = useRef<HTMLDivElement>(null);
-  /* 1 = form open, 0 = full G. Drives both the outline and the content. */
   const [t, setT] = useState(0);
+  const progress = useRef(0);
   const [ready, setReady] = useState(false);
-  const [fit, setFit] = useState<Fit | null>(null);
   const readyRef = useRef(false);
-  readyRef.current = ready;
-  const foldRef = useRef(onFold);
-  foldRef.current = onFold;
-  const startRef = useRef(onFoldStart);
-  startRef.current = onFoldStart;
-
-  /** Measured from the CURRENT viewport, so rotation/resizes stay correct. */
-  const measure = (): Fit | null => {
-    const el = source.current, box = frame.current?.getBoundingClientRect();
-    const m = el?.ownerSVGElement?.getScreenCTM();
-    if (!m || !box) return null;
-    const pt = (x: number, y: number) => new DOMPoint(x, y).matrixTransform(m);
-    const tl = pt(HOLLOW.left, HOLLOW.top), br = pt(HOLLOW.right, HOLLOW.bottom);
-    const L = tl.x - box.left, R = br.x - box.left, T = tl.y - box.top, B = br.y - box.top;
-    const inset = 10;
-    const sx = (box.width - 2 * inset) / (R - L), sy = (box.height - 2 * inset) / (B - T);
-    return { sx, sy, ax: inset - sx * L, ay: inset - sy * T };
+  const [geometry, setGeometry] = useState<{pose: OutlinePose; width: number; height: number} | null>(null);
+  const raf = useRef(0);
+  const foldRef = useRef(onFold); foldRef.current = onFold;
+  const startRef = useRef(onFoldStart); startRef.current = onFoldStart;
+  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const paint = (v: number) => { progress.current = v; setT(v); };
+  const finish = (v: number) => { readyRef.current = v === 1; setReady(v === 1); if (v === 0) foldRef.current?.(); };
+  const animate = (to: number, duration: number) => {
+    cancelAnimationFrame(raf.current);
+    readyRef.current = false; setReady(false);
+    const from = progress.current, start = performance.now();
+    const step = (now: number) => {
+      const k = reduced() ? 1 : Math.min(1, (now-start)/Math.max(1,duration));
+      paint(from+(to-from)*k*k*(3-2*k));
+      if(k<1) raf.current=requestAnimationFrame(step); else finish(to);
+    };
+    raf.current=requestAnimationFrame(step);
   };
-
   useEffect(() => {
-    let dead = false, raf = 0;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) { setT(1); setReady(true); return; }
-    /* Wait for the stage to lay out (two frames), then measure once. */
-    raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => {
-      const f = measure();
-      if (!f) { setT(1); setReady(true); return; }
-      setFit(f);
-      const start = performance.now();
-      const step = (now: number) => { if (dead) return; const k = Math.min(1, (now - start) / 900); const e = k * k * (3 - 2 * k); setT(e); if (k < 1) raf = requestAnimationFrame(step); else setReady(true); };
-      raf = requestAnimationFrame(step);
-    }); });
-    /* A rotation/resize after settling re-measures at the next pinch;
-       mid-unfold resizes simply keep the running fit (no jump). */
-    const resize = () => { if (readyRef.current) setFit(null); };
-    window.addEventListener("resize", resize);
-    return () => { dead = true; cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+    const el=frame.current; if(!el)return;
+    // This is the actual live main artwork's screen transform, not GStage's
+    // guessed pose or the path's baked Give ear. It remains mounted below us.
+    const main=el.closest("main");
+    const svg=Array.from(main?.querySelectorAll<SVGSVGElement>("svg[data-living-g]") ?? []).find(s=>!el.contains(s));
+    const matrix=svg?.getScreenCTM();
+    const box=el.getBoundingClientRect();
+    const pose:OutlinePose=matrix ? {x:matrix.e-box.left,y:matrix.f-box.top,scale:matrix.a} : {x:0,y:0,scale:1};
+    setGeometry({pose,width:box.width,height:box.height});
+    document.documentElement.dataset["giverForm"]="1";
+    animate(1,760);
+    const observer=new ResizeObserver(()=>{
+      const b=el.getBoundingClientRect();
+      setGeometry(g=>g?{...g,width:b.width,height:b.height}:g);
+    }); observer.observe(el);
+    return ()=>{cancelAnimationFrame(raf.current);observer.disconnect();delete document.documentElement.dataset["giverForm"];};
+    // Only mounting enters; mode edits do not restart the opening animation.
   }, []);
-
-  /* PINCH TO FOLD — two fingers only; one finger scrolls/types as normal. */
-  useEffect(() => {
-    const el = frame.current;
-    if (!el) return;
-    let startDist = 0, p = 0, active = false, raf = 0;
-    const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const dist = (e: TouchEvent) => { const [a, b] = [e.touches[0]!, e.touches[1]!]; return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); };
-    const paint = (k: number) => setT(1 - k);
-    const onStart = (e: TouchEvent) => {
-      /* The opening unfold owns the frame until it settles: no racing pinch. */
-      if (e.touches.length !== 2 || active || !readyRef.current) return;
-      active = true; startDist = dist(e) || 1; p = 0;
-      cancelAnimationFrame(raf);
-      /* Leaving begins: mic off now, no auto-restart, draft kept. */
-      startRef.current?.();
-      if (!reduced()) { setFit((f) => f ?? measure()); setReady(false); }
+  useEffect(()=>{
+    const el=frame.current;if(!el)return;
+    let active=false,startDist=0,zoom=false;
+    const distance=(e:TouchEvent)=>{const a=e.touches[0],b=e.touches[1];return a&&b?Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY):0;};
+    const returnToG=()=>{startRef.current?.();animate(0,360*progress.current);};
+    const start=(e:TouchEvent)=>{
+      if(e.touches.length!==2||active||!readyRef.current)return;
+      if((e.target as Element)?.closest("input,textarea,select,button"))return;
+      startDist=distance(e);if(startDist<30)return;
+      active=true;zoom=false;
     };
-    const onMove = (e: TouchEvent) => {
-      if (!active || e.touches.length < 2) return;
-      e.preventDefault();
-      p = Math.max(0, Math.min(1, (startDist - dist(e)) / (startDist * 0.55)));
-      if (!reduced()) paint(p);
+    const move=(e:TouchEvent)=>{
+      if(!active||e.touches.length!==2)return;
+      const delta=startDist-distance(e);
+      // Outward/browser magnification is not commandeered by the form.
+      if(delta < -8)zoom=true;
+      if(zoom||delta<8)return;
+      if(readyRef.current){startRef.current?.();cancelAnimationFrame(raf.current);readyRef.current=false;setReady(false);}
+      e.preventDefault();paint(1-Math.max(0,Math.min(1,delta/(startDist*.55))));
     };
-    const settle = (to: 0 | 1) => {
-      const from = p, t0 = performance.now(), ms = reduced() ? 0 : 260 * Math.abs(to - from) + 60;
-      const step = (now: number) => {
-        const k = ms ? Math.min(1, (now - t0) / ms) : 1;
-        p = from + (to - from) * (1 - (1 - k) ** 3);
-        if (!reduced()) paint(p);
-        if (k < 1) raf = requestAnimationFrame(step);
-        else if (to === 1) foldRef.current?.();
-        else { setT(1); setReady(true); }
-      };
-      raf = requestAnimationFrame(step);
-    };
-    const onEnd = (e: TouchEvent) => {
-      if (!active || e.touches.length >= 2) return;
-      active = false;
-      settle(p > 0.45 ? 1 : 0);
-    };
-    /* The OS took the touch away: never a commit — always back to the form. */
-    const onCancel = () => { if (!active) return; active = false; settle(0); };
-    el.addEventListener("touchstart", onStart, { passive: true });
-    el.addEventListener("touchmove", onMove, { passive: false });
-    el.addEventListener("touchend", onEnd);
-    el.addEventListener("touchcancel", onCancel);
-    return () => { cancelAnimationFrame(raf); el.removeEventListener("touchstart", onStart); el.removeEventListener("touchmove", onMove); el.removeEventListener("touchend", onEnd); el.removeEventListener("touchcancel", onCancel); };
-  }, []);
-
-  const f = fit;
-  const transform = f ? `matrix(${1 + (f.sx - 1) * t},0,0,${1 + (f.sy - 1) * t},${f.ax * t},${f.ay * t})` : undefined;
-  /* The real G stays visible until the CSS rim exactly overlays its band. */
-  const showG = !ready && (!!f || t < 1);
-  /* Last quarter: the stretched G hands over to the identical CSS rim. */
-  const hand = Math.max(0, Math.min(1, (t - 0.78) / 0.22));
-
-  return <div ref={frame} className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready ? "1" : "0"} data-fold={(1 - t).toFixed(2)}>
-    <div className="absolute inset-0 pointer-events-none" data-g-unpretzel="" style={{ visibility: showG ? "visible" : "hidden", transformOrigin: "0 0", transform, opacity: 1 - hand }}><GStage><svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible"><path ref={source} d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} fill="var(--world-g)" /></svg></GStage></div>
-    {!ready && <div className="gv-morph-rim" aria-hidden="true" style={{ opacity: hand }} />}
-    <div className="gv-review-content" style={ready ? undefined : { opacity: Math.max(0, (t - 0.7) / 0.3) }}>{children}</div>
+    const end=(e:TouchEvent)=>{if(!active||e.touches.length>=2)return;active=false;if(zoom||readyRef.current)return;animate(progress.current<.55?0:1,240);};
+    const cancel=()=>{if(!active)return;active=false;animate(1,240);};
+    const key=(e:KeyboardEvent)=>{if(e.key==="Escape"){e.preventDefault();returnToG();}};
+    const request=()=>returnToG();
+    el.addEventListener("touchstart",start,{passive:true});el.addEventListener("touchmove",move,{passive:false});el.addEventListener("touchend",end);el.addEventListener("touchcancel",cancel);el.addEventListener("giver:fold",request);window.addEventListener("keydown",key);
+    return()=>{el.removeEventListener("touchstart",start);el.removeEventListener("touchmove",move);el.removeEventListener("touchend",end);el.removeEventListener("touchcancel",cancel);el.removeEventListener("giver:fold",request);window.removeEventListener("keydown",key);};
+  },[]);
+  const angle=SEAT_ANGLE[seat as Seat] ?? SEAT_ANGLE.give;
+  return <div ref={frame} className="gv-frame gv-morph-frame" data-seat={seat} data-voice-frame="" data-unfold-ready={ready?"1":"0"} data-fold={(1-t).toFixed(3)}>
+    {geometry ? <svg className="gv-outline" width={geometry.width} height={geometry.height} viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true" data-g-unpretzel="">
+      <path d={formOutline(t,geometry.pose,geometry.width,geometry.height)} fill="var(--world-g)" fillRule="evenodd" />
+      <path d={movingEar(t,geometry.pose,geometry.width,geometry.height,angle)} fill="var(--world-g)" fillRule="evenodd" />
+    </svg> : null}
+    <div className="gv-review-content" inert={!ready}>{children}</div>
   </div>;
 }

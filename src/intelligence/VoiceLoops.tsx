@@ -32,7 +32,7 @@ export function VoiceLoops({ onReview, onNavigate, seat = "wish", quietMiddle = 
   const low = lowerHollow(v, recording, c.session?.heard ?? "");
   const prompt = (recording || low.words) && c.session?.prompt && c.session.stage !== "review" ? c.session.prompt : "";
   return <g data-voice-loops="" onPointerDown={stop} onClick={stop}>
-    {quietMiddle && !recording ? null : <foreignObject x={m.x-132} y={m.y-90} width={264} height={180}>
+    {quietMiddle && !recording && !low.words ? null : <foreignObject x={m.x-132} y={m.y-90} width={264} height={180}>
       <div className="gv-loop gv-loop-main">
         <Button variant="ghost" className="gv-mode-word" onClick={onNavigate} data-mode-word="">{MODE_WORD[seat] ?? "give"}</Button>
         {prompt ? <p className="gv-prompt" data-voice-prompt="">{prompt.toLowerCase()}</p> : null}

@@ -914,12 +914,16 @@ function Index() {
               )}
               {recordAvailable(firstLand?.phase ?? null) ? <VoiceLoops onReview={enterReview} onNavigate={enterSelectedWorld} seat={seat} quietMiddle={!!firstLand} /> : null}
               {firstLand ? (
+                /* The opening words step aside while a voice draft is on the G, so the
+                   prompt and transcript are never drawn over them. */
+                <g data-first-land-art="" style={recordAvailable(firstLand.phase) && (talk.mode !== "off" || !!talk.session?.heard) ? { opacity: 0 } : undefined} aria-hidden={recordAvailable(firstLand.phase) && (talk.mode !== "off" || !!talk.session?.heard) ? true : undefined}>
                 <FirstLandArt
                   phase={firstLand.phase}
                   startedAt={firstLand.startedAt}
                   still={firstLand.still}
                   onSettle={settleFirstLand}
                 />
+                </g>
               ) : null}
               </>
             }

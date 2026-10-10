@@ -1,7 +1,7 @@
 # Record control: Oct 8 preview verification
 
 ## Where to find it
-Return to the whole Living G (close any open form or introduction). A seat-coloured circle with a central record dot sits in the white S-curve pocket between the middle and lower loops. It is available after the welcome animation settles; it is not dependent on completing profile setup. Refresh the current Lovable preview to load this source. The published site requires a separate publish/redeploy; no deployment was performed.
+Return to the whole Living G. Press and hold the main toggle still (about half a second): its ring shows a record button and listening starts for the selected seat. Release to stop. A short tap still opens the seat; a drag still changes the seat. There is no separate S-curve record button any more. Published site unchanged until a publish.
 
 ## Root causes and repairs
 - The route previously suppressed the SVG record control whenever `firstLand` existed, including its settled welcome state. Only the active ceremony now suppresses it, with a regression test.

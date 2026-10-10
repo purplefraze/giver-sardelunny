@@ -22,7 +22,7 @@ export type VoiceSession = {
   /** The one question currently in the middle loop. */
   prompt: string;
   /** Which field the question is waiting on (so "here" → location). */
-  asking: keyof VoiceFields | "intent" | `ctx:${string}` | null;
+  asking: keyof VoiceFields | "intent" | "seed" | `ctx:${string}` | null;
   /** Everything said this session, in order (the model reads the whole talk). */
   said: string[];
   choices: readonly string[];
@@ -51,12 +51,22 @@ export const NOUN: Record<GiverAction, string> = {
 
 export const OPENING = "what would you like to share, or ask for?";
 
-export const startSession = (): VoiceSession => ({
+/** The selected toggle seat's own first question (no "which mode?" detour). */
+export const SEED_OPENING: Record<GiverAction, string> = {
+  give: "what are you giving?",
+  wish: "what do you wish for?",
+  trade: "what would you like to trade?",
+  borrow: "what would you like to borrow?",
+  lend: "what can you lend?",
+  fund: "what are you raising money for?",
+};
+
+export const startSession = (seed: GiverAction | null = null): VoiceSession => ({
   stage: "talk",
-  action: null,
+  action: seed,
   fields: { ...EMPTY_FIELDS },
-  prompt: OPENING,
-  asking: "intent",
+  prompt: seed ? SEED_OPENING[seed] : OPENING,
+  asking: seed ? "seed" : "intent",
   said: [],
   choices: [],
   pending: null,
@@ -125,6 +135,25 @@ export function hear(s: VoiceSession, raw: string): VoiceSession {
   if (s.stage === "ready") {
     if (YES.test(lower)) return { ...next, stage: "review" };
     if (NOT_YET.test(lower) || (DONE.test(lower) && lower.split(/\s+/).length <= 3)) return { ...next, stage: "anything", prompt: "what would you like to add?" };
+  }
+
+  /* SEEDED by the toggle seat: the first answer is that mode's draft, unless
+     it clearly names another intent or a profile/community/search request. */
+  if (s.asking === "seed" && s.action) {
+    const lead = contextOf(text) ? null : leadIntent(text);
+    if (lead?.action) return nextAsk({ ...next, action: lead.action, fields: fieldsFromDraft(lead, text), pending: null });
+    const area = profileAreaOf(text);
+    if (area) return { ...next, profile: area };
+    const cg = communityFilterOf(text);
+    if (cg) return { ...next, community: cg };
+    const route = routeVoice(text);
+    if (route.intent === "search") return { ...next, search: route.search.term };
+    const d = route.draft;
+    const ctxWish = contextOf(text) && (s.action === "wish" || s.action === "borrow");
+    const action = ctxWish ? "wish" : route.intent !== "clarify" && d.action ? d.action : s.action;
+    const fields = fieldsFromDraft({ ...d, action, clarification: null }, text);
+    if (!fields.what && action !== "fund" && !fields.context) fields.what = text.replace(/^(?:a|an|my|some)\s+/i, "") ;
+    return nextAsk({ ...next, action, fields, pending: null });
   }
 
   if (!next.action) {

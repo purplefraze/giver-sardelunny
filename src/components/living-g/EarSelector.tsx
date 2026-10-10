@@ -26,6 +26,8 @@ import { togglePath, type TrackPose } from "./toggle-path";
  */
 
 export const MODES = ["wish", "give", "trade", "borrow"] as const;
+/** A stationary press this long on the main toggle becomes a record hold. */
+export const HOLD_MS = 420;
 export type Mode = (typeof MODES)[number];
 
 /**
@@ -334,6 +336,9 @@ export function EarSelector({
   hideWord = false,
   weight = "normal",
   title = false,
+  onRecordStart,
+  onRecordEnd,
+  recording = false,
 }: {
   mode: Seat;
   onChange: (next: Seat) => void;
@@ -380,6 +385,12 @@ export function EarSelector({
    * When shown it is the ONLY thing inside the ring (no photo).
    */
   title?: boolean;
+  /** Stationary hold began: listen for the selected seat (call start synchronously). */
+  onRecordStart?: () => void;
+  /** The hold ended (release, or cancelled / lost capture). */
+  onRecordEnd?: (cancelled: boolean) => void;
+  /** Show the record button inside the ring instead of the seat title. */
+  recording?: boolean;
 }) {
   /* The track at this weight — shadows the module's canonical (normal) values. */
   /* The piece at this weight (variant A at "middle": thinner ring and stem). */
@@ -417,6 +428,32 @@ export function EarSelector({
   const stopPeek = () => {
     if (peekTimer.current) clearTimeout(peekTimer.current);
     setPeek(false);
+  };
+
+  /**
+   * HOLD TO RECORD on this same toggle: a stationary press past HOLD_MS turns
+   * the ring's interior into a record button and starts listening; release
+   * ends it. Any travel first makes it a drag; a quick lift stays a tap.
+   */
+  const recTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recHeld = useRef(false);
+  const clearRecTimer = () => {
+    if (recTimer.current) clearTimeout(recTimer.current);
+    recTimer.current = null;
+  };
+  const armRecord = () => {
+    clearRecTimer();
+    recHeld.current = false;
+    if (!onRecordStart) return;
+    recTimer.current = setTimeout(() => {
+      recTimer.current = null;
+      if (gesture.current && !gesture.current.moved) {
+        recHeld.current = true;
+        dragRef.current = null;
+        setDrag(null);
+        onRecordStart();
+      }
+    }, HOLD_MS);
   };
   useEffect(() => () => {
     if (peekTimer.current) clearTimeout(peekTimer.current);
@@ -512,7 +549,7 @@ export function EarSelector({
    */
   const activeId = useRef<number | null>(null);
 
-  const end = (e?: React.PointerEvent<SVGElement>) => {
+  const end = (e?: React.PointerEvent<SVGElement>, cancelled = false) => {
     if (e && activeId.current !== null && e.pointerId !== activeId.current) return;
     if (e) {
       const el = e.currentTarget as SVGElement & {
@@ -528,10 +565,14 @@ export function EarSelector({
     activeId.current = null;
     const g = gesture.current;
     const wasHeld = held.current;
+    const wasRecording = recHeld.current;
+    clearRecTimer();
+    recHeld.current = false;
     stopPeek();
     held.current = false;
-    if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
-    else if (g && !g.moved && !wasHeld) onTap?.();
+    if (wasRecording) onRecordEnd?.(cancelled);
+    else if (drag !== null && g?.moved) commit(nearestOf(drag, seats));
+    else if (g && !g.moved && !wasHeld && !cancelled) onTap?.();
     gesture.current = null;
     dragRef.current = null;
     setDrag(null);
@@ -625,7 +666,13 @@ export function EarSelector({
       {/* THE SEAT'S TITLE — upright (outside the piece's rotation), centred
           on the ring, in the ring's colour, and transparent to the pointer so
           a tap on a parked toggle still reaches the grip beneath. */}
-      {title ? (
+      {recording ? (
+        /* HOLD = RECORD: the ring's interior becomes a record button. */
+        <g pointerEvents="none" data-toggle-record="" aria-hidden="true">
+          <circle className="g-record-halo" cx={ear.x} cy={ear.y} r={EAR.innerR * 0.62} fill="none" stroke="var(--world-g)" strokeWidth={3} />
+          <circle cx={ear.x} cy={ear.y} r={EAR.innerR * 0.42} fill="var(--world-g)" />
+        </g>
+      ) : title ? (
         <text
           x={ear.x + titleSet.dx}
           y={ear.y + titleSet.dy}
@@ -787,6 +834,7 @@ export function EarSelector({
           const grab = angleFrom(e);
           gesture.current = { start: grab?.point ?? ear, moved: false };
           startPeek();
+          if (!locked) armRecord();
           // CAPTURE ON THE ELEMENT THAT HANDLES THE GESTURE, so the drag keeps
           // running even once the finger leaves the disc.
           (e.currentTarget as SVGElement).setPointerCapture?.(e.pointerId);
@@ -805,6 +853,7 @@ export function EarSelector({
           const g = gesture.current;
           if (g && !g.moved && dist(move.point, g.start) > 14) {
             g.moved = true;
+            clearRecTimer();
             /* A drag is a mode change, not a peek. */
             stopPeek();
             held.current = false;
@@ -820,11 +869,11 @@ export function EarSelector({
           e.stopPropagation();
           end(e);
         }}
-        onPointerCancel={(e) => end(e)}
+        onPointerCancel={(e) => end(e, true)}
         onLostPointerCapture={(e) => {
           // Android can revoke a capture mid-gesture: settle where we are and
           // leave the control immediately usable again.
-          if (activeId.current === e.pointerId) end(e);
+          if (activeId.current === e.pointerId) end(e, true);
         }}
         onKeyDown={(e) => {
           const i = ring.indexOf(mode);

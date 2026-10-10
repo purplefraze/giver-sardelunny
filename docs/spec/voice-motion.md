@@ -28,7 +28,7 @@ moves to the seat (skipping the orbit sweep).
 - Contract/expand: GDepthStack + g-depth.ts already own portal entry. Add a phase controller
   that calls those existing open/close transitions; do not add a second G.
 - Destination content: the existing editor/browse/detail panels in src/routes/index.tsx.
-- Mic in expanded state: render VoiceMic inside the perimeter frame, same seat colour (--world-g).
+- Recording is a stationary hold on the main toggle (record button inside the ring); no separate mic control.
 - Context: voice draft/search state lives in voice-capture + VoiceIntake state; lift it to a small
   store so it survives phase changes and back navigation.
 

@@ -257,10 +257,10 @@ export function CommunityFeed({
         onBack={onExit ?? onClose}
         header={showDetail ? undefined : <div className="cg-heading-row" data-align={align}><p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p><Button variant="ghost" className="cg-filter" data-cg-map-view="" onClick={() => { setCategoryView(view === "map" ? "list" : "map"); if (sel === "map") go("everything"); }}>{view === "map" ? "list" : "map"}</Button></div>}
         controls={showDetail ? undefined : <div data-cg-upper-tools="" data-align={align}>
-          <div role="tablist" aria-label="community filter" className="cg-filters">
+          <div role="tablist" aria-label="community filter" className="cg-filters" data-cg-safe-band="">
             {CG_FILTERS.map(f => <Button variant="ghost" key={f.value} ref={f.value === sel ? selectedTab : undefined} role="tab" aria-selected={f.value === sel} data-cg-filter={f.value} onClick={() => choose(f.value)} className="cg-filter">{f.word}</Button>)}
           </div>
-          <div className="cg-tools">
+          <div className="cg-tools" data-cg-safe-band="">
             <select aria-label="sort listings" value={sort} onChange={e => setSort(e.target.value as typeof sort)}><option value="latest">latest</option><option value="oldest">oldest</option><option value="nearest">nearest</option></select>
             <select aria-label="nearby radius" value={radius ?? "all"} onChange={e => setRadius(e.target.value === "all" ? null : Number(e.target.value))}><option value="all">any distance</option>{[2,5,10,25].map(km => <option key={km} value={km}>{km} km</option>)}</select>
             <Button variant="ghost" className="cg-filter" onClick={() => void allowLocation()}>near me</Button>
@@ -285,7 +285,7 @@ export function CommunityFeed({
         {showDetail && detailId ? <div className="absolute inset-0 z-[2]"><ActivityDetail key={detailId} itemId={detailId} embedded onClose={onCloseDetail ?? onClose} onOpenConnection={onOpenConnection ?? (() => {})} onOpenProfile={onOpenProfile} onNeedGive={onNeedGive} onStartGive={onStartGive} /></div> : null}
          <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align={align} style={{ textAlign: align, ...(showDetail ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={showDetail || undefined} {...(showDetail ? { inert: true } : {})}>
           <Button variant="ghost" type="button" className="sr-only focus:not-sr-only" onClick={() => (onExit ?? onClose)()}>back to the living g</Button>
-          {(radius !== null || sort === "nearest" || (view === "map" && !samplePins)) && !centre ? <div className="cg-location">
+          {(radius !== null || sort === "nearest" || (view === "map" && !samplePins)) && !centre ? <div className="cg-location" data-cg-safe-band="">
             <p>{locationProblem || "allow approximate location, or choose a map centre."}</p>
             <form onSubmit={e=>{e.preventDefault();void findArea();}}><input aria-label="neighbourhood and city" placeholder="neighbourhood and city" value={area} onChange={e=>setArea(e.target.value)} className="w-full bg-transparent border-b py-1" /><Button variant="ghost" type="submit" className="cg-filter" disabled={areaBusy}>find area</Button></form>
             <details><summary>choose coordinates instead</summary><form onSubmit={e => { e.preventDefault(); const lat = Number(coordinates.lat), lng = Number(coordinates.lng); if (!coordinates.lat || !coordinates.lng || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat)>90 || Math.abs(lng)>180) { setLocationProblem("enter valid latitude and longitude for your area."); return; } setManual({lat,lng}); setLocationProblem(""); }}>
@@ -325,7 +325,7 @@ export function CommunityFeed({
             </Button>
           ) : null}
           <div className="flex min-h-0 flex-1 flex-col" data-cg-results="" style={{justifyContent: "flex-start"}}>
-          {view === "map" ? <div className="cg-map-note"><span className="cg-map-count">{pins.length ? `${pins.length} on the map${samplePins ? ` · ${DEMO_REGION}` : ""}` : "no matching listings with a shared approximate location."}</span> <Button variant="ghost" type="button" className="cg-filter" aria-expanded={mapList} onClick={() => setMapList(v => !v)}>{mapList ? "hide list" : "show list"}</Button></div> : null}{view === "map" && !mapList ? null : <ul className="cg-list" data-cg-feed={sel} data-place-y={place.y}>
+          {view === "map" ? <div className="cg-map-note" data-cg-safe-band=""><span className="cg-map-count">{pins.length ? `${pins.length} on the map${samplePins ? ` · ${DEMO_REGION}` : ""}` : "no matching listings with a shared approximate location."}</span> <Button variant="ghost" type="button" className="cg-filter" aria-expanded={mapList} onClick={() => setMapList(v => !v)}>{mapList ? "hide list" : "show list"}</Button></div> : null}{view === "map" && !mapList ? null : <ul className="cg-list" data-cg-feed={sel} data-place-y={place.y}>
             {list.map((i) => (
               <li
                 key={i.id}

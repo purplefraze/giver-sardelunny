@@ -66,6 +66,7 @@ export function MiddleLoopClose({
       fill="none"
       stroke={fill}
       strokeWidth={strokeWidth ?? CLOSE_WIDTH[weight]}
+      vectorEffect="non-scaling-stroke"
       strokeLinecap="butt"
       strokeLinejoin="round"
       pointerEvents="none"

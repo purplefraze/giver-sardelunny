@@ -1,4 +1,5 @@
 import { frameOf, trackPose, TRACK_WIDTH } from "./perimeter-geometry";
+import { visibleStroke } from "../living-g/screen-paint";
 import type { CgStation } from "./lower-stations";
 
 /** Closed measured loop for containment only; the navigation wire stays open. */
@@ -17,7 +18,7 @@ const CURVE = Array.from({ length: 361 }, (_, i) => trackPose(i).point);
 export function hollowBand(w: number, h: number, angle: number, start: number, height: number, minimum = 180, exclude = true): Bounds {
   const f = frameOf(w, h, angle);
   const points = CURVE.map(p => ({ x: p.x * f.scale + f.x, y: p.y * f.scale + f.y }));
-  const inset = TRACK_WIDTH / 2 + 14;
+  const inset = visibleStroke(w) / 2 + 15;
   const rows = new Map<number, { l: number; r: number }>();
   const atY = (y: number) => {
     const cached = rows.get(y);

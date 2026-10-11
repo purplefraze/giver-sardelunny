@@ -17,13 +17,10 @@ import { useWall } from "@/hooks/use-wall";
 import { useProfilePhoto } from "@/components/profile/ProfilePhotoPicker";
 import { buzz, haptics } from "@/lib/haptics";
 import { inputAngle, signedTurn, scaleOf, settleDuration, easeOut, type Point } from "@/components/community/perimeter-geometry";
-import { voiceCapture } from "@/intelligence/voice-capture";
-import { seatPlacement } from "@/intelligence/seat-placement";
+import { visibleStroke, BEAD_SCREEN_RADIUS } from "@/components/living-g/screen-paint";
 import {
   PROFILE_AREAS,
-  activityTenseOf,
   areaById,
-  profileAreaOf,
   type ProfileAreaId,
 } from "@/intelligence/profile-areas";
 import {
@@ -46,8 +43,7 @@ import { seatCentre, toggleGeometry } from "@/components/living-g/EarSelector";
  * sparks 7:30 · activity 9 · settings 10:30.
  *
  * Bead gestures: drag = travel · tap = open the seat's area (on my g: exit)
- * · hold & release = toggle record mode (does not record) · in record mode
- * tap = start/stop listening. Nothing saves without its own button.
+ * · stationary hold remains navigation, never recording.
  */
 
 type Bio = { username: string; about: string; birthday: string };
@@ -66,7 +62,6 @@ const OUTER = RING.EAR.outerR;
 /* Camera: ring outer diameter fills ~80% of the width, a little air above. */
 const FIT_W = OUTER * 1.65;
 const ENTRY_MS = 420;
-const HOLD_MS = 450;
 const PROFILE_LENS = 0.90;
 
 const wrap = (d: number) => ((d % 360) + 360) % 360;
@@ -110,15 +105,11 @@ export function MyGRing({
   const [opened, setOpened] = useState<ProfileAreaId | null>(area && area.id !== "myg" ? area.id : "bio");
   const [span, setSpan] = useState(FIT_W);
   const [intro, setIntro] = useState(() => (reduced() ? 1 : 0));
-  const [recMode, setRecMode] = useState(false);
-  const [typed, setTyped] = useState("");
   const [tense, setTense] = useState<"current" | "past">("current");
   const [bioDraft, setBioDraft] = useState<Bio | null>(null);
-  const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const degRef = useRef(start);
   const anim = useRef(0);
-  const drag = useRef<{ id: number; onBead: boolean; moved: number; t: number; held: boolean; centre: Point; radii: Point; raw: number | null; down: Point } | null>(null);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drag = useRef<{ id: number; onBead: boolean; moved: number; centre: Point; radii: Point; raw: number | null; down: Point } | null>(null);
   const lastTick = useRef<number>(seatOf(start).at);
   const dockedOnMyg = useRef(start === 180);
   const pinch = useRef(0);
@@ -138,6 +129,7 @@ export function MyGRing({
   }, []);
 
   useEffect(() => {
+    if (reduced()) { setIntro(1); return; }
     if (intro >= 1) return;
     const t0 = performance.now();
     let raf = 0;
@@ -188,34 +180,10 @@ export function MyGRing({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area?.n]);
 
-  useEffect(() => () => { cancelAnimationFrame(anim.current); if (holdTimer.current) clearTimeout(holdTimer.current); }, []);
+  useEffect(() => () => cancelAnimationFrame(anim.current), []);
 
   const seat = seatOf(deg);
   const settledSeat = seatOf(degRef.current);
-
-  /** Words (spoken or typed) inside My G: navigate, or fill the open area's draft. */
-  const heard = (words: string) => {
-    const text = words.trim();
-    if (!text) return;
-    const to = profileAreaOf(text);
-    if (to) {
-      if (to === "activity") setTense(activityTenseOf(text));
-      goTo(to);
-      return;
-    }
-    if (opened === "bio") {
-      setBioDraft((d) => ({ ...(d ?? bioFrom()), about: [d?.about ?? me.aboutMe, text].filter(Boolean).join(" ") }));
-    }
-  };
-  const heardRef = useRef(heard);
-  heardRef.current = heard;
-  useEffect(() => {
-    if (!recMode) return;
-    const off = voiceCapture.onFinal((w) => heardRef.current(w));
-    return () => {
-      off();
-    };
-  }, [recMode]);
 
   const bioFrom = () => ({
     username: (me.username ?? "").replace(/^@/, ""),
@@ -258,20 +226,20 @@ export function MyGRing({
   });
   const hollow = toScreen(C);
   const safeRadius = (RING.EAR.innerR / viewW) * box.w;
-  const photoView = opened === "photo" && !recMode;
+  const photoView = opened === "photo";
   const panelLeft = photoView ? 20 : Math.max(20, hollow.x - safeRadius * .66);
   const panelRight = photoView ? box.w - 20 : Math.min(box.w - 20, hollow.x + safeRadius * .66);
   const panelW = Math.max(100, panelRight - panelLeft);
-  const panelTop = photoView
+  const desiredPanelTop = photoView
     ? Math.min(box.h - 104, hollow.y + safeRadius + 32)
     : Math.max(24, hollow.y - safeRadius * (opened === "bio" ? .74 : .68));
+  const grip = toScreen(bead);
+  const gripReach = 44;
+  const panelTop = !photoView && grip.x + gripReach > panelLeft && grip.x - gripReach < panelRight && grip.y + gripReach + 12 > desiredPanelTop && grip.y - gripReach < desiredPanelTop + 36
+    ? grip.y + gripReach + 12 : desiredPanelTop;
   const panelMaxH = photoView ? box.h - panelTop - 12
+    : opened === "bio" ? Math.min(260, box.h - panelTop - 32)
     : Math.max(100, Math.min(safeRadius * 1.36, box.h - panelTop - 32));
-
-  const clearHold = () => {
-    if (holdTimer.current) clearTimeout(holdTimer.current);
-    holdTimer.current = null;
-  };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("[data-interior]")) return;
@@ -284,32 +252,18 @@ export function MyGRing({
     const radii = { x: Math.max(1, rect.width / 2 - 54), y: Math.max(1, rect.height / 2 - 54) };
     const down = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: e.pointerId, onBead, moved: 0, t: Date.now(), held: false, centre, radii, down, raw: inputAngle(down, centre, radii) };
-    if (onBead) {
-      holdTimer.current = setTimeout(() => {
-        const d = drag.current;
-        if (!d || d.moved > 10) return;
-        d.held = true;
-        /* Hold & release toggles record mode — it never starts recording. */
-        setRecMode((r) => {
-          if (r) voiceCapture.stop();
-          else voiceCapture.prepare();
-          return !r;
-        });
-        buzz(24);
-      }, HOLD_MS);
-    }
+    drag.current = { id: e.pointerId, onBead, moved: 0, centre, radii, down, raw: inputAngle(down, centre, radii) };
+
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
-    if (!d || d.id !== e.pointerId || d.held) return;
+    if (!d || d.id !== e.pointerId) return;
     d.moved = Math.max(d.moved, Math.hypot(e.clientX - d.down.x, e.clientY - d.down.y));
     const raw = inputAngle({ x: e.clientX, y: e.clientY }, d.centre, d.radii);
     if (raw === null) { d.raw = null; return; }
     const delta = d.raw === null ? 0 : signedTurn(d.raw, raw);
     d.raw = raw;
-    if (d.moved > 6) clearHold();
     if (!delta) return;
     const next = degRef.current + delta;
     const nextSeat = seatOf(next);
@@ -326,9 +280,7 @@ export function MyGRing({
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
     drag.current = null;
-    clearHold();
     if (e.type === "pointercancel") { glideTo(seatOf(degRef.current).at); return; }
-    if (d.held) return;
     const at = seatOf(degRef.current);
     if (d.moved > 6) {
       lastTick.current = at.at;
@@ -340,12 +292,6 @@ export function MyGRing({
     }
     if (!d.onBead || e.type === "pointercancel") return;
     /* TAP on the bead. */
-    if (recMode) {
-      if (voice.state === "listening") voiceCapture.stop();
-      else voiceCapture.start();
-      buzz(12);
-      return;
-    }
     if (at.id === "myg") {
       if (dockedOnMyg.current) onClose();
       dockedOnMyg.current = true;
@@ -375,7 +321,7 @@ export function MyGRing({
   };
 
   const name = (me.username ?? "").replace(/^@/, "");
-  const showPanel = !drag.current || drag.current.held || drag.current.moved < 10;
+  const showPanel = !drag.current || drag.current.moved < 10;
 
   return (
     <div
@@ -386,6 +332,7 @@ export function MyGRing({
       data-profile-loop=""
       data-profile-seat={seat.id}
       data-profile-angle={deg}
+      data-profile-ready={intro >= 1 ? "1" : "0"}
       data-profile-camera-angle={deg}
       className="absolute inset-0 overflow-hidden outline-none"
       style={{ background: PAPER, color: INK }}
@@ -397,8 +344,7 @@ export function MyGRing({
       onLostPointerCapture={() => {
         if (drag.current) {
           drag.current = null;
-          clearHold();
-          glideTo(seatOf(degRef.current).at);
+                glideTo(seatOf(degRef.current).at);
         }
       }}
       onTouchStart={(e) => {
@@ -416,7 +362,7 @@ export function MyGRing({
         const ratio = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY)/pinch.current;
         setSpan(FIT_W * Math.min(1.8, Math.max(1, 1/ratio)));
       }}
-      onTouchEnd={() => { if (pinch.current && span > FIT_W * 1.45) { voiceCapture.cancel(); onClose(); } else setSpan(FIT_W); pinch.current=0; }}
+      onTouchEnd={() => { if (pinch.current && span > FIT_W * 1.45) { onClose(); } else setSpan(FIT_W); pinch.current=0; }}
       onTouchCancel={() => { pinch.current=0; setSpan(FIT_W); }}
       onWheel={(e) => {
         if ((e.target as HTMLElement).closest("[data-interior]")) return;
@@ -426,70 +372,27 @@ export function MyGRing({
       <svg viewBox={`${vx} ${vy} ${viewW} ${viewH}`} className="h-full w-full overflow-visible" aria-hidden>
         <defs><clipPath id="profile-photo-hollow"><circle cx={C.x} cy={C.y} r={RING.EAR.innerR-4} /></clipPath></defs>
         {seat.id === "photo" && me.photo ? <image data-profile-photo="" href={me.photo} x={C.x-RING.EAR.innerR} y={C.y-RING.EAR.innerR} width={RING.EAR.innerR*2} height={RING.EAR.innerR*2} preserveAspectRatio="xMidYMid slice" clipPath="url(#profile-photo-hollow)" /> : null}
-        <path d={arcPath(MID, -104, -76, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={8} vectorEffect="non-scaling-stroke" />
-        <line x1={C.x} y1={C.y+RIM} x2={C.x} y2={C.y+RIM+12} stroke={BLUE} strokeWidth={8} vectorEffect="non-scaling-stroke" />
-        <circle data-profile-rim="" cx={C.x} cy={C.y} r={RING.RING_MID} fill="none" stroke={BLUE} strokeWidth={17} vectorEffect="non-scaling-stroke" />
-        <g data-bead="" style={{ cursor: "pointer", touchAction: "none" }}>
-          <circle cx={bead.x} cy={bead.y} r={RING.RING_W / 2 + 3} fill={PAPER} stroke={BLUE} strokeWidth={3} />
-          {recMode ? (
-            <circle cx={bead.x} cy={bead.y} r={voice.state === "listening" ? 5 : 6.5} fill={BLUE} opacity={voice.state === "listening" ? 1 : 0.85}>
-              {voice.state === "listening" && !reduced() ? (
-                <animate attributeName="opacity" values="1;0.4;1" dur="1.2s" repeatCount="indefinite" />
-              ) : null}
-            </circle>
-          ) : (
-            <circle cx={bead.x} cy={bead.y} r={3} fill={BLUE} />
-          )}
-        </g>
-        {/* Bigger invisible grip so the small bead is easy to catch. */}
-        <circle data-bead="" cx={bead.x} cy={bead.y} r={Math.max(RING.RING_W, 22 * viewW / box.w)} fill="transparent" style={{ touchAction: "none" }} />
-      </svg>
-
-      <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${box.w} ${box.h}`} aria-hidden="true">
-        {PROFILE_AREAS.map(item => {
-          const on = item.id === seat.id;
-          if (Math.abs(turn(seat.at, item.at)) > 45) return null;
-          const p = toScreen(onRim(item.at, OUTER + 11));
-          if (on) p.y -= Math.abs(Math.sin(deg * Math.PI / 180)) * 58;
-          const size = on ? 22 : 18;
-          const half = item.word.length * size * .31;
-          return <text key={item.id} data-profile-label={item.id}
-            x={Math.max(half + 12, Math.min(box.w - half - 12, p.x))}
-            y={Math.max(26, Math.min(box.h - 26, p.y))}
-            textAnchor="middle" dominantBaseline="central" fill={BLUE} stroke={PAPER} strokeWidth={4} paintOrder="stroke"
-            fontSize={size} fontWeight={on ? 900 : 700} opacity={on ? 1 : .5}
-            style={{ fontFamily: "var(--giver-font)", letterSpacing: 0 }}>{item.word}</text>;
+        <path d={arcPath(MID, -104, -76, RIM_PATCH.rMid)} fill="none" stroke={BLUE} strokeWidth={visibleStroke(box.w)} vectorEffect="non-scaling-stroke" />
+        <line x1={C.x} y1={C.y+RIM} x2={C.x} y2={C.y+RIM+12} stroke={BLUE} strokeWidth={visibleStroke(box.w)} vectorEffect="non-scaling-stroke" />
+        <circle data-profile-rim="" cx={C.x} cy={C.y} r={RING.RING_MID} fill="none" stroke={BLUE} strokeWidth={visibleStroke(box.w)} vectorEffect="non-scaling-stroke" />
+        {PROFILE_AREAS.filter(item => item.id !== seat.id).map(item => {
+          const p = onRim(item.at);
+          return <circle key={item.id} data-profile-marker={item.id} cx={p.x} cy={p.y} r={(visibleStroke(box.w) / 2 + 2) * viewW / box.w} fill={BLUE} />;
         })}
+        <g data-bead="" style={{ cursor: "pointer", touchAction: "none" }}>
+          <circle data-profile-bead="" cx={bead.x} cy={bead.y} r={BEAD_SCREEN_RADIUS * viewW / box.w} fill={PAPER} stroke={BLUE} strokeWidth={visibleStroke(box.w)} vectorEffect="non-scaling-stroke" />
+          <text data-profile-bead-name="" x={bead.x} y={bead.y} textAnchor="middle" dominantBaseline="central" fill={BLUE} fontSize={11 * viewW / box.w} fontWeight={700} style={{fontFamily:"var(--giver-font)",letterSpacing:0}}>{seat.word}</text>
+          <circle data-bead="" cx={bead.x} cy={bead.y} r={44 * viewW / box.w} fill="transparent" />
+        </g>
       </svg>
 
-      {showPanel && (opened || recMode) ? (
+      {showPanel && opened ? (
         <div
           data-interior=""
-          className={`absolute ${opened === "bio" && !recMode ? "overflow-visible" : "overflow-y-auto"} overscroll-contain touch-auto px-1 pb-3 transition-opacity duration-200`}
+          className={`absolute ${opened === "activity" || opened === "chats" ? "overflow-y-auto" : "overflow-visible"} overscroll-contain touch-auto px-1 pb-3 transition-opacity duration-200`}
           style={{ left: panelLeft, top: panelTop, width: panelW, height: panelMaxH, color: INK, textAlign: "left" }}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {!photoView && opened !== "bio" ? <h1 className="g-heading mb-5" style={{ color: BLUE }}>{seat.word}</h1> : null}
-          {recMode ? (
-            <form
-              className="mb-3 flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                heard(typed);
-                setTyped("");
-              }}
-            >
-              <input
-                aria-label="type instead"
-                className={field}
-                style={{ borderColor: BLUE }}
-                placeholder={voice.state === "unsupported" ? "type here — voice isn't available" : "or type, e.g. show my chats"}
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-              />
-              <Button variant="ghost" type="submit" className={btn} style={{ color: BLUE }}>go</Button>
-            </form>
-          ) : null}
           {opened ? (
             <Area
               id={opened}
@@ -506,11 +409,6 @@ export function MyGRing({
         </div>
       ) : null}
 
-      {recMode && voice.transcript ? (
-        <p className="g-body pointer-events-none absolute inset-x-6 bottom-6 line-clamp-3 text-center text-[14px]" style={{ color: INK }} aria-live="polite">
-          {voice.transcript}
-        </p>
-      ) : null}
       {name ? <span className="sr-only">@{name}</span> : null}
     </div>
   );

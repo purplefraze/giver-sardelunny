@@ -4,6 +4,7 @@
  * Full Living G artwork is untouched. */
 export type Point = { x: number; y: number };
 import { LOWER_MIN, LOWER_WIRE_END, BACK_ANGLE } from "./lower-stations";
+import { visibleStroke, BEAD_SCREEN_RADIUS } from "../living-g/screen-paint";
 const RAD = Math.PI / 180;
 const COEFFICIENTS = [248.6643094065, -6.1074666129, .6760043650, 7.2934463149, -.4864824929, -.5014184058, -.1502362108, .4579759233, -.0198162384];
 export const TRACK_WIDTH = 17;
@@ -88,8 +89,8 @@ export function frameOf(width: number, height: number, angle: number): { x: numb
     const point = { x: f0.x + lp.x * f0.scale, y: f0.y + lp.y * f0.scale };
     const bead = { x: point.x + d.x * reach, y: point.y + d.y * reach };
     const normal = { x: -d.x, y: -d.y };
-    const root = { x: point.x - normal.x * (TRACK_WIDTH / 2 - .6), y: point.y - normal.y * (TRACK_WIDTH / 2 - .6) };
-    const tip = { x: bead.x + normal.x * 24, y: bead.y + normal.y * 24 };
+    const root = { x: point.x + normal.x * visibleStroke(width) / 2, y: point.y + normal.y * visibleStroke(width) / 2 };
+    const tip = { x: bead.x + normal.x * (BEAD_SCREEN_RADIUS - visibleStroke(width) / 2), y: bead.y + normal.y * (BEAD_SCREEN_RADIUS - visibleStroke(width) / 2) };
     return { x: f0.x, y: f0.y, scale: f0.scale, bead, root, tip, normal };
   }
   const pose = trackPose(angle);
@@ -103,8 +104,8 @@ export function frameOf(width: number, height: number, angle: number): { x: numb
   const point = { x: bead.x + pose.normal.x * reach, y: bead.y + pose.normal.y * reach };
   const x = point.x - pose.point.x * scale;
   const y = point.y - pose.point.y * scale;
-  const root = { x: point.x - pose.normal.x * (TRACK_WIDTH / 2 - .6), y: point.y - pose.normal.y * (TRACK_WIDTH / 2 - .6) };
-  const tip = { x: bead.x + pose.normal.x * 24, y: bead.y + pose.normal.y * 24 };
+  const root = { x: point.x + pose.normal.x * visibleStroke(width) / 2, y: point.y + pose.normal.y * visibleStroke(width) / 2 };
+  const tip = { x: bead.x + pose.normal.x * (BEAD_SCREEN_RADIUS - visibleStroke(width) / 2), y: bead.y + pose.normal.y * (BEAD_SCREEN_RADIUS - visibleStroke(width) / 2) };
   return { x, y, scale, bead, root, tip, normal: pose.normal };
 }
 export function armPath(tip: Point, root: Point, normal: Point) {

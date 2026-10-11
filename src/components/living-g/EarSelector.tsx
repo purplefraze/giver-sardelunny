@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { haptics } from "@/lib/haptics";
 import { EAR_GEOMETRY, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CENTRE, LOOP_RIM_RADIUS } from "./g-path";
 import { TOGGLE, rimRadius, trackRadius, type GWeight } from "./g-weight";
+import { useScreenPaint } from "./use-screen-paint";
 import { togglePath, type TrackPose } from "./toggle-path";
 
 /**
@@ -490,6 +491,8 @@ export function EarSelector({
   /** Where the ring actually is right now — text and hit area follow it. */
   const pose = poseAt(angle, weight);
   const ear: P = { x: pose.x, y: pose.y };
+  const paintRef = useRef<SVGGElement | null>(null);
+  const paint = useScreenPaint(paintRef);
   const knockId = useId().replace(/:/g, "");
 
   const angleFrom = (e: React.PointerEvent<SVGElement>) => {
@@ -561,7 +564,7 @@ export function EarSelector({
   const ring = [...seats].sort((a, b) => SEAT_ANGLE[a] - SEAT_ANGLE[b]);
 
   return (
-    <g>
+    <g ref={paintRef}>
       {/* Subtle destination hints, seated on the track itself. Never a drawn ring.
           MY G IS ONE OF THEM: at 12 o'clock it is the same small, soft, close-in
           dot as every other inactive destination — nothing about it is louder.
@@ -622,14 +625,7 @@ export function EarSelector({
         transform={`translate(${ear.x} ${ear.y}) rotate(${pose.deg})`}
         pointerEvents="none"
       >
-        <rect
-          x={STEM_FROM - TRACK_R}
-          y={-STEM_HALF}
-          width={STEM_TO - STEM_FROM}
-          height={STEM_HALF * 2}
-          rx={STEM_HALF * 0.5}
-          fill="var(--world-g)"
-        />
+        <line x1={STEM_FROM - TRACK_R} y1={0} x2={-RING_MID} y2={0} stroke="var(--world-g)" strokeWidth={paint.width} vectorEffect="non-scaling-stroke" strokeLinecap="butt" />
         {/* The ring's inside is NEGATIVE SPACE: no fill of its own. */}
         <circle
           cx={0}
@@ -637,7 +633,7 @@ export function EarSelector({
           r={RING_MID}
           fill="none"
           stroke="var(--world-g)"
-          strokeWidth={RING_W}
+          strokeWidth={paint.width} vectorEffect="non-scaling-stroke"
         />
       </g>
 
@@ -657,7 +653,7 @@ export function EarSelector({
           pointerEvents="none"
           aria-hidden="true"
           data-toggle-title=""
-          style={titleSet.style}
+          style={{...titleSet.style, fontSize: Math.max(11 / paint.scale, titleSet.size)}}
         >
           {SEAT_TITLE[mode]}
         </text>

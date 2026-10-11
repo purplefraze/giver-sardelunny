@@ -2017,6 +2017,7 @@
 .cg-map-problem { position:absolute; z-index:500; left:var(--map-safe-l,24px); right:var(--map-safe-r,24px); bottom:calc(var(--map-safe-b,88px) + 28px); background:var(--background); padding:6px; }
 [data-cg-interior-page][data-align="right"] .cg-filters { flex-direction:row; }
 [data-cg-interior-page][data-cg-view="map"] .cg-location { background:var(--background); padding:6px; }
+[data-cg-active-view="map"] .cg-heading-row { background:var(--background); border-radius:4px; }
 .cg-location { flex-shrink:0; }
 
 /* THE FORM'S OWN RECORDER — bottom centre, inside the unfolded border. */

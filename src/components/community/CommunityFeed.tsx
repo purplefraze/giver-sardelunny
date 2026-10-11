@@ -245,6 +245,7 @@ export function CommunityFeed({
       ref={root}
       data-world="communigy"
       data-cg-mode={sel}
+      data-cg-active-view={view}
       data-cg-detail-open={showDetail ? "1" : "0"}
       className="relative h-full w-full overflow-hidden"
       style={{ background: "var(--world-bg)", ["--cg-ink" as string]: ink }}

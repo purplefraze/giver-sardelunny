@@ -52,7 +52,8 @@ export function hollowBand(w: number, h: number, angle: number, start: number, h
 }
 
 export function communityBands(w: number, h: number, angle: number) {
-  const header = hollowBand(w, h, angle, COMMUNITY_TOP, COMMUNITY_HEADER_HEIGHT);
+  // Full contextual heading plus its adjacent map action at the existing 17px.
+  const header = hollowBand(w, h, angle, COMMUNITY_TOP, COMMUNITY_HEADER_HEIGHT, 214);
   const controls = hollowBand(w, h, angle, header.b + 8, COMMUNITY_CONTROLS_HEIGHT);
   const feed = hollowBounds(w, h, angle, "everything", controls.b + 8);
   return { header, controls, feed };

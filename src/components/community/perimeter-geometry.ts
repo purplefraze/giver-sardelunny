@@ -94,7 +94,9 @@ export function frameOf(width: number, height: number, angle: number): { x: numb
   }
   const pose = trackPose(angle);
   const a = angle * RAD;
-  const scale = scaleOf(angle);
+  // Uniform responsive fit opens the upper hollow on tall frames. The lens
+  // remains one bounded angle-driven function; artwork and stations do not move.
+  const scale = scaleOf(angle) + Math.max(0, height - width * 640 / 390) / 460;
   // Entire 88px local grip remains on screen; no after-the-fact bead clamping.
   const bead = { x: width / 2 + Math.sin(a) * Math.max(0, width / 2 - 54), y: height / 2 - Math.cos(a) * Math.max(0, height / 2 - 54) };
   const reach = TRACK_WIDTH / 2 + ARM_LENGTH + BEAD_RADIUS;

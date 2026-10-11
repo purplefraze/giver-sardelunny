@@ -5,7 +5,8 @@
 - [x] Category-preserving maps, neighbourhood zoom, full hollow mask and compact controls.
 - [x] Four-size main-app QA with isolated data and blocked remote writes; see docs/community-oct11-verification.md.
 - [x] Received screenshot height reference; shared high header/tools/feed bands verified in both entries at four sizes, including travel and category maps.
-- [ ] Physical iPhone Safari requires a device; unchanged curve/grip limits exact high placement on some frames, recorded in verification note.
+- [ ] 05:01 correction: replace arbitrary header width with measured individual controls and refine shared responsive lower fit; verify all headings/maps at 56px across four frames.
+- [ ] Physical iPhone Safari requires a device.
 ## Oct 10 22:28 combined regression repair
 - [x] Fixed top-left community headings and left-aligned lists across seats; preserve toggle/navigation.
 - [x] Middle seat label colours/content clearance and local fine track paint; canonical path unchanged.

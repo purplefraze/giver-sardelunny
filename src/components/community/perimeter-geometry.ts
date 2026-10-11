@@ -96,7 +96,7 @@ export function frameOf(width: number, height: number, angle: number): { x: numb
   const a = angle * RAD;
   // Uniform responsive fit opens the upper hollow on tall frames. The lens
   // remains one bounded angle-driven function; artwork and stations do not move.
-  const scale = scaleOf(angle) + Math.max(0, height - width * 640 / 390) / 460;
+  const scale = scaleOf(angle) + responsiveFit(width,height);
   // Entire 88px local grip remains on screen; no after-the-fact bead clamping.
   const bead = { x: width / 2 + Math.sin(a) * Math.max(0, width / 2 - 54), y: height / 2 - Math.cos(a) * Math.max(0, height / 2 - 54) };
   const reach = TRACK_WIDTH / 2 + ARM_LENGTH + BEAD_RADIUS;
@@ -134,3 +134,5 @@ export function inputAngle(point: Point, centre: Point, radii: Point = { x: 1, y
   return Math.atan2(x / Math.max(1, radii.x), -y / Math.max(1, radii.y)) / RAD;
 }
 export const settleDuration = (delta: number, reduced: boolean) => reduced ? 0 : Math.min(SNAP_MS, Math.max(60, Math.abs(delta) * 4));
+/** Smooth bounded viewport contribution shared by every station. */
+export const responsiveFit = (width:number,height:number) => .75 * Math.tanh(Math.max(0,height-width*640/390)/345);

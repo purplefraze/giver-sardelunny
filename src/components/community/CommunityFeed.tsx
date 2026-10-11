@@ -53,7 +53,7 @@ export function sectionChange(current: CgSelection, next: CgSelection): { sel: C
 }
 
 /** The visible heading word for a selection (always lowercase). */
-export const sectionWord = (s: CgSelection) => (s === "map" ? "map" : s === "mine" ? "my community" : s === "everything" ? "all community" : CG_WORD[s]);
+export const sectionWord = (s: CgSelection) => (s === "map" || s === "everything" ? "communi-g" : s === "mine" ? "my communi-g" : `communi-g ${CG_WORD[s]}`);
 
 export function CommunityFeed({
   initialType = null,
@@ -108,10 +108,8 @@ export function CommunityFeed({
   const listening = voice.state === "listening";
   const ink = sel === "map" ? "var(--mode-giver)" : CG_INK[sel === "mine" ? "everything" : sel];
   const location = useMyLocation();
-  /* The map exists ONLY at the lower loop's 12 o'clock seat; every other
-     seat is a list. No independent view state can carry a map elsewhere. */
-  void initialView;
-  const view: View = sel === "map" ? "map" : "list";
+  const [categoryView, setCategoryView] = useState<View>(initialView === "map" && !initialType && (initialSelection === undefined || initialSelection === "map") ? "map" : "list");
+  const view: View = sel === "map" ? "map" : categoryView;
   const [mapList, setMapList] = useState(false);
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
   const [radius, setRadius] = useState<number | null>(null);
@@ -158,6 +156,7 @@ export function CommunityFeed({
     cbs.current.onSectionChange?.(change.sel);
     selRef.current = change.sel;
     setSel(change.sel);
+    setCategoryView(change.sel === "map" ? "map" : "list");
   };
 
   useEffect(() => { const el = root.current; if (!el) return; const leave = () => (onExit ?? onClose)(); el.addEventListener("giver:community-return", leave); return () => el.removeEventListener("giver:community-return", leave); }, [onExit, onClose]);
@@ -236,7 +235,8 @@ export function CommunityFeed({
   /* Seat-dependent placement: content sits away from the inside toggle. */
   const place = seatPlacement(CG_CLOCK[sel] ?? 180);
 
-  const where = CG_FILTERS.find((f) => f.value === sel)?.word ?? "all";
+  const where = CG_FILTERS.find((f) => f.value === sel)?.word ?? "communi-g";
+  const align = sel === "wish" || sel === "borrow" || sel === "fund" ? "right" : "left";
   /* Only show a detail that is still a listing in the store. */
   const showDetail = !!detailId;
 
@@ -245,6 +245,7 @@ export function CommunityFeed({
       ref={root}
       data-world="communigy"
       data-cg-mode={sel}
+      data-cg-active-view={view}
       data-cg-detail-open={showDetail ? "1" : "0"}
       className="relative h-full w-full overflow-hidden"
       style={{ background: "var(--world-bg)", ["--cg-ink" as string]: ink }}
@@ -254,9 +255,9 @@ export function CommunityFeed({
         value={toStation(sel)}
         onChange={(st) => { if (st !== "back") go(fromStation(st)); }}
         onBack={onExit ?? onClose}
-         header={showDetail ? undefined : <p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p>}
-        backdrop={view === "map" ? <Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={openItem} /></Suspense> : undefined}
-        backdropHidden={showDetail}
+        header={showDetail ? undefined : <div className="cg-heading-row" data-align={align}><p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p><Button variant="ghost" className="cg-filter" data-cg-map-view="" onClick={() => { setCategoryView(view === "map" ? "list" : "map"); if (sel === "map") go("everything"); }}>{view === "map" ? "list" : "map"}</Button></div>}
+        backdrop={<Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={openItem} /></Suspense>}
+        backdropHidden={showDetail || view !== "map"}
         record={record}
         listening={listening}
         onHold={() => {
@@ -270,9 +271,9 @@ export function CommunityFeed({
           else voiceCapture.start();
         }}
       >
-        <div className="relative h-full w-full" ref={listBox}>
+        <div className="relative h-full w-full" ref={listBox} style={{ pointerEvents: view === "map" && !showDetail ? "none" : "auto" }}>
         {showDetail && detailId ? <div className="absolute inset-0 z-[2]"><ActivityDetail key={detailId} itemId={detailId} embedded onClose={onCloseDetail ?? onClose} onOpenConnection={onOpenConnection ?? (() => {})} onOpenProfile={onOpenProfile} onNeedGive={onNeedGive} onStartGive={onStartGive} /></div> : null}
-         <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align="left" style={{ textAlign: "left", ...(showDetail ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={showDetail || undefined} {...(showDetail ? { inert: true } : {})}>
+         <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align={align} style={{ textAlign: align, ...(showDetail ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={showDetail || undefined} {...(showDetail ? { inert: true } : {})}>
           <Button variant="ghost" type="button" className="sr-only focus:not-sr-only" onClick={() => (onExit ?? onClose)()}>back to the living g</Button>
           <div role="tablist" aria-label="community filter" className="cg-filters">
             {CG_FILTERS.map(f => <Button variant="ghost" key={f.value} ref={f.value === sel ? selectedTab : undefined} role="tab" aria-selected={f.value === sel} data-cg-filter={f.value} onClick={() => choose(f.value)} className="cg-filter">{f.word}</Button>)}
@@ -308,7 +309,7 @@ export function CommunityFeed({
                 placeholder="or type here"
                 autoCapitalize="none"
                 className="w-full border-b bg-transparent py-1 text-[15px] outline-none"
-                 style={{ textAlign: "left" }}
+                 style={{ textAlign: align }}
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
               />
@@ -317,7 +318,7 @@ export function CommunityFeed({
             </form>
           ) : null}
           {term ? (
-             <Button variant="ghost" type="button" className="g-meta mb-2 underline self-start" onClick={() => setTerm("")}>
+              <Button variant="ghost" type="button" className={`g-meta mb-2 underline ${align === "right" ? "self-end" : "self-start"}`} onClick={() => setTerm("")}>
               “{term}” · clear
             </Button>
           ) : null}
@@ -331,7 +332,7 @@ export function CommunityFeed({
                 {...(i.id === highlightId ? { "data-cg-new": "", "aria-current": "true" as const } : {})}
                 ref={i.id === highlightId ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
               >
-                 <Button variant="ghost" type="button" className="w-full" style={{ textAlign: "left", color: "var(--foreground)" }} onClick={() => openItem(i.id)} data-cg-item={i.type} data-cg-item-id={i.id}>
+                 <Button variant="ghost" type="button" className="w-full" style={{ textAlign: align, color: "var(--foreground)" }} onClick={() => openItem(i.id)} data-cg-item={i.type} data-cg-item-id={i.id}>
                   <span className="g-body block text-[15px]"><ListingLine mode={itemMode(i)} text={itemLine(i)} /></span>
                   <span className="g-meta block text-muted-foreground">
                     {sel === "mine" ? (i.type === "borrow" && i.side === "lend" ? "lend" : i.type) : (memberById(i.ownerId)?.username ?? "")}

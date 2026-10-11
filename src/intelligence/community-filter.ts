@@ -8,14 +8,13 @@ import type { CgMode } from "@/data/communigy";
 export type CgSelection = CgMode | "map" | "mine";
 
 export const CG_FILTERS: { value: CgSelection; word: string }[] = [
-  { value: "everything", word: "all" },
   { value: "give", word: "gives" },
-  { value: "wish", word: "wishes" },
-  { value: "trade", word: "trades" },
-  { value: "borrow", word: "borrows" },
   { value: "lend", word: "lends" },
+  { value: "trade", word: "trades" },
+  { value: "everything", word: "communi-g" },
   { value: "fund", word: "funds" },
-  { value: "map", word: "map" },
+  { value: "borrow", word: "borrows" },
+  { value: "wish", word: "wishes" },
 ];
 
 const RULES: [RegExp, CgSelection][] = [

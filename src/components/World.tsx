@@ -135,7 +135,6 @@ export function World({
           className={G_PRESENCE}
           /* THE MAIN G'S WEIGHT: the middle stroke, 28.5 units (g-weight.tsx). */
           weight="middle"
-          middleStroke={17}
           showLabels={teach}
           {...(contentKey === undefined ? {} : { contentKey })}
           overlay={overlay}

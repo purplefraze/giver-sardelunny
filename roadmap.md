@@ -1,4 +1,10 @@
 # Communi-G track repair
+## October 11 active preview corrections
+- [x] Uniform full-G paint and joins without camera/path changes.
+- [x] Shared curved safe bounds, side alignment, higher trade/overview, single-line titles and category controls.
+- [x] Category-preserving maps, neighbourhood zoom, full hollow mask and compact controls.
+- [x] Four-size main-app QA with isolated data and blocked remote writes; see docs/community-oct11-verification.md.
+- [ ] Physical iPhone Safari and pending exact vertical reference; October 11 rules supersede October 10 fixed-left/middle-only notes below.
 ## Oct 10 22:28 combined regression repair
 - [x] Fixed top-left community headings and left-aligned lists across seats; preserve toggle/navigation.
 - [x] Middle seat label colours/content clearance and local fine track paint; canonical path unchanged.

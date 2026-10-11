@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { VoiceEnclosure } from "@/components/living-g/GEnclosure";
 import { GStage } from "@/components/living-g/GStage";
-import { GThinMask } from "@/components/living-g/g-weight";
+import { FULL_G_PAINT_STROKE, GThinMask } from "@/components/living-g/g-weight";
 import { MiddleLoopClose } from "@/components/living-g/loop-close";
 import {
   LIVING_G_PATH,
@@ -803,12 +803,12 @@ function Index() {
           <GStage>
             <svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible">
               <defs>
-                <GThinMask id="g-wake-thin" weight="middle" />
+                <GThinMask id="g-wake-thin" weight="middle" paintWidth={FULL_G_PAINT_STROKE} />
               </defs>
               <g transform={LIVING_G_TRANSFORM} fill="var(--giver-ink)">
                 <path d={LIVING_G_PATH} mask="url(#g-wake-thin)" />
               </g>
-              <MiddleLoopClose weight="middle" fill="var(--giver-ink)" />
+              <MiddleLoopClose weight="middle" strokeWidth={FULL_G_PAINT_STROKE} fill="var(--giver-ink)" />
             </svg>
           </GStage>
         </div>

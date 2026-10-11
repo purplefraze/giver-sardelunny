@@ -5,11 +5,12 @@ import { EAR_GEOMETRY, LIVING_G_BOX, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CEN
  *
  * The canonical path (g-path.ts) is a filled outline whose stroke is baked in:
  * the middle loop measures 53.5 units (inner 143, outer 196.5). The MIDDLE
- * weight is 28.5 units. It is drawn by ERODING the same outline evenly on both
+ * camera measurement weight is 28.5 units; full-G paint uses 17 units uniformly.
+ * It is drawn by ERODING the same outline evenly on both
  * sides: a luminance mask of the path, filled white and stroked black
  * (round joins) at twice the per-side reduction. The path data never changes;
- * every contour (outer edge and every loop's inner edge) moves in by the same
- * 12.5 units, so the loops' centre lines, the S-curve and the G's scale stay
+ * every contour (outer edge and every loop's inner edge) moves in equally,
+ * so the loops' centre lines, the S-curve and the G's scale stay
  * exactly where they were.
  *
  *   per side   (53.5 − 28.5) / 2 = 12.5 units
@@ -18,6 +19,8 @@ import { EAR_GEOMETRY, LIVING_G_BOX, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CEN
 export type GWeight = "normal" | "middle";
 
 export const G_STROKE = { normal: 53.5, middle: 28.5 } as const;
+/** Paint only: keep established orbit/camera measurements unchanged. */
+export const FULL_G_PAINT_STROKE = 17;
 
 /** How far each edge of the stroke moves in at a weight (units). */
 export const strokeInset = (weight: GWeight = "normal") =>
@@ -72,15 +75,11 @@ export const gBottom = (weight: GWeight = "normal") => LIVING_G_BOX.height - str
  * the same space (inside a LIVING_G_TRANSFORM group), or pass `transformed`
  * to draw it in viewBox space.
  */
-export function GThinMask({ id, weight, transformed = false, middleWidth }: { id: string; weight: GWeight; transformed?: boolean; middleWidth?: number | undefined }) {
-  const w = strokeInset(weight) * 2 * 10;
+export function GThinMask({ id, weight, transformed = false, paintWidth }: { id: string; weight: GWeight; transformed?: boolean; paintWidth?: number | undefined }) {
+  const w = (G_STROKE.normal - (paintWidth ?? G_STROKE[weight])) * 10;
   const path = (
     <>
       <path d={LIVING_G_PATH} fill="#fff" stroke="#000" strokeWidth={w} strokeLinejoin="round" />
-      {middleWidth !== undefined ? <>
-        <defs><clipPath id={`${id}-middle-band`}><circle cx={LOOP_CENTRE.middle.x * 10} cy={(1133 - LOOP_CENTRE.middle.y) * 10} r={2050} /></clipPath></defs>
-        <path d={LIVING_G_PATH} fill="none" stroke="#000" strokeWidth={(G_STROKE.normal - middleWidth) * 10} strokeLinejoin="round" clipPath={`url(#${id}-middle-band)`} />
-      </> : null}
     </>
   );
   return transformed ? (

@@ -15,12 +15,14 @@ export function hollowBounds(w: number, h: number, angle: number, seat: CgStatio
   });
   const inset = TRACK_WIDTH / 2 + 14;
   const atY = (y: number) => {
-    const xs: number[] = [];
+    const xs: { x: number; clearance: number }[] = [];
     for (let i = 1; i < points.length; i++) {
       const p = points[i - 1], q = points[i];
-      if (p && q && (p.y > y) !== (q.y > y)) xs.push(p.x + (q.x - p.x) * (y - p.y) / (q.y - p.y));
+      if (p && q && (p.y > y) !== (q.y > y)) xs.push({ x: p.x + (q.x - p.x) * (y - p.y) / (q.y - p.y), clearance: inset * Math.hypot(q.x-p.x,q.y-p.y) / Math.abs(q.y-p.y) });
     }
-    return xs.length >= 2 ? { l: Math.max(18, Math.min(...xs) + inset), r: Math.min(w - 18, Math.max(...xs) - inset) } : { l: w / 2, r: w / 2 };
+    xs.sort((a,b) => a.x-b.x);
+    const left = xs[0], right = xs[xs.length-1];
+    return xs.length >= 2 && left && right ? { l: Math.max(18, left.x + left.clearance), r: Math.min(w - 18, right.x - right.clearance) } : { l: w / 2, r: w / 2 };
   };
   let t = seat === "trade" || seat === "everything" ? 56 : 96;
   let b = h - 88;

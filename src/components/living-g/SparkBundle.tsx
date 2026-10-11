@@ -87,9 +87,9 @@ export function SparkBundle({
             fill="var(--world-bg)"
             style={{
               fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: r * (count >= 100 ? 0.62 : 0.8),
-              letterSpacing: "-0.04em",
+              letterSpacing: 0,
             }}
           >
             {count}

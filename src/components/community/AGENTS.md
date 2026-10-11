@@ -2,3 +2,4 @@
 - ListingLine renders explicit schema-derived prefixes with neutral descriptions in feed/map results; this keeps Fund and lending unambiguous without colouring entire titles.
 - Category maps retain one feed/filter selection and mounted pan/zoom; neighbourhood zoom never changes radius. Close the full measured hollow mask, not the open wire, to avoid a diagonal chord.
 - Measure actual contextual text and map/list hit target separately in the shared high band; allocate either together or beside the grip, with full curve/arm clearance. Tools/feed follow independently so empty rectangles cannot drive headings down.
+- Each collection row and tools band measures its current screen position against hollowBand, including scroll/travel, so safe space is local rather than one whole-list rectangle.

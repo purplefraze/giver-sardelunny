@@ -76,7 +76,7 @@ export const gBottom = (weight: GWeight = "normal") => LIVING_G_BOX.height - str
  * to draw it in viewBox space.
  */
 export function GThinMask({ id, weight, transformed = false, paintWidth }: { id: string; weight: GWeight; transformed?: boolean; paintWidth?: number | undefined }) {
-  const w = (G_STROKE.normal - (paintWidth ?? G_STROKE[weight])) * 10;
+  const w = Math.max(0, (G_STROKE.normal - (paintWidth ?? G_STROKE[weight])) * 10);
   const path = (
     <>
       <path d={LIVING_G_PATH} fill="#fff" stroke="#000" strokeWidth={w} strokeLinejoin="round" />

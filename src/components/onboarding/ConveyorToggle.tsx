@@ -7,6 +7,7 @@ import {
   type Seat,
 } from "@/components/living-g/EarSelector";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM } from "@/components/living-g/g-path";
+import { useScreenPaint } from "@/components/living-g/use-screen-paint";
 import { togglePath } from "@/components/living-g/toggle-path";
 import { haptics } from "@/lib/haptics";
 import {
@@ -104,6 +105,8 @@ export function ConveyorToggle({
   /** Drawn above the knock-out and below the piece (the ring). */
   under?: ReactNode;
 }) {
+  const paintRef = useRef<SVGGElement | null>(null);
+  const paint = useScreenPaint(paintRef);
   const g = toggleGeometry("middle");
   const C = g.centre;
   const id = useId().replace(/:/g, "");
@@ -237,7 +240,7 @@ export function ConveyorToggle({
 
   const { ring: ring0, deg: out0 } = place(start0);
   return (
-    <g>
+    <g ref={paintRef}>
       <defs>
         <clipPath id={`${id}-g`} clipPathUnits="userSpaceOnUse">
           <path d={LIVING_G_PATH} transform={LIVING_G_TRANSFORM} />
@@ -257,15 +260,7 @@ export function ConveyorToggle({
       />
       {under}
       <g ref={piece} transform={`translate(${ring0.x} ${ring0.y}) rotate(${out0})`}>
-        <rect
-          x={g.STEM_FROM - g.TRACK_R}
-          y={-g.STEM_HALF}
-          width={g.STEM_TO - g.STEM_FROM}
-          height={g.STEM_HALF * 2}
-          rx={g.STEM_HALF * 0.5}
-          fill="var(--world-g)"
-          pointerEvents="none"
-        />
+        <line x1={g.STEM_FROM - g.TRACK_R} y1={0} x2={-g.RING_MID} y2={0} stroke="var(--world-g)" strokeWidth={paint.width} vectorEffect="non-scaling-stroke" strokeLinecap="butt" pointerEvents="none" />
         {/* THE HOLE: opaque paper, so the feed never shows through the ring.
             Out to the stroke's inner edge (+ HOLE_TUCK, hidden under it). */}
         <circle
@@ -283,7 +278,7 @@ export function ConveyorToggle({
           r={g.RING_MID}
           fill="none"
           stroke="var(--world-g)"
-          strokeWidth={g.RING_W}
+          strokeWidth={paint.width} vectorEffect="non-scaling-stroke"
           pointerEvents="none"
         />
         {/* Invisible grip, travelling with the ring. */}
@@ -349,7 +344,7 @@ export function ConveyorToggle({
         pointerEvents="none"
         aria-hidden="true"
         data-toggle-title=""
-        style={T.style}
+        style={{...T.style,fontSize: Math.max(11 / paint.scale, T.size)}}
       >
         {SEAT_TITLE[start]}
       </text>

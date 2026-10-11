@@ -5,6 +5,14 @@
 This document preserves historical approved decisions. The October 10 16:50 lower-loop section below supersedes conflicting lower-loop entries; full-G and upper-profile geometry are unchanged.
 
 ## Current lower-loop authority — October 10, 16:50 UTC
+### Authorised October 11 reconciliation (supersedes conflicts below)
+- My G: selected lowercase name inside moving bead; no exterior seat labels and no profile recorder. Eight authentic-ring positions and unlabelled markers retain shared drag/settling, keyboard naming, pinch and my g exit. External profile-area requests remain supported.
+- Shared visible screen paint is 8/9/10px at 320/390/430 app widths, interpolated independently of camera/orbit geometry. Canonical filled masks compensate actual SVG projection; line/ring paint uses non-scaling strokes.
+- Intended Helvetica Neue with existing fallback; active 400/500/700 weights, zero tracking, minimum 12px outside beads and 11px inside. No new font assets were acquired.
+- Lower physical order: gives → lends → trades → communi-g → funds → borrows → wishes. Entry remains lower-12 all-types map, with bounded open wire and outside S back route. No category remap.
+- All contextual headings and map/list actions use measured controls at the shared 56px target. Wish/borrow/fund right align, trade/lend left align. Rows and tools measure their own curved safe bands, including scroll/travel; maps retain context and closed hollow clipping.
+- Bio remains username/about me/private birthday; removed obsolete fields stay removed. Posting's deliberate Record/Stop, editable draft and explicit Share remain unchanged.
+
 - Entry from middle communi-g opens lower blue map at 12:00, with all types and genuine coordinates; list alternative remains. Own posts stay in My G activity.
 - Open lower track excludes 12→1:30. Bounded counterclockwise travel: map → wish → borrow → fund → all (6) → trade (4:30) → lend → give. Reversal is allowed; no wrap or shortest-path jump across the gap.
 - Existing authoritative seat tokens colour ring, arm and upright seat label together. Track stays red. Listing descriptions are neutral; only explicit category-colon prefixes are coloured.

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { crossings, frameOf, inputAngle, scaleOf, responsiveFit, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "../src/components/community/perimeter-geometry";
+import { visibleStroke } from "../src/components/living-g/screen-paint";
 
 /* Positive progress now rides the S connector past twelve; the lower wire's
    periodic ellipse is exercised on its own (non-positive) domain. */
@@ -69,7 +70,7 @@ describe("Communi-G single-angle geometry", () => {
     for (let angle = 0; angle < 360; angle += 3) {
       const pose = trackPose(angle), frame = frameOf(390, 844, lower(angle));
       const painted = { x: pose.point.x * frame.scale + frame.x, y: pose.point.y * frame.scale + frame.y };
-      expect(Math.hypot(frame.root.x - painted.x, frame.root.y - painted.y)).toBeCloseTo(7.9, 6);
+      expect(Math.hypot(frame.root.x - painted.x, frame.root.y - painted.y)).toBeCloseTo(visibleStroke(390) / 2, 6);
       expect(Math.hypot(pose.normal.x, pose.normal.y)).toBeCloseTo(1, 8);
       const next = frameOf(390, 844, lower(angle + .01));
       expect(Math.hypot(next.x - frame.x, next.y - frame.y)).toBeLessThan(1);

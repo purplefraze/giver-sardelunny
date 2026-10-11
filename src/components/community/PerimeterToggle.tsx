@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type Poin
 import { LOWER_STATIONS, clampLower, lowerAngle, lowerToken, lowerWord, nearestLower, type CgStation } from "./lower-stations";
 export type { CgStation } from "./lower-stations";
 import { Button } from "@/components/ui/button";
-import { HOLLOW_PATH, hollowBounds, communityBands } from "./hollow-layout";
+import { HOLLOW_PATH, hollowBounds, hollowBand, communityBands } from "./hollow-layout";
+import { visibleStroke, BEAD_SCREEN_RADIUS } from "../living-g/screen-paint";
 import { haptics } from "@/lib/haptics";
 import { ARM_LENGTH, SNAP_MS, TRACK_PATH, TRACK_WIDTH, sPath, crossings, easeOut, frameOf, inputAngle, settleDuration, signedTurn, wrap, type Point } from "./perimeter-geometry";
 
@@ -27,6 +28,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   const stage = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 390, h: 844 });
   const [headerSize,setHeaderSize]=useState({title:130,action:32,right:false});
+  const [toolsHeight,setToolsHeight]=useState(0);
   useLayoutEffect(()=>{
     const title=stage.current?.querySelector<HTMLElement>(".cg-head-cat");
     const action=stage.current?.querySelector<HTMLElement>("[data-cg-map-view]");
@@ -134,8 +136,31 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   const safe = hollowBounds(size.w, size.h, angle, shown);
   const bands = communityBands(size.w, size.h, angle, headerSize);
   const upper = bands.header;
-  const feed = controls ? bands.feed : safe;
+  const feed = controls ? { ...bands.feed, t: Math.max(bands.feed.t,bands.controls.t+toolsHeight+8) } : safe;
   const inner = header ? { l: feed.l, r: size.w - feed.r, t: feed.t, b: size.h - feed.b } : flowed ? box0 : beadClear(size, restBead, box0);
+  // Measure each row independently; scrolling changes its actual curve clearance.
+  useLayoutEffect(() => {
+    const root = stage.current;
+    if (!root || !header) return;
+    const update = () => {
+      const rect = root.getBoundingClientRect();
+      root.querySelectorAll<HTMLElement>(".cg-list > li, [data-cg-safe-band]").forEach(row => {
+        const box = row.getBoundingClientRect();
+        const bounds = hollowBand(size.w,size.h,angle,box.top-rect.top,box.height,0);
+        const parent = row.parentElement?.getBoundingClientRect();
+        if (!parent) return;
+        row.style.marginLeft = `${Math.max(0,bounds.l-(parent.left-rect.left))}px`;
+        row.style.marginRight = `${Math.max(0,(parent.right-rect.left)-bounds.r)}px`;
+        row.dataset["safeL"] = String(bounds.l); row.dataset["safeR"] = String(bounds.r);
+      });
+      const tools=root.querySelector<HTMLElement>("[data-cg-upper-tools]");
+      if(tools)setToolsHeight(tools.getBoundingClientRect().height);
+    };
+    update(); root.addEventListener("scroll",update,true);
+    const observer = new ResizeObserver(update); observer.observe(root);
+    root.querySelectorAll(".cg-list > li, [data-cg-safe-band]").forEach(row=>observer.observe(row));
+    return () => { root.removeEventListener("scroll",update,true); observer.disconnect(); };
+  },[angle,size.w,size.h,header,children]);
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     {backdrop ? <>
       <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={HOLLOW_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
@@ -143,14 +168,14 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
     </> : null}
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">
-        <path d={TRACK_PATH} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-track="" />
-        {angle > 0 ? <path opacity={Math.min(1, angle / 8)} d={sPath(size.w, size.h)} fill="none" stroke="var(--mode-communigy)" strokeWidth={TRACK_WIDTH} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-s-connector="" /> : null}
+        <path d={TRACK_PATH} fill="none" stroke="var(--mode-communigy)" strokeWidth={visibleStroke(size.w)} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-track="" />
+        {angle > 0 ? <path opacity={Math.min(1, angle / 8)} d={sPath(size.w, size.h)} fill="none" stroke="var(--mode-communigy)" strokeWidth={visibleStroke(size.w)} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" data-cg-s-connector="" /> : null}
       </g>
-      <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={10} strokeLinecap="round" data-cg-stem-arm="" />
+      <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={visibleStroke(size.w)} strokeLinecap="butt" data-cg-stem-arm="" />
     </svg>
      {header ? <div className="pointer-events-none absolute z-[6]" style={{ left: 0, right: 0, top: upper.t, height: upper.b-upper.t, ["--cg-title-l" as string]:`${bands.title.l}px`, ["--cg-title-w" as string]:`${bands.title.r-bands.title.l}px`, ["--cg-action-l" as string]:`${bands.action.l}px`, ["--cg-action-w" as string]:`${bands.action.r-bands.action.l}px` }} data-cg-header="">{header}</div> : null}
-     {controls ? <div className="absolute z-[6]" style={{ left: bands.controls.l, right: size.w-bands.controls.r, top: bands.controls.t, height: bands.controls.b-bands.controls.t }} data-cg-controls="">{controls}</div> : null}
-    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left: inner.l, right: inner.r, top: inner.t, bottom: inner.b, ...(flowed ? { ["--bead-top" as string]: `${flowed.top}px`, ["--bead-w" as string]: `${flowed.w}px`, ["--bead-h" as string]: `${flowed.h}px` } : {}) }} data-cg-interior="" data-cg-bead-flow={flowed ? flowed.side : undefined}><div className="h-full w-full" style={{ pointerEvents: backdrop && !backdropHidden && !flow ? "none" : "auto" }}>{children}</div></div> : null}
+     {controls ? <div className="absolute z-[6]" style={{ left: 0, right: 0, top: bands.controls.t, height: bands.controls.b-bands.controls.t }} data-cg-controls="">{controls}</div> : null}
+    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left: header ? 0 : inner.l, right: header ? 0 : inner.r, top: inner.t, bottom: inner.b, ...(flowed ? { ["--bead-top" as string]: `${flowed.top}px`, ["--bead-w" as string]: `${flowed.w}px`, ["--bead-h" as string]: `${flowed.h}px` } : {}) }} data-cg-interior="" data-cg-bead-flow={flowed ? flowed.side : undefined}><div className="h-full w-full" style={{ pointerEvents: backdrop && !backdropHidden && !flow ? "none" : "auto" }}>{children}</div></div> : null}
     <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={shown === "back" ? "back — tap to return to the living g" : record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={clockOf("back")} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;
@@ -189,10 +214,10 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
         else if (e.key === "Escape") { e.preventDefault(); stage.current?.dispatchEvent(new CustomEvent("giver:community-return", { bubbles:true })); }
         else if (e.key === "r" || e.key === "R") { e.preventDefault(); callbacks.current.onHold?.(); }
       }}>
-      <svg width={64} height={64} viewBox="-32 -32 64 64" aria-hidden="true" data-cg-bead-shape="circle-arm">
-        <circle r={24.5} fill="var(--world-bg)" />
-        <circle r={28.4} fill="none" stroke={colour} style={{ stroke: colour }} strokeWidth={7.2} data-cg-ring="" />
-        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} data-cg-seat-label="" style={{ fontFamily: "var(--giver-font)", fontSize: word.length > 5 ? 9.5 : 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
+      <svg width={88} height={88} viewBox="-44 -44 88 88" aria-hidden="true" data-cg-bead-shape="circle-arm">
+        <circle r={BEAD_SCREEN_RADIUS} fill="var(--world-bg)" />
+        <circle r={BEAD_SCREEN_RADIUS} fill="none" stroke={colour} style={{ stroke: colour }} strokeWidth={visibleStroke(size.w)} data-cg-ring="" />
+        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} data-cg-seat-label="" style={{ fontFamily: "var(--giver-font)", fontSize: 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
       </svg>
     </Button>
   </div>;

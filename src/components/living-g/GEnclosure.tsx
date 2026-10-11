@@ -6,6 +6,7 @@ import { type OutlinePose } from "./form-outline";
 import { formKeyboardBounds } from "@/lib/form-keyboard";
 import { formCamera } from "@/lib/form-camera";
 import { GThinMask, G_STROKE } from "./g-weight";
+import { visibleStroke, paintInUnits } from "./screen-paint";
 import { MiddleLoopClose } from "./loop-close";
 
 /**
@@ -249,7 +250,7 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
   return <div ref={frame} tabIndex={-1} className="gv-frame gv-morph-frame outline-none" data-seat={seat} data-world={seat} data-voice-frame="" data-unfold-ready={ready?"1":"0"} data-fold={(1-t).toFixed(3)}>
     {geometry ? <svg className="gv-outline" width={geometry.width} height={geometry.height} viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true" data-g-unpretzel="">
       <defs>
-        <GThinMask id="form-canonical-thin" weight="middle" />
+        <GThinMask id="form-canonical-thin" weight="middle" paintWidth={paintInUnits(geometry.width,camera?.scale ?? 1)} />
         <mask id="form-canonical-earcut" maskUnits="userSpaceOnUse" x="-400" y="-400" width="1600" height="2000">
           <rect x="-400" y="-400" width="1600" height="2000" fill="var(--spatial-mask-on)" />
           <path d={wedgePath(LOOP_CENTRE.middle,EAR_CUT.a0,EAR_CUT.a1,EAR_CUT.r0,EAR_CUT.r1)} fill="var(--spatial-mask-off)" />
@@ -257,8 +258,8 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
       </defs>
       {camera?<g transform={`translate(${camera.x} ${camera.y}) scale(${camera.scale})`} data-form-camera="">
         <g mask="url(#form-canonical-earcut)"><g transform={LIVING_G_TRANSFORM} fill="var(--world-g)"><path d={LIVING_G_PATH} mask="url(#form-canonical-thin)" data-form-canonical="" /></g></g>
-        <path d={arcPath(LOOP_CENTRE.middle,RIM_PATCH.a0,RIM_PATCH.a1,RIM_PATCH.rMid)} fill="none" stroke="var(--world-g)" strokeWidth={G_STROKE.middle} />
-        <MiddleLoopClose weight="middle" />
+        <path d={arcPath(LOOP_CENTRE.middle,RIM_PATCH.a0,RIM_PATCH.a1,RIM_PATCH.rMid)} fill="none" stroke="var(--world-g)" strokeWidth={visibleStroke(geometry.width)} vectorEffect="non-scaling-stroke" />
+        <MiddleLoopClose weight="middle" strokeWidth={visibleStroke(geometry.width)} />
       </g>:null}
     </svg> : null}
     <div className="gv-review-content" inert={!ready}>{children}</div>

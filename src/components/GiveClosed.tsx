@@ -1,5 +1,6 @@
 import { BackArrow } from "@/components/BackArrow";
 import { GStage } from "@/components/living-g/GStage";
+import { CanonicalPaint } from "@/components/living-g/CanonicalPaint";
 import { CAMERA, anchorOrigin } from "@/components/living-g/g-depth";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX } from "@/components/living-g/g-path";
 import { GThinMask } from "@/components/living-g/g-weight";
@@ -55,18 +56,7 @@ function GiveArcs() {
       }}
     >
       <GStage>
-        <svg
-          viewBox={LIVING_G_VIEWBOX}
-          className="pointer-events-none h-full w-full overflow-visible"
-        >
-          <defs>
-            <GThinMask id="gc-arcs-thin" weight="middle" />
-          </defs>
-          <g transform={LIVING_G_TRANSFORM} fill={GREEN}>
-            <path d={LIVING_G_PATH} mask="url(#gc-arcs-thin)" />
-          </g>
-          <MiddleLoopClose weight="middle" fill={GREEN} />
-        </svg>
+        <CanonicalPaint colour="var(--mode-give)" />
       </GStage>
     </div>
   );

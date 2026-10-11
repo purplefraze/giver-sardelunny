@@ -18,6 +18,7 @@ import {
 } from "@/components/onboarding/use-otp-sign-in";
 import { useSignInCanvas } from "@/components/onboarding/use-keyboard-fit";
 import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
+import { useScreenPaint } from "@/components/living-g/use-screen-paint";
 import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
 
 /**
@@ -152,6 +153,8 @@ function SignInRing() {
   );
 }
 function SignInRingStroke() {
+  const ref = useRef<SVGCircleElement | null>(null);
+  const paint = useScreenPaint(ref);
   return (
     <circle
       cx={RING_C.x}
@@ -159,8 +162,10 @@ function SignInRingStroke() {
       r={RING_OUTER - RING_STROKE / 2}
       fill="var(--world-bg)"
       stroke="var(--world-g)"
-      strokeWidth={RING_STROKE}
+      strokeWidth={paint.width}
       pointerEvents="none"
+      ref={ref}
+      vectorEffect="non-scaling-stroke"
       data-signin-ring=""
     />
   );

@@ -98,7 +98,7 @@ export function frameOf(width: number, height: number, angle: number): { x: numb
   // remains one bounded angle-driven function; artwork and stations do not move.
   const scale = scaleOf(angle) + responsiveFit(width,height);
   // Entire 88px local grip remains on screen; no after-the-fact bead clamping.
-  const bead = { x: width / 2 + Math.sin(a) * Math.max(0, width / 2 - 54), y: height / 2 - Math.cos(a) * Math.max(0, height / 2 - 54) };
+  const bead = { x: width / 2 + Math.sin(a) * Math.max(0, width / 2 - 54), y: height / 2 - Math.cos(a) * Math.max(0, height / 2 - 54) + 48 * Math.max(0,(390-width)/70) * Math.sin(a)**2 * Math.cos(a) };
   const reach = TRACK_WIDTH / 2 + ARM_LENGTH + BEAD_RADIUS;
   const point = { x: bead.x + pose.normal.x * reach, y: bead.y + pose.normal.y * reach };
   const x = point.x - pose.point.x * scale;

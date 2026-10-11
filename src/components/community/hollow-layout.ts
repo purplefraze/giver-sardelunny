@@ -22,8 +22,11 @@ export function hollowBounds(w: number, h: number, angle: number, seat: CgStatio
     }
     return xs.length >= 2 ? { l: Math.max(18, Math.min(...xs) + inset), r: Math.min(w - 18, Math.max(...xs) - inset) } : { l: w / 2, r: w / 2 };
   };
-  const t = seat === "trade" || seat === "everything" ? 56 : 96;
-  const b = h - 88;
+  let t = seat === "trade" || seat === "everything" ? 56 : 96;
+  let b = h - 88;
+  const minimum = Math.min(w - 36, 250);
+  while (t < b && atY(t).r - atY(t).l < minimum) t += 4;
+  while (b > t && atY(b).r - atY(b).l < minimum) b -= 4;
   let l = 18, r = w - 18;
   for (let y = t; y <= b; y += 4) { const edges = atY(y); l = Math.max(l, edges.l); r = Math.min(r, edges.r); }
   // Exclude the whole grip and connecting arm, not only their paint layer.

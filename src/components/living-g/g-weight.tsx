@@ -5,11 +5,12 @@ import { EAR_GEOMETRY, LIVING_G_BOX, LIVING_G_PATH, LIVING_G_TRANSFORM, LOOP_CEN
  *
  * The canonical path (g-path.ts) is a filled outline whose stroke is baked in:
  * the middle loop measures 53.5 units (inner 143, outer 196.5). The MIDDLE
- * weight is 28.5 units. It is drawn by ERODING the same outline evenly on both
+ * camera measurement weight is 28.5 units; full-G paint uses 17 units uniformly.
+ * It is drawn by ERODING the same outline evenly on both
  * sides: a luminance mask of the path, filled white and stroked black
  * (round joins) at twice the per-side reduction. The path data never changes;
- * every contour (outer edge and every loop's inner edge) moves in by the same
- * 12.5 units, so the loops' centre lines, the S-curve and the G's scale stay
+ * every contour (outer edge and every loop's inner edge) moves in equally,
+ * so the loops' centre lines, the S-curve and the G's scale stay
  * exactly where they were.
  *
  *   per side   (53.5 − 28.5) / 2 = 12.5 units

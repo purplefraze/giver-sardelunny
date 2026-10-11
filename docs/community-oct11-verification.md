@@ -14,7 +14,7 @@ Supersedes the fixed-left community band and middle-only paint instructions in O
 - All seven categories: heading, right/left alignment, title nowrap, no page overflow, no header/interior intersection with the toggle. Map/list toggles retain category and sort. Trade pin opens its detail and returns to the same map.
 - Continuous lower-angle pure checks cover usable bounds, toggle exclusion and at least 18px sampled wire-centre clearance, preserving the physical lower route.
 - Browser runs produced zero page runtime errors. Deliberately blocked remote profile reads are not live-cloud verification; existing floating-point track hydration warnings are not treated as verified fixes.
-- Local tests and automatic build result are recorded in the task report; no manual build or cloud writes.
+- Final local suite: 653 tests passed, zero failed. Automatic harness build reported `build OK`; no manual build or cloud writes.
 
 ## Limits
 Physical iPhone Safari/touch and live signed-in persistence are not verified. Exact overview/trade vertical refinement awaits the user's reference image; current placement prioritizes curved-wire clearance. Draft, voice, profile and email source were not changed by this repair.

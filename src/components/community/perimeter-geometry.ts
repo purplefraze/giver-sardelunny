@@ -61,7 +61,8 @@ export function sCurve(width: number, height: number) {
   const p3 = { x: (endScreen.x - f0.x) / f0.scale, y: (endScreen.y - f0.y) / f0.scale };
   const t0 = { x: p0.tangent.x / Math.hypot(p0.tangent.x, p0.tangent.y), y: p0.tangent.y / Math.hypot(p0.tangent.x, p0.tangent.y) };
   const span = Math.hypot(p3.x - p0.point.x, p3.y - p0.point.y);
-  const p1 = { x: p0.point.x + t0.x * span * 0.55, y: p0.point.y + t0.y * span * 0.55 };
+  const handle = Math.min(span*.55, Math.max(0,(p3.x-p0.point.x)/t0.x)*.6);
+  const p1 = { x: p0.point.x + t0.x * handle, y: p0.point.y + t0.y * handle };
   const p2 = { x: p3.x, y: p3.y - span * 0.55 };
   return { p0: p0.point, p1, p2, p3, f0 };
 }

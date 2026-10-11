@@ -2185,7 +2185,8 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
   .gv-form[data-dense="1"] .gv-title { line-height:1; }
   .gv-form[data-dense="1"] button:not(.gv-rec) { min-height:32px; height:auto; padding-block:3px; font-size:12px; }
   .gv-form[data-dense="1"] .gv-share { padding-inline:12px; }
-  .gv-form[data-dense="1"] .gv-actions { margin-block:2px; }
+  .gv-form[data-dense="1"] .gv-actions { margin-block:2px; gap:2px 4px; }
+  .gv-form[data-dense="1"] .gv-actions > button:last-child:not(.gv-tap) { max-width:66px; padding-inline:0; white-space:normal; line-height:1.1; }
   .gv-form[data-dense="1"] .gv-rec-dock { min-height:64px; padding:4px 0; }
 }
 .gv-field textarea { min-height:0; }

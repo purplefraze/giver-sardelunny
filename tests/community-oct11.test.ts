@@ -19,6 +19,20 @@ test("all sections use one app-frame reference independent of lower list bounds"
   }
   expect(communityBands(390,640,0).header.t).toBe(102);
 });
+test("independent upper bands clear the wire and full grip throughout lower travel", () => {
+  for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315;angle<=30;angle+=6) {
+    const {header,controls,feed}=communityBands(w,h,angle),f=frameOf(w,h,angle);
+    const exclusion={l:Math.min(f.bead.x-48,f.root.x-14),r:Math.max(f.bead.x+48,f.root.x+14),t:Math.min(f.bead.y-48,f.root.y-14),b:Math.max(f.bead.y+48,f.root.y+14)};
+    for(const band of [header,controls,feed]) {
+      expect(band.r>exclusion.l&&band.l<exclusion.r&&band.b>exclusion.t&&band.t<exclusion.b).toBe(false);
+      for(const x of [band.l,band.r])for(const y of [band.t,band.b]) {
+        let clearance=Infinity;
+        for(let d=0;d<360;d+=2){const p=trackPose(d).point;clearance=Math.min(clearance,Math.hypot(x-p.x*f.scale-f.x,y-p.y*f.scale-f.y));}
+        expect(clearance).toBeGreaterThan(18);
+      }
+    }
+  }
+});
 test("travel bounds clear curved wire and attached toggle", () => {
   for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315; angle<=30; angle+=3) {
     const b=hollowBounds(w,h,angle,nearestLower(angle)), f=frameOf(w,h,angle);

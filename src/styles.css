@@ -1991,7 +1991,7 @@
 [data-cg-description] { color:var(--foreground); }
 /* WHOLE-LOOP MAP: fills the stage, clipped to the lower hollow. */
 [data-cg-backdrop] .cg-map-wrap { position:absolute; inset:0; margin:0; border-radius:0; min-height:0; }
-.cg-map-attribution { position:absolute; right:var(--map-safe-r,24px); bottom:var(--map-safe-b,88px); z-index:500; font:400 11px var(--giver-font); color:var(--foreground); background:var(--background); padding:3px 6px; border-radius:4px; opacity:.9; }
+.cg-map-attribution { position:absolute; right:var(--map-safe-r,24px); bottom:var(--map-safe-b,88px); z-index:500; font:400 12px var(--giver-font); color:var(--foreground); background:var(--background); padding:3px 6px; border-radius:4px; opacity:.9; }
 /* Over the map, the page lets the map pan; only its controls take touches. */
 [data-cg-interior] > div:has(> [data-cg-view="map"]) { pointer-events:none; }
 [data-cg-interior-page][data-cg-view="map"] { pointer-events:none; }
@@ -2168,9 +2168,27 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 [data-cg-bead-flow="left"] .cg-detail .cg-flow-a, [data-cg-bead-flow="left"] .cg-detail .cg-flow-b { float:left; }
 [data-cg-bead-flow="right"] .cg-detail .cg-flow-a, [data-cg-bead-flow="right"] .cg-detail .cg-flow-b { float:right; }
 [data-cg-bead-flow] .cg-detail .cg-flow-b { clear:both; }
-/* Last resort only: if even the dense review cannot fit, it scrolls inside its
-   own area rather than ever sliding under the record button. */
-.gv-form[data-overflow="1"] .gv-scroll { overflow-y:auto; }
+/* Dense review reflows without hiding Share behind a second scroll area. */
+.gv-frame { container-type:size; }
+.gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="100"]) { grid-column:auto; grid-template-columns:minmax(0,1fr); }
+@container (height < 700px) {
+  .gv-review-content { inset:90px 24px 36px; }
+  .gv-form[data-dense="1"] .gv-sheet { padding:0; gap:0; }
+  .gv-frame .gv-form[data-dense="1"] .gv-field { padding-block:1px; }
+  .gv-form[data-dense="1"] .gv-field-wide:has(textarea):not(:has(textarea[maxlength="100"])) { grid-column:auto; grid-template-columns:minmax(0,1fr); gap:0; }
+  .gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="60"]):first-child { grid-column:1 / -1; grid-template-columns:76px minmax(0,1fr); }
+  .gv-form[data-dense="1"] .gv-collection p { margin:0; line-height:1.2; }
+  .gv-form[data-dense="1"] .gv-collection .gv-answer-actions button { min-height:32px; padding-block:2px; }
+  .gv-form[data-dense="1"] .gv-field > span:first-child { padding-top:0; }
+  .gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="60"]):first-child { padding-bottom:2px; }
+  .gv-form[data-dense="1"] .gv-field textarea { line-height:1.15; }
+  .gv-form[data-dense="1"] .gv-title { line-height:1; }
+  .gv-form[data-dense="1"] button:not(.gv-rec) { min-height:32px; height:auto; padding-block:3px; font-size:12px; }
+  .gv-form[data-dense="1"] .gv-share { padding-inline:12px; }
+  .gv-form[data-dense="1"] .gv-actions { margin-block:2px; gap:2px 4px; }
+  .gv-form[data-dense="1"] .gv-actions > button:last-child:not(.gv-tap) { max-width:66px; padding-inline:0; white-space:normal; line-height:1.1; }
+  .gv-form[data-dense="1"] .gv-rec-dock { min-height:60px; padding:2px 0; }
+}
 .gv-field textarea { min-height:0; }
 .gv-form[data-dense="1"] .gv-field { padding-block:5px; }
 .gv-form[data-dense="1"] .gv-title { margin-bottom:2px; }

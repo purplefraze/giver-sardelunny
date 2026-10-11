@@ -187,7 +187,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         {action === "trade" ? field("want", "for") : null}
         {action === "fund" ? field("amount", "raising", "amount") : null}
         {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
-         {collection ? <CollectionLocation draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
+          {collection ? <CollectionLocation compact={level >= 3} draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
          {collection ? <label className="gv-field"><span>collection date</span><input type="date" aria-label="collection date" value={f.timing?.date ?? ""} onChange={e => chooseDate(e.target.value)} /></label> : null}
         {f.context
           ? FIELDS_OF[f.context]
@@ -235,8 +235,8 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       <div className="gv-taps gv-actions">
         <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
+        {!canGoLive(action,f)||s.stage==="talk"?<Button variant="ghost" type="button" onClick={()=>conversation.continueQuestions()}>continue questions</Button>:null}
       </div>
-      {!canGoLive(action,f)||s.stage==="talk"?<Button variant="ghost" type="button" onClick={()=>conversation.continueQuestions()}>continue questions</Button>:null}
       </>}
       {noMic ? <p className="gv-problem" role="status">{noMic}</p> : null}
       </div>

@@ -1,5 +1,7 @@
 # October 11 community correction — preview verification
 
+Current saved-code verification is in **[luna-oct11-verification.md](luna-oct11-verification.md)**. Its fresh four-frame screenshots and test/build results supersede the older evidence below. Historical 17-unit paint, scrolling review, profile recording and exterior labels are not current instructions. Current paint is 8/9/10 CSS px, map attribution is 12px, and My G names remain inside the bead with no profile microphone.
+
 ## Authorised Luna repair — final preview follow-up
 
 Baseline: `24142a1cc6aafb5b57a1ae0ba85a20d4763eef9c`. Verified implementation revision: `9dced3a5e8fc8900dd34a6a5d7f29b9b4739e3f2`; documentation is recorded subsequently by the editor. No published history rewrite, deployment or remote data mutation. `IMG_7061.jpeg` is defect evidence only: its obsolete exterior profile labels, record dots and typography were not restored.

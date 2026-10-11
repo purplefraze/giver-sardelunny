@@ -256,6 +256,16 @@ export function CommunityFeed({
         onChange={(st) => { if (st !== "back") go(fromStation(st)); }}
         onBack={onExit ?? onClose}
         header={showDetail ? undefined : <div className="cg-heading-row" data-align={align}><p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p><Button variant="ghost" className="cg-filter" data-cg-map-view="" onClick={() => { setCategoryView(view === "map" ? "list" : "map"); if (sel === "map") go("everything"); }}>{view === "map" ? "list" : "map"}</Button></div>}
+        controls={showDetail ? undefined : <div data-cg-upper-tools="" data-align={align}>
+          <div role="tablist" aria-label="community filter" className="cg-filters">
+            {CG_FILTERS.map(f => <Button variant="ghost" key={f.value} ref={f.value === sel ? selectedTab : undefined} role="tab" aria-selected={f.value === sel} data-cg-filter={f.value} onClick={() => choose(f.value)} className="cg-filter">{f.word}</Button>)}
+          </div>
+          <div className="cg-tools">
+            <select aria-label="sort listings" value={sort} onChange={e => setSort(e.target.value as typeof sort)}><option value="latest">latest</option><option value="oldest">oldest</option><option value="nearest">nearest</option></select>
+            <select aria-label="nearby radius" value={radius ?? "all"} onChange={e => setRadius(e.target.value === "all" ? null : Number(e.target.value))}><option value="all">any distance</option>{[2,5,10,25].map(km => <option key={km} value={km}>{km} km</option>)}</select>
+            <Button variant="ghost" className="cg-filter" onClick={() => void allowLocation()}>near me</Button>
+          </div>
+        </div>}
         backdrop={<Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={openItem} /></Suspense>}
         backdropHidden={showDetail || view !== "map"}
         record={record}
@@ -275,14 +285,6 @@ export function CommunityFeed({
         {showDetail && detailId ? <div className="absolute inset-0 z-[2]"><ActivityDetail key={detailId} itemId={detailId} embedded onClose={onCloseDetail ?? onClose} onOpenConnection={onOpenConnection ?? (() => {})} onOpenProfile={onOpenProfile} onNeedGive={onNeedGive} onStartGive={onStartGive} /></div> : null}
          <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align={align} style={{ textAlign: align, ...(showDetail ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={showDetail || undefined} {...(showDetail ? { inert: true } : {})}>
           <Button variant="ghost" type="button" className="sr-only focus:not-sr-only" onClick={() => (onExit ?? onClose)()}>back to the living g</Button>
-          <div role="tablist" aria-label="community filter" className="cg-filters">
-            {CG_FILTERS.map(f => <Button variant="ghost" key={f.value} ref={f.value === sel ? selectedTab : undefined} role="tab" aria-selected={f.value === sel} data-cg-filter={f.value} onClick={() => choose(f.value)} className="cg-filter">{f.word}</Button>)}
-          </div>
-          <div className="cg-tools">
-            <select aria-label="sort listings" value={sort} onChange={e => setSort(e.target.value as typeof sort)}><option value="latest">latest</option><option value="oldest">oldest</option><option value="nearest">nearest</option></select>
-            <select aria-label="nearby radius" value={radius ?? "all"} onChange={e => setRadius(e.target.value === "all" ? null : Number(e.target.value))}><option value="all">any distance</option>{[2,5,10,25].map(km => <option key={km} value={km}>{km} km</option>)}</select>
-            <Button variant="ghost" className="cg-filter" onClick={() => void allowLocation()}>near me</Button>
-          </div>
           {(radius !== null || sort === "nearest" || (view === "map" && !samplePins)) && !centre ? <div className="cg-location">
             <p>{locationProblem || "allow approximate location, or choose a map centre."}</p>
             <form onSubmit={e=>{e.preventDefault();void findArea();}}><input aria-label="neighbourhood and city" placeholder="neighbourhood and city" value={area} onChange={e=>setArea(e.target.value)} className="w-full bg-transparent border-b py-1" /><Button variant="ghost" type="submit" className="cg-filter" disabled={areaBusy}>find area</Button></form>

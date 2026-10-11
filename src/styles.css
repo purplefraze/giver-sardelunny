@@ -2010,6 +2010,8 @@
 .cg-heading-row .cg-head { flex:1; min-width:0; padding-top:5px; }
 .cg-heading-row[data-align="right"] .cg-head { align-items:flex-end; text-align:right; }
 .cg-heading-row .cg-head-cat { font-size:17px; }
+[data-cg-upper-tools][data-align="right"] .cg-tools { justify-content:flex-end; }
+[data-cg-active-view="map"] [data-cg-upper-tools] { background:var(--background); border-radius:4px; }
 [data-cg-interior-page][data-align="right"] .cg-tools { justify-content:flex-end; }
 [data-cg-interior-page][data-align="right"] .cg-map-note { align-self:flex-end; }
 .cg-map-card { left:var(--map-safe-l,24px); right:var(--map-safe-r,24px); bottom:calc(var(--map-safe-b,88px) + 28px); padding:8px; border-radius:4px; background:var(--background); box-shadow:none; }

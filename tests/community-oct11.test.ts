@@ -4,10 +4,34 @@ import { lowerAngle, nearestLower } from "../src/components/community/lower-stat
 import { frameOf, trackPose } from "../src/components/community/perimeter-geometry";
 import { FULL_G_PAINT_STROKE, G_STROKE } from "../src/components/living-g/g-weight";
 import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "../src/components/community/map-view";
-import { hollowBounds } from "../src/components/community/hollow-layout";
+import { hollowBounds, communityBands, COMMUNITY_TOP } from "../src/components/community/hollow-layout";
 test("categories follow physical wheel, without a map category", () => {
   expect(CG_FILTERS.map(f => f.value)).toEqual(["give","lend","trade","everything","fund","borrow","wish"]);
   expect(CG_FILTERS.map(f => lowerAngle(f.value === "mine" ? "map" : f.value))).toEqual([-315,-270,-225,-180,-135,-90,-45]);
+});
+test("all sections use one app-frame reference independent of lower list bounds", () => {
+  expect(COMMUNITY_TOP).toBe(56);
+  for (const angle of [-315,-270,-225,-180,-135,-90,-45]) {
+    const bands = communityBands(390,640,angle);
+    expect(bands.header.t).toBe(56);
+    expect(bands.controls.t).toBe(100);
+    expect(bands.feed.t).toBe(200);
+  }
+  expect(communityBands(390,640,0).header.t).toBe(102);
+});
+test("independent upper bands clear the wire and full grip throughout lower travel", () => {
+  for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315;angle<=30;angle+=6) {
+    const {header,controls,feed}=communityBands(w,h,angle),f=frameOf(w,h,angle);
+    const exclusion={l:Math.min(f.bead.x-48,f.root.x-14),r:Math.max(f.bead.x+48,f.root.x+14),t:Math.min(f.bead.y-48,f.root.y-14),b:Math.max(f.bead.y+48,f.root.y+14)};
+    for(const band of [header,controls,feed]) {
+      expect(band.r>exclusion.l&&band.l<exclusion.r&&band.b>exclusion.t&&band.t<exclusion.b).toBe(false);
+      for(const x of [band.l,band.r])for(const y of [band.t,band.b]) {
+        let clearance=Infinity;
+        for(let d=0;d<360;d+=2){const p=trackPose(d).point;clearance=Math.min(clearance,Math.hypot(x-p.x*f.scale-f.x,y-p.y*f.scale-f.y));}
+        expect(clearance).toBeGreaterThan(18);
+      }
+    }
+  }
 });
 test("travel bounds clear curved wire and attached toggle", () => {
   for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315; angle<=30; angle+=3) {

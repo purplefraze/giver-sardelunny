@@ -1991,7 +1991,7 @@
 [data-cg-description] { color:var(--foreground); }
 /* WHOLE-LOOP MAP: fills the stage, clipped to the lower hollow. */
 [data-cg-backdrop] .cg-map-wrap { position:absolute; inset:0; margin:0; border-radius:0; min-height:0; }
-.cg-map-attribution { position:absolute; right:var(--map-safe-r,24px); bottom:var(--map-safe-b,88px); z-index:500; font:400 11px var(--giver-font); color:var(--foreground); background:var(--background); padding:3px 6px; border-radius:4px; opacity:.9; }
+.cg-map-attribution { position:absolute; right:var(--map-safe-r,24px); bottom:var(--map-safe-b,88px); z-index:500; font:400 12px var(--giver-font); color:var(--foreground); background:var(--background); padding:3px 6px; border-radius:4px; opacity:.9; }
 /* Over the map, the page lets the map pan; only its controls take touches. */
 [data-cg-interior] > div:has(> [data-cg-view="map"]) { pointer-events:none; }
 [data-cg-interior-page][data-cg-view="map"] { pointer-events:none; }

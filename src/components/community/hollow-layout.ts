@@ -4,7 +4,7 @@ import type { CgStation } from "./lower-stations";
 /** Closed measured loop for containment only; the navigation wire stays open. */
 export const HOLLOW_PATH = Array.from({ length: 361 }, (_, i) => {
   const p = trackPose(-i).point;
-  return `${i ? "L" : "M"} ${p.x} ${p.y}`;
+  return `${i ? "L" : "M"} ${p.x.toFixed(6)} ${p.y.toFixed(6)}`;
 }).join(" ") + " Z";
 
 export function hollowBounds(w: number, h: number, angle: number, seat: CgStation) {
@@ -24,7 +24,7 @@ export function hollowBounds(w: number, h: number, angle: number, seat: CgStatio
   };
   let t = seat === "trade" || seat === "everything" ? 56 : 96;
   let b = h - 88;
-  const minimum = Math.min(w - 36, 250);
+  const minimum = Math.min(w - 36, 220);
   while (t < b && atY(t).r - atY(t).l < minimum) t += 4;
   while (b > t && atY(b).r - atY(b).l < minimum) b -= 4;
   let l = 18, r = w - 18;

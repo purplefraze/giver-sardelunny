@@ -108,7 +108,7 @@ export function CommunityFeed({
   const listening = voice.state === "listening";
   const ink = sel === "map" ? "var(--mode-giver)" : CG_INK[sel === "mine" ? "everything" : sel];
   const location = useMyLocation();
-  const [categoryView, setCategoryView] = useState<View>(initialView === "map" && (initialSelection === undefined || initialSelection === "map") ? "map" : "list");
+  const [categoryView, setCategoryView] = useState<View>(initialView === "map" && !initialType && (initialSelection === undefined || initialSelection === "map") ? "map" : "list");
   const view: View = sel === "map" ? "map" : categoryView;
   const [mapList, setMapList] = useState(false);
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
@@ -270,7 +270,7 @@ export function CommunityFeed({
           else voiceCapture.start();
         }}
       >
-        <div className="relative h-full w-full" ref={listBox}>
+        <div className="relative h-full w-full" ref={listBox} style={{ pointerEvents: view === "map" && !showDetail ? "none" : "auto" }}>
         {showDetail && detailId ? <div className="absolute inset-0 z-[2]"><ActivityDetail key={detailId} itemId={detailId} embedded onClose={onCloseDetail ?? onClose} onOpenConnection={onOpenConnection ?? (() => {})} onOpenProfile={onOpenProfile} onNeedGive={onNeedGive} onStartGive={onStartGive} /></div> : null}
          <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align={align} style={{ textAlign: align, ...(showDetail ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={showDetail || undefined} {...(showDetail ? { inert: true } : {})}>
           <Button variant="ghost" type="button" className="sr-only focus:not-sr-only" onClick={() => (onExit ?? onClose)()}>back to the living g</Button>
@@ -317,7 +317,7 @@ export function CommunityFeed({
             </form>
           ) : null}
           {term ? (
-             <Button variant="ghost" type="button" className="g-meta mb-2 underline self-start" onClick={() => setTerm("")}>
+              <Button variant="ghost" type="button" className={`g-meta mb-2 underline ${align === "right" ? "self-end" : "self-start"}`} onClick={() => setTerm("")}>
               “{term}” · clear
             </Button>
           ) : null}

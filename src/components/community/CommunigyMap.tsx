@@ -17,9 +17,7 @@ import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "./map-view";
  *
  * Reuses the give flow's Leaflet setup (LocationPicker): Leaflet 1.9 loaded on
  * demand, OpenStreetMap tiles with visible attribution, no API key. The tiles
- * are kept PALE (grayscale, brighter, lower contrast — .cg-map in
- * styles.css) so the only colour on screen is the pins (each listing in its
- * own mode colour) and the red frame. A red circle marks the nearby radius
+ * remain full colour, framed by the existing hollow. A red circle marks the nearby radius
  * round the person (their approximate, device-only location, or the city
  * centre until they allow it).
  *
@@ -155,7 +153,7 @@ export function CommunigyMap({
     <div className="cg-map-wrap" data-testid="communigy-map">
       <div ref={box} className="cg-map absolute inset-0" aria-label="map of nearby listings" />
       <a className="cg-map-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
-      {tileProblem ? <p className="absolute top-2 left-2 right-2 z-[500] bg-background p-2 g-meta">map tiles unavailable · listing pins still work</p> : null}
+      {tileProblem ? <p className="cg-map-problem g-meta">map tiles unavailable · listing pins still work</p> : null}
       {picked ? (
         <div className="cg-map-card">
           <span className="cg-map-line"><ListingLine mode={picked.mode} text={picked.text} /></span>

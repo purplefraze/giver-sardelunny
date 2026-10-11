@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type Poin
 import { LOWER_STATIONS, clampLower, lowerAngle, lowerToken, lowerWord, nearestLower, type CgStation } from "./lower-stations";
 export type { CgStation } from "./lower-stations";
 import { Button } from "@/components/ui/button";
+import { HOLLOW_PATH, hollowBounds } from "./hollow-layout";
 import { haptics } from "@/lib/haptics";
 import { ARM_LENGTH, SNAP_MS, TRACK_PATH, TRACK_WIDTH, sPath, crossings, easeOut, frameOf, inputAngle, settleDuration, signedTurn, wrap, type Point } from "./perimeter-geometry";
 
@@ -120,10 +121,11 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   /* A single record may instead flow AROUND the bead (CSS float) so the whole
      hollow is usable; lists keep the plain rectangular clearance. */
   const flowed = flow ? beadFlow(size, restBead, box0) : null;
-   const inner = header ? { l: 24, r: 24, t: 132, b: 110 } : flowed ? box0 : beadClear(size, restBead, box0);
+  const safe = hollowBounds(size.w, size.h, angle, shown);
+  const inner = header ? { l: safe.l, r: size.w - safe.r, t: safe.t + HEADER_H, b: size.h - safe.b } : flowed ? box0 : beadClear(size, restBead, box0);
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     {backdrop ? <>
-      <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={TRACK_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
+      <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={HOLLOW_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
       <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)", ...(backdropHidden ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={backdropHidden || undefined} data-cg-backdrop="">{backdrop}</div>
     </> : null}
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" data-cg-world="">
@@ -133,7 +135,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
       </g>
       <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={10} strokeLinecap="round" data-cg-stem-arm="" />
     </svg>
-     {header ? <div className="pointer-events-none absolute z-[6] flex justify-start" style={{ left: 24, right: 108, top: 108, height: 24 }} data-cg-header="">{header}</div> : null}
+     {header ? <div className="pointer-events-none absolute z-[6] flex justify-start" style={{ left: safe.l, right: size.w - safe.r, top: safe.t, height: HEADER_H }} data-cg-header="">{header}</div> : null}
     {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left: inner.l, right: inner.r, top: inner.t, bottom: inner.b, ...(flowed ? { ["--bead-top" as string]: `${flowed.top}px`, ["--bead-w" as string]: `${flowed.w}px`, ["--bead-h" as string]: `${flowed.h}px` } : {}) }} data-cg-interior="" data-cg-bead-flow={flowed ? flowed.side : undefined}><div className="pointer-events-auto h-full w-full">{children}</div></div> : null}
     <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={shown === "back" ? "back — tap to return to the living g" : record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={clockOf("back")} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {

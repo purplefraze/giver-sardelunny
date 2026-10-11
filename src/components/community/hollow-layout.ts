@@ -1,0 +1,36 @@
+import { frameOf, trackPose, TRACK_WIDTH } from "./perimeter-geometry";
+import type { CgStation } from "./lower-stations";
+
+/** Closed measured loop for containment only; the navigation wire stays open. */
+export const HOLLOW_PATH = Array.from({ length: 361 }, (_, i) => {
+  const p = trackPose(-i).point;
+  return `${i ? "L" : "M"} ${p.x} ${p.y}`;
+}).join(" ") + " Z";
+
+export function hollowBounds(w: number, h: number, angle: number, seat: CgStation) {
+  const f = frameOf(w, h, angle);
+  const points = Array.from({ length: 361 }, (_, i) => {
+    const p = trackPose(i).point;
+    return { x: p.x * f.scale + f.x, y: p.y * f.scale + f.y };
+  });
+  const inset = TRACK_WIDTH / 2 + 14;
+  const atY = (y: number) => {
+    const xs: number[] = [];
+    for (let i = 1; i < points.length; i++) {
+      const p = points[i - 1], q = points[i];
+      if (p && q && (p.y > y) !== (q.y > y)) xs.push(p.x + (q.x - p.x) * (y - p.y) / (q.y - p.y));
+    }
+    return xs.length >= 2 ? { l: Math.max(18, Math.min(...xs) + inset), r: Math.min(w - 18, Math.max(...xs) - inset) } : { l: w / 2, r: w / 2 };
+  };
+  const t = seat === "trade" || seat === "everything" ? 56 : 96;
+  const b = h - 88;
+  let l = 18, r = w - 18;
+  for (let y = t; y <= b; y += 4) { const edges = atY(y); l = Math.max(l, edges.l); r = Math.min(r, edges.r); }
+  // Exclude the whole grip and connecting arm, not only their paint layer.
+  const exclusion = { l: Math.min(f.bead.x - 48, f.root.x - 14), r: Math.max(f.bead.x + 48, f.root.x + 14), t: Math.min(f.bead.y - 48, f.root.y - 14), b: Math.max(f.bead.y + 48, f.root.y + 14) };
+  const base = { l, r, t, b };
+  const hits = exclusion.r > l && exclusion.l < r && exclusion.b > t && exclusion.t < b;
+  if (!hits) return base;
+  const candidates = [ { ...base, l: Math.max(l, exclusion.r) }, { ...base, r: Math.min(r, exclusion.l) }, { ...base, t: Math.max(t, exclusion.b) }, { ...base, b: Math.min(b, exclusion.t) } ];
+  return candidates.reduce((best, q) => Math.max(0, q.r-q.l)*Math.max(0,q.b-q.t) > Math.max(0,best.r-best.l)*Math.max(0,best.b-best.t) ? q : best, candidates[0] ?? base);
+}

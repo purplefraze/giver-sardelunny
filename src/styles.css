@@ -2006,8 +2006,9 @@
 .cg-list [data-cg-item] > span { width:100%; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cg-list .cg-listing-line { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cg-list .g-meta { letter-spacing:0; font-size:12px; }
-.cg-heading-row { width:100%; display:flex; align-items:flex-start; gap:10px; pointer-events:auto; }
-.cg-heading-row .cg-head { flex:1; min-width:0; padding-top:5px; }
+.cg-heading-row { width:100%; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; pointer-events:none; }
+.cg-heading-row .cg-head { position:absolute; left:var(--cg-title-l); width:var(--cg-title-w); min-width:0; padding-top:5px; pointer-events:auto; }
+.cg-heading-row [data-cg-map-view] { position:absolute; left:var(--cg-action-l); width:var(--cg-action-w); flex-shrink:0; pointer-events:auto; }
 .cg-heading-row[data-align="right"] .cg-head { align-items:flex-end; text-align:right; }
 .cg-heading-row .cg-head-cat { font-size:17px; }
 [data-cg-upper-tools][data-align="right"] .cg-tools { justify-content:flex-end; }

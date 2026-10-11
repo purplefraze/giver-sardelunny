@@ -25,7 +25,7 @@ function Review() {
   const [email,setEmail]=useState("");
   const otp={step:"email" as const,email,setEmail,busy:false,error:null,notice:null,cooldown:0,code:"",setCode:()=>{},submitEmail:async(e?:React.FormEvent)=>{e?.preventDefault();},submitCode:async(e?:React.FormEvent)=>{e?.preventDefault();},resend:async()=>{},changeEmail:()=>{}};
   const region={label:"",panelTitle:"",panelBody:null};
-  return <div className="fixed inset-0" data-luna-review="">
+  return <main className="fixed inset-0" data-luna-review="">
     {view==="full" ? <World world="give" earCut regions={{top:region,middle:region,bottom:region}} overlay={<EarSelector mode={seat} onChange={s=>setSeat(s=== "giver" ? "giver" : s==="map" ? "map":"give")} onTap={()=>setView(seat==="giver"?"profile":seat==="map"?"community":"signin")} />} /> : null}
     {view==="signin" ? <SignInView otp={otp} /> : null}
     {view==="community" ? <CommunityFeed detailId={detail} onOpen={setDetail} onCloseDetail={()=>setDetail(null)} onClose={()=>setView("full")} /> : null}
@@ -33,5 +33,5 @@ function Review() {
     <div className="sr-only focus-within:not-sr-only absolute bottom-0 z-50" aria-label="isolated review views">
       {["full","signin","community","profile"].map(v=><Button key={v} variant="ghost" onClick={()=>setView(v)}>{v}</Button>)}
     </div>
-  </div>;
+  </main>;
 }

@@ -1,9 +1,9 @@
 # Authorised Luna repair — October 11
-- [ ] Screen-space stroke across full/sign-in, posting, profile and community renderers.
-- [ ] My G bead-only names/markers; remove profile recording without changing posting.
-- [ ] Row-specific community clearance, useful widths and compact map paint.
-- [ ] Shared readable typography, preserve birthday/keyboard/draft behavior.
-- [ ] Four-frame actual-component screenshots and focused regressions; documentation.
+- [x] Screen-space stroke across full/sign-in, posting, profile and community renderers.
+- [x] My G bead-only names/markers; remove profile recording without changing posting.
+- [x] Row-specific community clearance, useful widths and compact map paint.
+- [x] Shared readable typography, preserve birthday/keyboard/draft behavior.
+- [x] Four-frame actual-component screenshots and focused regressions; documentation.
 - [ ] Physical Safari/microphone/haptics and real Helvetica Neue assets: unavailable in sandbox.
 
 # Communi-G track repair

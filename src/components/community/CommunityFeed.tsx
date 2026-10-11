@@ -255,8 +255,8 @@ export function CommunityFeed({
         onChange={(st) => { if (st !== "back") go(fromStation(st)); }}
         onBack={onExit ?? onClose}
         header={showDetail ? undefined : <div className="cg-heading-row" data-align={align}><p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p><Button variant="ghost" className="cg-filter" data-cg-map-view="" onClick={() => { setCategoryView(view === "map" ? "list" : "map"); if (sel === "map") go("everything"); }}>{view === "map" ? "list" : "map"}</Button></div>}
-        backdrop={view === "map" ? <Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={openItem} /></Suspense> : undefined}
-        backdropHidden={showDetail}
+        backdrop={<Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={openItem} /></Suspense>}
+        backdropHidden={showDetail || view !== "map"}
         record={record}
         listening={listening}
         onHold={() => {

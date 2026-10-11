@@ -9,6 +9,8 @@ import "leaflet/dist/leaflet.css";
 import { CG_COLOUR, CG_INK, type MapPin } from "@/data/communigy";
 import type { Pin } from "@/data/give-pins";
 import { haptics } from "@/lib/haptics";
+import { CITY_CENTRE } from "@/data/give-boundary";
+import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "./map-view";
 
 /**
  * COMMUNI-G'S MAP — THE PIN IS THE PRODUCT.
@@ -48,6 +50,9 @@ export function CommunigyMap({
   const [tileProblem, setTileProblem] = useState(false);
   const [picked, setPicked] = useState<MapPin | null>(null);
 
+  const cameraKey = useRef<string | null>(null);
+  const mapCentre = centre ?? (pins.some(p => p.sample) ? CITY_CENTRE : null);
+
   /* The map, once. */
   useEffect(() => {
     let dead = false;
@@ -57,7 +62,7 @@ export function CommunigyMap({
       L.current = lib;
       const m = lib
         .map(box.current, { zoomControl: false, attributionControl: false, zoomAnimation:false, fadeAnimation:false, markerZoomAnimation:false })
-        .setView(centre ? [centre.lat, centre.lng] : [0, 0], centre ? 13 : 1);
+        .setView(mapCentre ? [mapCentre.lat, mapCentre.lng] : [0, 0], mapCentre ? NEIGHBOURHOOD_ZOOM : 1);
       lib
         .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
@@ -86,8 +91,12 @@ export function CommunigyMap({
     if (!ready || !lib || !m) return;
     ring.current?.remove();
     me.current?.remove();
+    const key = mapCameraKey(mapCentre);
+    if (cameraKey.current !== key) {
+      cameraKey.current = key;
+      if (mapCentre) m.setView([mapCentre.lat, mapCentre.lng], NEIGHBOURHOOD_ZOOM);
+    }
     if (!centre) return;
-    if (radiusKm === null) { m.setView([centre.lat, centre.lng], 12); }
     /* Leaflet writes SVG presentation attributes, which cannot read var():
        resolve the red token to its value first. */
     const red =
@@ -114,8 +123,8 @@ export function CommunigyMap({
         interactive: false,
       })
       .addTo(m);
-    if (radiusKm !== null && ring.current) m.fitBounds(ring.current.getBounds(), { padding: [18, 18] });
-  }, [ready, centre?.lat, centre?.lng, radiusKm]);
+
+  }, [ready, centre?.lat, centre?.lng, mapCentre?.lat, mapCentre?.lng, radiusKm]);
 
   /* One pin per listing, in its mode colour. */
   useEffect(() => {
@@ -139,7 +148,7 @@ export function CommunigyMap({
         })
         .addTo(group);
     }
-    if (!centre && pins.length) map.current?.fitBounds(lib.latLngBounds(pins.map(p => [p.pin.lat, p.pin.lng])), { padding: [24, 24], maxZoom: 13 });
+
   }, [ready, pins, centre]);
 
   return (

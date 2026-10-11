@@ -126,7 +126,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     {backdrop ? <>
       <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={HOLLOW_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
-      <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)", ...(backdropHidden ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={backdropHidden || undefined} data-cg-backdrop="">{backdrop}</div>
+      <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)", ["--map-safe-l" as string]: `${safe.l}px`, ["--map-safe-r" as string]: `${size.w-safe.r}px`, ["--map-safe-b" as string]: `${size.h-safe.b}px`, ...(backdropHidden ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={backdropHidden || undefined} data-cg-backdrop="">{backdrop}</div>
     </> : null}
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">

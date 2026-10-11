@@ -1,4 +1,9 @@
 # Communi-G track repair
+## October 11 active preview corrections
+- [ ] Uniform full-G paint and joins without camera/path changes.
+- [ ] Shared curved safe bounds, side alignment, higher trade/overview, single-line titles and category controls.
+- [ ] Category-preserving maps, neighbourhood zoom, full hollow mask and compact controls.
+- [ ] Four-size main-app QA with isolated data and mocked writes; document actual checks and limits.
 ## Oct 10 22:28 combined regression repair
 - [x] Fixed top-left community headings and left-aligned lists across seats; preserve toggle/navigation.
 - [x] Middle seat label colours/content clearance and local fine track paint; canonical path unchanged.

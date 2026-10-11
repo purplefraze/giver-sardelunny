@@ -31,7 +31,9 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
     const title=stage.current?.querySelector<HTMLElement>(".cg-head-cat");
     const action=stage.current?.querySelector<HTMLElement>("[data-cg-map-view]");
     if(!title||!action)return;
-    const next={title:Math.ceil(title.getBoundingClientRect().width),action:Math.max(32,Math.ceil(action.scrollWidth)),right:title.closest("[data-align]")?.getAttribute("data-align")==="right"};
+    // Layout widths, not transformed screen widths: entry animation must not
+    // inflate the measured text and spuriously lower the stable header.
+    const next={title:Math.ceil(title.offsetWidth),action:Math.max(32,Math.ceil(action.scrollWidth)),right:title.closest("[data-align]")?.getAttribute("data-align")==="right"};
     setHeaderSize(old=>old.title===next.title&&old.action===next.action&&old.right===next.right?old:next);
   },[header]);
   const [angle, setAngle] = useState(() => clockOf(value));

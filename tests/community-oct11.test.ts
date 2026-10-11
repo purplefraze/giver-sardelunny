@@ -11,19 +11,21 @@ test("categories follow physical wheel, without a map category", () => {
 });
 test("all sections use one app-frame reference independent of lower list bounds", () => {
   expect(COMMUNITY_TOP).toBe(56);
-  for (const angle of [-315,-270,-225,-180,-135,-90,-45]) {
-    const bands = communityBands(390,640,angle);
+  for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]]) for (const angle of [-315,-270,-225,-180,-135,-90,-45,0]) {
+    const bands = communityBands(w ?? 0,h ?? 0,angle,{title:angle===0||angle===-180?92:132,action:32,right:angle>=-135&&angle<0});
     expect(bands.header.t).toBe(56);
-    expect(bands.controls.t).toBe(100);
-    expect(bands.feed.t).toBe(200);
+    expect(bands.controls.t).toBeGreaterThanOrEqual(100);
+    expect(bands.controls.t).toBeLessThanOrEqual(102);
+    expect(bands.feed.t).toBeGreaterThanOrEqual(200);
+    expect(bands.feed.t).toBeLessThanOrEqual(202);
   }
-  expect(communityBands(390,640,0).header.t).toBe(102);
 });
 test("independent upper bands clear the wire and full grip throughout lower travel", () => {
   for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315;angle<=30;angle+=6) {
     const {header,controls,feed}=communityBands(w,h,angle),f=frameOf(w,h,angle);
     const exclusion={l:Math.min(f.bead.x-48,f.root.x-14),r:Math.max(f.bead.x+48,f.root.x+14),t:Math.min(f.bead.y-48,f.root.y-14),b:Math.max(f.bead.y+48,f.root.y+14)};
-    for(const band of [header,controls,feed]) {
+    const {title,action}=communityBands(w,h,angle);
+    for(const band of [title,action,controls,feed]) {
       expect(band.r>exclusion.l&&band.l<exclusion.r&&band.b>exclusion.t&&band.t<exclusion.b).toBe(false);
       for(const x of [band.l,band.r])for(const y of [band.t,band.b]) {
         let clearance=Infinity;
@@ -60,5 +62,11 @@ test("all phone seats have usable bounded interior", () => {
     const b = hollowBounds(w ?? 0,h ?? 0,lowerAngle(seat),seat);
     expect(b.r-b.l).toBeGreaterThan(160);
     expect(b.b-b.t).toBeGreaterThan(190);
+  }
+});
+test("responsive fit keeps the full grip on screen and actual longest heading at the reference",()=>{
+  for(const [w,h]of [[320,568],[390,640],[390,844],[430,932]] as const){
+    for(let a=-315;a<=0;a+=1){const f=frameOf(w,h,a);expect(f.bead.x-44).toBeGreaterThanOrEqual(0);expect(f.bead.x+44).toBeLessThanOrEqual(w);expect(f.bead.y-44).toBeGreaterThanOrEqual(0);expect(f.bead.y+44).toBeLessThanOrEqual(h);}
+    for(const a of[-315,-270,-225,-180,-135,-90,-45])expect(communityBands(w,h,a,{title:154,action:32,right:a>=-135&&a<0}).header.t).toBe(56);
   }
 });

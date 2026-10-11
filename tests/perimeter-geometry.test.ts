@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { crossings, frameOf, inputAngle, scaleOf, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "../src/components/community/perimeter-geometry";
+import { crossings, frameOf, inputAngle, scaleOf, responsiveFit, settleDuration, signedTurn, trackPose, TRACK_WIDTH, SNAP_MS } from "../src/components/community/perimeter-geometry";
 
 /* Positive progress now rides the S connector past twelve; the lower wire's
    periodic ellipse is exercised on its own (non-positive) domain. */
@@ -13,7 +13,7 @@ describe("Communi-G single-angle geometry", () => {
       expect(scaleOf(a)).toBeGreaterThanOrEqual(1.45);
       expect(scaleOf(a)).toBeLessThanOrEqual(1.85);
       expect(scaleOf(a + 360)).toBeCloseTo(scaleOf(a), 8);
-      expect(frameOf(390, 844, lower(a)).scale).toBeCloseTo(scaleOf(a), 8);
+      expect(frameOf(390, 844, lower(a)).scale).toBeCloseTo(scaleOf(a)+responsiveFit(390,844), 8);
       expect(Math.abs(scaleOf(a + .01) - scaleOf(a))).toBeLessThan(.0001);
     }
     expect(scaleOf(-.001)).toBeCloseTo(scaleOf(.001), 10);

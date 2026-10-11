@@ -235,8 +235,8 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       <div className="gv-taps gv-actions">
         <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
+        {!canGoLive(action,f)||s.stage==="talk"?<Button variant="ghost" type="button" onClick={()=>conversation.continueQuestions()}>continue questions</Button>:null}
       </div>
-      {!canGoLive(action,f)||s.stage==="talk"?<Button variant="ghost" type="button" onClick={()=>conversation.continueQuestions()}>continue questions</Button>:null}
       </>}
       {noMic ? <p className="gv-problem" role="status">{noMic}</p> : null}
       </div>

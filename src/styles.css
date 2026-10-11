@@ -2170,13 +2170,18 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 [data-cg-bead-flow] .cg-detail .cg-flow-b { clear:both; }
 /* Dense review reflows without hiding Share behind a second scroll area. */
 .gv-frame { container-type:size; }
+.gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="100"]) { grid-column:auto; grid-template-columns:minmax(0,1fr); }
 @container (height < 700px) {
-  .gv-review-content { inset:90px 24px 28px; }
+  .gv-review-content { inset:90px 24px 36px; }
   .gv-form[data-dense="1"] .gv-sheet { padding:0; gap:3px; }
   .gv-form[data-dense="1"] .gv-field { padding-block:2px; }
   .gv-form[data-dense="1"] .gv-field-wide:has(textarea):not(:has(textarea[maxlength="100"])) { grid-column:auto; grid-template-columns:minmax(0,1fr); gap:0; }
   .gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="60"]):first-child { grid-column:1 / -1; grid-template-columns:76px minmax(0,1fr); }
   .gv-form[data-dense="1"] .gv-collection p { margin:0; line-height:1.2; }
+  .gv-form[data-dense="1"] .gv-field > span:first-child { padding-top:0; }
+  .gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="60"]):first-child { padding-bottom:2px; }
+  .gv-form[data-dense="1"] .gv-field textarea { line-height:1.15; }
+  .gv-form[data-dense="1"] .gv-title { line-height:1; }
   .gv-form[data-dense="1"] button:not(.gv-rec) { min-height:32px; height:auto; padding-block:3px; font-size:12px; }
   .gv-form[data-dense="1"] .gv-share { padding-inline:12px; }
   .gv-form[data-dense="1"] .gv-actions { margin-block:2px; }

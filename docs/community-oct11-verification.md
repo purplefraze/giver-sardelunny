@@ -1,5 +1,35 @@
 # October 11 community correction — preview verification
 
+## Authorised Luna repair — final preview follow-up
+
+Baseline: `24142a1cc6aafb5b57a1ae0ba85a20d4763eef9c`. Verified implementation revision: `9dced3a5e8fc8900dd34a6a5d7f29b9b4739e3f2`; documentation is recorded subsequently by the editor. No published history rewrite, deployment or remote data mutation. `IMG_7061.jpeg` is defect evidence only: its obsolete exterior profile labels, record dots and typography were not restored.
+
+### Delivered files
+- Shared paint: `screen-paint.ts`, `use-screen-paint.ts`, `CanonicalPaint.tsx`, `LivingG.tsx`, `g-weight.tsx`, `loop-close.tsx`, `GEnclosure.tsx`, `EarSelector.tsx`, `GiveClosed.tsx`, `SignInView.tsx`, `ConveyorToggle.tsx`.
+- Profile: `MyGRing.tsx` removes profile recording/subscriptions/transcripts, puts only the selected name in the bead, retains all eight upper-ring stations and seven unlabelled markers on the actual ring. Photo empty-state copy clears the bottom attachment. Bio/private birthday validation and profile store behavior remain intact.
+- Community: `perimeter-geometry.ts`, `hollow-layout.ts`, `PerimeterToggle.tsx`, `CommunityFeed.tsx` and `styles.css` share paint, measure each list row independently and keep tools/feed independent of the heading. Wrapped tools' actual height reserves feed space. Category selection, mounted map and neighbourhood zoom are retained.
+- Typography/fixtures/rules: `g-type.ts`, `SparkBundle.tsx`, `dev.luna.tsx`, `index.tsx`, root/community `AGENTS.md`, `docs/spec/g-navigation.md`, `roadmap.md`, `tests/screen-paint.test.ts` and `tests/perimeter-geometry.test.ts`. The route tree is editor-generated.
+
+### Measured results
+| app frame | full/sign-in visible paint | community heading top | profile selected font |
+|---|---:|---:|---:|
+| 320×568 | 8px | 56px | 11px |
+| 390×640 | 9px | 56px | 11px |
+| 390×844 | 9px | 56px | 11px |
+| 430×932 | 10px | 56px | 11px |
+
+Stroke checkpoints are DOM-reported shared paint, with non-scaling track/closure/bead strokes and projection-compensated canonical mask; not a raster thickness claim at antialiased edges. Widths between checkpoints interpolate independently of camera. No canonical path or full-G aspect/camera replacement. Transformed profile SVG fonts measure 10.999978–11.000020px (rounding around 11px), including `reputation` and `my g`; bead diameter is 78px before paint. Seven unlabelled marker nodes accompany every selected station. Community contextual headings remain 17px, filters 13px, titles 15px and handles 12px; no below-floor autofit. Listing titles retain ellipsis and neutral descriptions with schema prefixes.
+
+### Browser/test evidence and limitations
+- Main `/` community entry and isolated production-component fixture covered all seven categories' map/list views and keyboard travel at the four required frames; measured heading tops were `[56]`, with zero page errors. Lower order/continuous clearance remains covered by pure geometry regressions. The earlier temporary main/community scripts were lost on sandbox renewal; their logged results are historical evidence, not newly preserved screenshot files.
+- Fresh `/dev/luna` evidence is at `/tmp/browser/luna/final_check.py`, `final.log`, and `{width}-{height}-full.png`, `-signin.png`, `-profile-{seat}.png`. Chromium viewport stays 1280×1800; actual containing phone frames use the required dimensions. Sign-in's isolated local canvas is explicitly constrained for the fixture because the desktop visual viewport otherwise supplies 1800px. Filling a synthetic email did not move the G in all four frames. This is not an actual phone keyboard test.
+- Fresh screenshots visually reviewed: 320×568 full G/reputation, 390×640 sign-in, and earlier 430×932 photo/map and 320×568 category lists. Maps showed full-colour neighbourhood tiles, attribution and explicitly sample/demo state; provider availability and real-member coordinates were not certified.
+- Main posting mock observed zero recognition starts on form entry, one on explicit Record, stopped after Stop, and zero starts on profile long hold; zero page errors. Share was not clicked. Existing transcript/typed-edit/draft identity/retry protections are exercised by the regression suite, not a real microphone or publication test.
+- Final suite: **658 passed, 0 failed, 31,770 assertions across 30 files**. Latest automatic preview build: `build OK` at 18:48:30 UTC. No manual build/typecheck.
+- Remote auth/data/function requests were mocked or blocked; no real sign-in, profile edits, posts, messages, Sparks or paid provider calls. Physical iPhone Safari/touch/pinch, microphone/haptics, live Cloud persistence and actual Helvetica Neue rendering remain unverified. Intended Helvetica Neue family/fallback is retained; no font acquired or actual-font claim made.
+
+The historical sections below describe earlier, narrower repairs; their 17-unit paint and unchanged-profile statements are superseded by this follow-up.
+
 Supersedes the fixed-left community band and middle-only paint instructions in October 10 notes. No deployment or remote data mutation.
 
 ## Causes and repairs

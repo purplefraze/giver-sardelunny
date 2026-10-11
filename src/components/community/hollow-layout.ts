@@ -18,7 +18,10 @@ export function hollowBand(w: number, h: number, angle: number, start: number, h
   const f = frameOf(w, h, angle);
   const points = CURVE.map(p => ({ x: p.x * f.scale + f.x, y: p.y * f.scale + f.y }));
   const inset = TRACK_WIDTH / 2 + 14;
+  const rows = new Map<number, { l: number; r: number }>();
   const atY = (y: number) => {
+    const cached = rows.get(y);
+    if (cached) return cached;
     const xs: { x: number; clearance: number }[] = [];
     for (let i = 1; i < points.length; i++) {
       const p = points[i - 1], q = points[i];
@@ -26,7 +29,9 @@ export function hollowBand(w: number, h: number, angle: number, start: number, h
     }
     xs.sort((a,b) => a.x-b.x);
     const left = xs[0], right = xs[xs.length-1];
-    return xs.length >= 2 && left && right ? { l: Math.max(18, left.x + left.clearance), r: Math.min(w - 18, right.x - right.clearance) } : { l: w / 2, r: w / 2 };
+    const row = xs.length >= 2 && left && right ? { l: Math.max(18, left.x + left.clearance), r: Math.min(w - 18, right.x - right.clearance) } : { l: w / 2, r: w / 2 };
+    rows.set(y, row);
+    return row;
   };
   // Exclude the whole grip and connecting arm, not only their paint layer.
   const exclusion = { l: Math.min(f.bead.x - 48, f.root.x - 14), r: Math.max(f.bead.x + 48, f.root.x + 14), t: Math.min(f.bead.y - 48, f.root.y - 14), b: Math.max(f.bead.y + 48, f.root.y + 14) };
@@ -59,10 +64,12 @@ export function hollowBounds(w: number, h: number, angle: number, seat: CgStatio
   // Grow down from the first usable strip; stop before the lower curve/grip.
   const first = hollowBand(w, h, angle, start, 32, 162);
   let best = first;
-  for (let height = 36; first.t + height <= h - 88; height += 4) {
+  let low = 8, high = Math.floor((h - 88 - first.t) / 4);
+  while (low <= high) {
+    const step = Math.floor((low + high) / 2), height = step * 4;
     const band = hollowBand(w, h, angle, first.t, height, 0);
-    if (band.r - band.l >= 162) best = band;
-    else break;
+    if (band.r - band.l >= 162) { best = band; low = step + 1; }
+    else high = step - 1;
   }
   return best;
 }

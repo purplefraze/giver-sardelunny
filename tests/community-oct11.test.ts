@@ -4,10 +4,20 @@ import { lowerAngle, nearestLower } from "../src/components/community/lower-stat
 import { frameOf, trackPose } from "../src/components/community/perimeter-geometry";
 import { FULL_G_PAINT_STROKE, G_STROKE } from "../src/components/living-g/g-weight";
 import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "../src/components/community/map-view";
-import { hollowBounds } from "../src/components/community/hollow-layout";
+import { hollowBounds, communityBands, COMMUNITY_TOP } from "../src/components/community/hollow-layout";
 test("categories follow physical wheel, without a map category", () => {
   expect(CG_FILTERS.map(f => f.value)).toEqual(["give","lend","trade","everything","fund","borrow","wish"]);
   expect(CG_FILTERS.map(f => lowerAngle(f.value === "mine" ? "map" : f.value))).toEqual([-315,-270,-225,-180,-135,-90,-45]);
+});
+test("all sections use one app-frame reference independent of lower list bounds", () => {
+  expect(COMMUNITY_TOP).toBe(56);
+  for (const angle of [-315,-270,-225,-180,-135,-90,-45]) {
+    const bands = communityBands(390,640,angle);
+    expect(bands.header.t).toBe(56);
+    expect(bands.controls.t).toBe(100);
+    expect(bands.feed.t).toBe(200);
+  }
+  expect(communityBands(390,640,0).header.t).toBe(102);
 });
 test("travel bounds clear curved wire and attached toggle", () => {
   for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315; angle<=30; angle+=3) {

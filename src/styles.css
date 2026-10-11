@@ -2173,7 +2173,7 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="100"]) { grid-column:auto; grid-template-columns:minmax(0,1fr); }
 @container (height < 700px) {
   .gv-review-content { inset:90px 24px 36px; }
-  .gv-form[data-dense="1"] .gv-sheet { padding:0; gap:3px; }
+  .gv-form[data-dense="1"] .gv-sheet { padding:0; gap:0; }
   .gv-frame .gv-form[data-dense="1"] .gv-field { padding-block:1px; }
   .gv-form[data-dense="1"] .gv-field-wide:has(textarea):not(:has(textarea[maxlength="100"])) { grid-column:auto; grid-template-columns:minmax(0,1fr); gap:0; }
   .gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="60"]):first-child { grid-column:1 / -1; grid-template-columns:76px minmax(0,1fr); }

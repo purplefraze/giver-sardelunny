@@ -21,7 +21,9 @@ Physical iPhone Safari/touch and live signed-in persistence are not verified. Th
 
 ## Received-reference follow-up — October 11, 04:45 request
 
-The old 56/96 seat split and all-content 220px rectangle were removed. One 56px app-frame reference drives every header. Header clearance uses a 36px strip with room for the existing 17px contextual heading and adjacent map action; controls follow by 8px in their own 92px band. Lower lists grow independently to their curve/grip limit. No path, camera, seat, paint, provider, record or cloud logic was edited.
+The initial reference pass removed the 56/96 split, but retained an artificial 214px header minimum and the old tall-screen projection. The 05:01 follow-up completes this repair: measure actual title layout width (not entry-transformed width) and the separate 32px map/list action, with 6px spacing. Each element must clear the curve and full grip/arm; their empty union need not. At lower 12 the title and list action occupy opposite safe sides of the central grip at the same height. Controls and feed remain independently measured.
+
+The lower-loop fit now uses a shared bounded smooth viewport contribution to uniform scale plus a smooth narrow-frame horizontal grip orbit adjustment. All paint, attachment and map mask consume the same frame and unwrapped angle. The measured canonical curve, aspect ratio, station angles/order, full-G pose and profile camera are unchanged; no independent camera animation, distorted loop or seat-specific layout offset was introduced.
 
 ### Actual rendered heading tops (CSS px from app-frame top)
 
@@ -29,17 +31,17 @@ These are `[data-cg-head]` bounding-box tops, not the whole phone or Safari chro
 
 | frame | gives | lends | trades | communi-g | funds | borrows | wishes | lower-12 map |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| 320×568 | 170 | 60 | 56 | 56 | 56 | 56 | 170 | 102 |
-| 390×640 | 56 | 56 | 56 | 56 | 56 | 56 | 56 | 102 |
-| 390×844 | 72 | 106 | 88 | 138 | 88 | 102 | 72 | 102 |
-| 430×932 | 66 | 114 | 144 | 226 | 144 | 112 | 66 | 102 |
+| 320×568 | 56 | 56 | 56 | 56 | 56 | 56 | 56 | 56 |
+| 390×640 | 56 | 56 | 56 | 56 | 56 | 56 | 56 | 56 |
+| 390×844 | 56 | 56 | 56 | 56 | 56 | 56 | 56 | 56 |
+| 430×932 | 56 | 56 | 56 | 56 | 56 | 56 | 56 | 56 |
 
-Filters/tools start 44px after the heading; list/results start 144px after it in these settled checks. Text remains 17px for contextual headings, 13px for filters/tools, 15px for listing titles, 12px for handles. No font shrinking was used.
+Filters/tools start at 100px and list/results at 200px for all seven sections and their maps. Lower-12 tools start at 102px and results at 202px to clear the central grip. Heading boxes start at 56px; painted title spans start at 61px due to the retained 5px internal top spacing. Text remains 17px for contextual headings, 13px for filters/tools, 15px for listing titles, 12px for handles. No font shrinking was used. Narrow-screen measured titles include gives 140px and wishes 154px, rather than an invented 214px minimum.
 
 ### Evidence and geometry limits
 - Chromium ran 120 settled entry/category/view checks with isolated local sample fixtures, no restored real session, all remote requests and internal write requests blocked. The main-app entry was actually navigated using its existing map seat and bottom-loop action.
-- Both entries additionally exercised pointer travel from give through map in 6-degree input steps at all four sizes. Rendered header, controls and list bounds cleared the visible wire by at least 18px and the full attached grip/arm exclusion; contextual text fit at every sampled step. Zero page runtime errors. Existing track hydration warnings and intentionally blocked tiles/profile requests remain distinct from placement checks.
+- The latest Chromium run exercised 120 settled main/dev category/view checks and 699 animation-frame samples during keyboard-driven seat traversal. Actual title, action, controls and feed rectangles cleared the measured wire by at least 18px and the full attached grip/arm exclusion (0.05px layout-rounding tolerance). Zero page runtime errors. Evidence: `/tmp/browser/height/results.json`, `verify.log` and per-frame/seat screenshots. This is browser evidence, not physical iPhone Safari evidence.
 - List/category-map switches retained category. Maps showed real sample marker elements, honest tile-unavailable feedback and attribution while external tile requests were intentionally blocked; this is not live map-service verification.
-- Exact 56px placement is geometrically impossible in some unchanged camera frames: the tall overview's hollow begins below that height; tall side seats have narrow shoulders; the 320px give/wish upper grip blocks the usable heading width. The lower-12 grip occupies y6–102, so its header begins at 102px. These are reported limits, not hidden overlaps or altered geometry.
-- Geometry tests include the shared 56px rule, concrete 390×640 positions, unchanged seat/paint/camera rules and continuous band/wire/full-grip exclusions. Browser evidence is not physical iPhone Safari evidence. No production publication or remote data writes occurred.
-- Final focused regression run: 31 tests passed across five community/geometry suites, zero failed; automatic preview build reported `build OK` at 04:57:49 UTC. No manual build/typecheck was run.
+- The previous 170–226px placements were incomplete fit/clearance implementation, not physical impossibilities. All settled section/category-map/lower-12 headings now meet 56px on all four frames; no remaining settled height limitation is claimed.
+- Focused regressions: 32 tests passed across five community/geometry suites, 26,069 assertions, zero failures. Tests cover actual longest title width, all-frame 56px placement, independent element clearance, full lower-wheel grip accessibility, canonical station order, continuous joint frame, paint and discovery/map rules. Automatic preview build reported `build OK` at 05:13:01 UTC; manual builds/typechecks are not run under the harness workflow.
+- Physical iPhone Safari/touch, real microphone/haptics, live map tiles and signed-in Cloud persistence remain unverified. Remote requests and all writes were blocked; no production publication occurred. The pre-existing S/back transition can extend the invisible grip hit area about 2.6px outside the 320px frame at intermediate angles 43–50; its visible grip and settled back seat remain on screen. The S path was not changed by this height-only repair.

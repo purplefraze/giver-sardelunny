@@ -4,7 +4,8 @@
 - [x] Row-specific community clearance, useful widths and compact map paint.
 - [x] Shared readable typography, preserve birthday/keyboard/draft behavior.
 - [x] Four-frame actual-component screenshots and focused regressions; documentation.
-- [ ] Physical Safari/microphone/haptics and real Helvetica Neue assets: unavailable in sandbox.
+- [x] Fresh saved-code verification and short-phone review/attribution repair; see docs/luna-oct11-verification.md.
+- External verification limitations (not unfinished sandbox implementation): physical Safari/microphone/haptics, live Cloud and actual Helvetica Neue assets.
 
 # Communi-G track repair
 ## October 11 active preview corrections

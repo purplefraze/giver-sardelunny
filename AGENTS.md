@@ -33,3 +33,4 @@
 - Shared screen-paint metrics compensate canonical masks and use non-scaling SVG strokes for tracks, closures and beads; camera/orbit geometry stays separate to prevent zoom-dependent weight.
 - Observe SVG projection without moving cameras; shared type floors prevent unreadable autofit.
 - Collection selection validates approximate coordinates in the same draft; text edits invalidate confirmation and async callbacks check draft identity, protecting privacy and stale-state safety.
+- Dense review uses container-height reflow and the same collection selector with compact actions; keep Share separate from Record without introducing ordinary-review scrolling or another draft.

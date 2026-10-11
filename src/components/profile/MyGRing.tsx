@@ -231,7 +231,7 @@ export function MyGRing({
   const panelRight = photoView ? box.w - 20 : Math.min(box.w - 20, hollow.x + safeRadius * .66);
   const panelW = Math.max(100, panelRight - panelLeft);
   const desiredPanelTop = photoView
-    ? Math.min(box.h - 104, hollow.y + safeRadius + 32)
+    ? Math.min(box.h - 104, toScreen({x:C.x,y:C.y+RIM+12}).y + 12)
     : Math.max(24, hollow.y - safeRadius * (opened === "bio" ? .74 : .68));
   const grip = toScreen(bead);
   const gripReach = 44;

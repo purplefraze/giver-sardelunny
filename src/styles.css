@@ -2014,6 +2014,9 @@
 [data-cg-interior-page][data-align="right"] .cg-map-note { align-self:flex-end; }
 .cg-map-card { left:var(--map-safe-l,24px); right:var(--map-safe-r,24px); bottom:calc(var(--map-safe-b,88px) + 28px); padding:8px; border-radius:4px; background:var(--background); box-shadow:none; }
 .cg-map-line { font-size:15px; }
+.cg-map-problem { position:absolute; z-index:500; left:var(--map-safe-l,24px); right:var(--map-safe-r,24px); bottom:calc(var(--map-safe-b,88px) + 28px); background:var(--background); padding:6px; }
+[data-cg-interior-page][data-align="right"] .cg-filters { flex-direction:row; }
+[data-cg-interior-page][data-cg-view="map"] .cg-location { background:var(--background); padding:6px; }
 .cg-location { flex-shrink:0; }
 
 /* THE FORM'S OWN RECORDER — bottom centre, inside the unfolded border. */

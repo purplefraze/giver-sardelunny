@@ -11,14 +11,12 @@ export const COMMUNITY_TOP = 56;
 export const COMMUNITY_HEADER_HEIGHT = 36;
 export const COMMUNITY_CONTROLS_HEIGHT = 92;
 type Bounds = { l: number; r: number; t: number; b: number };
+const CURVE = Array.from({ length: 361 }, (_, i) => trackPose(i).point);
 
 /** Each band is measured independently: a lower arc cannot displace a heading. */
 export function hollowBand(w: number, h: number, angle: number, start: number, height: number, minimum = 180): Bounds {
   const f = frameOf(w, h, angle);
-  const points = Array.from({ length: 361 }, (_, i) => {
-    const p = trackPose(i).point;
-    return { x: p.x * f.scale + f.x, y: p.y * f.scale + f.y };
-  });
+  const points = CURVE.map(p => ({ x: p.x * f.scale + f.x, y: p.y * f.scale + f.y }));
   const inset = TRACK_WIDTH / 2 + 14;
   const atY = (y: number) => {
     const xs: { x: number; clearance: number }[] = [];
@@ -58,8 +56,13 @@ export function communityBands(w: number, h: number, angle: number) {
 /** A lower list remains rectangular, without imposing its rectangle on upper bands. */
 export function hollowBounds(w: number, h: number, angle: number, seat: CgStation, start = COMMUNITY_TOP) {
   void seat;
-  let height = h - 88 - start;
-  let band = hollowBand(w, h, angle, start, height, 162);
-  while (band.r - band.l < 162 && height > 150) { height -= 4; band = hollowBand(w, h, angle, start, height, 162); }
-  return band;
+  // Grow down from the first usable strip; stop before the lower curve/grip.
+  const first = hollowBand(w, h, angle, start, 32, 162);
+  let best = first;
+  for (let height = 36; first.t + height <= h - 88; height += 4) {
+    const band = hollowBand(w, h, angle, first.t, height, 0);
+    if (band.r - band.l >= 162) best = band;
+    else break;
+  }
+  return best;
 }

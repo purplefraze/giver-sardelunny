@@ -5,6 +5,7 @@
 export type Point = { x: number; y: number };
 import { LOWER_MIN, LOWER_WIRE_END, BACK_ANGLE } from "./lower-stations";
 import { visibleStroke, BEAD_SCREEN_RADIUS } from "../living-g/screen-paint";
+import { canonicalConnectorCentre } from "../living-g/canonical-rim";
 const RAD = Math.PI / 180;
 const COEFFICIENTS = [248.6643094065, -6.1074666129, .6760043650, 7.2934463149, -.4864824929, -.5014184058, -.1502362108, .4579759233, -.0198162384];
 export const TRACK_WIDTH = 17;
@@ -58,8 +59,9 @@ export function sCurve(width: number, height: number) {
   const f0 = frameOf(width, height, 0), p0 = trackPose(0).point;
   const dy = p0.y - 608;
   const point = (x:number,y:number) => ({x,y:y+dy});
-  return {p0, p1:{x:p0.x+79,y:p0.y+79*trackPose(0).tangent.y/trackPose(0).tangent.x}, p2:point(381,585), p3:point(381,537),
-    p4:point(381,501), p5:point(343,478), p6:point(300,475), f0};
+  const turn=canonicalConnectorCentre(537),upper=canonicalConnectorCentre(505);
+  return {p0, p1:{x:p0.x+79,y:p0.y+79*trackPose(0).tangent.y/trackPose(0).tangent.x}, p2:point(turn.x,585), p3:point(turn.x,537),
+    p4:point(turn.x,501), p5:point(upper.x,478), p6:point(300,475), f0};
 }
 export function sPath(width: number, height: number) {
   const p=sCurve(width,height);

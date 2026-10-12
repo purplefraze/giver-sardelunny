@@ -37,3 +37,21 @@ export const CANONICAL_RIM_PATH = Array.from({length:113},(_,i)=> {
   const d=-70+i*.5,r=canonicalRimRadius(d),a=d*Math.PI/180;
   return `${i?"L":"M"} ${centre.x+r*Math.cos(a)} ${centre.y+r*Math.sin(a)}`;
 }).join(" ");
+/** Horizontal ink cross-sections on the canonical connector's narrow neck. */
+export function canonicalConnectorCentre(y:number) {
+  const hits:number[]=[];
+  for(let i=1;i<contour.length;i++) {
+    const a=contour[i-1],b=contour[i]; if(!a||!b||(a.y>y)===(b.y>y))continue;
+    hits.push(a.x+(b.x-a.x)*(y-a.y)/(b.y-a.y));
+  }
+  hits.sort((a,b)=>a-b);
+  const right=hits.at(-1),left=hits.at(-2);
+  if(right===undefined||left===undefined)throw new Error("canonical connector cross-section missing");
+  return {x:(left+right)/2,y};
+}
+
+/** Closed middle rim derived from the same contour, not a substitute circle. */
+export const CANONICAL_MIDDLE_PATH = Array.from({length:721},(_,i)=>{
+  const d=-70+i*.5,r=canonicalRimRadius(d>180?d-360:d),a=d*Math.PI/180;
+  return `${i?"L":"M"} ${centre.x+r*Math.cos(a)} ${centre.y+r*Math.sin(a)}`;
+}).join(" ")+" Z";

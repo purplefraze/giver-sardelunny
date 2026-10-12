@@ -717,7 +717,7 @@ function Index() {
    * null while the toggle is sitting on My G.
    */
   const activity: ActivitySeat | null = seat === "giver" || seat === "map" ? null : seat;
-  /** THE 6:00 DOOR: map / search opens communi-g's map, never a form. */
+  /** THE FULL-G 6:00 DOOR opens the white communi-g overview, never a form. */
   const atMap = seat === "map";
   const openMap = () => setBrowse({ type: null, selection: "everything", view: "list" });
   /* The last activity world still owns the loops' grammar when My G is held. */
@@ -939,14 +939,14 @@ function Index() {
                 label: "",
                 panelTitle: content.mine.title,
                 panelBody: null,
-                ariaLabel: atMap ? "open the communi-g map" : activity === null ? "open my g" : `open the ${seat} form`,
+                ariaLabel: atMap ? "open communi-g" : activity === null ? "open my g" : `open the ${seat} form`,
                 onPress: enterSelectedWorld,
                 /* The label is drawn by <LoopLabels> in the overlay. */
               },
               /*
                 BOTTOM LOOP = EVERYONE. COMMUNI-G, already filtered to the
                 toggle's world; the mixed community lives one word away inside.
-                At the map seat it opens communi-g's map.
+                At the full-G community seat it opens the white overview.
               */
               bottom: {
                 label: "",

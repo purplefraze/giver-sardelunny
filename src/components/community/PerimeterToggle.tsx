@@ -20,7 +20,7 @@ type Gesture = { id: number; centre: Point; radii: Point; raw: number | null; do
 /** ONE angle → one paint. Only release owns an animation; no camera timer.
  * A stable gesture-space ellipse is INPUT only, never a frozen camera/lens. */
 /** Tap = onTap (never exits) · stationary hold = onHold (record mode toggle). */
-/** backdrop = content clipped to the loop's hollow (the map at 12).
+/** backdrop = content clipped to the loop's hollow (the explicit map at 6).
  * onBack = a deliberate tap on the toggle once SETTLED at the outside "back". */
 /** header = the centred communi-g lockup at the top of the hollow (one line each).
  * backdropHidden keeps the map mounted (centre/zoom kept) while a detail shows. */
@@ -35,7 +35,8 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
     if(!title||!action)return;
     // Layout widths, not transformed screen widths: entry animation must not
     // inflate the measured text and spuriously lower the stable header.
-    const next={title:Math.ceil(title.offsetWidth),action:Math.max(32,Math.ceil(action.scrollWidth)),right:title.closest("[data-align]")?.getAttribute("data-align")==="right"};
+    const textWidth=(el:HTMLElement)=>{const range=document.createRange();range.selectNodeContents(el);return Math.ceil(range.getBoundingClientRect().width);};
+    const next={title:textWidth(title),action:Math.max(32,textWidth(action)),right:title.closest("[data-align]")?.getAttribute("data-align")==="right"};
     setHeaderSize(old=>old.title===next.title&&old.action===next.action&&old.right===next.right?old:next);
   },[header]);
   const [angle, setAngle] = useState(() => clockOf(value));
@@ -64,7 +65,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   const show = (station: CgStation) => {
     if (station === shownRef.current) return;
     shownRef.current = station; setShown(station);
-    // Content changes at real station crossings; 12:00 is the all-types map; no wrapped station crossings.
+    // Content changes at real station crossings; 12:00 is the white overview; no wrapped station crossings.
     if (station === "back") return; // reaching back never leaves, never changes content
     if (!external.current) { previousValue.current = station; callbacks.current.onChange(station); }
   };
@@ -133,8 +134,8 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   /* A single record may instead flow AROUND the bead (CSS float) so the whole
      hollow is usable; lists keep the plain rectangular clearance. */
   const flowed = flow ? beadFlow(size, restBead, box0) : null;
-  const safe = hollowBounds(size.w, size.h, angle, shown);
-  const bands = communityBands(size.w, size.h, angle, headerSize);
+  const safe = hollowBounds(size.w, size.h, Math.min(0,angle), shown);
+  const bands = communityBands(size.w, size.h, Math.min(0,angle), headerSize);
   const upper = bands.header;
   const feed = controls ? { ...bands.feed, t: Math.max(bands.feed.t,bands.controls.t+toolsHeight+8) } : safe;
   const inner = header ? { l: feed.l, r: size.w - feed.r, t: feed.t, b: size.h - feed.b } : flowed ? box0 : beadClear(size, restBead, box0);
@@ -146,7 +147,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
       const rect = root.getBoundingClientRect();
       root.querySelectorAll<HTMLElement>(".cg-list > li, [data-cg-safe-band]").forEach(row => {
         const box = row.getBoundingClientRect();
-        const bounds = hollowBand(size.w,size.h,angle,box.top-rect.top,box.height,0);
+        const bounds = hollowBand(size.w,size.h,Math.min(0,angle),box.top-rect.top,box.height,0);
         const parent = row.parentElement?.getBoundingClientRect();
         if (!parent) return;
         row.style.marginLeft = `${Math.max(0,bounds.l-(parent.left-rect.left))}px`;
@@ -164,7 +165,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   return <div ref={stage} className="absolute inset-0 overflow-hidden bg-background" data-cg-stage="" data-cg-clock={wrap(angle).toFixed(4)} data-cg-progress={angle.toFixed(4)} data-cg-snapping={snapping ? "1" : "0"} data-cg-held={held ? "1" : "0"} data-cg-sfit={frame.scale} data-cg-seat-ms={SNAP_MS} data-cg-stem-len={ARM_LENGTH} data-cg-track-w={TRACK_WIDTH} data-cg-kind="smooth-lower-loop" data-cg-camera-angle={angle.toFixed(4)}>
     {backdrop ? <>
       <svg width={0} height={0} className="absolute" aria-hidden="true"><clipPath id="cg-hollow" clipPathUnits="userSpaceOnUse"><path d={HOLLOW_PATH} transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} /></clipPath></svg>
-      <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)", ["--map-safe-l" as string]: `${safe.l}px`, ["--map-safe-r" as string]: `${size.w-safe.r}px`, ["--map-safe-b" as string]: `${size.h-safe.b}px`, ...(backdropHidden ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={backdropHidden || undefined} data-cg-backdrop="">{backdrop}</div>
+      <div className="absolute inset-0 z-[1]" style={{ clipPath: "url(#cg-hollow)", WebkitClipPath: "url(#cg-hollow)", ["--map-safe-l" as string]: `${safe.l}px`, ["--map-safe-r" as string]: `${size.w-safe.r}px`, ["--map-safe-b" as string]: `${size.h-safe.b}px`, ...(backdropHidden || angle > 0 ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={backdropHidden || undefined} data-cg-backdrop="">{backdrop}</div>
     </> : null}
     <svg width={size.w} height={size.h} className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true" data-cg-world="">
       <g transform={`translate(${frame.x} ${frame.y}) scale(${frame.scale})`} data-cg-loop="">
@@ -173,9 +174,9 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
       </g>
       <line x1={frame.tip.x} y1={frame.tip.y} x2={frame.root.x} y2={frame.root.y} stroke={colour} strokeWidth={visibleStroke(size.w)} strokeLinecap="butt" data-cg-stem-arm="" />
     </svg>
-     {header ? <div className="pointer-events-none absolute z-[6]" style={{ left: 0, right: 0, top: upper.t, height: upper.b-upper.t, ["--cg-title-l" as string]:`${bands.title.l}px`, ["--cg-title-w" as string]:`${bands.title.r-bands.title.l}px`, ["--cg-action-l" as string]:`${bands.action.l}px`, ["--cg-action-w" as string]:`${bands.action.r-bands.action.l}px` }} data-cg-header="">{header}</div> : null}
-     {controls ? <div className="absolute z-[6]" style={{ left: 0, right: 0, top: bands.controls.t, height: bands.controls.b-bands.controls.t }} data-cg-controls="">{controls}</div> : null}
-    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ left: header ? 0 : inner.l, right: header ? 0 : inner.r, top: inner.t, bottom: inner.b, ...(flowed ? { ["--bead-top" as string]: `${flowed.top}px`, ["--bead-w" as string]: `${flowed.w}px`, ["--bead-h" as string]: `${flowed.h}px` } : {}) }} data-cg-interior="" data-cg-bead-flow={flowed ? flowed.side : undefined}><div className="h-full w-full" style={{ pointerEvents: backdrop && !backdropHidden && !flow ? "none" : "auto" }}>{children}</div></div> : null}
+     {header ? <div className="pointer-events-none absolute z-[6]" style={{ left: 0, right: 0, visibility: angle > 0 ? "hidden" : undefined, top: upper.t, height: upper.b-upper.t, ["--cg-title-l" as string]:`${bands.title.l}px`, ["--cg-title-w" as string]:`${bands.title.r-bands.title.l}px`, ["--cg-action-l" as string]:`${bands.action.l}px`, ["--cg-action-w" as string]:`${bands.action.r-bands.action.l}px` }} data-cg-header="">{header}</div> : null}
+     {controls ? <div className="absolute z-[6]" style={{ left: 0, right: 0, visibility: angle > 0 ? "hidden" : undefined, top: bands.controls.t, height: bands.controls.b-bands.controls.t }} data-cg-controls="">{controls}</div> : null}
+    {children ? <div className="pointer-events-none absolute z-[5] overflow-hidden" style={{ visibility: angle > 0 ? "hidden" : undefined, left: header ? 0 : inner.l, right: header ? 0 : inner.r, top: inner.t, bottom: inner.b, ...(flowed ? { ["--bead-top" as string]: `${flowed.top}px`, ["--bead-w" as string]: `${flowed.w}px`, ["--bead-h" as string]: `${flowed.h}px` } : {}) }} data-cg-interior="" data-cg-bead-flow={flowed ? flowed.side : undefined}><div className="h-full w-full" style={{ pointerEvents: backdrop && !backdropHidden && !flow ? "none" : "auto" }}>{children}</div></div> : null}
     <Button variant="ghost" className="absolute z-30 h-[88px] w-[88px] rounded-full border-0 bg-transparent p-0 shadow-none transition-none hover:bg-transparent focus-visible:ring-0 [&_svg]:size-auto" style={{ left: frame.bead.x - 44, top: frame.bead.y - 44, touchAction: "none", cursor: held ? "grabbing" : "grab" }} role="slider" aria-label={shown === "back" ? "back — tap to return to the living g" : record ? (listening ? "recording — tap to stop" : "record mode — tap to listen, hold to return") : "communi-g mode — hold for voice"} aria-valuemin={-315} aria-valuemax={clockOf("back")} aria-valuenow={angle} aria-valuetext={lowerWord(shown)} data-cg-toggle="" data-cg-seat={shown} data-cg-settled={!held && !snapping ? "1" : "0"}
       onPointerDown={e => {
         if (gesture.current || !e.isPrimary || e.button !== 0) return;

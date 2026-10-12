@@ -1,3 +1,9 @@
+# October 12 final voice corrections — active
+- [ ] White main community entry at12, explicit map at6 and wish-first filters; preserve context.
+- [ ] Canonical upward S return with coherent attachment and continuous reversible motion.
+- [ ] Repair full/sign-in rim notches and projected paint joins across modes.
+- [ ] Actual phone viewport screenshots, whole-motion inspection, focused regressions and current documentation.
+
 # Authorised Luna repair — October 11
 - [x] Screen-space stroke across full/sign-in, posting, profile and community renderers.
 - [x] My G bead-only names/markers; remove profile recording without changing posting.

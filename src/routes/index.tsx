@@ -719,7 +719,7 @@ function Index() {
   const activity: ActivitySeat | null = seat === "giver" || seat === "map" ? null : seat;
   /** THE 6:00 DOOR: map / search opens communi-g's map, never a form. */
   const atMap = seat === "map";
-  const openMap = () => setBrowse({ type: null, selection: "map", view: "map" });
+  const openMap = () => setBrowse({ type: null, selection: "everything", view: "list" });
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = seatMode(activity ?? "give");
   const content = MODE_CONTENT[mode];
@@ -1346,7 +1346,7 @@ function Index() {
                       });
                     }}
                     onClose={() => setBrowse(null)}
-                    /* Explicit accessible return; lower 12:00 is now map, not exit. */
+                    /* Explicit settled return to whole G; lower12 is overview, not profile. */
                     onExit={() => {
                       setBrowse(null);
                       setSeat("map");

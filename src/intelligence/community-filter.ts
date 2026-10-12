@@ -2,19 +2,19 @@ import type { CgMode } from "@/data/communigy";
 
 /**
  * LOWER-LOOP SELECTION — one value drives the inside toggle, the filter row
- * and the feed. "map" is the blue 12:00 all-types map. "mine" remains a
+ * and the feed. "map" is the blue 6:00 all-types map. "mine" remains a
  * legacy voice scope routed to My G activity, never a lower seat.
  */
 export type CgSelection = CgMode | "map" | "mine";
 
 export const CG_FILTERS: { value: CgSelection; word: string }[] = [
-  { value: "give", word: "gives" },
-  { value: "lend", word: "lends" },
-  { value: "trade", word: "trades" },
-  { value: "everything", word: "communi-g" },
-  { value: "fund", word: "funds" },
-  { value: "borrow", word: "borrows" },
   { value: "wish", word: "wishes" },
+  { value: "borrow", word: "borrows" },
+  { value: "fund", word: "funds" },
+  { value: "everything", word: "communi-g" },
+  { value: "trade", word: "trades" },
+  { value: "lend", word: "lends" },
+  { value: "give", word: "gives" },
 ];
 
 const RULES: [RegExp, CgSelection][] = [

@@ -77,13 +77,11 @@ export function frameOf(width: number, height: number, angle: number): { x: numb
   if (angle > 0) {
     const u=Math.min(1,angle/BACK_ANGLE), pose=returnPose(width,height,u);
     const k=u*u*(3-2*u), scale=pose.f0.scale+(width/576-pose.f0.scale)*k;
-    // The same progress pulls back the camera to reveal the upward S.
-    const x=pose.f0.x+((width/2-330*scale)-pose.f0.x)*k;
-    const y=pose.f0.y+((height*.38-530*scale)-pose.f0.y)*k;
-    const point={x:x+pose.point.x*scale,y:y+pose.point.y*scale};
-    const reach=TRACK_WIDTH/2+ARM_LENGTH+BEAD_RADIUS;
-    const normal=pose.normal;
-    const bead={x:point.x-normal.x*reach,y:point.y-normal.y*reach};
+    const reach=TRACK_WIDTH/2+ARM_LENGTH+BEAD_RADIUS,normal=pose.normal;
+    // Keep the live grip accessible while the same progress reveals the S.
+    const bead={x:width/2+Math.sin(Math.PI*u)*width*.12,y:54+k*(height*.26-54)};
+    const point={x:bead.x+normal.x*reach,y:bead.y+normal.y*reach};
+    const x=point.x-pose.point.x*scale,y=point.y-pose.point.y*scale;
     const root={x:point.x-normal.x*visibleStroke(width)/2,y:point.y-normal.y*visibleStroke(width)/2};
     const tip={x:bead.x+normal.x*(BEAD_SCREEN_RADIUS-visibleStroke(width)/2),y:bead.y+normal.y*(BEAD_SCREEN_RADIUS-visibleStroke(width)/2)};
     return {x,y,scale,bead,root,tip,normal};

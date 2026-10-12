@@ -2,14 +2,21 @@
 
 **Status:** Approved by Frazer, 27 Sep 2026. Communi-g spatial nav (sections 2 to 5) updated 29 Sep 2026: the phone rectangle rides the lower loop's arc; the toggle stays fixed at 12:00 on the rectangle; snap on midpoint.
 
-This document preserves historical approved decisions. The October 10 16:50 lower-loop section below supersedes conflicting lower-loop entries; full-G and upper-profile geometry are unchanged.
+This document preserves historical approved decisions. October 12 authority below supersedes conflicting lower-loop entries; full-G and upper-profile geometry are unchanged.
 
-## Current lower-loop authority — October 10, 16:50 UTC
+## Current authority — October 12
+- White communi-g list entry, red overview bead at twelve; explicit all-types map at six. No map-first flash or provider/palette change.
+- Filters: wishes → borrows → funds → communi-g → trades → lends → gives. Map remains separate. Unchanged physical categories make wish-first travel anticlockwise on screen; never mirror or shortcut the opening.
+- Canonical upward S measurements ground joined return paint, normal/contact and camera-projected bead. No downward rail, straight tail or independent twist. Settled my g tap returns to whole G, not profile.
+- Preserve category/search/sort/radius and mounted map pan/zoom on normal returns; changing category dismisses nested views. Content disappears during positive return travel rather than crossing the connector.
+- Preserve October 11 type, screen paint, profile-only navigation, draft/Share and keyboard rules. Actual-viewport evidence: `docs/voice-oct12-verification.md`.
+
+## Historical lower-loop authority — October 10/11 (map/order/S superseded)
 ### Authorised October 11 reconciliation (supersedes conflicts below)
 - My G: selected lowercase name inside moving bead; no exterior seat labels and no profile recorder. Eight authentic-ring positions and unlabelled markers retain shared drag/settling, keyboard naming, pinch and my g exit. External profile-area requests remain supported.
 - Shared visible screen paint is 8/9/10px at 320/390/430 app widths, interpolated independently of camera/orbit geometry. Canonical filled masks compensate actual SVG projection; line/ring paint uses non-scaling strokes.
 - Intended Helvetica Neue with existing fallback; active 400/500/700 weights, zero tracking, minimum 12px outside beads and 11px inside. No new font assets were acquired.
-- Lower physical order: gives → lends → trades → communi-g → funds → borrows → wishes. Entry remains lower-12 all-types map, with bounded open wire and outside S back route. No category remap.
+- Lower physical category stations remain unchanged; October 12 swaps only overview/map and supersedes the former map-first entry/order below.
 - All contextual headings and map/list actions use measured controls at the shared 56px target. Wish/borrow/fund right align, trade/lend left align. Rows and tools measure their own curved safe bands, including scroll/travel; maps retain context and closed hollow clipping.
 - Bio remains username/about me/private birthday; removed obsolete fields stay removed. Posting's deliberate Record/Stop, editable draft and explicit Share remain unchanged.
 

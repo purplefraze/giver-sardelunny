@@ -2,6 +2,7 @@ import svgpath from "svgpath";
 import Clipper from "clipper-lib";
 import { EAR_CUT, LIVING_G_PATH, LOOP_CENTRE, RIM_PATCH, arcPath, wedgePath } from "./g-path";
 import { MIDDLE_CLOSE } from "./loop-close";
+import { CANONICAL_EAR_MASK, CANONICAL_RIM_PATH } from "./canonical-rim";
 
 export type Point = { x: number; y: number };
 export type OutlinePose = { x: number; y: number; scale: number };
@@ -36,8 +37,8 @@ const source = (() => {
   const paths=flatten(svgpath(LIVING_G_PATH).transform("translate(0,1133) scale(0.1,-0.1)").toString()).map(p=>p.map(ip));
   const off=new Clipper.ClipperOffset(2,.08*U); off.AddPaths(paths,Clipper.JoinType.jtRound,Clipper.EndType.etClosedPolygon);
   const eroded:Clipper.Paths=[]; off.Execute(eroded,-12.5*U);
-  let art=boolean(eroded,flatten(wedgePath(C,EAR_CUT.a0,EAR_CUT.a1,EAR_CUT.r0,EAR_CUT.r1)).map(p=>p.map(ip)),Clipper.ClipType.ctDifference);
-  art=boolean(art,stroke(arcPath(C,RIM_PATCH.a0,RIM_PATCH.a1,RIM_PATCH.rMid),28.5),Clipper.ClipType.ctUnion);
+  let art=boolean(eroded,flatten(CANONICAL_EAR_MASK).map(p=>p.map(ip)),Clipper.ClipType.ctDifference);
+  art=boolean(art,stroke(CANONICAL_RIM_PATH,28.5),Clipper.ClipType.ctUnion);
   const m=MIDDLE_CLOSE; const pts:Point[]=[];
   for(let d=m.from;d<=m.to;d++){const t=Math.min(1,Math.max(0,(d-m.easeFrom)/(m.easeTo-m.easeFrom)));const r=m.rFrom+(m.rTo-m.rFrom)*t*t*(3-2*t);pts.push({x:C.x+r*Math.cos(d*Math.PI/180),y:C.y+r*Math.sin(d*Math.PI/180)});}
   art=boolean(art,stroke(`M${pts.map(p=>`${p.x} ${p.y}`).join(" L")}`,28.5),Clipper.ClipType.ctUnion);

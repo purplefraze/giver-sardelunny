@@ -19,6 +19,7 @@ import {
 import { useSignInCanvas } from "@/components/onboarding/use-keyboard-fit";
 import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
 import { useScreenPaint } from "@/components/living-g/use-screen-paint";
+import { CANONICAL_MIDDLE_PATH } from "@/components/living-g/canonical-rim";
 import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
 
 /**
@@ -147,19 +148,17 @@ function SignInRing() {
           </g>
         </mask>
       </defs>
-      <path d={TRIM_PATH} fill="var(--world-bg)" mask={`url(#${id}-trim)`} pointerEvents="none" />
+
       <SignInRingStroke />
     </>
   );
 }
 function SignInRingStroke() {
-  const ref = useRef<SVGCircleElement | null>(null);
+  const ref = useRef<SVGPathElement | null>(null);
   const paint = useScreenPaint(ref);
   return (
-    <circle
-      cx={RING_C.x}
-      cy={RING_C.y}
-      r={RING_OUTER - RING_STROKE / 2}
+    <path
+      d={CANONICAL_MIDDLE_PATH}
       fill="var(--world-bg)"
       stroke="var(--world-g)"
       strokeWidth={paint.width}

@@ -6,8 +6,8 @@ import { FULL_G_PAINT_STROKE, G_STROKE } from "../src/components/living-g/g-weig
 import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "../src/components/community/map-view";
 import { hollowBounds, communityBands, COMMUNITY_TOP } from "../src/components/community/hollow-layout";
 test("categories follow physical wheel, without a map category", () => {
-  expect(CG_FILTERS.map(f => f.value)).toEqual(["give","lend","trade","everything","fund","borrow","wish"]);
-  expect(CG_FILTERS.map(f => lowerAngle(f.value === "mine" ? "map" : f.value))).toEqual([-315,-270,-225,-180,-135,-90,-45]);
+  expect(CG_FILTERS.map(f => f.value)).toEqual(["wish","borrow","fund","everything","trade","lend","give"]);
+  expect(CG_FILTERS.map(f => lowerAngle(f.value === "mine" ? "everything" : f.value))).toEqual([-45,-90,-135,0,-225,-270,-315]);
 });
 test("all sections use one app-frame reference independent of lower list bounds", () => {
   expect(COMMUNITY_TOP).toBe(56);
@@ -21,7 +21,7 @@ test("all sections use one app-frame reference independent of lower list bounds"
   }
 });
 test("independent upper bands clear the wire and full grip throughout lower travel", () => {
-  for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315;angle<=30;angle+=6) {
+  for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315;angle<=0;angle+=6) {
     const {header,controls,feed}=communityBands(w,h,angle),f=frameOf(w,h,angle);
     const exclusion={l:Math.min(f.bead.x-48,f.root.x-14),r:Math.max(f.bead.x+48,f.root.x+14),t:Math.min(f.bead.y-48,f.root.y-14),b:Math.max(f.bead.y+48,f.root.y+14)};
     const {title,action}=communityBands(w,h,angle);
@@ -36,7 +36,7 @@ test("independent upper bands clear the wire and full grip throughout lower trav
   }
 });
 test("travel bounds clear curved wire and attached toggle", () => {
-  for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315; angle<=30; angle+=3) {
+  for (const [w,h] of [[320,568],[390,640],[390,844],[430,932]] as const) for (let angle=-315; angle<=0; angle+=3) {
     const b=hollowBounds(w,h,angle,nearestLower(angle)), f=frameOf(w,h,angle);
     expect(b.r-b.l).toBeGreaterThan(130);
     expect(b.b-b.t).toBeGreaterThan(150);

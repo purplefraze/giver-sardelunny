@@ -5,11 +5,12 @@ import { itemMode } from "../src/data/communigy";
 import { reviseFundFixture, DEMO_FUND_ID } from "../src/data/fund-fixture";
 import type { Item } from "../src/data/items";
 
-test("top map to Give follows the counterclockwise wire without moving Trade", () => {
-  expect(LOWER_STATIONS.map(s => s.value).filter(s => s !== "everything")).toEqual(["back", "map", "wish", "borrow", "fund", "trade", "lend", "give"]);
-  expect(lowerAngle("map")).toBe(0);
+test("top overview to Give follows the counterclockwise wire without moving Trade", () => {
+  expect(LOWER_STATIONS.map(s => s.value)).toEqual(["back", "everything", "wish", "borrow", "fund", "map", "trade", "lend", "give"]);
+  expect(lowerAngle("map")).toBe(-180);
+  expect(lowerAngle("everything")).toBe(0);
   expect(lowerAngle("trade")).toBe(-225);
-  expect(lowerAngle("give") - lowerAngle("map")).toBe(-315);
+  expect(lowerAngle("give") - lowerAngle("everything")).toBe(-315);
 });
 test("missing top-to-Give arc is open and cannot wrap", () => {
   expect(clampLower(90)).toBe(60);
@@ -36,16 +37,15 @@ test("only unedited synthetic Fund becomes a cause, without changing target or r
   expect(reviseFundFixture({...demo,edited:true})).toEqual({...demo,edited:true});
 });
 import { frameOf } from "../src/components/community/perimeter-geometry";
-test("past twelve the same toggle rides the S continuously and settles horizontal at the right", () => {
+test("past twelve the same toggle follows the upward S with transported attachment", () => {
   for (const [w, h] of [[320, 640], [390, 844], [430, 932]] as const) {
     const at0 = frameOf(w, h, 0), just = frameOf(w, h, 0.01);
     expect(Math.hypot(at0.bead.x - just.bead.x, at0.bead.y - just.bead.y)).toBeLessThan(1);
     let prev = at0.bead;
     for (let a = 1; a <= 60; a++) { const b = frameOf(w, h, a).bead; expect(Math.hypot(b.x - prev.x, b.y - prev.y)).toBeLessThan(25); prev = b; }
     const back = frameOf(w, h, 60);
-    expect(Math.abs(back.normal.y)).toBeLessThan(0.01);
-    expect(back.normal.x).toBeLessThan(0); // arm points back left into the loop
-    expect(back.bead.x).toBeGreaterThan(w - 60);
+    expect(back.normal.y).toBeGreaterThan(.9);
+    expect(back.bead.y).toBeLessThan(h*.4);
     expect(back.bead.x + 44).toBeLessThanOrEqual(w);
   }
 });

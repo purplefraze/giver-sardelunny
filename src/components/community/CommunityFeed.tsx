@@ -8,7 +8,7 @@ import { kmBetween, itemMode, listingPin, DEMO_REGION, isDemoListing, CG_WORD, t
 const CommunigyMap = lazy(() => import("./CommunigyMap").then(m => ({ default: m.CommunigyMap })));
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { seatPlacement } from "@/intelligence/seat-placement";
-const CG_CLOCK: Record<string, number> = { map: 0, mine: 0, give: 45, lend: 90, trade: 135, everything: 180, fund: 225, borrow: 270, wish: 315 };
+const CG_CLOCK: Record<string, number> = { map: 180, mine: 0, give: 45, lend: 90, trade: 135, everything: 0, fund: 225, borrow: 270, wish: 315 };
 
 import { PerimeterToggle, type CgStation } from "@/components/community/PerimeterToggle";
 import { WishMatch } from "@/components/community/WishMatch";
@@ -23,7 +23,7 @@ import { haptics } from "@/lib/haptics";
 
 /**
  * COMMUNI-G — the lower loop. ONE selection drives the inside toggle, the
- * filter row and feed. 12:00 = blue all-types map; 6:00 = all list.
+ * filter row and feed. 12:00 = red overview list; 6:00 = explicit blue all-types map.
  *
  * SECTION CHANGES DISMISS THE OPEN LISTING: any deliberate change of station
  * (toggle crossing, filter tap, voice filter, a new initialSelection) closes
@@ -33,8 +33,8 @@ import { haptics } from "@/lib/haptics";
 type Scope = "everyone" | "mine";
 type View = "list" | "map";
 
-const toStation = (s: CgSelection): CgStation => (s === "mine" ? "map" : s);
-const fromStation = (s: CgStation): CgSelection => (s === "back" ? "map" : s);
+const toStation = (s: CgSelection): CgStation => (s === "mine" ? "everything" : s);
+const fromStation = (s: CgStation): CgSelection => (s === "back" ? "everything" : s);
 
 /** Pure: what the feed lists for one selection. Only active, published posts. */
 export function feedFor(items: Item[], sel: CgSelection, term = "", keep?: string): Item[] {
@@ -57,7 +57,7 @@ export const sectionWord = (s: CgSelection) => (s === "map" || s === "everything
 
 export function CommunityFeed({
   initialType = null,
-  initialView = "map",
+  initialView = "list",
   initialSide,
   initialScope,
   initialSelection,
@@ -96,7 +96,7 @@ export function CommunityFeed({
   onStartGive?: () => void;
 }) {
   const [sel, setSel] = useState<CgSelection>(
-    initialSelection ?? (initialScope === "mine" ? "mine" : initialType ? modeFor(initialType, initialSide) : "map"),
+    initialSelection ?? (initialScope === "mine" ? "mine" : initialType ? modeFor(initialType, initialSide) : "everything"),
   );
   const selRef = useRef(sel);
   selRef.current = sel;
@@ -108,7 +108,7 @@ export function CommunityFeed({
   const listening = voice.state === "listening";
   const ink = sel === "map" ? "var(--mode-giver)" : CG_INK[sel === "mine" ? "everything" : sel];
   const location = useMyLocation();
-  const [categoryView, setCategoryView] = useState<View>(initialView === "map" && !initialType && (initialSelection === undefined || initialSelection === "map") ? "map" : "list");
+  const [categoryView, setCategoryView] = useState<View>(initialView);
   const view: View = sel === "map" ? "map" : categoryView;
   const [mapList, setMapList] = useState(false);
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");

@@ -26,6 +26,7 @@ import { loopOrigin, wrapLines, wrapWidth } from "./loop-layout";
 import { GThinMask } from "./g-weight";
 import { useScreenPaint } from "./use-screen-paint";
 import { MiddleLoopClose } from "./loop-close";
+import { CANONICAL_EAR_MASK, CANONICAL_RIM_PATH } from "./canonical-rim";
 
 
 /**
@@ -149,11 +150,11 @@ function rimPatch(paint: number) {
      weight; only its width follows the weight (53.5 → 28.5). */
   return (
     <path
-      d={arcPath(LOOP_CENTRE.middle, RIM_PATCH.a0, RIM_PATCH.a1, RIM_PATCH.rMid)}
+      d={CANONICAL_RIM_PATH}
       fill="none"
       stroke="var(--world-g)"
       strokeWidth={paint} vectorEffect="non-scaling-stroke"
-      strokeLinecap="butt"
+      strokeLinecap="round"
     />
   );
 }
@@ -303,13 +304,7 @@ export function LivingG({
           <mask id={`${uid}-earcut`} maskUnits="userSpaceOnUse">
             <rect x="-200" y="-200" width="1200" height="1600" fill="#fff" />
             <path
-              d={wedgePath(
-                LOOP_CENTRE.middle,
-                EAR_CUT.a0,
-                EAR_CUT.a1,
-                EAR_CUT.r0,
-                EAR_CUT.r1,
-              )}
+              d={CANONICAL_EAR_MASK}
               fill="#000"
             />
           </mask>

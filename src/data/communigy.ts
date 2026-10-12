@@ -10,7 +10,7 @@ import { signInFeedLines, type SignInFeedKind } from "@/data/signin-feed";
  * THE MODES the page visits round the lower loop, at the wheel's seat
  * angles (EarSelector SEAT_ANGLE; PerimeterToggle maps each mode to its
  * seat), clockwise from 12:00 (the exit back to the full G):
- *   give 1:30 · lend 3:00 · trade 4:30 · everything 6:00 (entry) ·
+ *   give 1:30 · lend 3:00 · trade 4:30 · map 6:00; communi-g overview 12:00 (entry) ·
  *   fund 7:30 · borrow 9:00 · wish 10:30
  * Lend is a borrow record with side "lend"; fund is a wish with a money
  * target (details.fundTarget). No new tables: this only reads Items.
@@ -18,7 +18,7 @@ import { signInFeedLines, type SignInFeedKind } from "@/data/signin-feed";
 export type CgMode = "everything" | SignInFeedKind;
 
 /** The modes in clock order from 1:30 (see above). */
-export const CG_MODES: CgMode[] = ["give", "lend", "trade", "everything", "fund", "borrow", "wish"];
+export const CG_MODES: CgMode[] = ["wish", "borrow", "fund", "everything", "trade", "lend", "give"];
 
 /** The mode colour (the frame stays red; this is the INTERIOR ink). */
 export const CG_COLOUR: Record<CgMode, string> = {

@@ -26,7 +26,7 @@ function Review() {
   const otp={step:"email" as const,email,setEmail,busy:false,error:null,notice:null,cooldown:0,code:"",setCode:()=>{},submitEmail:async(e?:React.FormEvent)=>{e?.preventDefault();},submitCode:async(e?:React.FormEvent)=>{e?.preventDefault();},resend:async()=>{},changeEmail:()=>{}};
   const region={label:"",panelTitle:"",panelBody:null};
   return <main className="fixed inset-0" data-luna-review="">
-    {view==="full" ? <World world={seat==="giver"?"profile":seat} earCut regions={{top:region,middle:region,bottom:region}} overlay={<EarSelector mode={seat} onChange={setSeat} onTap={()=>setView(seat==="giver"?"profile":seat==="map"?"community":"signin")} />} /> : null}
+    {view==="full" ? <World world={seat==="giver"?"profile":seat} earCut regions={{top:region,middle:region,bottom:region}} overlay={<EarSelector seats={["giver","give","lend","trade","map","fund","borrow","wish"]} mode={seat} onChange={setSeat} onTap={()=>setView(seat==="giver"?"profile":seat==="map"?"community":"signin")} />} /> : null}
     {view==="signin" ? <SignInView otp={otp} /> : null}
     {view==="community" ? <CommunityFeed detailId={detail} onOpen={setDetail} onCloseDetail={()=>setDetail(null)} onClose={()=>setView("full")} /> : null}
     {view==="profile" ? <MyGRing onClose={()=>setView("full")} /> : null}

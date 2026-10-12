@@ -28,6 +28,10 @@ const before=edges(-60),after=edges(-30);
 /** The ear flare obscures the outer contour only across this span. Continue
  * its measured neighbouring radii, retaining the actual inner contour. */
 export function canonicalRimRadius(degrees:number) {
+  if(degrees>=38&&degrees<=104) {
+    const t=Math.min(1,Math.max(0,(degrees-50)/28));
+    return 170.75+7*t*t*(3-2*t);
+  }
   const measured=edges(degrees);
   const outer=degrees>-60&&degrees<-30?before.outer+(after.outer-before.outer)*(degrees+60)/30:measured.outer;
   return (measured.inner+outer)/2;

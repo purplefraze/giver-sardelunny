@@ -35,4 +35,27 @@ $P -d sec_sep23 -c "create schema t" >/dev/null
 sed -n '1,/^-- ---- synthetic/p' supabase/tests/10_security_tests.sql | $P -d sec_sep23 >/dev/null
 $P -d sec_sep23 -f supabase/tests/30_reserved_tests.sql >/dev/null
 echo "== Sep-23 present run"; report sec_sep23
-for d in sec_main sec_sep23; do $P -d $d -At -c "select count(*) filter (where ok)||' pass / '||count(*) filter (where not ok)||' fail' from t.results"; done
+# 4) full app flow in SHIP ORDER: 01 (+03, 02) -> client -> 01b
+fresh sec_flow
+$P -d sec_flow -f supabase/unapplied/20261015_01_spark_lock.sql
+$P -d sec_flow -f supabase/unapplied/20261015_03_holds_sparkles_fund.sql
+$P -d sec_flow -f supabase/unapplied/20261015_02_live_give_gate.sql
+sed -n '1,/^-- ---- synthetic/p' supabase/tests/10_security_tests.sql | $P -d sec_flow >/dev/null
+$P -d sec_flow -f supabase/tests/50_flow_tests.sql >/dev/null
+$P -d sec_flow -f supabase/unapplied/20261015_01b_spark_column_revoke.sql
+$P -d sec_flow -f supabase/tests/55_after_01b_tests.sql >/dev/null
+echo "== app flow (ship order 01 -> client -> 01b) run"; report sec_flow
+rollback_sql supabase/unapplied/20261015_03_holds_sparkles_fund.sql | $P -d sec_flow >/dev/null
+$P -d sec_flow -At -c "select 'rollback 03 ok: '||(to_regprocedure('public.spend_my_sparkle(uuid)') is null)"
+# 5) Fund: with Sep-27 wish_contributions present
+fresh sec_fund
+# TEST-ONLY shim: Sep-27 calls public.owns_profile/is_admin, which prod no longer
+# has (moved to app_private). Reconciliation task must fix Sep-27 itself.
+$P -d sec_fund -c "create function public.owns_profile(uuid) returns boolean language sql stable as 'select app_private.owns_profile(\$1)'; create function public.is_admin() returns boolean language sql stable as 'select app_private.is_admin()';" >/dev/null
+$P -d sec_fund -f supabase/migrations/20260927150000_wish_contributions.sql >/dev/null
+$P -d sec_fund -f supabase/unapplied/20261015_01_spark_lock.sql
+$P -d sec_fund -f supabase/unapplied/20261015_03_holds_sparkles_fund.sql
+sed -n '1,/^-- ---- synthetic/p' supabase/tests/10_security_tests.sql | $P -d sec_fund >/dev/null
+$P -d sec_fund -f supabase/tests/60_fund_tests.sql >/dev/null
+echo "== Sep-27 present (fund) run"; report sec_fund
+for d in sec_main sec_sep23 sec_flow sec_fund; do $P -d $d -At -c "select count(*) filter (where ok)||' pass / '||count(*) filter (where not ok)||' fail' from t.results"; done

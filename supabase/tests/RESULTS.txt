@@ -58,5 +58,49 @@ PASS | after rollback: ledger kept |
 PASS | reserved: PATCH runs | 
 PASS | reserved/sparks_seeded/rewarded kept, name saved | 
 PASS | Sep-23 default (50) respected on insert | 
+== app flow (ship order 01 -> client -> 01b) run
+PASS | client: identity-only profile save | 
+PASS | client: identity saved | 
+PASS | welcome: claim | 
+PASS | welcome: replay is a no-op | 
+PASS | welcome: +50 sparks +50 give once | 
+PASS | reserve: wish A2 | 
+PASS | reserve: replay idempotent | 
+PASS | reserve: wish A3 | 
+PASS | reserve: -20 total, two open holds | 
+PASS | reserve: someone else's item refused | not your wish
+PASS | release: withdraw A3 | 
+PASS | release: replay no-op | 
+PASS | reserve: more than balance refused | insufficient sparks
+PASS | release: refunded once (-10 net) | 
+PASS | delete: hold refunded | 
+PASS | holds: member cannot write holds | permission denied for table spark_holds
+PASS | settle: granter connects (has live give) | 
+PASS | settle: granter claims | 
+PASS | settle: wisher confirms | 
+PASS | settle: hold closed as settled (not refunded) | 
+PASS | settle: wisher not refunded | 
+PASS | settle: granter paid +10 exactly once | 
+PASS | ledger: every A balance change ledgered | 
+PASS | sparkle: boost A1 | 
+PASS | sparkle: second boost same item capped | capped
+PASS | sparkle: own item refused | self
+PASS | sparkle: direct boost insert revoked | permission denied for table boosts
+PASS | sparkle: -1 sparkle, +1 boost_count | 
+PASS | sparkle: none left refused | insufficient sparks
+PASS | gate: no-give member cannot start conversation | new row violates row-level security policy for table "conversations"
+PASS | gate: no-give member cannot connect | new row violates row-level security policy for table "connections"
+PASS | 01b: new client identity save | 
+PASS | 01b: old client PATCH (with sparks) rejected — why client ships first | permission denied for table profiles
+PASS | 01b: RPCs still work | 
+rollback 03 ok: true
+== Sep-27 present (fund) run
+PASS | fund: pledge | 
+PASS | fund: replay idempotent | 
+PASS | fund: past target refused | pledge exceeds the wish's stated cost
+PASS | fund: own wish refused | wish not fundable
+PASS | fund: one row, sparks untouched | 
 4 pass / 0 fail
 3 pass / 0 fail
+34 pass / 0 fail
+5 pass / 0 fail

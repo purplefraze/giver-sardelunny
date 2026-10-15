@@ -1,4 +1,4 @@
-import { gateLine } from "@/data/cloud/sparks";
+import { afterSettlement, gateLine } from "@/data/cloud/sparks";
 import { supabase } from "@/integrations/supabase/client";
 import { connectionsStore, type Connection } from "@/data/connections";
 import { itemsStore, ME_ID, type ItemType } from "@/data/items";
@@ -76,10 +76,16 @@ export async function startConnection(itemId: string): Promise<string> {
   ).select("id").single();
   /* 02_live_give_gate: the server refuses without a live give (RLS 42501). */
   if (error) throw gateLine(error) ? new Error(gateLine(error)!) : error;
-  await supabase.from("conversations").upsert(
+  const conv = await supabase.from("conversations").upsert(
     { connection_id: data.id, item_id: cloudId, a_id: ownerId, b_id: me },
     { onConflict: "connection_id" },
   );
+  /* The connection row exists but the gate refused its chat: say so plainly. */
+  if (conv.error) {
+    const gated = gateLine(conv.error);
+    await loadConnections();
+    throw gated ? new Error(gated) : conv.error;
+  }
   await loadConnections();
   await notify({
     profileId: ownerId,
@@ -99,7 +105,15 @@ export async function updateConnection(connectionId: string, action: "handover" 
     const blocked = c && item ? receiveBlock(itemsStore.get(), item, c.helperId) : null;
     if (blocked) throw new Error(blocked);
   }
-  await changeConnectionState({ data: { connectionId, action, ...(value === undefined ? {} : { value }) } });
+  try {
+    await changeConnectionState({ data: { connectionId, action, ...(value === undefined ? {} : { value }) } });
+  } catch (e) {
+    /* 02: the receiver lost their live give before settling. */
+    if (e instanceof Error && /live give/i.test(e.message)) throw new Error("put a give out first — then you can receive.");
+    throw e;
+  }
+  /* Settlement may have paid +10 / settled a wish hold on the server. */
+  if (action === "confirm") void afterSettlement();
   await loadConnections();
   const connection = connectionsStore.get().connections.find((candidate) => candidate.id === connectionId);
   const me = sessionStore.get().profile?.id;

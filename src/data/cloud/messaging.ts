@@ -15,6 +15,7 @@
  * frontend trick.
  */
 
+import { gateLine } from "@/data/cloud/sparks";
 import { supabase } from "@/integrations/supabase/client";
 import { itemsStore, type ItemType } from "@/data/items";
 import { connectionsStore } from "@/data/connections";
@@ -157,11 +158,14 @@ export async function openCloudConversation(
       (itemId ? c.itemId === itemId : true),
   );
   if (existing) return existing.id;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("conversations")
     .insert({ a_id: me, b_id: otherProfileId, item_id: itemId })
     .select("id, connection_id, item_id, a_id, b_id, last_message_at")
     .maybeSingle();
+  /* 02_live_give_gate: no live give, no new conversation. Say why. */
+  const gated = gateLine(error);
+  if (gated) throw new Error(gated);
   if (!data) return null;
   commit({
     ...state,
@@ -182,7 +186,7 @@ export async function sendCloudMessage(
   const me = sessionStore.get().profile?.id;
   const from = asProfileId ?? me;
   if (!from) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("messages")
     .insert({
       conversation_id: conversationId,
@@ -192,6 +196,11 @@ export async function sendCloudMessage(
     })
     .select("id, conversation_id, from_profile_id, text, sent_as_sample, read_at, created_at")
     .maybeSingle();
+  if (error) {
+    /* 02_live_give_gate: outside a connection-bound chat, sending needs a live give. */
+    const gated = gateLine(error);
+    if (gated) throw new Error(gated);
+  }
   if (!data) return null;
   pairs.sent.push(data.id);
   writePairs();
@@ -250,6 +259,9 @@ async function cloudConversationFor(localConnectionId: string): Promise<string |
   return conv;
 }
 
+/** The last live-give gate refusal on an outgoing message (for UI copy). */
+export let lastGateRefusal: string | null = null;
+
 async function mirrorOutgoing() {
   const me = sessionStore.get().profile?.id;
   if (!me) return;
@@ -258,11 +270,19 @@ async function mirrorOutgoing() {
     (m) => m.fromId === "me" && !pairs.sent.includes(`local:${m.id}`),
   );
   for (const m of mine) {
-    const conv = await cloudConversationFor(m.connectionId);
-    if (!conv) continue;
-    pairs.sent.push(`local:${m.id}`);
-    writePairs();
-    await sendCloudMessage(conv, m.text);
+    try {
+      const conv = await cloudConversationFor(m.connectionId);
+      if (!conv) continue;
+      pairs.sent.push(`local:${m.id}`);
+      writePairs();
+      await sendCloudMessage(conv, m.text);
+    } catch (e) {
+      /* 02 gate refused: keep it unsent (retried once a give is live), stop. */
+      pairs.sent = pairs.sent.filter((k) => k !== `local:${m.id}`);
+      writePairs();
+      lastGateRefusal = e instanceof Error ? e.message : String(e);
+      return;
+    }
   }
 }
 

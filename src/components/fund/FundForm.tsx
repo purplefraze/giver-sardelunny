@@ -15,6 +15,7 @@ import {
 import { formatCents, fullyFunded, parseAmount } from "@/data/fund-rules";
 import { OTHER_PERSON_COLOUR } from "@/lib/exchange-colours";
 import { haptics } from "@/lib/haptics";
+import { logSparkFailure, pledgeToWish } from "@/data/cloud/sparks";
 
 /**
  * THE FUND SEAT'S SHEET — the same chamber pattern as CategoryForm, opened
@@ -69,6 +70,9 @@ export function FundForm({
       haptics.warning();
       return;
     }
+    /* SERVER RECORD (pledge_to_wish, needs Sep-27): best effort, idempotent. */
+    if (result.contribution)
+      void pledgeToWish(wish.id, cents, result.contribution.id).then((r) => logSparkFailure("pledge", r));
     haptics.light();
     setProblem(null);
     setAmount("");

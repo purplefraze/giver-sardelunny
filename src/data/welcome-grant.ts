@@ -7,9 +7,9 @@
  * The moment that says so is first-land/FirstLand.tsx.
  *
  * ONCE PER ACCOUNT, NEVER REPLAYED: remembered on this device (localStorage)
- * AND on the account (auth user_metadata.welcome_grant_at — the same pattern
- * as the give hint), so a second phone neither replays the lines nor grants
- * twice. The only count ever shown is the wish bank, at the wish seat.
+ * AND on the server (spark_ledger kind 'welcome' / profiles.welcome_granted_at,
+ * read in welcomeOwed), so a second phone neither replays the lines nor grants
+ * twice. user_metadata is member-editable and is no longer trusted. The only count ever shown is the wish bank, at the wish seat.
  *
  * "FIRST SESSION" = the account's last sign-in is within a day of its
  * creation (a brand-new magic-link account). Older accounts are not granted.
@@ -55,15 +55,29 @@ export async function welcomeOwed(): Promise<boolean> {
   const { data } = await supabase.auth.getSession();
   const user = data.session?.user;
   if (!user) return false;
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  if (meta["welcome_grant_at"]) {
+  /*
+    THE SERVER PROFILE DECIDES, not user_metadata (which the member can edit).
+    profiles.welcome_granted_at / give_sparks come from my_profile(); a granted
+    account restores its "to give" pot here and answers no.
+  */
+  const { data: profile } = await supabase.rpc("my_profile").maybeSingle();
+  const server = (profile ?? null) as { give_sparks?: number; welcome_granted_at?: string | null } | null;
+  const ledgered = await (supabase.from as unknown as (t: string) => {
+    select: (c: string) => {
+      eq: (k: string, v: string) => { limit: (n: number) => Promise<{ data: unknown[] | null; error: unknown }> };
+    };
+  })("spark_ledger")
+    .select("id")
+    .eq("kind", "welcome")
+    .limit(1);
+  const granted =
+    Boolean(server?.welcome_granted_at) || Boolean(!ledgered.error && ledgered.data && ledgered.data.length);
+  if (granted) {
     rememberHere();
-    const pot = Number(meta["sparks_to_give"]);
-    const me = myProfileStore.get();
-    if (!me.welcomeGranted)
+    if (!myProfileStore.get().welcomeGranted)
       myProfileStore.patch({
         welcomeGranted: true,
-        ...(Number.isFinite(pot) ? { giveSparks: pot } : {}),
+        ...(typeof server?.give_sparks === "number" ? { giveSparks: server.give_sparks } : {}),
       });
     return false;
   }

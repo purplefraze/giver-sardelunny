@@ -136,6 +136,38 @@ alter policy "send as self or as sample when admin" on public.messages
     )
   );
 
+-- 5. NO RE-POINTING CONVERSATIONS (closes a bypass of section 4) -----------------
+-- "touch own conversations" lets a participant UPDATE any column, so without
+-- this a member with no live give could set connection_id (message exemption)
+-- or swap b_id to reach anyone. Client roles may only touch timestamps.
+-- A conversation bound to a connection must be between that connection's two
+-- people, and the caller must be one of them.
+create or replace function app_private.guard_conversation()
+returns trigger language plpgsql set search_path = public, app_private as $$
+declare k public.connections;
+begin
+  -- not security definer: current_user is the caller, and the connection lookup
+  -- runs under the caller's RLS (only participants can see a connection).
+  if tg_op = 'UPDATE' and current_user in ('anon', 'authenticated') then
+    if new.a_id is distinct from old.a_id or new.b_id is distinct from old.b_id
+       or new.item_id is distinct from old.item_id or new.connection_id is distinct from old.connection_id then
+      raise exception 'conversation participants and links are fixed';
+    end if;
+  end if;
+  if new.connection_id is not null
+     and (tg_op = 'INSERT' or new.connection_id is distinct from old.connection_id) then
+    select * into k from public.connections where id = new.connection_id;
+    if k.id is null
+       or not ((new.a_id = k.owner_id and new.b_id = k.helper_id) or (new.a_id = k.helper_id and new.b_id = k.owner_id)) then
+      raise exception 'conversation must match its connection';
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists conversations_guard on public.conversations;
+create trigger conversations_guard before insert or update on public.conversations
+  for each row execute function app_private.guard_conversation();
+
 commit;
 
 -- -----------------------------------------------------------------------------
@@ -151,6 +183,8 @@ commit;
 --   alter policy "send as self or as sample when admin" on public.messages
 --     with check (app_private.can_see_conversation(conversation_id) and (app_private.owns_profile(from_profile_id)
 --       or (app_private.is_admin() and app_private.is_sample_profile(from_profile_id))));
+--   drop trigger if exists conversations_guard on public.conversations;
+--   drop function if exists app_private.guard_conversation();
 --   drop function if exists app_private.may_act(uuid);
 --   drop function if exists app_private.live_give_exempt(uuid);
 --   -- item_is_live_give / has_live_give / item_type are harmless to leave;

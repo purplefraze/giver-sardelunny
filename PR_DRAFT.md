@@ -1,72 +1,92 @@
 # DRAFT — security: spark lock + server-side live-give gate
 
-**Status: draft, local only. Not pushed. Nothing applied to any Supabase project.**
-Branch: `security/spark-lock-and-give-gate` (from origin/main 62f73de)
+**Draft for founder review. Nothing applied to production or any Supabase project. Do not merge.**
+Every SQL file is in `supabase/unapplied/` (never auto-applied). Tested only on a local throwaway Postgres 17 with synthetic accounts.
 
-Both files live in `supabase/unapplied/` (repo convention for "never auto-apply"), not `supabase/migrations/`, so a Lovable/CLI deploy can't pick them up by accident. Move them into `migrations/` only after review + branch-DB testing.
+## Migration order
+1. `20261015_01_spark_lock.sql`: Fix 1. Standalone on top of prod's Aug-27 schema.
+2. `20261015_02_live_give_gate.sql`: Fix 2. Independent of 01, but apply after it.
+3. `20261015_01b_spark_column_revoke.sql`: column-level UPDATE revoke. **Apply only together with the client follow-up PR** (see Risks).
 
-## Fix 1 (High) — `20261015_01_spark_lock.sql`
-Problem: `authenticated` has table-level UPDATE on `profiles`; "update own profile" only checks ownership → any user can PATCH their own `sparks`/`sparkles`.
-- `BEFORE UPDATE` trigger: for `anon`/`authenticated`, `new.sparks/sparkles := old.*` (silently ignored, not an error — see "client impact").
-- `BEFORE INSERT` trigger: client-created profiles get the column defaults.
-- `public.spark_ledger` (append-only, owner-readable, no client write policy).
-- `app_private.adjust_sparks(...)` SECURITY DEFINER — the only writer; row lock, no negative balances, idempotent on `(profile, kind, ref)`, writes the ledger. service_role only.
-- `public.spend_my_sparks(amount, reason, ref)` — the one client RPC (debit only).
-- Existing `update_connection_state` +10 payout keeps working (definer runs as owner, not `authenticated`).
+- **Not required:** Sep-23 `profile_sparks_sync`, Sep-27 `wish_contributions`, `give_trust`, `grant_live_give`.
+- **If Sep-23 lands later:** 01 already guards `reserved`/`sparks_seeded`/`rewarded`. It looks them up by name at runtime, and this was tested with Sep-23 present.
+- **`give_trust.sql`:** it calls `public.owns_profile`/`public.is_admin`, which prod dropped on Aug 27. As written it **will fail on prod**. It needs a rewrite to `app_private.*` before anyone applies it. Nothing here depends on it.
+- **`grant_live_give.sql`:** 02 copies its blocks 1 and 3 (live-give definition, connections gate, receiver trigger), routed through one `may_act()` hook. If someone applies grant_live_give later, its block 4 re-creates `give_sparks` (IF NOT EXISTS, same column) and a second welcome-grant function (`claim_welcome_grant` returns `profiles` there, `spark_ledger` here). **Conflict:** pick one before applying both.
 
-## Fix 2 (High) — `20261015_02_live_give_gate.sql`
-Problem: insert policies on connections/conversations/messages don't check for a live give; the gate is client-side only (`community-access.ts`).
-- Copies block 1 (`item_is_live_give`, `has_live_give`, `item_type`) and block 3 (connections insert policy + `receiver_needs_live_give` trigger) of `20260928_grant_live_give.sql`. Leaves out its visibility, welcome-grant, and handoff-sparks blocks (product changes).
-- New `app_private.may_act(profile)` = admin OR `live_give_exempt(profile)` OR `has_live_give(profile)`. Every gate goes through it.
-- `live_give_exempt()` = sample profiles only for now. **This is the place for the free-wish decision.**
-- conversations: the starter must pass `may_act`.
-- messages: the sender must pass `may_act`, **or** the conversation must be tied to a connection (so an ongoing handoff doesn't go dark when a give expires).
+## Fix 1: Sparks can't be edited by members
+- **Guard trigger** on profiles. Protected columns: `sparks`, `sparkles`, `give_sparks`, plus `reserved`/`sparks_seeded`/`rewarded`/`welcome_granted_at` when present, plus `is_sample`/`sample_key`/`user_id`.
+  - Client roles: protected values are silently kept on UPDATE and reset to defaults on INSERT. Name/bio edits in the same PATCH still save.
+  - `is_sample` had to be locked too. Today a member can set `is_sample=true` on their own row, and that would exempt them from the gate.
+- **`public.spark_ledger`:** append-only (no client writes, UPDATE/DELETE trigger raises), owner-readable.
+  - An AFTER UPDATE audit trigger logs **every** balance change, including the existing +10 connection payout (`kind='connection'`) and service_role edits.
+- **`app_private.adjust_sparks()`:** SECURITY DEFINER, service_role only. Row lock, no negative balance, idempotent per `(profile, kind, ref)`.
+- **Client RPCs:**
+  - `spend_my_sparks(amount, reason, ref)`: debit only.
+  - `claim_welcome_grant()`: +50 to wish (`sparks`) and +50 to give (`give_sparks`), once per profile.
+- **New hole found and closed:** Aug-27 granted `authenticated` EXECUTE on `app_private.update_connection_state(_actor_user_id, …)`. Any member could confirm a connection **as the counterpart** and mint the +10 payout.
+  - The grant is revoked.
+  - `public.update_my_connection_state` is now SECURITY DEFINER and always passes `auth.uid()`.
+- **01b:** replaces table-level UPDATE with a column list excluding protected columns, computed from the live catalog so it matches prod's real columns.
 
-## Client impact (needs a follow-up PR before/with apply)
-- `src/data/cloud/boot.ts` PATCHes `sparks`/`sparkles` (+ `reserved`, etc.) from local state. After Fix 1, those values are silently ignored and the server stays authoritative. That's safe, but local spend/earn will drift from the server until the client calls `spend_my_sparks` and earns go through server RPCs.
-- Earns that the client does today (seed, rewards) have no server path yet. Each one needs a definer RPC with its own rule, or they stop persisting.
-- After Fix 2, inserts that `community-access.ts` already blocks will now also fail at the server. Check the UI handles the RLS error (empty `data`) without crashing.
+## Fix 2: first-Give gate at the DB
+`app_private.may_act(p)` = admin OR `live_give_exempt(p)` (sample profiles only, for now) OR `has_live_give(p)`.
+- **Connections:** the helper must pass `may_act`. Connecting on a wish also needs the wish owner to pass it ("receiving").
+- **Receiving:** the `connections_receiver_live_give` trigger blocks moving to awaiting/verified when the receiver has no live give.
+- **Conversations:** the starter must pass `may_act`.
+- **Messages:** the sender must pass `may_act`, or the conversation must be bound to a connection (handoffs don't go dark when a give expires).
+- **New `conversations_guard` trigger:** members can't change `a_id`/`b_id`/`item_id`/`connection_id`. Before this, a member with no give could re-point a conversation at a connection to get the message exemption, or swap in anyone as `b_id`. A connection-bound conversation must be between that connection's two people.
 
-## Assumptions (prod per the 15 Oct audit, not verified by us)
-- Prod = the 12 Aug-27 migrations: `app_private.{owns_profile,is_admin,is_sample_profile,can_see_conversation}` exist, and the policy names match Aug-27.
-- `profiles.reserved/sparks_seeded/rewarded` and `wish_contributions` do NOT exist. Neither file references them.
-- The audit's prod-only objects (column-level SELECT on profiles, `my_profile()`, extra private helpers) aren't touched. Re-check that `my_profile()` doesn't UPDATE sparks as `authenticated` (it would now be ignored).
-- `ledger_events.connection_id` is NOT NULL, so there's a new `spark_ledger` instead of reusing it.
+## Test results (local Postgres 17, synthetic accounts): 57 pass / 0 fail
+`PGHOST=… PGPORT=… supabase/tests/run_local.sh`. Full output is in `supabase/tests/RESULTS.txt`.
 
-## Open questions (founder decisions — not resolved here)
-1. Are the **three free wishes** exempt from the live-give gate? (Set this in `live_give_exempt`.)
-2. Should messaging inside an existing connection survive the give expiring? (Currently: yes.)
-3. Should a wish owner with no live give be able to receive a grant? (Currently: no, per grant_live_give.)
-4. Should `reserved` (holds) also be server-guarded once Sep-23 lands?
-5. Order/fate of `give_trust.sql`: it calls `public.owns_profile`/`public.is_admin`, which prod dropped, so it would fail as written.
-6. Should the +10 connection payout also write `spark_ledger`?
+Three runs:
+1. **Prod-shaped:** shim, then Aug-27 ×12, then a prod-drift shim (column-level SELECT on profiles + `my_profile()`), then 01, 02, 01b. **50/50.**
+2. **Rollback blocks of 01b, 02, 01:** Aug-27 behaviour returns, ledger kept. **4/4.**
+3. **Sep-23 present:** `reserved` etc. are guarded, Sep-23 default respected. **3/3.**
+
+Proven to still work:
+- Profile edits.
+- 100-spark welcome grant (50/50, once).
+- Spend.
+- Giver +10 on a mutually confirmed lesson, with the receiver's balance unchanged.
+- Messaging after a live give.
+- Handoff chat after expiry.
+- Admin acting as sample.
+- service_role adjustments.
+
+Proven blocked:
+- Direct sparks/sparkles/give_sparks/is_sample edits.
+- Insert with a chosen balance.
+- Calling adjust_sparks or update_connection_state directly.
+- Writing the ledger.
+- Connect/converse/message without a live give.
+- Connecting on a giveless member's wish.
+- Settling when the receiver's give has expired.
+- Conversation re-pointing.
 
 ## Rollback
-Each file ends with commented rollback SQL that restores the Aug-27 policy definitions and drops the new triggers/functions. The ledger table is kept by default for audit.
+Each file ends with a `ROLLBACK` block (begin…commit). `run_local.sh` executes those exact blocks in reverse order (01b → 02 → 01), and the tests confirm they work. `spark_ledger` and `give_sparks` are kept by default.
 
-## Test plan (Supabase branch DB seeded from a prod schema dump — never prod)
-Setup: two users A and B plus one sample profile. A has a live give; B has none.
+## Risks / client follow-up (needed before or with apply)
+- **Balances stop syncing from the client.** `src/data/cloud/boot.ts` PATCHes `sparks`/`sparkles`/`reserved`/… from local state. After 01 those values are silently ignored, so local balances will drift from the server until the client:
+  - reloads balances from the server,
+  - spends via `spend_my_sparks`,
+  - stops sending currency.
+  Client-side earns (seed, rewards) need server RPCs or they stop persisting.
+- **01b + current client = broken profile saves.** The whole PATCH fails with 42501, so name/bio saves break. Apply 01b only with the client change.
+- **Gate errors in the UI.** After 02, writes that `community-access.ts` blocks will also fail server-side. Check the UI handles RLS errors.
+- **Prod drift is a stand-in.** The prod-drift shim is an approximation (assumed hidden columns: birthday/gender/answers). Re-run against a real schema-only dump.
+- **The gate is cheap to satisfy.** "Live give" = any published, active, unexpired give the member posted themselves, so a throwaway give passes. give_trust's verification block is superseded.
 
-Fix 1
-- [ ] As A: `update profiles set sparks=99999 where user_id=auth.uid()` → succeeds, but sparks is unchanged. `name` changes in the same PATCH are still saved.
-- [ ] As A: insert a profile with `sparks=99999` → the default is stored.
-- [ ] As A: `spend_my_sparks(10,'test','t1')` → balance −10, one ledger row. Repeat with the same ref → no second debit.
-- [ ] Spend more than the balance → `insufficient sparks`. Amount ≤0 → `bad amount`.
-- [ ] As A: call `app_private.adjust_sparks` directly → permission denied.
-- [ ] As A: insert into `spark_ledger` → denied. B can't read A's ledger.
-- [ ] Verified connection via `update_my_connection_state` → +10 still applied.
-- [ ] service_role update of sparks → allowed.
-
-Fix 2
-- [ ] B inserts a connection as helper → RLS denied. A → ok.
-- [ ] A connects on a wish owned by B (no live give) → denied.
-- [ ] Claim/confirm to awaiting/verified where the receiver has no live give → `receiving needs a live give`.
-- [ ] B starts a conversation → denied. A → ok.
-- [ ] B sends a message in a plain conversation → denied. In a connection-bound conversation → ok.
-- [ ] Admin as sample → still ok. Sample profiles → ok.
-- [ ] A's give expires (details.expiresAt in the past) → A is now blocked like B.
-- [ ] Rollback blocks run clean and restore the previous behaviour.
+## Open questions (founder decisions — not resolved)
+1. Are the **three free wishes** exempt from the gate? Hook: `app_private.live_give_exempt`.
+2. What counts as **"receiving"**? Implemented: settling a connection to awaiting/verified as the receiver, and others connecting on your wish. Should it also block receiving messages, or being the `b_id` of a new conversation? (Currently not blocked.)
+3. Should messaging inside an existing connection survive the give expiring? (Currently: yes.)
+4. **Welcome grant is additive.** Prod's column default is `sparks=250, sparkles=3` (Aug-27); Sep-23 changes it to 50/0. Should new accounts start at 0 so grant = exactly 100? Which welcome-grant implementation wins (this one vs grant_live_give block 4)?
+5. Should `reserved` holds move to a server RPC too? (Today they're locked; holds won't persist from the client.)
+6. Should the give-handoff +10 continue? (grant_live_give block 6 says no sparks on a give's handoff; current prod pays the give owner. Left unchanged.)
 
 ## Not verified
-- Not run against any Postgres. SQL was parse-checked only (pglast, and the plpgsql bodies aren't checked).
-- Prod catalog not queried (no credentials used). The prod facts are second-hand from the audit.
+- Prod catalog was not queried: no read-only access was available, and none was used. The prod facts are from the 15 Oct audit (second-hand).
+- The Notion audit page was not read.
+- Not run on a Supabase branch DB. Local Postgres only, with a hand-written Supabase shim (roles, `auth.uid()`). PostgREST behaviour wasn't exercised.

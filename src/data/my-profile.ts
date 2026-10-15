@@ -28,6 +28,16 @@ import { sparkFlashStore } from "@/data/spark-flash";
 import { sessionStore } from "@/data/cloud/session";
 import { haptics } from "@/lib/haptics";
 
+/* Spark RPCs live in cloud/sparks.ts, which imports this module: load lazily. */
+const cloudSparks = () => import("@/data/cloud/sparks");
+const signedIn = () => {
+  try {
+    return Boolean(sessionStore.get().userId);
+  } catch {
+    return false;
+  }
+};
+
 
 /**
  * MY PROFILE — THE SINGLE SOURCE OF TRUTH FOR THE PERSON.
@@ -456,6 +466,13 @@ export const myProfileStore = {
         say: `held for your wish · ${text.trim()}`,
         itemId: item.id,
       });
+      /* SERVER HOLD (03): the shown balance is re-read once it lands. */
+      if (signedIn()) {
+        const amount = composed || WISH_COST;
+        void cloudSparks().then((m) =>
+          m.reserveWish(item.id, amount).then((r) => m.logSparkFailure("reserve wish", r)),
+        );
+      }
     }
     return { ok: true, id: item.id };
   },
@@ -520,7 +537,16 @@ export const myProfileStore = {
     const item = myProfileStore.get().records[category][index];
     if (!item) return;
     /* WITHDRAWING A WISH RETURNS ITS RESERVED SPARKS. Nothing was completed. */
-    if (category === "wish") myProfileStore.releaseWish(item.id, true);
+    if (category === "wish") {
+      myProfileStore.releaseWish(item.id, true);
+      /* Server refund (03). Deleting the cloud row refunds too (trigger). */
+      if (signedIn()) {
+        const id = item.id;
+        void cloudSparks().then((m) =>
+          m.releaseWishHold(id).then((r) => m.logSparkFailure("release wish", r)),
+        );
+      }
+    }
     itemsStore.remove(item.id);
   },
   /**
@@ -630,6 +656,15 @@ export const myProfileStore = {
       never re-gift 50 over the top of what the server already holds.
     */
     if (person.sparksSeeded) return;
+    /*
+      NO STACKING ON THE WELCOME GRANT. A signed-in account's balance is the
+      server's (default + claim_welcome_grant); an account already granted is
+      seeded by definition. Only the signed-out local prototype seeds here.
+    */
+    if (person.welcomeGranted || signedIn()) {
+      savePerson({ ...person, sparksSeeded: true });
+      return;
+    }
     savePerson({ ...person, sparks: STARTING_SPARKS, sparksSeeded: true });
     ledgerStore.record({
       id: "seed:received",
@@ -660,6 +695,14 @@ export const myProfileStore = {
     const result = itemsStore.boost(itemId, ME_ID);
     if (!result.ok) return result;
     savePerson({ ...person, sparkles: person.sparkles - 1 });
+    /* SERVER SPEND (03): -1 sparkle and the boost in one step; re-read after. */
+    if (signedIn())
+      void cloudSparks().then((m) =>
+        m.spendSparkle(itemId).then((r) => {
+          m.logSparkFailure("sparkle", r);
+          if (!r.ok && r.reason !== "unavailable") void m.refreshBalance();
+        }),
+      );
     ledgerStore.record({
       currency: "sparkle",
       kind: "spent",

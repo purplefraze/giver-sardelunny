@@ -1,0 +1,106 @@
+== prod-shaped run
+PASS | legit profile edit with currency in same PATCH | 
+PASS | legit edit saved: name/about | 
+PASS | direct sparks edit ignored | 
+PASS | self-exempt attempt runs | 
+PASS | is_sample/sample_key cannot be self-set | 
+PASS | member cannot call adjust_sparks | permission denied for function adjust_sparks
+PASS | member cannot insert ledger rows | permission denied for table spark_ledger
+PASS | member cannot call update_connection_state as someone else | permission denied for function update_connection_state
+PASS | new member creates profile (picks a balance) | 
+PASS | insert takes column defaults | 
+PASS | claim welcome grant | 
+PASS | claim welcome grant again (idempotent) | 
+PASS | welcome grant = +50 to wish, +50 to give, once | 
+PASS | welcome grant ledgered once (100 total) | 
+PASS | spend 10 | 
+PASS | spend replay same ref | 
+PASS | spend debited once | 
+PASS | overspend rejected | insufficient sparks
+PASS | zero/negative spend rejected | bad amount
+PASS | member sees only own ledger | 
+PASS | ledger is append-only | permission denied for table spark_ledger
+PASS | B (no give) cannot connect on a give | new row violates row-level security policy for table "connections"
+PASS | B (no give) cannot start a conversation | new row violates row-level security policy for table "conversations"
+PASS | C cannot connect on B's wish (B cannot receive without a live give) | new row violates row-level security policy for table "connections"
+PASS | C cannot connect on B's wish (correct owner id) | new row violates row-level security policy for table "connections"
+PASS | A (live give) starts a conversation with B | 
+PASS | A messages after a live give | 
+PASS | B (no give) cannot message, even in A's conversation | new row violates row-level security policy for table "messages"
+PASS | B can still read A's message | 
+PASS | C (live give) connects on A's give | 
+PASS | C opens the connection-bound conversation | 
+PASS | B cannot re-point a conversation to a connection (bypass) | conversation participants and links are fixed
+PASS | B cannot swap conversation participants | conversation participants and links are fixed
+PASS | participant may still touch timestamps | 
+PASS | A claims the lesson | 
+PASS | C confirms (mutual) | 
+PASS | giver A paid +10 sparks | 
+PASS | receiver C is free (balance unchanged) | 
+PASS | payout recorded in spark_ledger as connection | 
+PASS | service_role can still adjust balances | 
+PASS | service_role change audited | 
+PASS | receiving blocked once receiver has no live give | receiving needs a live give
+PASS | expired give = blocked from starting conversations | new row violates row-level security policy for table "conversations"
+PASS | in-progress handoff chat survives expiry (connection-bound) | 
+PASS | admin starts conversation as sample | 
+PASS | admin messages as sample | 
+PASS | 01b: identity-only PATCH still works | 
+PASS | 01b: PATCH including sparks now rejected | permission denied for table profiles
+PASS | 01b: PATCH including is_sample rejected | permission denied for table profiles
+PASS | 01b: definer payout path unaffected | 
+== rollback run
+PASS | after rollback: B can start a conversation again | 
+PASS | after rollback: sparks edit allowed again (Aug-27 behaviour) | 
+PASS | after rollback: sparks edit took effect | 
+PASS | after rollback: ledger kept | 
+== Sep-23 present run
+PASS | reserved: PATCH runs | 
+PASS | reserved/sparks_seeded/rewarded kept, name saved | 
+PASS | Sep-23 default (50) respected on insert | 
+== app flow (ship order 01 -> client -> 01b) run
+PASS | client: identity-only profile save | 
+PASS | client: identity saved | 
+PASS | welcome: claim | 
+PASS | welcome: replay is a no-op | 
+PASS | welcome: +50 sparks +50 give once | 
+PASS | reserve: wish A2 | 
+PASS | reserve: replay idempotent | 
+PASS | reserve: wish A3 | 
+PASS | reserve: -20 total, two open holds | 
+PASS | reserve: someone else's item refused | not your wish
+PASS | release: withdraw A3 | 
+PASS | release: replay no-op | 
+PASS | reserve: more than balance refused | insufficient sparks
+PASS | release: refunded once (-10 net) | 
+PASS | delete: hold refunded | 
+PASS | holds: member cannot write holds | permission denied for table spark_holds
+PASS | settle: granter connects (has live give) | 
+PASS | settle: granter claims | 
+PASS | settle: wisher confirms | 
+PASS | settle: hold closed as settled (not refunded) | 
+PASS | settle: wisher not refunded | 
+PASS | settle: granter paid +10 exactly once | 
+PASS | ledger: every A balance change ledgered | 
+PASS | sparkle: boost A1 | 
+PASS | sparkle: second boost same item capped | capped
+PASS | sparkle: own item refused | self
+PASS | sparkle: direct boost insert revoked | permission denied for table boosts
+PASS | sparkle: -1 sparkle, +1 boost_count | 
+PASS | sparkle: none left refused | insufficient sparks
+PASS | gate: no-give member cannot start conversation | new row violates row-level security policy for table "conversations"
+PASS | gate: no-give member cannot connect | new row violates row-level security policy for table "connections"
+PASS | 01b: new client identity save | 
+PASS | 01b: old client PATCH (with sparks) rejected — why client ships first | permission denied for table profiles
+PASS | 01b: RPCs still work | 
+rollback 03 ok: true
+== Sep-27 present (fund) run
+PASS | fund: pledge | 
+PASS | fund: replay idempotent | 
+PASS | fund: past target refused | pledge exceeds the wish's stated cost
+PASS | fund: own wish refused | wish not fundable
+PASS | fund: one row, sparks untouched | 
+4 pass / 0 fail
+3 pass / 0 fail
+34 pass / 0 fail
+5 pass / 0 fail

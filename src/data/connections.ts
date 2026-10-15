@@ -20,6 +20,15 @@ import { ME_ID, itemsStore, type ItemType } from "@/data/items";
 import { receiveBlock, startBlock } from "@/data/community-access";
 import { myProfileStore } from "@/data/my-profile";
 import { giveCapState } from "@/data/give-cap";
+import { sessionStore } from "@/data/cloud/session";
+
+const signedInNow = () => {
+  try {
+    return Boolean(sessionStore.get().userId);
+  } catch {
+    return false;
+  }
+};
 
 export type ConnectionState =
   /** Intent expressed. Messaging is open. The activity is STILL ACTIVE. */
@@ -180,8 +189,12 @@ function settle(c: Connection): Connection {
   /* Giver recognises the generous side — once per connection, per person.
      NOT FOR A GIVE: sparks on a give's handoff are a later ticket (the phone
      tap), so closing a give pays nothing and shows no "+10" — never faked. */
+  /* SIGNED IN: the server already paid (update_connection_state +10) and
+     settled the wish hold (03). Re-read the balance; never add +10 locally. */
+  const cloud = signedInNow();
+  if (cloud) void import("@/data/cloud/sparks").then((m) => m.afterSettlement());
   for (const id of generousIds(c)) {
-    if (id === ME_ID && c.type !== "give") myProfileStore.earnSparks(`connection:${c.id}:${id}`);
+    if (!cloud && id === ME_ID && c.type !== "give") myProfileStore.earnSparks(`connection:${c.id}:${id}`);
   }
   /* A wish's reserved sparks have now done their job. */
   if (c.type === "wish") myProfileStore.releaseWish(c.itemId, false);

@@ -124,36 +124,21 @@ function mirrorMyProfile() {
     birthday: latest.birthday ? latest.birthday : null,
     answers: latest.answers ?? {},
   };
-  /* CURRENCY — write on earn / spend / seed so the next login matches. */
-  const currency = {
-    sparks: latest.sparks,
-    sparkles: latest.sparkles,
-    reserved: latest.reserved,
-    sparks_seeded: latest.sparksSeeded,
-    rewarded: latest.rewarded,
-  };
-  const fields = { ...identity, ...currency };
+  /*
+    CURRENCY IS SERVER-OWNED (20261015_01_spark_lock). sparks, sparkles,
+    give_sparks, reserved, sparks_seeded and rewarded are never sent from the
+    client: the guard trigger would drop them and 01b rejects the whole PATCH.
+    Balances change only through the spark RPCs (data/cloud/sparks.ts).
+  */
+  const fields = identity;
   const signature = JSON.stringify(fields);
   if (signature === lastPushed) return;
   lastPushed = signature;
   void sessionStore
     .saveProfile(fields)
     .then(() => directoryStore.reload())
-    .catch(async () => {
-      /*
-        Migration not applied yet: still persist sparks/sparkles (already on
-        profiles) so balances survive logins without the companion columns.
-      */
-      try {
-        await sessionStore.saveProfile({
-          ...identity,
-          sparks: latest.sparks,
-          sparkles: latest.sparkles,
-        });
-        await directoryStore.reload();
-      } catch {
-        lastPushed = "";
-      }
+    .catch(() => {
+      lastPushed = "";
     });
 }
 

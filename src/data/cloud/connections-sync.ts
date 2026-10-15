@@ -1,3 +1,4 @@
+import { gateLine } from "@/data/cloud/sparks";
 import { supabase } from "@/integrations/supabase/client";
 import { connectionsStore, type Connection } from "@/data/connections";
 import { itemsStore, ME_ID, type ItemType } from "@/data/items";
@@ -73,7 +74,8 @@ export async function startConnection(itemId: string): Promise<string> {
     { item_id: cloudId, owner_id: ownerId, helper_id: me },
     { onConflict: "item_id,helper_id" },
   ).select("id").single();
-  if (error) throw error;
+  /* 02_live_give_gate: the server refuses without a live give (RLS 42501). */
+  if (error) throw gateLine(error) ? new Error(gateLine(error)!) : error;
   await supabase.from("conversations").upsert(
     { connection_id: data.id, item_id: cloudId, a_id: ownerId, b_id: me },
     { onConflict: "connection_id" },

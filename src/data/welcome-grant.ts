@@ -20,6 +20,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import { myProfileStore } from "@/data/my-profile";
+import { claimWelcomeGrant } from "@/data/cloud/sparks";
 
 export const WELCOME_TO_GIVE = 50;
 export const WELCOME_TO_WISH = 50;
@@ -79,6 +80,16 @@ export async function welcomeOwed(): Promise<boolean> {
 export function claimWelcome() {
   rememberHere();
   myProfileStore.grantWelcome(WELCOME_TO_GIVE, WELCOME_TO_WISH);
+  /*
+    SERVER GRANT (claim_welcome_grant, once per profile, idempotent). On
+    success the balance is re-read from the server. "unavailable" = the
+    migration is not applied yet: the local grant above stands as before.
+  */
+  void claimWelcomeGrant()
+    .then((r) => {
+      if (!r.ok && r.reason !== "unavailable") console.warn("welcome grant:", r.message);
+    })
+    .catch(() => undefined);
   void supabase.auth
     .updateUser({
       data: {

@@ -62,6 +62,11 @@ export const FIRST_LAND_PLACE = {
    * minus the spark's halo and a little air.
    */
   textRadiusPx: 60,
+  /**
+   * REDUCED MOTION's still explainer has no sparks to clear, so it may use
+   * the middle loop's inner edge less this much air (px).
+   */
+  explainAirPx: 10,
   /** "communi-g" is centred in the BOTTOM loop, on its x-height. */
   communiLoop: "bottom",
 } as const;

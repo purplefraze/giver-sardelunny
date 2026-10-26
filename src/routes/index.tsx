@@ -156,7 +156,12 @@ import { removeLegacyAutomaticProfile } from "@/data/dev-fixture";
 import { initializeFirstUse } from "@/data/first-use";
 import { LoopLabels } from "@/components/living-g/LoopLabel";
 import { useLifecycle } from "@/hooks/use-lifecycle";
-import { FirstLandArt, FirstLandCatch, type FirstLandPhase } from "@/components/first-land/FirstLand";
+import {
+  FIRST_LAND_EXPLAIN_MS,
+  FirstLandArt,
+  FirstLandCatch,
+  type FirstLandPhase,
+} from "@/components/first-land/FirstLand";
 import { GiveClosed } from "@/components/GiveClosed";
 import { claimWelcome, welcomeOwed } from "@/data/welcome-grant";
 import { markAsked, noteLiveGives } from "@/data/give-close";
@@ -619,9 +624,10 @@ function Index() {
    * first session after the magic link. It opens with the toggle on My G
    * (12:00) — the only time the app ever opens there — and cannot be skipped:
    * every tap is swallowed until beat 4 ("are you a giver?") settles, when the
-   * toggle is handed back at give (1:30). Reduced motion lands straight on
-   * the settled end state. "settled" = the question (and communi-g) stay
-   * until the first move.
+   * toggle is handed back at give (1:30). Reduced motion shows one still
+   * frame, "here’s 100 sparks" over "50 to wish · 50 to give", for
+   * FIRST_LAND_EXPLAIN_MS or until a tap, then the settled end state.
+   * "settled" = the question (and communi-g) stay until the first move.
    *
    * The account is known to be owed as soon as the session is ready, so the
    * G is already blue with the bead at 12:00 while the opening hands over;
@@ -631,6 +637,8 @@ function Index() {
     phase: FirstLandPhase;
     startedAt: number | null;
     still: boolean;
+    /** Reduced motion: the still explainer is showing. */
+    explain: boolean;
   } | null>(null);
   const grantChecked = useRef(false);
   const landed =
@@ -656,7 +664,7 @@ function Index() {
         if (still && prev !== "give") quietSeat.current = "give";
         return still ? "give" : "giver";
       });
-      setFirstLand({ phase: still ? "settled" : "ceremony", startedAt: null, still });
+      setFirstLand({ phase: still ? "settled" : "ceremony", startedAt: null, still, explain: still });
     });
   }, [hydrated, entered, session.status]);
   /* THE CLOCK starts once the G is landed on; the grant is claimed then. */
@@ -665,6 +673,13 @@ function Index() {
     claimWelcome();
     setFirstLand({ ...firstLand, startedAt: performance.now() });
   }, [landed, firstLand]);
+  /* REDUCED MOTION: the still explainer holds ~3s (or until a tap), then settles. */
+  const endExplain = () => setFirstLand((f) => (f?.explain ? { ...f, explain: false } : f));
+  useEffect(() => {
+    if (!firstLand?.explain || firstLand.startedAt === null) return;
+    const id = window.setTimeout(endExplain, FIRST_LAND_EXPLAIN_MS);
+    return () => window.clearTimeout(id);
+  }, [firstLand?.explain, firstLand?.startedAt]);
   /* BEAT 4 SETTLED: the toggle is handed back at give; taps work again. */
   const settleFirstLand = () => {
     quietSeat.current = "give";
@@ -914,6 +929,7 @@ function Index() {
                   phase={firstLand.phase}
                   startedAt={firstLand.startedAt}
                   still={firstLand.still}
+                  explain={firstLand.explain}
                   onSettle={settleFirstLand}
                 />
                 </g>
@@ -1445,6 +1461,9 @@ function Index() {
       )}
       {/* THE CEREMONY: every tap is swallowed until beat 4 settles. */}
       {entered && ceremony && firstLand?.startedAt !== null ? <FirstLandCatch active /> : null}
+      {entered && firstLand?.explain && firstLand.startedAt !== null ? (
+        <FirstLandCatch active onTap={endExplain} />
+      ) : null}
       {/* A GIVE JUST CLOSED: offer that again, or something else. */}
       {entered && closedGive && !opening && !ceremony ? (
         <GiveClosed

@@ -212,6 +212,61 @@ function wrapInCircle(
 }
 
 /**
+ * REDUCED MOTION: the still explainer. "here’s 100 sparks" over
+ * "50 to wish · 50 to give", in the ceremony's own type and colours, laid out
+ * as the fewest lines whose corners sit inside the circle of radius R. There
+ * are no sparks in this frame, so R is the middle loop's inner edge less air.
+ */
+type Run = { text: string; colour: string; weight?: number };
+export function explainerLines(
+  widthOf: (s: string) => number,
+  R: number,
+  step: number,
+  capH: number,
+  colours: { ink: string; wish: string; give: string },
+): Run[][] {
+  const c = FIRST_LAND_COPY_PARTS;
+  const hw = FIRST_LAND.type.weight.hundred;
+  const hundred = [{ text: c.hundred, colour: colours.ink, weight: hw }];
+  const hundred2 = [
+    [{ text: c.hundredA, colour: colours.ink, weight: hw }],
+    [{ text: c.hundredB, colour: colours.ink, weight: hw }],
+  ];
+  const wish = { text: c.wish, colour: colours.wish };
+  const dot = { text: " · ", colour: colours.ink };
+  const give = { text: c.give, colour: colours.give };
+  const options: Run[][][] = [
+    [hundred, [wish, dot, give]],
+    [hundred, [wish, { text: " ·", colour: colours.ink }], [give]],
+    [...hundred2, [wish, dot, give]],
+    [...hundred2, [wish, { text: " ·", colour: colours.ink }], [give]],
+  ];
+  let best: { lines: Run[][]; over: number } | null = null;
+  for (const lines of options) {
+    const n = lines.length;
+    let over = 0;
+    lines.forEach((runs, i) => {
+      const w = widthOf(runs.map((r) => r.text).join(""));
+      const d = Math.abs((i - (n - 1) / 2) * step) + capH / 2;
+      over = Math.max(over, Math.hypot(w / 2, d) - R);
+    });
+    if (over <= 0) return lines;
+    if (!best || over < best.over) best = { lines, over };
+  }
+  return best!.lines;
+}
+const FIRST_LAND_COPY_PARTS = {
+  hundred: FIRST_LAND.copy.hundred,
+  hundredA: FIRST_LAND.copy.hundred.split(" ").slice(0, -1).join(" "),
+  hundredB: FIRST_LAND.copy.hundred.split(" ").slice(-1)[0] ?? "",
+  wish: FIRST_LAND.copy.wish,
+  give: FIRST_LAND.copy.give,
+};
+
+/** REDUCED MOTION: how long the still explainer holds before it settles. */
+export const FIRST_LAND_EXPLAIN_MS = 3000;
+
+/**
  * "communi-" and then the mini G: the real path from g-path.ts in solid red,
  * scaled so its MIDDLE LOOP is the letters' x-height, set so the point where
  * the S-curve joins the lower loop sits on the baseline (level with the foot
@@ -294,13 +349,16 @@ export function FirstLandArt({
   phase,
   startedAt,
   still,
+  explain = false,
   onSettle,
 }: {
   phase: FirstLandPhase;
   /** performance.now() when the ceremony began; null = waiting on its first frame. */
   startedAt: number | null;
-  /** Reduced motion: straight to the settled end state. */
+  /** Reduced motion: no motion; the settled end state after the explainer. */
   still: boolean;
+  /** Reduced motion only: the still "100 · 50 to wish · 50 to give" frame. */
+  explain?: boolean;
   /** Beat 4 has settled: hand the toggle back, taps work again. */
   onSettle: () => void;
 }) {
@@ -364,6 +422,14 @@ export function FirstLandArt({
     give: ["50 to give"],
     question: ["are you", "a giver?"],
   }));
+  const [explainer, setExplainer] = useState<Run[][]>(() => [
+    [{ text: FIRST_LAND.copy.hundred, colour: FIRST_LAND.colour.ink, weight: FIRST_LAND.type.weight.hundred }],
+    [
+      { text: FIRST_LAND.copy.wish, colour: FIRST_LAND.colour.wish },
+      { text: " · ", colour: FIRST_LAND.colour.ink },
+      { text: FIRST_LAND.copy.give, colour: FIRST_LAND.colour.give },
+    ],
+  ]);
   useLayoutEffect(() => {
     const el = measure.current;
     if (!el) return;
@@ -377,6 +443,20 @@ export function FirstLandArt({
       };
       next[key] = wrapInCircle(FIRST_LAND.copy[key].split(" "), widthOf, R, step, capH);
     }
+    /* The explainer has no sparks to clear: the loop's inner edge, less air.
+       Measured at the heavier weight so every line is sure to fit. */
+    el.style.fontWeight = String(TY.weight.hundred);
+    const ruler = (s: string) => {
+      el.textContent = s;
+      return el.getComputedTextLength();
+    };
+    setExplainer(
+      explainerLines(ruler, INNER_R - px(FIRST_LAND.place.explainAirPx), step, capH, {
+        ink: FIRST_LAND.colour.ink,
+        wish: FIRST_LAND.colour.wish,
+        give: FIRST_LAND.colour.give,
+      }),
+    );
     el.textContent = "";
     setLines(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -387,9 +467,9 @@ export function FirstLandArt({
     hundred: beat(at, T.hundredIn, TM.hundred.fadeInMs, T.wishAt, TM.crossfadeMs),
     wish: beat(at, T.wishAt, TM.crossfadeMs, T.giveAt, TM.crossfadeMs),
     give: beat(at, T.giveAt, TM.crossfadeMs, T.questionIn, TM.crossfadeMs),
-    question: beat(at, T.questionIn, TM.question.fadeInMs),
+    question: explain ? 0 : beat(at, T.questionIn, TM.question.fadeInMs),
   } satisfies Record<LineKey, number>;
-  const communi = beat(at, T.communiIn, TM.communi.fadeInMs) * C.communiOpacity;
+  const communi = explain ? 0 : beat(at, T.communiIn, TM.communi.fadeInMs) * C.communiOpacity;
 
   /* ---- the sparks ---- */
   const bead = PATH.poseDeg(toggleDeg(at));
@@ -574,6 +654,28 @@ export function FirstLandArt({
           </text>
         ) : null,
       )}
+      {explain ? (
+        <text
+          textAnchor="middle"
+          style={textStyle(TY.weight.wish)}
+          data-testid="first-land-explainer"
+          data-lines={explainer.length}
+        >
+          {explainer.map((runs, i) => (
+            <tspan
+              key={i}
+              x={MID.x}
+              y={MID.y + (i - (explainer.length - 1) / 2) * step + capH / 2}
+            >
+              {runs.map((r, j) => (
+                <tspan key={j} fill={r.colour} fontWeight={r.weight}>
+                  {r.text}
+                </tspan>
+              ))}
+            </tspan>
+          ))}
+        </text>
+      ) : null}
       {communi > 0 ? <Communi size={size} upp={upp} opacity={communi} /> : null}
     </g>
   );
@@ -583,7 +685,7 @@ export function FirstLandArt({
  * THE CATCH: a clear layer over everything while the ceremony runs. Every
  * tap is swallowed and does nothing until beat 4 settles; then it is gone.
  */
-export function FirstLandCatch({ active }: { active: boolean }) {
+export function FirstLandCatch({ active, onTap }: { active: boolean; onTap?: () => void }) {
   if (!active) return null;
   const swallow = (e: SyntheticEvent) => {
     e.preventDefault();
@@ -595,7 +697,10 @@ export function FirstLandCatch({ active }: { active: boolean }) {
       className="absolute inset-0 z-[65]"
       style={{ touchAction: "none", WebkitTapHighlightColor: "transparent" }}
       onPointerDown={swallow}
-      onPointerUp={swallow}
+      onPointerUp={(e) => {
+        swallow(e);
+        onTap?.();
+      }}
       onClick={swallow}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => {

@@ -687,30 +687,10 @@ export const myProfileStore = {
   },
 
 
-  /* ---- SPARKLES: earned, never bought, never awarded for a profile. ---- */
-  /** Spend one sparkle on somebody ELSE's active community item. */
-  useSparkle(itemId: string): { ok: boolean; reason?: string } {
-    hydrate();
-    if (person.sparkles < 1) return { ok: false, reason: "none" };
-    const result = itemsStore.boost(itemId, ME_ID);
-    if (!result.ok) return result;
-    savePerson({ ...person, sparkles: person.sparkles - 1 });
-    /* SERVER SPEND (03): -1 sparkle and the boost in one step; re-read after. */
-    if (signedIn())
-      void cloudSparks().then((m) =>
-        m.spendSparkle(itemId).then((r) => {
-          m.logSparkFailure("sparkle", r);
-          if (!r.ok && r.reason !== "unavailable") void m.refreshBalance();
-        }),
-      );
-    ledgerStore.record({
-      currency: "sparkle",
-      kind: "spent",
-      amount: -1,
-      say: "you helped somebody else get seen",
-      itemId,
-    });
-    return { ok: true };
+  /* ---- SPARKLES: dropped from Giver for now (Oct 26). No local or server
+   * spend and no ledger entry; the sparkles field and its sync stay. ---- */
+  useSparkle(_itemId: string): { ok: boolean; reason?: string } {
+    return { ok: false, reason: "disabled" };
   },
 
 };

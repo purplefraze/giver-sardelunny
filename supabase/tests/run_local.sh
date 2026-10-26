@@ -46,7 +46,7 @@ $P -d sec_flow -f supabase/unapplied/20261015_01b_spark_column_revoke.sql
 $P -d sec_flow -f supabase/tests/55_after_01b_tests.sql >/dev/null
 echo "== app flow (ship order 01 -> client -> 01b) run"; report sec_flow
 rollback_sql supabase/unapplied/20261015_03_holds_sparkles_fund.sql | $P -d sec_flow >/dev/null
-$P -d sec_flow -At -c "select 'rollback 03 ok: '||(to_regprocedure('public.spend_my_sparkle(uuid)') is null)"
+$P -d sec_flow -At -c "select 'rollback 03 ok: '||(to_regprocedure('public.reserve_wish_sparks(uuid,integer)') is null)"
 # 5) Fund: with Sep-27 wish_contributions present
 fresh sec_fund
 # TEST-ONLY shim: Sep-27 calls public.owns_profile/is_admin, which prod no longer

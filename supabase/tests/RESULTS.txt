@@ -82,12 +82,7 @@ PASS | settle: hold closed as settled (not refunded) |
 PASS | settle: wisher not refunded | 
 PASS | settle: granter paid +10 exactly once | 
 PASS | ledger: every A balance change ledgered | 
-PASS | sparkle: boost A1 | 
-PASS | sparkle: second boost same item capped | capped
-PASS | sparkle: own item refused | self
-PASS | sparkle: direct boost insert revoked | permission denied for table boosts
-PASS | sparkle: -1 sparkle, +1 boost_count | 
-PASS | sparkle: none left refused | insufficient sparks
+PASS | boosts: direct boost insert revoked | permission denied for table boosts
 PASS | gate: no-give member cannot start conversation | new row violates row-level security policy for table "conversations"
 PASS | gate: no-give member cannot connect | new row violates row-level security policy for table "connections"
 PASS | 01b: new client identity save | 
@@ -102,5 +97,5 @@ PASS | fund: own wish refused | wish not fundable
 PASS | fund: one row, sparks untouched | 
 4 pass / 0 fail
 3 pass / 0 fail
-34 pass / 0 fail
+29 pass / 0 fail
 5 pass / 0 fail

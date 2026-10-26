@@ -58,4 +58,17 @@ $P -d sec_fund -f supabase/unapplied/20261015_03_holds_sparkles_fund.sql
 sed -n '1,/^-- ---- synthetic/p' supabase/tests/10_security_tests.sql | $P -d sec_fund >/dev/null
 $P -d sec_fund -f supabase/tests/60_fund_tests.sql >/dev/null
 echo "== Sep-27 present (fund) run"; report sec_fund
-for d in sec_main sec_sep23 sec_flow sec_fund; do $P -d $d -At -c "select count(*) filter (where ok)||' pass / '||count(*) filter (where not ok)||' fail' from t.results"; done
+# 6) exact welcome grant (07) on both defaults: prod-shaped (250) and Sep-23 (50)
+for d in sec_wg250 sec_wg50; do
+  fresh $d
+  [ $d = sec_wg50 ] && $P -d $d -f supabase/migrations/20260923160000_profile_sparks_sync.sql >/dev/null
+  $P -d $d -f supabase/unapplied/20261015_01_spark_lock.sql
+  $P -d $d -f supabase/unapplied/20261015_01b_spark_column_revoke.sql
+  $P -d $d -f supabase/unapplied/20261026_07_welcome_grant_exact.sql
+  sed -n '1,/^-- ---- synthetic/p' supabase/tests/10_security_tests.sql | $P -d $d >/dev/null
+  $P -d $d -f supabase/tests/75_welcome_exact_tests.sql >/dev/null
+  echo "== exact welcome grant run ($d)"; report $d
+  rollback_sql supabase/unapplied/20261026_07_welcome_grant_exact.sql | $P -d $d >/dev/null
+  $P -d $d -At -c "select 'rollback 07 ok: '||(pg_get_functiondef('public.claim_welcome_grant()'::regprocedure) like '%adjust_sparks(me, 50, 0%')"
+done
+for d in sec_main sec_sep23 sec_flow sec_fund sec_wg250 sec_wg50; do $P -d $d -At -c "select count(*) filter (where ok)||' pass / '||count(*) filter (where not ok)||' fail' from t.results"; done

@@ -70,12 +70,12 @@ export function memberFromProfile(row: ProfileRow): Member {
 }
 
 const PUBLIC_PROFILE_COLUMNS =
-  "id,user_id,sample_key,is_sample,handle,name,photo_url,about,by_day,by_night,weekend,pronouns,created_at,updated_at";
+  "id,user_id,sample_key,is_sample,handle,name,photo_url,about,by_day,by_night,weekend,created_at,updated_at";
 
 async function load() {
   const { data } = await supabase
     .from("profiles")
-    /* PUBLIC COLUMNS ONLY — birthday, gender, answers and sparks are owner-only
+    /* PUBLIC COLUMNS ONLY — birthday, gender, answers, pronouns and sparks are owner-only
        in the database (column grants); the owner reads them via my_profile(). */
     .select(PUBLIC_PROFILE_COLUMNS);
   /* Private columns are absent by design; the shape stays one ProfileRow. */

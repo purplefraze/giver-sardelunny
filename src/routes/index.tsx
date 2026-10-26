@@ -15,6 +15,7 @@ import { useAppHeight } from "@/hooks/use-app-height";
 
 
 import { Onboarding } from "@/components/Onboarding";
+import { AuthGate } from "@/components/onboarding/AuthGate";
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { useSession } from "@/hooks/use-session";
 import { sessionEndedPending } from "@/data/cloud/session";
@@ -276,6 +277,11 @@ function Index() {
       void navigate({ to: "/auth", search: {} });
     }
   }, [entered, session, navigate]);
+  /* RE-SIGN-IN (production): /auth is dev-only, so a member who has entered
+     but is signed out (their session ended) gets the home-page sign-in here,
+     the same AuthGate onboarding uses. It says the session ended; once the
+     session is back the workspace returns. No navigation, so no loop. */
+  const reSignIn = !devRoutesOpen() && entered && session.status === "signed-out";
   const [opening, setOpening] = useState(false);
   const owed = hydrated && entered && !opening ? openingPending() : null;
   const openingCover = owed !== null && session.status === "loading";
@@ -851,6 +857,8 @@ function Index() {
             setSessionEntered(true);
           }}
         />
+      ) : reSignIn ? (
+        <AuthGate onDone={() => undefined} />
       ) : (
         <>
           {/*

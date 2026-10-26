@@ -106,6 +106,37 @@ export function isEcho(heard: string, spoken: string): boolean {
   return h === p || (h.length >= 12 && p.includes(h));
 }
 
+/**
+ * The recogniser often hears Giver's own question AND the answer in one
+ * segment ("online or in person? tuesday evening"). Remove any run of 3+
+ * words copied from a recently spoken question (or the whole question if it
+ * is shorter), keeping the person's own words. A single word or two that
+ * merely repeats the question ("in person") is a real answer and stays.
+ */
+export function stripEcho(heard: string, spoken: readonly string[]): string {
+  let words = heard.trim().split(/\s+/).filter(Boolean);
+  const key = (w: string) => norm(w);
+  for (const prompt of spoken) {
+    const p = norm(prompt).split(" ").filter(Boolean);
+    if (!p.length) continue;
+    const min = Math.min(3, p.length);
+    for (;;) {
+      const h = words.map(key);
+      let best = { at: -1, len: 0 };
+      for (let i = 0; i < h.length; i++) {
+        for (let j = 0; j < p.length; j++) {
+          let n = 0;
+          while (i + n < h.length && j + n < p.length && h[i + n] && h[i + n] === p[j + n]) n++;
+          if (n > best.len) best = { at: i, len: n };
+        }
+      }
+      if (best.len < min || (best.len < 3 && best.len !== h.filter(Boolean).length)) break;
+      words = [...words.slice(0, best.at), ...words.slice(best.at + best.len)];
+    }
+  }
+  return words.join(" ").replace(/^[\s,.?!;:-]+|[\s,;:-]+$/g, "").trim();
+}
+
 export const readyAsk = (a: GiverAction) => `ready to review your ${NOUN[a]}?`;
 
 /**

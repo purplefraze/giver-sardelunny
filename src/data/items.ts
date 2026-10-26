@@ -549,8 +549,9 @@ export const BOOST_RULES = {
   windowMs: 7 * 24 * 60 * 60 * 1000,
   /** No amount of sparkles can pin an item to the top forever. */
   maxCountedPerItem: 25,
-  /** One person may only sparkle the same item this many times. */
-  maxPerPersonPerItem: 3,
+  /** One person may only sparkle the same item this many times. Matches the
+   *  server: boosts unique(item_id, by_profile_id) + spend_my_sparkle 'capped'. */
+  maxPerPersonPerItem: 1,
 };
 
 export type ItemsState = { items: Item[]; boosts: Boost[]; seeded: boolean };

@@ -8,6 +8,7 @@ import {
   ITEM_TYPES,
   ME_ID,
   boostWeight,
+  boostsFor,
   myItems,
   pastItems,
   type ItemType,
@@ -353,7 +354,11 @@ export function FullProfile({
                       ) : (
                         <button
                           type="button"
-                          disabled={sparkles < 1}
+                          /* ONE SPARKLE PER PERSON PER ITEM (server: 03 + 04). */
+                          disabled={
+                            sparkles < 1 ||
+                            boostsFor(state, item.id).some((b) => b.byOwnerId === ME_ID)
+                          }
                           onClick={() => {
                             buzz();
                             myProfileStore.useSparkle(item.id);
@@ -361,7 +366,9 @@ export function FullProfile({
                           className="text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
                           style={{ color: "var(--giver-sparkles)" }}
                         >
-                          {boostWeight(state, item.id) ? "sparkle again" : "sparkle"}
+                          {boostsFor(state, item.id).some((b) => b.byOwnerId === ME_ID)
+                            ? "sparkled"
+                            : "sparkle"}
                         </button>
                       )}
 

@@ -100,7 +100,66 @@ PASS | fund: replay idempotent |
 PASS | fund: past target refused | pledge exceeds the wish's stated cost
 PASS | fund: own wish refused | wish not fundable
 PASS | fund: one row, sparks untouched | 
+== 04 boost_count lock (flow suite + 04 tests, ship order) run
+PASS | client: identity-only profile save | 
+PASS | client: identity saved | 
+PASS | welcome: claim | 
+PASS | welcome: replay is a no-op | 
+PASS | welcome: +50 sparks +50 give once | 
+PASS | reserve: wish A2 | 
+PASS | reserve: replay idempotent | 
+PASS | reserve: wish A3 | 
+PASS | reserve: -20 total, two open holds | 
+PASS | reserve: someone else's item refused | not your wish
+PASS | release: withdraw A3 | 
+PASS | release: replay no-op | 
+PASS | reserve: more than balance refused | insufficient sparks
+PASS | release: refunded once (-10 net) | 
+PASS | delete: hold refunded | 
+PASS | holds: member cannot write holds | permission denied for table spark_holds
+PASS | settle: granter connects (has live give) | 
+PASS | settle: granter claims | 
+PASS | settle: wisher confirms | 
+PASS | settle: hold closed as settled (not refunded) | 
+PASS | settle: wisher not refunded | 
+PASS | settle: granter paid +10 exactly once | 
+PASS | ledger: every A balance change ledgered | 
+PASS | sparkle: boost A1 | 
+PASS | sparkle: second boost same item capped | capped
+PASS | sparkle: own item refused | self
+PASS | sparkle: direct boost insert revoked | permission denied for table boosts
+PASS | sparkle: -1 sparkle, +1 boost_count | 
+PASS | sparkle: none left refused | insufficient sparks
+PASS | gate: no-give member cannot start conversation | new row violates row-level security policy for table "conversations"
+PASS | gate: no-give member cannot connect | new row violates row-level security policy for table "connections"
+PASS | boost lock: owner direct boost_count PATCH runs (silently ignored) | 
+PASS | boost lock: owner direct boost_count edit refused (still 0), other fields saved | 
+PASS | boost lock: items-sync style upsert with boost_count=50 | 
+PASS | boost lock: new item boost_count forced to 0 | 
+PASS | boost lock: upsert replay (conflict -> update) with boost_count=50 | 
+PASS | boost lock: upsert update path keeps 0 | 
+PASS | boost lock: non-owner direct boost_count PATCH runs (RLS: 0 rows) | 
+PASS | boost lock: spend_my_sparkle boosts | 
+PASS | boost lock: boost_count = 1, sparkles 3 -> 2, one boost row | 
+PASS | boost lock: second boost same item same member refused | capped
+PASS | boost lock: member cannot delete own boost (closes free re-boost loop) | permission denied for table boosts
+PASS | boost lock: member cannot insert boost directly | permission denied for table boosts
+PASS | boost lock: owner stale save boost_count=0 | 
+PASS | boost lock: after refused 2nd boost + stale save: still 1, sparkles still 2 | 
+PASS | boost lock: service_role may set boost_count | 
+PASS | boost lock: service_role edit took effect | 
+PASS | 01b: new client identity save | 
+PASS | 01b: old client PATCH (with sparks) rejected — why client ships first | permission denied for table profiles
+PASS | 01b: RPCs still work | 
+04 lock: 50 pass / 0 fail
+== 04 rollback run
+PASS | after 04 rollback: owner boost_count edit allowed again | 
+PASS | after 04 rollback: member can delete own boost again | 
+PASS | after 04 rollback: owner edit took effect (42), boost row gone | 
+PASS | after 04 rollback: guard function and trigger removed | 
+PASS | after 04 rollback: spend_my_sparkle (03) untouched | 
 4 pass / 0 fail
 3 pass / 0 fail
 34 pass / 0 fail
 5 pass / 0 fail
+04 rollback: 5 pass / 0 fail

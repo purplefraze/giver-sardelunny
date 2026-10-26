@@ -213,9 +213,9 @@ function wrapInCircle(
 
 /**
  * REDUCED MOTION: the still explainer, two frames at the ceremony's own 22px,
- * type and colours (no step-down). Frame 1 is always "a gift from giver:" /
+ * type and colours (no step-down). Frame 1 is always "a gift from" / "giver:" /
  * "100 sparks". Frame 2 is "50 to wish · 50 to give" on one line when it sits
- * inside the circle of radius R, otherwise broken after the dot. There are no
+ * inside the circle of radius R, otherwise "50 to wish" / "50 to give" (no dot). There are no
  * sparks in these frames, so R is the middle loop's inner edge less air.
  */
 type Run = { text: string; colour: string; weight?: number };
@@ -228,14 +228,11 @@ export function explainerFrames(
 ): [Run[][], Run[][]] {
   const c = FIRST_LAND_COPY_PARTS;
   const hw = FIRST_LAND.type.weight.hundred;
-  const frame1: Run[][] = [
-    [{ text: c.hundredA, colour: colours.ink, weight: hw }],
-    [{ text: c.hundredB, colour: colours.ink, weight: hw }],
-  ];
+  const frame1: Run[][] = c.hundredLines.map((text) => [{ text, colour: colours.ink, weight: hw }]);
   const wish = { text: c.wish, colour: colours.wish };
   const give = { text: c.give, colour: colours.give };
   const oneLine: Run[][] = [[wish, { text: " · ", colour: colours.ink }, give]];
-  const broken: Run[][] = [[wish, { text: " ·", colour: colours.ink }], [give]];
+  const broken: Run[][] = [[wish], [give]];
   const frame2 = explainerOver(oneLine, widthOf, R, step, capH) <= 0 ? oneLine : broken;
   return [frame1, frame2];
 }
@@ -250,17 +247,17 @@ export function explainerOver(lines: Run[][], widthOf: (s: string) => number, R:
   );
 }
 
-function splitHundred(t: string): [string, string] {
+/** "a gift from giver: 100 sparks" set by hand as "a gift from" / "giver:" / "100 sparks". */
+function splitHundred(t: string): string[] {
   const at = t.indexOf(": ");
-  if (at >= 0) return [t.slice(0, at + 1), t.slice(at + 2)];
-  const words = t.split(" ");
-  return [words.slice(0, -1).join(" "), words.slice(-1)[0] ?? ""];
+  if (at < 0) return [t];
+  const head = t.slice(0, at + 1).split(" ");
+  return [head.slice(0, -1).join(" "), head[head.length - 1] ?? "", t.slice(at + 2)].filter(Boolean);
 }
 const FIRST_LAND_COPY_PARTS = {
   hundred: FIRST_LAND.copy.hundred,
-  /* Always two lines, broken after the colon: "a gift from giver:" / "100 sparks". */
-  hundredA: splitHundred(FIRST_LAND.copy.hundred)[0],
-  hundredB: splitHundred(FIRST_LAND.copy.hundred)[1],
+  /* Always three lines: "a gift from" / "giver:" / "100 sparks". */
+  hundredLines: splitHundred(FIRST_LAND.copy.hundred),
   wish: FIRST_LAND.copy.wish,
   give: FIRST_LAND.copy.give,
 };
@@ -419,7 +416,7 @@ export function FirstLandArt({
 
   /* ---- the copy, wrapped to fit inside the middle loop ---- */
   const [lines, setLines] = useState<Record<LineKey, string[]>>(() => ({
-    hundred: ["a gift from giver:", "100 sparks"],
+    hundred: ["a gift from", "giver:", "100 sparks"],
     wish: ["50 to wish"],
     give: ["50 to give"],
     question: ["are you", "a giver?"],
@@ -440,10 +437,10 @@ export function FirstLandArt({
         el.textContent = s;
         return el.getComputedTextLength();
       };
-      /* Beat 1 is set by hand: "a gift from giver:" / "100 sparks", never re-wrapped. */
+      /* Beat 1 is set by hand: "a gift from" / "giver:" / "100 sparks", never re-wrapped. */
       next[key] =
         key === "hundred"
-          ? [FIRST_LAND_COPY_PARTS.hundredA, FIRST_LAND_COPY_PARTS.hundredB]
+          ? [...FIRST_LAND_COPY_PARTS.hundredLines]
           : wrapInCircle(FIRST_LAND.copy[key].split(" "), widthOf, R, step, capH);
       if (key === "hundred") hundredOver = explainerOver(next[key].map((t) => [{ text: t, colour: "" }]), widthOf, R, step, capH);
     }

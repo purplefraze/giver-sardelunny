@@ -48,6 +48,15 @@ export const FIRST_LAND_TYPE = {
   },
   /** STAND-IN: line step when a line wraps inside the middle loop. */
   lineHeightEm: 1.15,
+  /**
+   * STAND-IN (Luna, 26 Oct 2026): reduced motion's still frame 1 only, and
+   * only where it would otherwise crowd the loop (a 320px phone; 390 keeps
+   * 1.15): a tighter line step, then, if its corners are still under
+   * tightMinGapPx from the stroke, a hair of negative tracking.
+   */
+  tightLineHeightEm: 1.05,
+  tightLetterSpacingEm: -0.01,
+  tightMinGapPx: 6,
   /** Helvetica's cap height and x-height, used to set baselines optically. */
   capHeightEm: 0.72,
   xHeightEm: 0.52,
@@ -87,6 +96,14 @@ export const FIRST_LAND_SPARK = {
    */
   swirlInsetPx: 9,
   swirlScatterPx: 3.5,
+  /**
+   * STAND-IN (Luna, 26 Oct 2026): during beat 1 only, the swirl rides further
+   * out and tighter so the three-line "a gift from / giver: / 100 sparks"
+   * stays clear of it; it eases back to the values above as beat 1
+   * crossfades out.
+   */
+  beat1SwirlInsetPx: 6,
+  beat1SwirlScatterPx: 1.5,
   /** About one lap per 4s. */
   lapMs: 4000,
   /** STAND-IN: how the stream pours in at 12:00, then opens round the loop. */

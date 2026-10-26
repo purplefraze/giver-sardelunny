@@ -424,7 +424,10 @@ export function FirstLandArt({
   const [frames, setFrames] = useState<[Run[][], Run[][]]>(() =>
     explainerFrames((t) => t.length, Infinity, 1, 1, FIRST_LAND.colour),
   );
-  const [over, setOver] = useState<{ hundred: number; frames: [number, number] }>({ hundred: 0, frames: [0, 0] });
+  /** Reported in data-* attributes (screen px): gap from each frame's corners to the stroke. */
+  const [gaps, setGaps] = useState<{ hundredR: number; frames: [number, number] }>({ hundredR: 0, frames: [0, 0] });
+  /** Still frame 1's line step and tracking (tightened only where it would crowd the loop). */
+  const [f1Set, setF1Set] = useState<{ stepEm: number; trackEm: number }>({ stepEm: TY.lineHeightEm, trackEm: 0 });
   useLayoutEffect(() => {
     const el = measure.current;
     if (!el) return;
@@ -454,11 +457,20 @@ export function FirstLandArt({
     const ER = INNER_R - px(FIRST_LAND.place.explainAirPx);
     const f = explainerFrames(ruler, ER, step, capH, FIRST_LAND.colour);
     setFrames(f);
-    /* Reported, never acted on: how far each frame sits outside its circle at 22px. */
-    setOver({
-      hundred: hundredOver / upp,
-      frames: [explainerOver(f[0], ruler, ER, step, capH) / upp, explainerOver(f[1], ruler, ER, step, capH) / upp],
-    });
+    /* Still frame 1: 1.15 where it sits inside the air; otherwise the tight
+       step, then (if still under tightMinGapPx from the stroke) the tracking. */
+    const gapOf = (lines: Run[][], w: (s: string) => number, st: number) =>
+      -explainerOver(lines, w, INNER_R, st, capH) / upp;
+    let f1: { stepEm: number; trackEm: number } = { stepEm: TY.lineHeightEm, trackEm: 0 };
+    if (explainerOver(f[0], ruler, ER, step, capH) > 0) {
+      f1 = { stepEm: TY.tightLineHeightEm, trackEm: 0 };
+      if (gapOf(f[0], ruler, size * f1.stepEm) < TY.tightMinGapPx) f1.trackEm = TY.tightLetterSpacingEm;
+    }
+    el.style.letterSpacing = f1.trackEm ? `${f1.trackEm}em` : "";
+    const g1 = gapOf(f[0], ruler, size * f1.stepEm);
+    el.style.letterSpacing = "";
+    setF1Set(f1);
+    setGaps({ hundredR: (hundredOver + R) / upp, frames: [g1, gapOf(f[1], ruler, step)] });
     el.textContent = "";
     setLines(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -478,7 +490,11 @@ export function FirstLandArt({
   const beadAt = { wish: PATH.poseDeg(DEG.wish), give: PATH.poseDeg(DEG.give) };
   const beadR = GEO.EAR.innerR * S.beadSettleOfInner;
   const noon = PATH.poseDeg(DEG.giver);
-  const swirlR = INNER_R - px(S.swirlInsetPx);
+  /* Beat 1 rides the swirl out (Luna); it eases back as beat 1 crossfades out. */
+  const b1 = at < T.wishAt ? 1 : op.hundred;
+  const swirlInset = S.swirlInsetPx + (S.beat1SwirlInsetPx - S.swirlInsetPx) * b1;
+  const swirlScatter = S.swirlScatterPx + (S.beat1SwirlScatterPx - S.swirlScatterPx) * b1;
+  const swirlR = INNER_R - px(swirlInset);
   const omega = (2 * Math.PI) / S.lapMs;
   const fallMs = TM.fall.ms - TM.fall.staggerMs;
   const dotR = px(S.dotPx / 2);
@@ -493,7 +509,7 @@ export function FirstLandArt({
   };
   const swirlPos = (s: Spark, time: number) => {
     const a = swirlAngle(s, time);
-    const r = swirlR + px(S.swirlScatterPx) * s.rj;
+    const r = swirlR + px(swirlScatter) * s.rj;
     return { x: MID.x + Math.cos(a) * r, y: MID.y + Math.sin(a) * r, a };
   };
   /** Nearest to the bead leaves first. */
@@ -643,7 +659,9 @@ export function FirstLandArt({
             style={textStyle(TY.weight[key])}
             data-testid={`first-land-${key}`}
             data-lines={lines[key].length}
-            data-over-px={key === "hundred" ? over.hundred.toFixed(1) : undefined}
+            data-corner-r-px={key === "hundred" ? gaps.hundredR.toFixed(1) : undefined}
+            data-swirl-inner-px={key === "hundred" ? ((swirlR - px(swirlScatter) - dotR) / upp).toFixed(1) : undefined}
+            data-stroke-inner-px={key === "hundred" ? (INNER_R / upp).toFixed(1) : undefined}
           >
             {lines[key].map((line, i) => (
               <tspan
@@ -660,21 +678,29 @@ export function FirstLandArt({
       {explain ? (
         <text
           textAnchor="middle"
-          style={textStyle(TY.weight.wish)}
+          style={{
+            ...textStyle(TY.weight.wish),
+            letterSpacing: explain === 1 && f1Set.trackEm ? `${f1Set.trackEm}em` : undefined,
+          }}
           data-testid="first-land-explainer"
           data-frame={explain}
           data-lines={frames[explain === 1 ? 0 : 1].length}
-          data-over-px={over.frames[explain === 1 ? 0 : 1].toFixed(1)}
+          data-gap-px={gaps.frames[explain === 1 ? 0 : 1].toFixed(1)}
+          data-line-em={explain === 1 ? f1Set.stepEm : TY.lineHeightEm}
+          data-track-em={explain === 1 ? f1Set.trackEm : 0}
         >
-          {frames[explain === 1 ? 0 : 1].map((runs, i, all) => (
-            <tspan key={i} x={MID.x} y={MID.y + (i - (all.length - 1) / 2) * step + capH / 2}>
-              {runs.map((r, j) => (
-                <tspan key={j} fill={r.colour} fontWeight={r.weight}>
-                  {r.text}
-                </tspan>
-              ))}
-            </tspan>
-          ))}
+          {frames[explain === 1 ? 0 : 1].map((runs, i, all) => {
+            const st = explain === 1 ? size * f1Set.stepEm : step;
+            return (
+              <tspan key={i} x={MID.x} y={MID.y + (i - (all.length - 1) / 2) * st + capH / 2}>
+                {runs.map((r, j) => (
+                  <tspan key={j} fill={r.colour} fontWeight={r.weight}>
+                    {r.text}
+                  </tspan>
+                ))}
+              </tspan>
+            );
+          })}
         </text>
       ) : null}
       {communi > 0 ? <Communi size={size} upp={upp} opacity={communi} /> : null}

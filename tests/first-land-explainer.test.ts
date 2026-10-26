@@ -1,46 +1,40 @@
 import { describe, expect, test } from "bun:test";
-import { EXPLAIN_MIN_SCALE, FIRST_LAND_EXPLAIN_MS, explainerLines, fitExplainer } from "@/components/first-land/FirstLand";
+import { FIRST_LAND_EXPLAIN_MS, explainerFrames, explainerOver } from "@/components/first-land/FirstLand";
 
-/* REDUCED MOTION FIRST LAND: one still frame, "a gift from giver: 100 sparks" over
-   "50 to wish · 50 to give", held ~3s or until a tap. */
+/* REDUCED MOTION FIRST LAND: two still frames at 22px, each held ~3s or until a tap.
+   Frame 1: "a gift from giver:" / "100 sparks". Frame 2: "50 to wish · 50 to give",
+   broken after the dot only when one line will not fit. */
 const colours = { ink: "#000", wish: "#9D00FF", give: "#4BE01E" };
 const mono = (px: number) => (s: string) => s.length * px;
 const text = (lines: { text: string }[][]) => lines.map((l) => l.map((r) => r.text).join(""));
 
 describe("first land still explainer", () => {
-  test("holds about three seconds", () => {
+  test("each frame holds about three seconds", () => {
     expect(FIRST_LAND_EXPLAIN_MS).toBe(3000);
   });
 
-  test("a roomy circle gets the two plain lines", () => {
-    expect(text(explainerLines(mono(5), 200, 20, 10, colours))).toEqual([
-      "a gift from giver: 100 sparks",
-      "50 to wish · 50 to give",
-    ]);
+  test("frame 1 is always broken after the colon, even in a roomy circle", () => {
+    expect(text(explainerFrames(mono(5), 500, 20, 10, colours)[0])).toEqual(["a gift from giver:", "100 sparks"]);
+    expect(text(explainerFrames(mono(11), 40, 20, 10, colours)[0])).toEqual(["a gift from giver:", "100 sparks"]);
   });
 
-  test("a tight circle breaks, never drops a word", () => {
-    const lines = explainerLines(mono(9), 70, 18, 10, colours);
-    expect(lines.length).toBeGreaterThan(2);
-    expect(text(lines).join(" ").replace(/\s+/g, " ")).toBe("a gift from giver: 100 sparks 50 to wish · 50 to give");
+  test("frame 2 stays on one line when it fits", () => {
+    expect(text(explainerFrames(mono(5), 200, 20, 10, colours)[1])).toEqual(["50 to wish · 50 to give"]);
   });
 
-  test("a forced break falls after the colon", () => {
-    const lines = text(explainerLines(mono(9), 110, 18, 10, colours));
-    if (lines.length > 2) expect(lines.slice(0, 2)).toEqual(["a gift from giver:", "100 sparks"]);
+  test("frame 2 breaks after the dot when it does not, and drops no word", () => {
+    expect(text(explainerFrames(mono(9), 70, 18, 10, colours)[1])).toEqual(["50 to wish ·", "50 to give"]);
   });
 
   test("wish is wish purple, give is give green, the hundred is ink", () => {
-    const runs = explainerLines(mono(5), 200, 20, 10, colours).flat();
-    expect(runs.find((r) => r.text === "50 to wish")?.colour).toBe(colours.wish);
-    expect(runs.find((r) => r.text === "50 to give")?.colour).toBe(colours.give);
-    expect(runs[0]?.colour).toBe(colours.ink);
+    const [f1, f2] = explainerFrames(mono(5), 200, 20, 10, colours);
+    expect(f1.flat().every((r) => r.colour === colours.ink)).toBe(true);
+    expect(f2.flat().find((r) => r.text === "50 to wish")?.colour).toBe(colours.wish);
+    expect(f2.flat().find((r) => r.text === "50 to give")?.colour).toBe(colours.give);
   });
 
-  test("full size when it fits; steps down together when it does not, never below the floor", () => {
-    expect(fitExplainer(mono(5), 200, 20, 10, colours).scale).toBe(1);
-    const tight = fitExplainer(mono(11), 75, 25, 16, colours);
-    expect(tight.scale).toBeLessThan(1);
-    expect(tight.scale).toBeGreaterThanOrEqual(EXPLAIN_MIN_SCALE - 1e-9);
+  test("over-measure reports how far the widest corner sits outside the circle", () => {
+    expect(explainerOver([[{ text: "abcd", colour: "" }]], mono(10), 100, 20, 0)).toBeLessThan(0);
+    expect(explainerOver([[{ text: "abcd", colour: "" }]], mono(10), 10, 20, 0)).toBeCloseTo(10, 5);
   });
 });

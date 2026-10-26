@@ -624,9 +624,9 @@ function Index() {
    * first session after the magic link. It opens with the toggle on My G
    * (12:00) — the only time the app ever opens there — and cannot be skipped:
    * every tap is swallowed until beat 4 ("are you a giver?") settles, when the
-   * toggle is handed back at give (1:30). Reduced motion shows one still
-   * frame, "a gift from giver: 100 sparks" over "50 to wish · 50 to give", for
-   * FIRST_LAND_EXPLAIN_MS or until a tap, then the settled end state.
+   * toggle is handed back at give (1:30). Reduced motion shows two still
+   * frames, "a gift from giver:" / "100 sparks", then "50 to wish · 50 to give",
+   * each for FIRST_LAND_EXPLAIN_MS or until a tap, then the settled end state.
    * "settled" = the question (and communi-g) stay until the first move.
    *
    * The account is known to be owed as soon as the session is ready, so the
@@ -637,8 +637,8 @@ function Index() {
     phase: FirstLandPhase;
     startedAt: number | null;
     still: boolean;
-    /** Reduced motion: the still explainer is showing. */
-    explain: boolean;
+    /** Reduced motion: which still explainer frame is showing (0 = none). */
+    explain: 0 | 1 | 2;
   } | null>(null);
   const grantChecked = useRef(false);
   const landed =
@@ -664,7 +664,7 @@ function Index() {
         if (still && prev !== "give") quietSeat.current = "give";
         return still ? "give" : "giver";
       });
-      setFirstLand({ phase: still ? "settled" : "ceremony", startedAt: null, still, explain: still });
+      setFirstLand({ phase: still ? "settled" : "ceremony", startedAt: null, still, explain: still ? 1 : 0 });
     });
   }, [hydrated, entered, session.status]);
   /* THE CLOCK starts once the G is landed on; the grant is claimed then. */
@@ -673,8 +673,9 @@ function Index() {
     claimWelcome();
     setFirstLand({ ...firstLand, startedAt: performance.now() });
   }, [landed, firstLand]);
-  /* REDUCED MOTION: the still explainer holds ~3s (or until a tap), then settles. */
-  const endExplain = () => setFirstLand((f) => (f?.explain ? { ...f, explain: false } : f));
+  /* REDUCED MOTION: each still frame holds ~3s (or until a tap); after frame 2 it settles. */
+  const endExplain = () =>
+    setFirstLand((f) => (f?.explain ? { ...f, explain: f.explain === 1 ? 2 : 0 } : f));
   useEffect(() => {
     if (!firstLand?.explain || firstLand.startedAt === null) return;
     const id = window.setTimeout(endExplain, FIRST_LAND_EXPLAIN_MS);

@@ -212,52 +212,36 @@ function wrapInCircle(
 }
 
 /**
- * REDUCED MOTION: the still explainer. "a gift from giver: 100 sparks" over
- * "50 to wish · 50 to give", in the ceremony's own type and colours, laid out
- * as the fewest lines whose corners sit inside the circle of radius R. There
- * are no sparks in this frame, so R is the middle loop's inner edge less air.
+ * REDUCED MOTION: the still explainer, two frames at the ceremony's own 22px,
+ * type and colours (no step-down). Frame 1 is always "a gift from giver:" /
+ * "100 sparks". Frame 2 is "50 to wish · 50 to give" on one line when it sits
+ * inside the circle of radius R, otherwise broken after the dot. There are no
+ * sparks in these frames, so R is the middle loop's inner edge less air.
  */
 type Run = { text: string; colour: string; weight?: number };
-export function explainerLines(
+export function explainerFrames(
   widthOf: (s: string) => number,
   R: number,
   step: number,
   capH: number,
   colours: { ink: string; wish: string; give: string },
-): Run[][] {
+): [Run[][], Run[][]] {
   const c = FIRST_LAND_COPY_PARTS;
   const hw = FIRST_LAND.type.weight.hundred;
-  const hundred = [{ text: c.hundred, colour: colours.ink, weight: hw }];
-  const hundred2 = [
+  const frame1: Run[][] = [
     [{ text: c.hundredA, colour: colours.ink, weight: hw }],
     [{ text: c.hundredB, colour: colours.ink, weight: hw }],
   ];
   const wish = { text: c.wish, colour: colours.wish };
-  const dot = { text: " · ", colour: colours.ink };
   const give = { text: c.give, colour: colours.give };
-  const options: Run[][][] = [
-    [hundred, [wish, dot, give]],
-    [hundred, [wish, { text: " ·", colour: colours.ink }], [give]],
-    [...hundred2, [wish, dot, give]],
-    [...hundred2, [wish, { text: " ·", colour: colours.ink }], [give]],
-  ];
-  let best: { lines: Run[][]; over: number } | null = null;
-  for (const lines of options) {
-    const n = lines.length;
-    let over = 0;
-    lines.forEach((runs, i) => {
-      const w = widthOf(runs.map((r) => r.text).join(""));
-      const d = Math.abs((i - (n - 1) / 2) * step) + capH / 2;
-      over = Math.max(over, Math.hypot(w / 2, d) - R);
-    });
-    if (over <= 0) return lines;
-    if (!best || over < best.over) best = { lines, over };
-  }
-  return best!.lines;
+  const oneLine: Run[][] = [[wish, { text: " · ", colour: colours.ink }, give]];
+  const broken: Run[][] = [[wish, { text: " ·", colour: colours.ink }], [give]];
+  const frame2 = explainerOver(oneLine, widthOf, R, step, capH) <= 0 ? oneLine : broken;
+  return [frame1, frame2];
 }
 
-/** How far the explainer's widest corner sits outside R (≤ 0 = it fits). */
-function explainerOver(lines: Run[][], widthOf: (s: string) => number, R: number, step: number, capH: number) {
+/** How far a frame's widest corner sits outside R (≤ 0 = it fits). */
+export function explainerOver(lines: Run[][], widthOf: (s: string) => number, R: number, step: number, capH: number) {
   const n = lines.length;
   return Math.max(
     ...lines.map((runs, i) =>
@@ -266,28 +250,6 @@ function explainerOver(lines: Run[][], widthOf: (s: string) => number, R: number
   );
 }
 
-/**
- * THE EXPLAINER, FITTED. At the ceremony's 22px the full copy cannot sit
- * inside the middle loop on a phone, so the whole frame steps down together
- * (same family, weights and colours) until it fits, never below
- * EXPLAIN_MIN_SCALE. Returns the lines and the scale to draw them at.
- */
-export const EXPLAIN_MIN_SCALE = 0.75;
-export function fitExplainer(
-  widthOf: (s: string) => number,
-  R: number,
-  step: number,
-  capH: number,
-  colours: { ink: string; wish: string; give: string },
-): { lines: Run[][]; scale: number } {
-  for (let k = 1; k >= EXPLAIN_MIN_SCALE - 1e-9; k -= 0.025) {
-    const w = (t: string) => widthOf(t) * k;
-    const lines = explainerLines(w, R, step * k, capH * k, colours);
-    if (explainerOver(lines, w, R, step * k, capH * k) <= 0) return { lines, scale: k };
-  }
-  const k = EXPLAIN_MIN_SCALE;
-  return { lines: explainerLines((t) => widthOf(t) * k, R, step * k, capH * k, colours), scale: k };
-}
 function splitHundred(t: string): [string, string] {
   const at = t.indexOf(": ");
   if (at >= 0) return [t.slice(0, at + 1), t.slice(at + 2)];
@@ -296,14 +258,14 @@ function splitHundred(t: string): [string, string] {
 }
 const FIRST_LAND_COPY_PARTS = {
   hundred: FIRST_LAND.copy.hundred,
-  /* If it must break, it breaks after the colon: "a gift from giver:" / "100 sparks". */
+  /* Always two lines, broken after the colon: "a gift from giver:" / "100 sparks". */
   hundredA: splitHundred(FIRST_LAND.copy.hundred)[0],
   hundredB: splitHundred(FIRST_LAND.copy.hundred)[1],
   wish: FIRST_LAND.copy.wish,
   give: FIRST_LAND.copy.give,
 };
 
-/** REDUCED MOTION: how long the still explainer holds before it settles. */
+/** REDUCED MOTION: how long each still explainer frame holds. */
 export const FIRST_LAND_EXPLAIN_MS = 3000;
 
 /**
@@ -389,7 +351,7 @@ export function FirstLandArt({
   phase,
   startedAt,
   still,
-  explain = false,
+  explain = 0,
   onSettle,
 }: {
   phase: FirstLandPhase;
@@ -397,8 +359,8 @@ export function FirstLandArt({
   startedAt: number | null;
   /** Reduced motion: no motion; the settled end state after the explainer. */
   still: boolean;
-  /** Reduced motion only: the still "100 · 50 to wish · 50 to give" frame. */
-  explain?: boolean;
+  /** Reduced motion only: which still explainer frame shows (0 = none). */
+  explain?: number;
   /** Beat 4 has settled: hand the toggle back, taps work again. */
   onSettle: () => void;
 }) {
@@ -462,27 +424,28 @@ export function FirstLandArt({
     give: ["50 to give"],
     question: ["are you", "a giver?"],
   }));
-  const [explainScale, setExplainScale] = useState(1);
-  const [explainer, setExplainer] = useState<Run[][]>(() => [
-    [{ text: FIRST_LAND.copy.hundred, colour: FIRST_LAND.colour.ink, weight: FIRST_LAND.type.weight.hundred }],
-    [
-      { text: FIRST_LAND.copy.wish, colour: FIRST_LAND.colour.wish },
-      { text: " · ", colour: FIRST_LAND.colour.ink },
-      { text: FIRST_LAND.copy.give, colour: FIRST_LAND.colour.give },
-    ],
-  ]);
+  const [frames, setFrames] = useState<[Run[][], Run[][]]>(() =>
+    explainerFrames((t) => t.length, Infinity, 1, 1, FIRST_LAND.colour),
+  );
+  const [over, setOver] = useState<{ hundred: number; frames: [number, number] }>({ hundred: 0, frames: [0, 0] });
   useLayoutEffect(() => {
     const el = measure.current;
     if (!el) return;
     const R = px(FIRST_LAND.place.textRadiusPx);
     const next = {} as Record<LineKey, string[]>;
+    let hundredOver = 0;
     for (const key of LINE_KEYS) {
       el.style.fontWeight = String(TY.weight[key]);
       const widthOf = (s: string) => {
         el.textContent = s;
         return el.getComputedTextLength();
       };
-      next[key] = wrapInCircle(FIRST_LAND.copy[key].split(" "), widthOf, R, step, capH);
+      /* Beat 1 is set by hand: "a gift from giver:" / "100 sparks", never re-wrapped. */
+      next[key] =
+        key === "hundred"
+          ? [FIRST_LAND_COPY_PARTS.hundredA, FIRST_LAND_COPY_PARTS.hundredB]
+          : wrapInCircle(FIRST_LAND.copy[key].split(" "), widthOf, R, step, capH);
+      if (key === "hundred") hundredOver = explainerOver(next[key].map((t) => [{ text: t, colour: "" }]), widthOf, R, step, capH);
     }
     /* The explainer has no sparks to clear: the loop's inner edge, less air.
        Measured at the heavier weight so every line is sure to fit. */
@@ -491,13 +454,14 @@ export function FirstLandArt({
       el.textContent = s;
       return el.getComputedTextLength();
     };
-    const fitted = fitExplainer(ruler, INNER_R - px(FIRST_LAND.place.explainAirPx), step, capH, {
-      ink: FIRST_LAND.colour.ink,
-      wish: FIRST_LAND.colour.wish,
-      give: FIRST_LAND.colour.give,
+    const ER = INNER_R - px(FIRST_LAND.place.explainAirPx);
+    const f = explainerFrames(ruler, ER, step, capH, FIRST_LAND.colour);
+    setFrames(f);
+    /* Reported, never acted on: how far each frame sits outside its circle at 22px. */
+    setOver({
+      hundred: hundredOver / upp,
+      frames: [explainerOver(f[0], ruler, ER, step, capH) / upp, explainerOver(f[1], ruler, ER, step, capH) / upp],
     });
-    setExplainer(fitted.lines);
-    setExplainScale(fitted.scale);
     el.textContent = "";
     setLines(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -682,6 +646,7 @@ export function FirstLandArt({
             style={textStyle(TY.weight[key])}
             data-testid={`first-land-${key}`}
             data-lines={lines[key].length}
+            data-over-px={key === "hundred" ? over.hundred.toFixed(1) : undefined}
           >
             {lines[key].map((line, i) => (
               <tspan
@@ -698,17 +663,14 @@ export function FirstLandArt({
       {explain ? (
         <text
           textAnchor="middle"
-          style={{ ...textStyle(TY.weight.wish), fontSize: size * explainScale }}
+          style={textStyle(TY.weight.wish)}
           data-testid="first-land-explainer"
-          data-lines={explainer.length}
-          data-scale={explainScale.toFixed(3)}
+          data-frame={explain}
+          data-lines={frames[explain === 1 ? 0 : 1].length}
+          data-over-px={over.frames[explain === 1 ? 0 : 1].toFixed(1)}
         >
-          {explainer.map((runs, i) => (
-            <tspan
-              key={i}
-              x={MID.x}
-              y={MID.y + ((i - (explainer.length - 1) / 2) * step + capH / 2) * explainScale}
-            >
+          {frames[explain === 1 ? 0 : 1].map((runs, i, all) => (
+            <tspan key={i} x={MID.x} y={MID.y + (i - (all.length - 1) / 2) * step + capH / 2}>
               {runs.map((r, j) => (
                 <tspan key={j} fill={r.colour} fontWeight={r.weight}>
                   {r.text}

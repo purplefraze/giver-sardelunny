@@ -14,8 +14,8 @@
 --  4. Settlement: when a wish connection reaches 'verified', the hold is
 --     closed as 'settled' (no refund). The granter's +10 is the EXISTING
 --     payout in update_connection_state — not paid twice.
---  5. spend_my_sparkle(_item) — -1 sparkle + boost row + boost_count, one
---     transaction. Direct INSERT on boosts revoked (else boosts are free).
+--  5. Direct INSERT on boosts revoked (one-line lock; the sparkle/boost
+--     feature itself is dropped for now, so there is no spend function).
 --  6. pledge_to_wish(...) — only if public.wish_contributions exists.
 -- =============================================================================
 begin;
@@ -109,28 +109,9 @@ drop trigger if exists connections_settle_wish_hold on public.connections;
 create trigger connections_settle_wish_hold after update on public.connections
   for each row execute function app_private.settle_wish_hold();
 
--- SPARKLES ------------------------------------------------------------------------
-create or replace function public.spend_my_sparkle(_item uuid)
-returns public.boosts
-language plpgsql security definer set search_path = public, app_private as $$
-declare me uuid; i public.items; b public.boosts;
-begin
-  select id into me from public.profiles where user_id = auth.uid();
-  if me is null then raise exception 'no profile'; end if;
-  select * into i from public.items where id = _item for update;
-  if i.id is null then raise exception 'gone'; end if;
-  if i.owner_id = me then raise exception 'self'; end if;
-  if i.status <> 'active' or not i.published then raise exception 'inactive'; end if;
-  if exists (select 1 from public.boosts where item_id = _item and by_profile_id = me) then
-    raise exception 'capped';
-  end if;
-  perform app_private.adjust_sparks(me, 0, -1, 'sparkle', 'boosted an item', 'boost:' || _item::text);
-  insert into public.boosts(item_id, by_profile_id) values (_item, me) returning * into b;
-  update public.items set boost_count = boost_count + 1 where id = _item;
-  return b;
-end $$;
-revoke all on function public.spend_my_sparkle(uuid) from public, anon;
-grant execute on function public.spend_my_sparkle(uuid) to authenticated;
+-- BOOSTS LOCK -------------------------------------------------------------------
+-- Sparkle/boost is dropped from Giver for now (Oct 26). No sparkle spend here.
+-- One-line lock only: members cannot write boost rows directly (else free boosts).
 revoke insert on public.boosts from authenticated;
 
 -- FUND (only once Sep-27 wish_contributions exists) ---------------------------------
@@ -169,7 +150,6 @@ commit;
 -- begin;
 --   drop function if exists public.pledge_to_wish(uuid, integer, text);
 --   grant insert on public.boosts to authenticated;
---   drop function if exists public.spend_my_sparkle(uuid);
 --   drop trigger if exists connections_settle_wish_hold on public.connections;
 --   drop function if exists app_private.settle_wish_hold();
 --   drop trigger if exists items_refund_holds on public.items;

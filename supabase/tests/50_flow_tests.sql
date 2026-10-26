@@ -13,7 +13,7 @@ insert into public.profiles(id,user_id,name,handle) values
 insert into public.items(id,owner_id,type,text,published,status) values
  ('20000000-0000-0000-0000-0000000000a1','10000000-0000-0000-0000-0000000000a1','give','soup',true,'active'),
  ('20000000-0000-0000-0000-0000000000c1','10000000-0000-0000-0000-0000000000c1','give','tea',true,'active');
-create temp table bal0 as select id, sparks, sparkles from public.profiles;
+create temp table bal0 as select id, sparks from public.profiles;
 grant select on bal0 to public;
 
 set role authenticated;
@@ -66,24 +66,10 @@ select t.ok('settle: granter paid +10 exactly once', (select p.sparks = b.sparks
 select t.ok('ledger: every A balance change ledgered',
   (select sum(delta_sparks) = 40 from public.spark_ledger where profile_id = '10000000-0000-0000-0000-0000000000a1'));
 
--- ---- sparkles ------------------------------------------------------------------
-update public.profiles set sparkles = 2 where id = '10000000-0000-0000-0000-0000000000c1';
+-- ---- boosts lock (sparkle feature dropped; only the insert lock remains) --------
 set role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000c1',false);
-select t.lives('sparkle: boost A1', $$select public.spend_my_sparkle('20000000-0000-0000-0000-0000000000a1')$$);
-select t.throws('sparkle: second boost same item capped', $$select public.spend_my_sparkle('20000000-0000-0000-0000-0000000000a1')$$, '%capped%');
-select t.throws('sparkle: own item refused', $$select public.spend_my_sparkle('20000000-0000-0000-0000-0000000000c1')$$, '%self%');
-select t.throws('sparkle: direct boost insert revoked', $$insert into public.boosts(item_id,by_profile_id) values ('20000000-0000-0000-0000-0000000000a1','10000000-0000-0000-0000-0000000000c1')$$, '%permission denied%');
-reset role;
-select t.ok('sparkle: -1 sparkle, +1 boost_count',
-  (select sparkles = 1 from public.profiles where id='10000000-0000-0000-0000-0000000000c1')
-  and (select boost_count = 1 from public.items where id='20000000-0000-0000-0000-0000000000a1'));
-update public.profiles set sparkles = 0 where id = '10000000-0000-0000-0000-0000000000c1';
-insert into public.items(id,owner_id,type,text,published,status) values
- ('20000000-0000-0000-0000-0000000000a5','10000000-0000-0000-0000-0000000000a1','give','more',true,'active');
-set role authenticated;
-select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000c1',false);
-select t.throws('sparkle: none left refused', $$select public.spend_my_sparkle('20000000-0000-0000-0000-0000000000a5')$$, '%insufficient sparks%');
+select t.throws('boosts: direct boost insert revoked', $$insert into public.boosts(item_id,by_profile_id) values ('20000000-0000-0000-0000-0000000000a1','10000000-0000-0000-0000-0000000000c1')$$, '%permission denied%');
 
 -- ---- gate (02) on client paths --------------------------------------------------
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-0000000000b1',false);

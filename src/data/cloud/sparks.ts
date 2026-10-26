@@ -12,7 +12,6 @@
  *   - release_my_wish_hold(_item)              wish withdrawn: hold -> sparks
  *     (settlement closes the hold server-side; the granter's +10 is the
  *      existing connection payout)
- *   - spend_my_sparkle(_item)                  -1 sparkle + boost, one step
  *   - pledge_to_wish(_wish, _cents, _local_id) Fund pledge (needs Sep-27)
  * After every call the balance is re-read from the server (my_profile) so the
  * local store never drifts from the ledger.
@@ -152,11 +151,6 @@ export function reserveWish(localItemId: string, amount: number) {
 /** A wish withdrawn before it was granted: refund its hold. */
 export function releaseWishHold(localItemId: string) {
   return withCloudItem(localItemId, (id) => call("release_my_wish_hold", { _item: id }));
-}
-
-/** One sparkle on somebody else's item; the boost is written in the same step. */
-export function spendSparkle(localItemId: string) {
-  return withCloudItem(localItemId, (id) => call("spend_my_sparkle", { _item: id }));
 }
 
 /** A Fund pledge (no sparks move). Idempotent per local id. */

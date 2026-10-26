@@ -20,7 +20,7 @@ export function ItemRow({
   trailing?: React.ReactNode;
 }) {
   const fill = ACTIVITY_FILL[item.type];
-  const facts = factLine(item, item.boostCount ? [`sparkled ×${item.boostCount}`] : []);
+  const facts = factLine(item, []);
   return (
     <li className="g-rule py-4 first:border-t-0 first:pt-0">
       <div className="flex items-start gap-4">

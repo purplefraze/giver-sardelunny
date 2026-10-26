@@ -14,7 +14,7 @@
 
 /* ---- COPY (verbatim, lowercase) ---- */
 export const FIRST_LAND_COPY = {
-  hundred: "here’s 100 sparks",
+  hundred: "a gift from giver: 100 sparks",
   wish: "50 to wish",
   give: "50 to give",
   question: "are you a giver?",
@@ -103,7 +103,7 @@ export const FIRST_LAND_SPARK = {
 export const FIRST_LAND_TIMING = {
   /** Beat 1: blue sparks fall through the 12:00 hole in 900ms. */
   fall: { ms: 900, /** STAND-IN: spread of each spark's start. */ staggerMs: 260 },
-  /** "here's 100 sparks" fades in over 300ms (STAND-IN: as the fall
+  /** "a gift from giver: 100 sparks" fades in over 300ms (STAND-IN: as the fall
       lands), holds 1.4s. */
   hundred: { fadeInMs: 300, holdMs: 1400 },
   /** Text crossfades between beats. */

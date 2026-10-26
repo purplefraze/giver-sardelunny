@@ -19,7 +19,7 @@ import { useSvgUnits } from "./use-svg-units";
  *
  *   1. The G blue, the toggle on My G (12:00). Blue sparks fall from the top
  *      of the screen through the 12:00 hole and swirl round the inside of the
- *      middle loop. "here's 100 sparks"
+ *      middle loop. "a gift from giver: 100 sparks"
  *   2. "50 to wish". The toggle travels to 10:30 as the whole G tints
  *      purple; half the sparks stream into the bead turning purple, rest, poof.
  *   3. "50 to give". The toggle travels back past 12:00 to 1:30 as the
@@ -212,7 +212,7 @@ function wrapInCircle(
 }
 
 /**
- * REDUCED MOTION: the still explainer. "here’s 100 sparks" over
+ * REDUCED MOTION: the still explainer. "a gift from giver: 100 sparks" over
  * "50 to wish · 50 to give", in the ceremony's own type and colours, laid out
  * as the fewest lines whose corners sit inside the circle of radius R. There
  * are no sparks in this frame, so R is the middle loop's inner edge less air.
@@ -255,10 +255,50 @@ export function explainerLines(
   }
   return best!.lines;
 }
+
+/** How far the explainer's widest corner sits outside R (≤ 0 = it fits). */
+function explainerOver(lines: Run[][], widthOf: (s: string) => number, R: number, step: number, capH: number) {
+  const n = lines.length;
+  return Math.max(
+    ...lines.map((runs, i) =>
+      Math.hypot(widthOf(runs.map((r) => r.text).join("")) / 2, Math.abs((i - (n - 1) / 2) * step) + capH / 2) - R,
+    ),
+  );
+}
+
+/**
+ * THE EXPLAINER, FITTED. At the ceremony's 22px the full copy cannot sit
+ * inside the middle loop on a phone, so the whole frame steps down together
+ * (same family, weights and colours) until it fits, never below
+ * EXPLAIN_MIN_SCALE. Returns the lines and the scale to draw them at.
+ */
+export const EXPLAIN_MIN_SCALE = 0.75;
+export function fitExplainer(
+  widthOf: (s: string) => number,
+  R: number,
+  step: number,
+  capH: number,
+  colours: { ink: string; wish: string; give: string },
+): { lines: Run[][]; scale: number } {
+  for (let k = 1; k >= EXPLAIN_MIN_SCALE - 1e-9; k -= 0.025) {
+    const w = (t: string) => widthOf(t) * k;
+    const lines = explainerLines(w, R, step * k, capH * k, colours);
+    if (explainerOver(lines, w, R, step * k, capH * k) <= 0) return { lines, scale: k };
+  }
+  const k = EXPLAIN_MIN_SCALE;
+  return { lines: explainerLines((t) => widthOf(t) * k, R, step * k, capH * k, colours), scale: k };
+}
+function splitHundred(t: string): [string, string] {
+  const at = t.indexOf(": ");
+  if (at >= 0) return [t.slice(0, at + 1), t.slice(at + 2)];
+  const words = t.split(" ");
+  return [words.slice(0, -1).join(" "), words.slice(-1)[0] ?? ""];
+}
 const FIRST_LAND_COPY_PARTS = {
   hundred: FIRST_LAND.copy.hundred,
-  hundredA: FIRST_LAND.copy.hundred.split(" ").slice(0, -1).join(" "),
-  hundredB: FIRST_LAND.copy.hundred.split(" ").slice(-1)[0] ?? "",
+  /* If it must break, it breaks after the colon: "a gift from giver:" / "100 sparks". */
+  hundredA: splitHundred(FIRST_LAND.copy.hundred)[0],
+  hundredB: splitHundred(FIRST_LAND.copy.hundred)[1],
   wish: FIRST_LAND.copy.wish,
   give: FIRST_LAND.copy.give,
 };
@@ -417,11 +457,12 @@ export function FirstLandArt({
 
   /* ---- the copy, wrapped to fit inside the middle loop ---- */
   const [lines, setLines] = useState<Record<LineKey, string[]>>(() => ({
-    hundred: ["here’s 100", "sparks"],
+    hundred: ["a gift from giver:", "100 sparks"],
     wish: ["50 to wish"],
     give: ["50 to give"],
     question: ["are you", "a giver?"],
   }));
+  const [explainScale, setExplainScale] = useState(1);
   const [explainer, setExplainer] = useState<Run[][]>(() => [
     [{ text: FIRST_LAND.copy.hundred, colour: FIRST_LAND.colour.ink, weight: FIRST_LAND.type.weight.hundred }],
     [
@@ -450,13 +491,13 @@ export function FirstLandArt({
       el.textContent = s;
       return el.getComputedTextLength();
     };
-    setExplainer(
-      explainerLines(ruler, INNER_R - px(FIRST_LAND.place.explainAirPx), step, capH, {
-        ink: FIRST_LAND.colour.ink,
-        wish: FIRST_LAND.colour.wish,
-        give: FIRST_LAND.colour.give,
-      }),
-    );
+    const fitted = fitExplainer(ruler, INNER_R - px(FIRST_LAND.place.explainAirPx), step, capH, {
+      ink: FIRST_LAND.colour.ink,
+      wish: FIRST_LAND.colour.wish,
+      give: FIRST_LAND.colour.give,
+    });
+    setExplainer(fitted.lines);
+    setExplainScale(fitted.scale);
     el.textContent = "";
     setLines(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -657,15 +698,16 @@ export function FirstLandArt({
       {explain ? (
         <text
           textAnchor="middle"
-          style={textStyle(TY.weight.wish)}
+          style={{ ...textStyle(TY.weight.wish), fontSize: size * explainScale }}
           data-testid="first-land-explainer"
           data-lines={explainer.length}
+          data-scale={explainScale.toFixed(3)}
         >
           {explainer.map((runs, i) => (
             <tspan
               key={i}
               x={MID.x}
-              y={MID.y + (i - (explainer.length - 1) / 2) * step + capH / 2}
+              y={MID.y + ((i - (explainer.length - 1) / 2) * step + capH / 2) * explainScale}
             >
               {runs.map((r, j) => (
                 <tspan key={j} fill={r.colour} fontWeight={r.weight}>

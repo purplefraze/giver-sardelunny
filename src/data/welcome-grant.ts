@@ -9,7 +9,8 @@
  * ONCE PER ACCOUNT, NEVER REPLAYED: remembered on this device (localStorage)
  * AND on the account (auth user_metadata.welcome_grant_at — the same pattern
  * as the give hint), so a second phone neither replays the lines nor grants
- * twice. The only count ever shown is the wish bank, at the wish seat.
+ * twice. Counts shown: the wish bank (at the wish seat and in my g) and the
+ * "to give" pot (in my g's sparks line).
  *
  * "FIRST SESSION" = the account's last sign-in is within a day of its
  * creation (a brand-new magic-link account). Older accounts are not granted.

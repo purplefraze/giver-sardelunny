@@ -625,7 +625,7 @@ function Index() {
    * (12:00) — the only time the app ever opens there — and cannot be skipped:
    * every tap is swallowed until beat 4 ("are you a giver?") settles, when the
    * toggle is handed back at give (1:30). Reduced motion shows one still
-   * frame, "here’s 100 sparks" over "50 to wish · 50 to give", for
+   * frame, "a gift from giver: 100 sparks" over "50 to wish · 50 to give", for
    * FIRST_LAND_EXPLAIN_MS or until a tap, then the settled end state.
    * "settled" = the question (and communi-g) stay until the first move.
    *

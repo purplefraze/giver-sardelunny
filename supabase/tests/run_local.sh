@@ -58,4 +58,23 @@ $P -d sec_fund -f supabase/unapplied/20261015_03_holds_sparkles_fund.sql
 sed -n '1,/^-- ---- synthetic/p' supabase/tests/10_security_tests.sql | $P -d sec_fund >/dev/null
 $P -d sec_fund -f supabase/tests/60_fund_tests.sql >/dev/null
 echo "== Sep-27 present (fund) run"; report sec_fund
+# 6) 04 boost_count lock, in SHIP ORDER 01 (+03, 04, 02) -> client -> 01b,
+#    with the full app-flow suite re-run on top of 04, then 04's ROLLBACK
+fresh sec_boost
+$P -d sec_boost -f supabase/unapplied/20261015_01_spark_lock.sql
+$P -d sec_boost -f supabase/unapplied/20261015_03_holds_sparkles_fund.sql
+$P -d sec_boost -f supabase/unapplied/20261026_04_boost_count_lock.sql
+$P -d sec_boost -f supabase/unapplied/20261015_02_live_give_gate.sql
+sed -n '1,/^-- ---- synthetic/p' supabase/tests/10_security_tests.sql | $P -d sec_boost >/dev/null
+$P -d sec_boost -f supabase/tests/50_flow_tests.sql >/dev/null
+$P -d sec_boost -f supabase/tests/70_boost_count_tests.sql >/dev/null
+$P -d sec_boost -f supabase/unapplied/20261015_01b_spark_column_revoke.sql
+$P -d sec_boost -f supabase/tests/55_after_01b_tests.sql >/dev/null
+echo "== 04 boost_count lock (flow suite + 04 tests, ship order) run"; report sec_boost
+$P -d sec_boost -At -c "select '04 lock: '||count(*) filter (where ok)||' pass / '||count(*) filter (where not ok)||' fail' from t.results"
+rollback_sql supabase/unapplied/20261026_04_boost_count_lock.sql | $P -d sec_boost >/dev/null
+$P -d sec_boost -c "truncate t.results" >/dev/null
+$P -d sec_boost -f supabase/tests/75_boost_rollback_tests.sql >/dev/null
+echo "== 04 rollback run"; report sec_boost
 for d in sec_main sec_sep23 sec_flow sec_fund; do $P -d $d -At -c "select count(*) filter (where ok)||' pass / '||count(*) filter (where not ok)||' fail' from t.results"; done
+$P -d sec_boost -At -c "select '04 rollback: '||count(*) filter (where ok)||' pass / '||count(*) filter (where not ok)||' fail' from t.results"

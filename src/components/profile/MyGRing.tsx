@@ -555,9 +555,13 @@ function Area({
     return (
       <div>
         <p className="g-heading text-[28px]" style={{ letterSpacing: 0 }}>{me.sparks}</p>
-        <p className="g-meta mb-3 opacity-60">
-          sparks available · {reservedTotal(me)} held in wishes · {me.giveSparks} to give · {me.sparkles} sparkles
-        </p>
+        {/* THREE SHORT LINES (Casper, Oct 26): never one long wrapping line.
+            Same 14px type as the movements below; sparkles are not shown. */}
+        <div className="g-body mb-3 text-[14px] leading-snug" data-testid="sparks-balance">
+          <p className="whitespace-nowrap">{me.sparks} available</p>
+          <p className="whitespace-nowrap">{reservedTotal(me)} held in wishes</p>
+          <p className="whitespace-nowrap">{me.giveSparks} to give</p>
+        </div>
         {ev.length ? (
           ev.map((e) => (
             <p key={e.id} className="g-body mb-1 flex justify-between gap-3 text-[14px]">

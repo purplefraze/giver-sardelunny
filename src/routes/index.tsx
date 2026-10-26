@@ -18,6 +18,7 @@ import { Onboarding } from "@/components/Onboarding";
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { useSession } from "@/hooks/use-session";
 import { sessionEndedPending } from "@/data/cloud/session";
+import { devRoutesOpen } from "@/lib/dev-routes";
 import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { MyGRing } from "@/components/profile/MyGRing";
@@ -269,7 +270,9 @@ function Index() {
      returns to the G sign-in, which says so. No email is ever sent for it. */
   const navigate = useNavigate();
   useEffect(() => {
-    if (entered && session.status === "signed-out" && sessionEndedPending()) {
+    /* /auth is dev-only (src/lib/dev-routes.ts); a production build would
+       bounce straight back here, so it does not navigate. */
+    if (devRoutesOpen() && entered && session.status === "signed-out" && sessionEndedPending()) {
       void navigate({ to: "/auth", search: {} });
     }
   }, [entered, session, navigate]);

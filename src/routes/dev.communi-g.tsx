@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { devOnlyRoute } from "@/lib/dev-routes";
 import { CommunityFeed } from "@/components/community/CommunityFeed";
 import { useState } from "react";
 import { ActivityDetail } from "@/components/community/ActivityDetail";
 
 export const Route = createFileRoute("/dev/communi-g")({
+  beforeLoad: devOnlyRoute,
   head: () => ({ meta: [
     { title: "Communi-G lower loop · Giver Dev" },
     { name: "description", content: "Review page for the eight-area Communi-G lower loop." },

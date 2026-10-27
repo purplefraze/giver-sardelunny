@@ -14,7 +14,7 @@
 
 /* ---- COPY (verbatim, lowercase) ---- */
 export const FIRST_LAND_COPY = {
-  hundred: "here’s 100 sparks",
+  hundred: "a gift from giver: 100 sparks",
   wish: "50 to wish",
   give: "50 to give",
   question: "are you a giver?",
@@ -48,6 +48,15 @@ export const FIRST_LAND_TYPE = {
   },
   /** STAND-IN: line step when a line wraps inside the middle loop. */
   lineHeightEm: 1.15,
+  /**
+   * STAND-IN (Luna, 26 Oct 2026): reduced motion's still frame 1 only, and
+   * only where it would otherwise crowd the loop (a 320px phone; 390 keeps
+   * 1.15): a tighter line step, then, if its corners are still under
+   * tightMinGapPx from the stroke, a hair of negative tracking.
+   */
+  tightLineHeightEm: 1.05,
+  tightLetterSpacingEm: -0.01,
+  tightMinGapPx: 6,
   /** Helvetica's cap height and x-height, used to set baselines optically. */
   capHeightEm: 0.72,
   xHeightEm: 0.52,
@@ -62,6 +71,11 @@ export const FIRST_LAND_PLACE = {
    * minus the spark's halo and a little air.
    */
   textRadiusPx: 60,
+  /**
+   * REDUCED MOTION's still explainer has no sparks to clear, so it may use
+   * the middle loop's inner edge less this much air (px).
+   */
+  explainAirPx: 10,
   /** "communi-g" is centred in the BOTTOM loop, on its x-height. */
   communiLoop: "bottom",
 } as const;
@@ -82,6 +96,14 @@ export const FIRST_LAND_SPARK = {
    */
   swirlInsetPx: 9,
   swirlScatterPx: 3.5,
+  /**
+   * STAND-IN (Luna, 26 Oct 2026): during beat 1 only, the swirl rides further
+   * out and tighter so the three-line "a gift from / giver: / 100 sparks"
+   * stays clear of it; it eases back to the values above as beat 1
+   * crossfades out.
+   */
+  beat1SwirlInsetPx: 6,
+  beat1SwirlScatterPx: 1.5,
   /** About one lap per 4s. */
   lapMs: 4000,
   /** STAND-IN: how the stream pours in at 12:00, then opens round the loop. */
@@ -98,7 +120,7 @@ export const FIRST_LAND_SPARK = {
 export const FIRST_LAND_TIMING = {
   /** Beat 1: blue sparks fall through the 12:00 hole in 900ms. */
   fall: { ms: 900, /** STAND-IN: spread of each spark's start. */ staggerMs: 260 },
-  /** "here's 100 sparks" fades in over 300ms (STAND-IN: as the fall
+  /** "a gift from giver: 100 sparks" fades in over 300ms (STAND-IN: as the fall
       lands), holds 1.4s. */
   hundred: { fadeInMs: 300, holdMs: 1400 },
   /** Text crossfades between beats. */

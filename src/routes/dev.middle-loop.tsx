@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { devOnlyRoute } from "@/lib/dev-routes";
 import { MiddleSpatialPrototype } from "@/components/living-g/MiddleSpatialPrototype";
 
 export const Route = createFileRoute("/dev/middle-loop")({
+  beforeLoad: devOnlyRoute,
   head: () => ({ meta: [
     { title: "Middle-loop spatial study · Giver Dev" },
     { name: "description", content: "An isolated Wish-first Living G spatial navigation study." },

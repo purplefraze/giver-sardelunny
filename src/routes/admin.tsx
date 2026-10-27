@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { devOnlyRoute } from "@/lib/dev-routes";
 import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ import { directoryStore } from "@/data/cloud/directory";
  * every read here is still governed by row-level security.
  */
 export const Route = createFileRoute("/admin")({
+  beforeLoad: devOnlyRoute,
   head: () => ({
     meta: [
       { title: "dev console · giver" },

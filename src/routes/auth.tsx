@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { devOnlyAuthRoute } from "@/lib/dev-routes";
 import { useEffect, useRef } from "react";
 import { z } from "zod";
 
@@ -23,6 +24,7 @@ import { useOtpSignIn } from "@/components/onboarding/use-otp-sign-in";
  * profile gate. Restore the earned path and a real account step before launch.
  */
 export const Route = createFileRoute("/auth")({
+  beforeLoad: devOnlyAuthRoute,
   validateSearch: z.object({ invite: z.string().optional() }).parse,
   head: () => ({
     meta: [

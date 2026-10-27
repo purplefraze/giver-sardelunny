@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { devOnlyRoute } from "@/lib/dev-routes";
 import { MyGRing } from "@/components/profile/MyGRing";
 
 export const Route = createFileRoute("/dev/my-g")({
+  beforeLoad: devOnlyRoute,
   head: () => ({ meta: [
     { title: "My G profile loop · Giver Dev" },
     { name: "description", content: "Review page for the eight-area My G profile loop." },

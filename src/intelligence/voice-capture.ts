@@ -53,6 +53,10 @@ let rec: Recognition | null = null;
 let finalText = "";
 let cancelled = false;
 let speechEpoch = 0;
+/** Quiet tail after Giver stops speaking, before the mic may reopen. */
+export const POST_SPEECH_GUARD_MS = 500;
+/** Longest the fallback will wait on speech that never reports its end. */
+const SPEECH_MAX_MS = 20000;
 const subs = new Set<() => void>();
 const finals = new Set<(words: string) => void>();
 
@@ -173,11 +177,30 @@ export const voiceCapture = {
     }
     set({ state: "speaking" });
     let done = false;
+    const giveUpAt = Date.now() + SPEECH_MAX_MS;
+    /* The mic stays closed ("speaking") until speech has really ended and a
+       short tail guard has passed, so the question's last words (or the
+       speaker's echo) are never recorded as the person's answer. */
     const finish = () => {
       if (done || epoch !== speechEpoch) return;
       done = true;
-      if (snap.state === "speaking") set({ state: "idle" });
-      after();
+      window.setTimeout(() => {
+        if (epoch !== speechEpoch) return;
+        if (snap.state === "speaking") set({ state: "idle" });
+        after();
+      }, POST_SPEECH_GUARD_MS);
+    };
+    /* Fallback for a missing onend: never reopen while speech is still playing. */
+    const fallback = () => {
+      if (done || epoch !== speechEpoch) return;
+      let playing = false;
+      try {
+        playing = !!synth.speaking;
+      } catch {
+        /* fine */
+      }
+      if (playing && Date.now() < giveUpAt) window.setTimeout(fallback, 250);
+      else finish();
     };
     try {
       synth.cancel();
@@ -186,7 +209,7 @@ export const voiceCapture = {
       u.onend = finish;
       u.onerror = finish;
       synth.speak(u);
-      window.setTimeout(finish, 1200 + text.length * 90);
+      window.setTimeout(fallback, 1200 + text.length * 90);
     } catch {
       finish();
     }

@@ -45,7 +45,6 @@ export function AboutForm({
   onViewProfile,
   onMessages,
   onSparks,
-  onSparkles,
   unread = 0,
   firstSetup = false,
 }: {
@@ -54,7 +53,6 @@ export function AboutForm({
   onViewProfile?: () => void;
   onMessages?: () => void;
   onSparks?: () => void;
-  onSparkles?: () => void;
   unread?: number;
   firstSetup?: boolean;
 }) {
@@ -105,7 +103,6 @@ export function AboutForm({
   const openSeat = (seat: PhotoSeat) => {
     if (seat === "messages") onMessages?.();
     if (seat === "sparks") onSparks?.();
-    if (seat === "sparkles") onSparkles?.();
   };
 
   const save = async () => {
@@ -236,7 +233,7 @@ export function AboutForm({
             {!firstSetup ? (
               <ProfilePhotoToggle
                 size={PHOTO}
-                counts={{ messages: unread, sparks: me.sparks, sparkles: me.sparkles }}
+                counts={{ messages: unread, sparks: me.sparks }}
                 onOpen={openSeat}
               />
             ) : null}

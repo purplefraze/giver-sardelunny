@@ -652,22 +652,10 @@ export const myProfileStore = {
   },
 
 
-  /* ---- SPARKLES: earned, never bought, never awarded for a profile. ---- */
-  /** Spend one sparkle on somebody ELSE's active community item. */
-  useSparkle(itemId: string): { ok: boolean; reason?: string } {
-    hydrate();
-    if (person.sparkles < 1) return { ok: false, reason: "none" };
-    const result = itemsStore.boost(itemId, ME_ID);
-    if (!result.ok) return result;
-    savePerson({ ...person, sparkles: person.sparkles - 1 });
-    ledgerStore.record({
-      currency: "sparkle",
-      kind: "spent",
-      amount: -1,
-      say: "you helped somebody else get seen",
-      itemId,
-    });
-    return { ok: true };
+  /* ---- SPARKLES: dropped from Giver for now (Oct 2026). Kept as a no-op so
+   * nothing can spend a sparkle or boost an item; data fields stay intact. ---- */
+  useSparkle(_itemId: string): { ok: boolean; reason?: string } {
+    return { ok: false, reason: "disabled" };
   },
 
 };

@@ -556,7 +556,7 @@ function Area({
       <div>
         <p className="g-heading text-[28px]" style={{ letterSpacing: 0 }}>{me.sparks}</p>
         <p className="g-meta mb-3 opacity-60">
-          sparks available · {reservedTotal(me)} held in wishes · {me.giveSparks} to give · {me.sparkles} sparkles
+          sparks available · {reservedTotal(me)} held in wishes · {me.giveSparks} to give
         </p>
         {ev.length ? (
           ev.map((e) => (

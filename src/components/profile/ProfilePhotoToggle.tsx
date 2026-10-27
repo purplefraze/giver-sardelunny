@@ -10,27 +10,24 @@ import { haptics } from "@/lib/haptics";
  *
  *   1:30 — messages  (RED)
  *   3:00 — sparks    (PURPLE)
- *   4:30 — sparkles  (PINK)
  *
  * FIRST TAP SELECTS. SECOND TAP OPENS. Selecting says the word; opening walks
  * into that history.
  */
 
-export type PhotoSeat = "messages" | "sparks" | "sparkles";
+export type PhotoSeat = "messages" | "sparks";
 
-export const PHOTO_SEATS: PhotoSeat[] = ["messages", "sparks", "sparkles"];
+export const PHOTO_SEATS: PhotoSeat[] = ["messages", "sparks"];
 
 /** Clock angles, in degrees from 12 o'clock, clockwise. */
 const SEAT_ANGLE: Record<PhotoSeat, number> = {
   messages: 45,
   sparks: 90,
-  sparkles: 135,
 };
 
 const SEAT_COLOUR: Record<PhotoSeat, string> = {
   messages: "var(--giver-messages)",
   sparks: "var(--giver-sparks)",
-  sparkles: "var(--giver-sparkles)",
 };
 
 export function ProfilePhotoToggle({

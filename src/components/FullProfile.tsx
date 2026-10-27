@@ -7,7 +7,6 @@ import {
   ACTIVITY_FILL,
   ITEM_TYPES,
   ME_ID,
-  boostWeight,
   myItems,
   pastItems,
   type ItemType,
@@ -124,7 +123,6 @@ export function FullProfile({
   const links = useConnections();
   const mine = member.id === ME_ID;
   const me = useMyProfile();
-  const sparkles = me.sparkles;
   /** Which activity count has been opened. A count is never a dead number. */
   const [openedCount, setOpenedCount] = useState<ItemType | null>(null);
   /* THE DEVELOPER SWITCH: the profile becomes directly editable while it is on. */
@@ -345,26 +343,6 @@ export function FullProfile({
                   onOpen={openItem}
                   trailing={
                     <div className="flex flex-col items-end gap-2">
-                      {/* SPARKLES HELP OTHER PEOPLE GET SEEN — never me. */}
-                      {mine ? (
-                        boostWeight(state, item.id) ? (
-                          <span className="g-meta">{boostWeight(state, item.id)} sparkled</span>
-                        ) : null
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={sparkles < 1}
-                          onClick={() => {
-                            buzz();
-                            myProfileStore.useSparkle(item.id);
-                          }}
-                          className="text-[11px] font-black lowercase tracking-[0.24em] disabled:opacity-25"
-                          style={{ color: "var(--giver-sparkles)" }}
-                        >
-                          {boostWeight(state, item.id) ? "sparkle again" : "sparkle"}
-                        </button>
-                      )}
-
                       {/* FAST DEVELOPER EDITING, right where the item is listed. */}
                       {admin ? (
                         <button

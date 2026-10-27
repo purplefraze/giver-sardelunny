@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { devOnlyRoute } from "@/lib/dev-routes";
 import { useState } from "react";
 import { World } from "@/components/World";
 import { EarSelector } from "@/components/living-g/EarSelector";
@@ -8,6 +9,7 @@ import { MyGRing } from "@/components/profile/MyGRing";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/dev/luna")({
+  beforeLoad: devOnlyRoute,
   head: () => ({ meta: [
     {title:"Giver · isolated design review"},
     {name:"description",content:"Isolated Giver production-component design review without account writes."},

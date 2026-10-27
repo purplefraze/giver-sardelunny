@@ -29,13 +29,16 @@ const SAY: Record<Currency, string> = {
 };
 
 export function LedgerHistory({
-  currency,
+  currency: _requested,
   onClose,
 }: {
   currency: Currency;
   onClose: () => void;
 }) {
   const me = useMyProfile();
+  /* Sparkles are dropped for now: the history only ever shows Sparks. The
+     "sparkle" Currency stays in the type so old local history still loads. */
+  const currency: Currency = "spark";
   const events = eventsOf(useLedger(), currency);
   const colour = COLOUR[currency];
   const balance = currency === "spark" ? me.sparks : me.sparkles;

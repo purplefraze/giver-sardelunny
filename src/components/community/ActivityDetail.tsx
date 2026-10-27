@@ -14,10 +14,8 @@ import {
   isOpen,
   myConnectionFor,
 } from "@/data/connections";
-import { myProfileStore } from "@/data/my-profile";
 import { useConnections } from "@/hooks/use-connections";
 import { useItems } from "@/hooks/use-items";
-import { useMyProfile } from "@/hooks/use-my-profile";
 import { useAdmin } from "@/hooks/use-admin";
 import { useMemberEdits } from "@/hooks/use-member-edits";
 import { AdminItemEditor } from "@/components/admin/AdminItemEditor";
@@ -81,7 +79,6 @@ export function ActivityDetail({
   const items = useItems();
   const fund = useFund();
   const links = useConnections();
-  const sparkles = useMyProfile().sparkles;
   /* THE DEVELOPER SWITCH, and the live people projection it can edit. */
   const admin = useAdmin();
   useMemberEdits();
@@ -225,7 +222,6 @@ export function ActivityDetail({
           <button type="button" onClick={open} className={`cg-d-primary ${capBlocks ? "gf-faded" : ""}`} style={{ color: fill }}>{mine ? "open the conversation" : target !== null ? "talk about this cause" : actionWord(item)}</button>
           <button type="button" onClick={open} className={`cg-d-quiet ${capBlocks ? "gf-faded" : ""}`} style={{ color: "var(--giver-messages)" }}>{`message ${who}`}</button>
         </>}
-        {status !== "completed" && !isMine ? <button type="button" disabled={sparkles < 1} onClick={() => { buzz(); if (!canEngageCommunity(items)) { onNeedGive?.(); return; } myProfileStore.useSparkle(item.id); }} className="cg-d-quiet disabled:opacity-25" style={{ color: "var(--giver-sparkles)" }}>{item.boostCount > 0 ? `sparkled ×${item.boostCount}` : "sparkle this"}</button> : null}
         {admin ? <button type="button" onClick={() => { buzz(); setEditing(true); }} className="cg-d-quiet" style={{ color: "var(--giver-me)" }}>edit this activity</button> : null}
       </div>
       {capOpen ? <CapScreen kind={cap.waiting ? "waiting" : "prompt"} onBack={() => setCapOpen(false)} onGive={() => { setCapOpen(false); onStartGive?.(); }} /> : null}

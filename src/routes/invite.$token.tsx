@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { lookupInvite } from "@/lib/invites.functions";
+import { devRoutesOpen } from "@/lib/dev-routes";
 
 /**
  * AN INVITED FRIEND'S OWN LINK. It says almost nothing to a stranger; it simply
@@ -60,7 +61,13 @@ function InviteScreen() {
             type="button"
             className="g-heading mt-10 self-start"
             style={{ color: "var(--giver-me)" }}
-            onClick={() => void navigate({ to: "/auth", search: { invite: token } })}
+            onClick={() =>
+              /* /auth is dev-only; in production the token is already in
+                 localStorage and the onboarding sign-in on "/" picks it up. */
+              void (devRoutesOpen()
+                ? navigate({ to: "/auth", search: { invite: token } })
+                : navigate({ to: "/" }))
+            }
           >
             make my giver
           </button>

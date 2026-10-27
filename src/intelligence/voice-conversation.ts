@@ -2,7 +2,7 @@ import { askLocation } from "@/data/my-location";
 import type { Pin } from "@/data/give-pins";
 import { pickImages, readImage, shrinkImage } from "@/lib/pick-image";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { editField, hear, isEcho, nextAsk, startSession, sessionForSeat, type VoiceSession } from "@/intelligence/voice-session";
+import { editField, hear, isEcho, nextAsk, stripEcho, startSession, sessionForSeat, type VoiceSession } from "@/intelligence/voice-session";
 import { followUp, interpretDraft } from "@/lib/followup.functions";
 import type { VoiceFields } from "@/intelligence/voice-flow";
 import type { GiverAction } from "@/intelligence/action-draft";
@@ -42,6 +42,8 @@ const BLANK = { photo: null, pin: null, picking: false, form: false, edited: [] 
 let snap: Conversation = { session: null, mode: "off", ...BLANK };
 const subs = new Set<() => void>();
 let spokenPrompt = "";
+/** The last two questions Giver spoke: an echo of the earlier one is caught too. */
+let recentSpoken: string[] = [];
 let revision = 0;
 const parked = new Map<string, Conversation>();
 let currentSeat = "";
@@ -72,14 +74,18 @@ const speakIfNew = () => {
   if (!s || snap.form || snap.mode === "off" || snap.mode === "hold" || s.stage === "review" || s.stage === "live") return;
   if (s.prompt === spokenPrompt) return;
   spokenPrompt = s.prompt;
+  recentSpoken = [s.prompt, ...recentSpoken.filter((p) => p !== s.prompt)].slice(0, 2);
   voiceCapture.speak(s.prompt, () => {
     if (snap.mode === "locked" && !snap.picking && voiceCapture.get().state === "idle" && snap.session?.stage !== "review" && snap.session?.stage !== "live") voiceCapture.start();
   });
 };
 
-const advance = (words: string) => {
+const advance = (heardWords: string) => {
   if (!snap.session) return;
-  if (isEcho(words, spokenPrompt)) return;
+  if (isEcho(heardWords, spokenPrompt)) return;
+  /* Keep only the person's own words: drop Giver's echoed question(s). */
+  const words = stripEcho(heardWords, recentSpoken);
+  if (!words) return;
   const before = snap.session;
   const pending=snap.timePending;
   let input=words;
@@ -205,6 +211,7 @@ export const conversation = {
     if (snap.session && currentSeat) parked.set(currentSeat, snap);
     currentSeat = seat;
     spokenPrompt = "";
+    recentSpoken = [];
     set({ ...(parked.get(seat) ?? { session:sessionForSeat(seat), ...BLANK }), mode:"off" });
     voiceCapture.cancel();
   },
@@ -221,6 +228,7 @@ export const conversation = {
     wire();
     if (!snap.session) {
       spokenPrompt = "";
+      recentSpoken = [];
       set({ session: startSession(seed) });
     }
     set({ mode: "hold" });
@@ -405,6 +413,7 @@ export const conversation = {
   close() {
     voiceCapture.cancel();
     spokenPrompt = "";
+    recentSpoken = [];
     parked.delete(currentSeat); currentSeat = "";
     set({ session: null, mode: "off", ...BLANK });
   },

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { useNotifications, useSession } from "@/hooks/use-session";
 import { notificationsStore } from "@/data/cloud/notifications";
+import { devRoutesOpen } from "@/lib/dev-routes";
 
 /**
  * THE ONLY BACKEND UI A TESTER EVER SEES: their own @name, or the way in.
@@ -17,7 +18,8 @@ export function DevSeal() {
   return (
     <div className="pointer-events-auto absolute left-3 top-2 z-[90] flex items-baseline gap-3">
       {session.status === "signed-out" ? (
-        <Link to="/auth" search={{}} className="g-meta opacity-60">
+        /* /auth and /admin are dev-only (src/lib/dev-routes.ts). */
+        !devRoutesOpen() ? null : <Link to="/auth" search={{}} className="g-meta opacity-60">
           sign in
         </Link>
       ) : (
@@ -30,7 +32,7 @@ export function DevSeal() {
               {unread}
             </span>
           ) : null}
-          {session.isAdmin ? (
+          {session.isAdmin && devRoutesOpen() ? (
             <Link to="/admin" className="g-meta opacity-50">
               dev
             </Link>

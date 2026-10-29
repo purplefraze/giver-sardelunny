@@ -35,8 +35,8 @@ const OPEN_EASE = "cubic-bezier(0.16, 1.02, 0.24, 1)";
 const CLOSE_EASE = "cubic-bezier(0.5, 0, 0.72, 0.32)";
 
 /** The pressed loop stays exactly where it is; the G grows around it. */
-const ORIGIN_X = ((G_ANCHORS.upperRing.x - LIVING_G_FRAME.x) / LIVING_G_FRAME.width) * 100;
-const ORIGIN_Y = ((G_ANCHORS.upperRing.y - LIVING_G_FRAME.y) / LIVING_G_FRAME.height) * 100;
+const ORIGIN_X = ((G_ANCHORS.middle.x - LIVING_G_FRAME.x) / LIVING_G_FRAME.width) * 100;
+const ORIGIN_Y = ((G_ANCHORS.middle.y - LIVING_G_FRAME.y) / LIVING_G_FRAME.height) * 100;
 
 type Phase = "shut" | "opening" | "in" | "closing";
 

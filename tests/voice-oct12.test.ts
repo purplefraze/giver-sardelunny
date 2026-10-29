@@ -15,8 +15,6 @@ test("return follows measured canonical right turn and upper shoulder, no downwa
     expect(Math.hypot(f.normal.x,f.normal.y)).toBeCloseTo(1,6);
   }
 });
-test("ear replacement follows measured noncircular rim rather than a constant radius",()=>{
-  expect(canonicalRimRadius(-65)).toBeGreaterThan(169);
-  expect(canonicalRimRadius(-20)).toBeGreaterThan(170);
-  expect(canonicalRimRadius(-65)).not.toBe(canonicalRimRadius(-20));
+test("redrawn middle loop is a true circle: rim radius is constant 169.75",()=>{
+  for(const d of [-65,-20,0,90,180]) expect(canonicalRimRadius(d)).toBe(169.75);
 });

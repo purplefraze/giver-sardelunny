@@ -1,117 +1,53 @@
-import { LOOP_CENTRE } from "./g-path";
+import { G_GEOMETRY } from "./g-path";
 
 /**
  * THE SPARK RAIL — the centre line of the Living G's own stroke.
  *
- * MEASURED, NEVER INVENTED. The two radius tables below were ray-cast against
- * the canonical filled path (`LIVING_G_PATH`) with `isPointInFill`, from each
- * loop's measured optical centre, at 8° steps starting at -180°. Each value is
- * the MIDDLE of that loop's ink at that angle — i.e. the rail a bead would ride
- * if it sat inside the stroke.
- *
- * READ-ONLY measurement, exactly like LOOP_RIM_RADIUS: the canonical geometry is
- * never edited, moved or redrawn to make the rail. The rail is derived FROM it.
+ * EXACT, NEVER INVENTED. Since the 29 Oct 2026 redraw the G is constructed from
+ * three true circles (G_GEOMETRY), so the rail is those circles' centre lines:
+ * the middle circle, the S-curve's turn, and the bottom loop up to its cap.
  */
-const MID_R: readonly number[] = [
-  170, 169, 169, 169, 169, 169, 169, 169, 169, 170, 170, 170, 170, 170, 170, 170,
-  170, 170, 172, 170, 171, 171, 171, 172, 172, 172, 172, 172, 171, 171, 170, 170,
-  181, 179, 178, 178, 178, 177, 177, 175, 174, 173, 172, 171, 171,
-];
-
-const BOT_R: readonly number[] = [
-  242, 242, 242, 242, 243, 244, 245, 247, 248, 249, 250, 250, 251, 259, 242, 246,
-  245, 244, 244, 244, 243, 243, 243, 244, 245, 246, 248, 251, 253, 257, 259, 261,
-  263, 264, 263, 263, 261, 259, 256, 253, 251, 248, 245, 244, 243,
-];
-
-const STEP = 8;
-
-/** Median of three, so a spine junction can never dent the rail. */
-function smooth(table: readonly number[], i: number) {
-  const n = table.length;
-  const a = table[(i - 1 + n) % n]!;
-  const b = table[i % n]!;
-  const c = table[(i + 1) % n]!;
-  return a + b + c - Math.min(a, b, c) - Math.max(a, b, c);
-}
-
-/** The measured stroke-centre radius at any angle, linearly interpolated. */
-function radius(table: readonly number[], deg: number, lo: number, hi: number) {
-  const k = (((deg + 180) % 360) + 360) % 360 / STEP;
-  const i = Math.floor(k);
-  const f = k - i;
-  const r = smooth(table, i) * (1 - f) + smooth(table, i + 1) * f;
-  return Math.min(hi, Math.max(lo, r));
-}
-
 const rad = (d: number) => (d * Math.PI) / 180;
+type C = { c: { x: number; y: number }; r: number };
+const at = (k: C, deg: number) => ({ x: k.c.x + k.r * Math.cos(rad(deg)), y: k.c.y + k.r * Math.sin(rad(deg)) });
 
-function ride(
-  centre: { x: number; y: number },
-  table: readonly number[],
-  deg: number,
-  lo: number,
-  hi: number,
-) {
-  const r = radius(table, deg, lo, hi);
-  return { x: centre.x + r * Math.cos(rad(deg)), y: centre.y + r * Math.sin(rad(deg)) };
-}
+const MID = G_GEOMETRY.middle;
+const S = G_GEOMETRY.s;
+const BOT = G_GEOMETRY.bottom;
 
 /**
  * THE JOURNEY, in the G's own coordinates.
- *
- *   start  the middle loop's lower-right edge (~4-5 o'clock), where the bowl
- *          begins narrowing toward the S-curve
- *   then   COUNTERCLOCKWISE around the middle loop (decreasing angle, y-down):
- *          right side, top, left side, back down to the lower right
- *   then   through the connecting S-curve
- *   then   into the lower loop, stopping at its upper-right edge (~1-2 o'clock)
+ *   start  the middle loop's lower-right (52°, ~4-5 o'clock)
+ *   then   COUNTERCLOCKWISE (decreasing angle, y-down) once round the middle
+ *          loop to where the S-curve leaves it (S.leaveDeg, one turn on)
+ *   then   the S-curve's turn (increasing angle about its own centre)
+ *   then   into the lower loop, stopping at the round cap's centre (capDeg)
  */
-const MID_FROM = 52; // lower-right of the bowl: where the journey begins
-const MID_TO = -298; // = 62°, the spine junction, one full turn later
-const BOT_FROM = -84; // where the spine meets the lower loop
-/**
- * THE TRUE TERMINUS OF THE LOWER LOOP'S INK. Ray-cast against the canonical
- * filled path along this very rail (isPointInFill, 0.25° steps): the last angle
- * whose stroke-centre point is still inside the G is -424.75°. Beyond it the
- * rail would leave the coloured stroke and cross the loop's white opening, so
- * the sparks stop exactly here — no unused stroke left, no white space entered.
- * MEASURED, NEVER GUESSED: no hand-tuned percentage of the path length.
- */
-const BOT_TO = -424.75;
-
+const MID_FROM = 52;
+const MID_TO = S.leaveDeg - 360;
+const S_FROM = S.leaveDeg + 180;
+const S_TO = S.joinDeg + 360;
+const BOT_FROM = BOT.joinDeg;
+const BOT_TO = BOT.capDeg - 360;
 
 function build() {
   const parts: string[] = [];
   const f = (n: number) => Math.round(n * 10) / 10;
-
-  const first = ride(LOOP_CENTRE.middle, MID_R, MID_FROM, 166, 174);
-  parts.push(`M${f(first.x)} ${f(first.y)}`);
-  for (let a = MID_FROM - 2; a >= MID_TO; a -= 2) {
-    const p = ride(LOOP_CENTRE.middle, MID_R, a, 166, 174);
-    parts.push(`L${f(p.x)} ${f(p.y)}`);
-  }
-
-  // The spine, as one smooth curve between the two measured junctions. Its
-  // control points sit on the spine's own measured ink centre (x ~ 380).
-  const enter = ride(LOOP_CENTRE.bottom, BOT_R, BOT_FROM, 240, 266);
-  parts.push(`C374 486 383 545 ${f(enter.x)} ${f(enter.y)}`);
-
-  const dir = BOT_TO >= BOT_FROM ? 2 : -2;
-  for (let a = BOT_FROM + dir; dir > 0 ? a <= BOT_TO : a >= BOT_TO; a += dir) {
-    const p = ride(LOOP_CENTRE.bottom, BOT_R, a, 240, 266);
-    parts.push(`L${f(p.x)} ${f(p.y)}`);
-  }
-
-
+  const push = (p: { x: number; y: number }) => parts.push(`${parts.length ? "L" : "M"}${f(p.x)} ${f(p.y)}`);
+  for (let a = MID_FROM; a > MID_TO; a -= 2) push(at(MID, a));
+  push(at(MID, MID_TO));
+  for (let a = S_FROM; a < S_TO; a += 2) push(at(S, a));
+  push(at(S, S_TO));
+  for (let a = BOT_FROM; a > BOT_TO; a -= 2) push(at(BOT, a));
+  push(at(BOT, BOT_TO));
   return parts.join(" ");
 }
 
-/** The rail itself. Built once from the measurements above. */
+/** The rail itself. */
 export const SPARK_TRACK_D = build();
 
 /** Where the spark is born: the middle loop's opening. */
-export const SPARK_START = ride(LOOP_CENTRE.middle, MID_R, MID_FROM, 166, 174);
+export const SPARK_START = at(MID, MID_FROM);
 
 /** Where the journey ends, and where the green begins to travel outward. */
-export const SPARK_END = ride(LOOP_CENTRE.bottom, BOT_R, BOT_TO, 240, 266);
+export const SPARK_END = at(BOT, BOT_TO);

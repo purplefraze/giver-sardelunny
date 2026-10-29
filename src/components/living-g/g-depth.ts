@@ -50,9 +50,9 @@ export const CAMERA = {
 } as const;
 
 const RING = {
-  top: G_ANCHORS.smallRing,
-  middle: G_ANCHORS.upperRing,
-  bottom: G_ANCHORS.lowerRing,
+  top: G_ANCHORS.toggle,
+  middle: G_ANCHORS.middle,
+  bottom: G_ANCHORS.communiG,
 } as const;
 
 /**

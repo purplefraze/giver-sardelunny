@@ -26,7 +26,7 @@ export const HISTORY_STATES = ["wishes", "gives", "trades"] as const;
 
 export type HistoryState = (typeof HISTORY_STATES)[number];
 
-const CENTRE = G_ANCHORS.smallRing;
+const CENTRE = G_ANCHORS.toggle;
 /** Orbit radius — just outside the top loop's stroke, still inside the frame. */
 const ORBIT = 64;
 /** Evenly spaced (120deg apart), arranged to stay inside the frame. */

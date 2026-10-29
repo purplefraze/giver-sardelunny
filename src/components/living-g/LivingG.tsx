@@ -80,9 +80,9 @@ type Props = {
 const ORDER: RegionKey[] = ["top", "middle", "bottom"];
 
 const RING: Record<RegionKey, Anchor> = {
-  top: G_ANCHORS.smallRing,
-  middle: G_ANCHORS.upperRing,
-  bottom: G_ANCHORS.lowerRing,
+  top: G_ANCHORS.toggle,
+  middle: G_ANCHORS.middle,
+  bottom: G_ANCHORS.communiG,
 };
 
 /** How far each loop's press response reaches before dissolving away. */

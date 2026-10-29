@@ -122,7 +122,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   // Smooth interior clearance; no threshold-based page jumps as the camera rides.
   const a = Math.min(0, angle) * Math.PI / 180;
   const left = 16 + Math.max(0, -Math.sin(a)) * 98, right = 16 + Math.max(0, Math.sin(a)) * 98;
-  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "map" || shown === "back" ? 118 : shown === "wish" || shown === "give" ? 180 : 290), bottom = shown === "map" || shown === "back" ? 118 : 16 + Math.max(0, -Math.cos(a)) * 98;
+  const top = 16 + Math.max(0, Math.cos(a)) * (shown === "everything" || shown === "back" ? 118 : shown === "wish" || shown === "give" ? 180 : 290), bottom = shown === "everything" || shown === "back" ? 118 : 16 + Math.max(0, -Math.cos(a)) * 98;
   /* The lockup is centred on the stage and never sits under the bead: when the
      bead rides the upper band it drops just below the bead's ring. */
   const headTop = header && frame.bead.y < size.h * 0.45 && Math.abs(frame.bead.x - size.w / 2) < 150 ? Math.max(top, frame.bead.y + 46) : top;

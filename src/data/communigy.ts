@@ -10,8 +10,10 @@ import { signInFeedLines, type SignInFeedKind } from "@/data/signin-feed";
  * THE MODES the page visits round the lower loop, at the wheel's seat
  * angles (EarSelector SEAT_ANGLE; PerimeterToggle maps each mode to its
  * seat), clockwise from 12:00 (the exit back to the full G):
- *   give 1:30 · lend 3:00 · trade 4:30 · map 6:00; communi-g overview 12:00 (entry) ·
+ *   give 1:30 · lend 3:00 · trade 4:30 · Community 6:00 (entry, "everything") ·
  *   fund 7:30 · borrow 9:00 · wish 10:30
+ * 12:00 belongs to My G (the S-curve exit back to the full G); it is no longer a
+ * communi-g overview entry. The map is a list/map VIEW inside Communi-G, not a seat.
  * Lend is a borrow record with side "lend"; fund is a wish with a money
  * target (details.fundTarget). No new tables: this only reads Items.
  */

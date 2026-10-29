@@ -2,8 +2,8 @@ import {expect,test} from "bun:test";
 import {sCurve,frameOf,trackPose} from "../src/components/community/perimeter-geometry";
 import {lowerAngle} from "../src/components/community/lower-stations";
 import {canonicalRimRadius,canonicalConnectorCentre} from "../src/components/living-g/canonical-rim";
-test("only authorised overview and map stations swap",()=>{
-  expect(["everything","map","wish","borrow","fund","trade","lend","give"].map(s=>lowerAngle(s as Parameters<typeof lowerAngle>[0]))).toEqual([0,-180,-45,-90,-135,-225,-270,-315]);
+test("Community takes the lower 6:00; the map is no longer a station",()=>{
+  expect(["everything","wish","borrow","fund","trade","lend","give"].map(s=>lowerAngle(s as Parameters<typeof lowerAngle>[0]))).toEqual([-180,-45,-90,-135,-225,-270,-315]);
 });
 test("return follows measured canonical right turn and upper shoulder, no downward tail",()=>{
   const p=sCurve(390,844),dy=trackPose(0).point.y-608;

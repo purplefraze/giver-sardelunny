@@ -6,11 +6,11 @@ import { reviseFundFixture, DEMO_FUND_ID } from "../src/data/fund-fixture";
 import type { Item } from "../src/data/items";
 
 test("top overview to Give follows the counterclockwise wire without moving Trade", () => {
-  expect(LOWER_STATIONS.map(s => s.value)).toEqual(["back", "everything", "wish", "borrow", "fund", "map", "trade", "lend", "give"]);
-  expect(lowerAngle("map")).toBe(-180);
-  expect(lowerAngle("everything")).toBe(0);
+  // Communi-G nav: entered at the lower loop's 6:00 (Community); no map station, nothing at 12:00.
+  expect(LOWER_STATIONS.map(s => s.value)).toEqual(["back", "wish", "borrow", "fund", "everything", "trade", "lend", "give"]);
+  expect(lowerAngle("everything")).toBe(-180);
   expect(lowerAngle("trade")).toBe(-225);
-  expect(lowerAngle("give") - lowerAngle("everything")).toBe(-315);
+  expect(lowerAngle("give")).toBe(-315);
 });
 test("missing top-to-Give arc is open and cannot wrap", () => {
   expect(clampLower(90)).toBe(60);
@@ -18,8 +18,8 @@ test("missing top-to-Give arc is open and cannot wrap", () => {
   expect(TRACK_PATH.endsWith("Z")).toBe(false);
   expect((TRACK_PATH.match(/ C /g) ?? []).length).toBe(65);
 });
-test("lower map is blue and category assemblies use current authoritative tokens", () => {
-  expect(lowerToken("map")).toBe("--mode-giver");
+test("Community is the communi-g token and category assemblies use current authoritative tokens", () => {
+  expect(lowerToken("everything")).toBe("--mode-communigy");
   expect(lowerToken("give")).toBe("--mode-give");
   expect(lowerToken("fund")).toBe("--mode-fund");
 });

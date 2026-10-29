@@ -2,7 +2,8 @@ import type { CgMode } from "@/data/communigy";
 
 /**
  * LOWER-LOOP SELECTION — one value drives the inside toggle, the filter row
- * and the feed. "map" is the blue 6:00 all-types map. "mine" remains a
+ * and the feed. "map" is NOT a seat: it means Community (everything) shown in
+ * the map view. "mine" remains a
  * legacy voice scope routed to My G activity, never a lower seat.
  */
 export type CgSelection = CgMode | "map" | "mine";

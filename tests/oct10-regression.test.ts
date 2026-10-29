@@ -28,7 +28,7 @@ test("demo lends exist and read as lend", () => {
 });
 
 test("every authored mode word is lowercase", () => {
-  for (const w of [...Object.values(MODE_WORD), ...Object.values(SEAT_TITLE), ...Object.values(NOUN), lowerWord("back"), sectionWord("fund"), sectionWord("everything")])
+  for (const w of [...Object.values(MODE_WORD), ...Object.values(SEAT_TITLE), lowerWord("everything"), ...Object.values(NOUN), lowerWord("back"), sectionWord("fund"), sectionWord("everything")])
     expect(w).toBe(w.toLowerCase());
   expect(MODE_WORD["map"]).toBe("communi-g");
 });

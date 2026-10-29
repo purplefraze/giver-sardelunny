@@ -744,6 +744,7 @@ function Index() {
   const activity: ActivitySeat | null = seat === "giver" || seat === "map" ? null : seat;
   /** THE FULL-G 6:00 DOOR opens the white communi-g overview, never a form. */
   const atMap = seat === "map";
+  /** 6:00 COMMUNI-G: enter the lower loop at ITS 6:00 ("communi-g"), list first. */
   const openMap = () => setBrowse({ type: null, selection: "everything", view: "list" });
   /* The last activity world still owns the loops' grammar when My G is held. */
   const mode: Mode = seatMode(activity ?? "give");

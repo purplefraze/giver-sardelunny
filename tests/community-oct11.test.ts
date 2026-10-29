@@ -7,7 +7,7 @@ import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "../src/components/community/ma
 import { hollowBounds, communityBands, COMMUNITY_TOP } from "../src/components/community/hollow-layout";
 test("categories follow physical wheel, without a map category", () => {
   expect(CG_FILTERS.map(f => f.value)).toEqual(["wish","borrow","fund","everything","trade","lend","give"]);
-  expect(CG_FILTERS.map(f => lowerAngle(f.value === "mine" ? "everything" : f.value))).toEqual([-45,-90,-135,0,-225,-270,-315]);
+  expect(CG_FILTERS.map(f => lowerAngle(f.value === "mine" ? "everything" : f.value))).toEqual([-45,-90,-135,-180,-225,-270,-315]);
 });
 test("all sections use one app-frame reference independent of lower list bounds", () => {
   expect(COMMUNITY_TOP).toBe(56);

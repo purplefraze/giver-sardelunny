@@ -33,7 +33,7 @@ import { haptics } from "@/lib/haptics";
 type Scope = "everyone" | "mine";
 type View = "list" | "map";
 
-const toStation = (s: CgSelection): CgStation => (s === "mine" ? "everything" : s);
+const toStation = (s: CgSelection): CgStation => (s === "mine" || s === "map" ? "everything" : s);
 const fromStation = (s: CgStation): CgSelection => (s === "back" ? "everything" : s);
 
 /** Pure: what the feed lists for one selection. Only active, published posts. */
@@ -96,7 +96,7 @@ export function CommunityFeed({
   onStartGive?: () => void;
 }) {
   const [sel, setSel] = useState<CgSelection>(
-    initialSelection ?? (initialScope === "mine" ? "mine" : initialType ? modeFor(initialType, initialSide) : "everything"),
+    (initialSelection === "map" ? "everything" : initialSelection) ?? (initialScope === "mine" ? "mine" : initialType ? modeFor(initialType, initialSide) : "everything"),
   );
   const selRef = useRef(sel);
   selRef.current = sel;
@@ -106,10 +106,12 @@ export function CommunityFeed({
   const voice = useSyncExternalStore(voiceCapture.subscribe, voiceCapture.get, voiceCapture.getServer);
   const items = useItems();
   const listening = voice.state === "listening";
-  const ink = sel === "map" ? "var(--mode-giver)" : CG_INK[sel === "mine" ? "everything" : sel];
+  const ink = CG_INK[sel === "mine" || sel === "map" ? "everything" : sel];
   const location = useMyLocation();
-  const [categoryView, setCategoryView] = useState<View>(initialView);
-  const view: View = sel === "map" ? "map" : categoryView;
+  const [categoryView, setCategoryView] = useState<View>(initialSelection === "map" ? "map" : initialView);
+  /** THE MAP IS A VIEW, NOT A SEAT: list is the default; "map" shows the same
+   *  selection on the map (the list/map toggle in the heading). */
+  const view: View = categoryView;
   const [mapList, setMapList] = useState(false);
   const [sort, setSort] = useState<"latest" | "oldest" | "nearest">("latest");
   const [radius, setRadius] = useState<number | null>(null);
@@ -148,7 +150,10 @@ export function CommunityFeed({
   /** THE ONE WAY A SECTION CHANGES. */
   const cbs = useRef({ onCloseDetail, onSectionChange, detailId });
   cbs.current = { onCloseDetail, onSectionChange, detailId };
-  const go = (next: CgSelection) => {
+  const go = (asked: CgSelection) => {
+    /* "map" (voice, legacy callers) = Community, shown on the map. */
+    if (asked === "map") setCategoryView("map");
+    const next: CgSelection = asked === "map" ? "everything" : asked;
     const change = sectionChange(selRef.current, next);
     if (!change.dismiss) return;
     savedScroll.current = 0;
@@ -156,7 +161,7 @@ export function CommunityFeed({
     cbs.current.onSectionChange?.(change.sel);
     selRef.current = change.sel;
     setSel(change.sel);
-    setCategoryView(change.sel === "map" ? "map" : "list");
+    if (asked !== "map") setCategoryView("list");
   };
 
   useEffect(() => { const el = root.current; if (!el) return; const leave = () => (onExit ?? onClose)(); el.addEventListener("giver:community-return", leave); return () => el.removeEventListener("giver:community-return", leave); }, [onExit, onClose]);
@@ -255,7 +260,7 @@ export function CommunityFeed({
         value={toStation(sel)}
         onChange={(st) => { if (st !== "back") go(fromStation(st)); }}
         onBack={onExit ?? onClose}
-        header={showDetail ? undefined : <div className="cg-heading-row" data-align={align}><p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p><Button variant="ghost" className="cg-filter" data-cg-map-view="" onClick={() => { setCategoryView(view === "map" ? "list" : "map"); if (sel === "map") go("everything"); }}>{view === "map" ? "list" : "map"}</Button></div>}
+        header={showDetail ? undefined : <div className="cg-heading-row" data-align={align}><p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p><Button variant="ghost" className="cg-filter" data-cg-map-view="" aria-pressed={view === "map"} data-cg-view-toggle={view} onClick={() => setCategoryView(view === "map" ? "list" : "map")}>{view === "map" ? "list" : "map"}</Button></div>}
         controls={showDetail ? undefined : <div data-cg-upper-tools="" data-align={align}>
           <div role="tablist" aria-label="community filter" className="cg-filters" data-cg-safe-band="">
             {CG_FILTERS.map(f => <Button variant="ghost" key={f.value} ref={f.value === sel ? selectedTab : undefined} role="tab" aria-selected={f.value === sel} data-cg-filter={f.value} onClick={() => choose(f.value)} className="cg-filter">{f.word}</Button>)}

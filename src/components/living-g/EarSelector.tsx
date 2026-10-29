@@ -43,7 +43,7 @@ export type Seat = (typeof SEATS)[number];
 /**
  * Every seat on the wire, in travel order (one end of the break -> the other).
  * COMMUNI-G (6:00, seat key "map") is the door INTO the lower loop, entered
- * at ITS 6:00 ("Communi-G"); the map is a list/map view inside it, never a
+ * at ITS 6:00 ("communi-g"); the map is a list/map view inside it, never a
  * second community seat; communi-g itself is always the bottom loop.
  */
 export const FULL_SEATS = [
@@ -245,7 +245,7 @@ export function toggleGeometry(weight: GWeight = "normal") {
 /**
  * THE SEAT'S TITLE — the word set INSIDE the hollow ring, naming the mode or
  * world the toggle is in (Frazer, 28 Sep 2026). Clockwise from 12:00:
- * my g · give · lend · trade · Communi-G (the 6:00 seat, key "map") · fund ·
+ * my g · give · lend · trade · communi-g (the 6:00 seat, key "map") · fund ·
  * borrow · wish. The one table every toggle reads its title from.
  */
 export const SEAT_TITLE: Record<Seat, string> = {
@@ -253,7 +253,7 @@ export const SEAT_TITLE: Record<Seat, string> = {
   give: "give",
   lend: "lend",
   trade: "trade",
-  map: "Communi-G",
+  map: "communi-g",
   fund: "fund",
   borrow: "borrow",
   wish: "wish",
@@ -752,7 +752,7 @@ export function EarSelector({
                 r={78}
                 fill="transparent"
                 role="button"
-                aria-label={m === "giver" ? "my g" : m === "map" ? "Communi-G" : m}
+                aria-label={m === "giver" ? "my g" : m === "map" ? "communi-g" : m}
                 className="outline-none focus:outline-none focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
                 style={{ cursor: "pointer", touchAction: "none", outline: "none" }}
                 onPointerDown={(e) => {

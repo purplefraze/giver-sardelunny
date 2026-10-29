@@ -190,7 +190,7 @@ function GiveWordmark() {
     <g
       className="signin-give-mark"
       style={{ opacity: "var(--give-mark, 0)" }}
-      fill="var(--seat)"
+      fill="var(--world-g)"
       pointerEvents="none"
       aria-hidden="true"
     >

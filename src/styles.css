@@ -1254,7 +1254,7 @@
    circle (orbit 283.1 units). All of it lives in ONE scaled stage.
 
    COLOURS: read from the ONE app-wide map (--mode-*). One attribute
-   (data-signin-seat) sets --seat, which recolours the circle, the
+   (data-signin-seat) sets --seat, which recolours the G, the circle, the
    toggle, the wordmark, the caret and the send circle in the same frame —
    in EVERY seat (the circle's stroke is var(--seat), never a per-seat
    switch; it used to be a fund-only hairline).
@@ -1263,11 +1263,8 @@
   --seat: var(--mode-give);
   --signin-field-rule: #ece9e4;
   --signin-placeholder: #b8b3ab;
-  /* SELF IS ALWAYS BLUE: the Living G's stroke is my g's blue (#1E7BFF) at
-     every toggle position and never takes the seat colour. The seat colour
-     (--seat) still drives the field, the toggle and its ring, the wordmark,
-     the caret and the send circle. */
-  --world-g: var(--mode-giver);
+  /* The Living G / EarSelector read the world pair: here it is the seat. */
+  --world-g: var(--seat);
   --world-bg: var(--seat-bg);
   container-type: size;
   background: #fff;

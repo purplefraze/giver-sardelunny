@@ -55,6 +55,9 @@ export function sectionChange(current: CgSelection, next: CgSelection): { sel: C
 /** The visible heading word for a selection (always lowercase). */
 export const sectionWord = (s: CgSelection) => (s === "map" || s === "everything" ? "communi-g" : s === "mine" ? "my communi-g" : `communi-g ${CG_WORD[s]}`);
 
+/** Outward spread (share of the starting span) that returns to the G, matching GDepthStack's PINCH.ratio. */
+export const CG_PINCH_OUT = 1.32;
+
 export function CommunityFeed({
   initialType = null,
   initialView = "list",
@@ -176,7 +179,7 @@ export function CommunityFeed({
       active = true; d0 = dist(e) || 1; p = 0; cancelAnimationFrame(raf);
       voiceCapture.cancel(); setRecord(false);
     };
-    const move = (e: TouchEvent) => { if (!active || e.touches.length < 2) return; e.preventDefault(); p = Math.max(0, Math.min(1, (d0 - dist(e)) / (d0 * .55))); paint(p); };
+    const move = (e: TouchEvent) => { if (!active || e.touches.length < 2) return; e.preventDefault(); const d = dist(e); /* A clear outward spread leaves too, as every depth of the G does. */ if (d / d0 >= CG_PINCH_OUT) { p = 1; paint(0); return; } p = Math.max(0, Math.min(1, (d0 - d) / (d0 * .55))); paint(p); };
     const end = (e: TouchEvent) => {
       if (!active || e.touches.length >= 2) return; active = false;
       const to = p > .45 ? 1 : 0, from = p, t0 = performance.now(), reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches, ms = reduced ? 0 : 240;

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { GMark } from "@/components/living-g/GMark";
 import { SendArrow } from "@/components/forms/UnifiedForm";
 import { haptics } from "@/lib/haptics";
 
@@ -35,9 +34,6 @@ export function CapScreen({
   return createPortal(
     <div className="gf-cap" data-world="give" role="dialog" aria-modal="true" data-testid={`cap-${kind}`}>
       <div className="uf-screen">
-        <span className="gf-cap-g" aria-hidden="true">
-          <GMark colour="var(--form-seat)" height={32} />
-        </span>
         {kind === "prompt" ? (
           <>
             <h1 className="uf-heading">you’ve received three gives.</h1>

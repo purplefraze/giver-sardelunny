@@ -1,3 +1,5 @@
+import { ToggleTether } from "./ToggleTether";
+import type { Seat } from "./EarSelector";
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX, G_ANCHORS, LIVING_G_FRAME, EAR_CUT, LOOP_CENTRE, RIM_PATCH, arcPath, wedgePath } from "./g-path";
@@ -159,6 +161,29 @@ export function GEnclosure({
   );
 }
 
+/** Outward spread (share of the starting span) that leaves the form. */
+export const FORM_PINCH_OUT = 1.32;
+/**
+ * The form folds away mid-gesture, so the rest of the same two-finger spread
+ * lands on the page below. Swallow it (window-level, outlives this component)
+ * until every finger lifts, so the browser never magnifies the G.
+ */
+function holdGestureUntilLift() {
+  const block = (e: TouchEvent) => e.preventDefault();
+  const lift = (e: TouchEvent) => {
+    if (e.touches.length > 0) return;
+    window.removeEventListener("touchmove", block);
+    window.removeEventListener("touchend", lift);
+    window.removeEventListener("touchcancel", lift);
+  };
+  window.addEventListener("touchmove", block, { passive: false });
+  window.addEventListener("touchend", lift);
+  window.addEventListener("touchcancel", lift);
+}
+
+const SEATS: readonly string[] = ["give", "wish", "trade", "borrow", "lend", "fund", "giver", "map"];
+const isSeat = (s: string): s is Seat => SEATS.includes(s);
+
 /** One contour/progress owner for opening, pinch, Escape and focusable return. */
 export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: string; children: React.ReactNode; onFold?: () => void; onFoldStart?: () => void }) {
   const frame = useRef<HTMLDivElement>(null);
@@ -220,7 +245,7 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
   }, []);
   useEffect(()=>{
     const el=frame.current;if(!el)return;
-    let active=false,startDist=0,zoom=false;
+    let active=false,startDist=0,zoom=false,exiting=false;
     const distance=(e:TouchEvent)=>{const a=e.touches[0],b=e.touches[1];return a&&b?Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY):0;};
     const dismissKeyboard=()=>{const active=document.activeElement;if(active instanceof HTMLElement&&el.contains(active))active.blur();};
     const returnToG=()=>{dismissKeyboard();startRef.current?.();animate(0,360*progress.current);};
@@ -232,15 +257,20 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
       dismissKeyboard();
     };
     const move=(e:TouchEvent)=>{
+      if(exiting){e.preventDefault();return;}
       if(!active||e.touches.length!==2)return;
+      // Two fingers on the form are the G's gesture, never browser magnification.
+      e.preventDefault();
       const delta=startDist-distance(e);
-      // Outward/browser magnification is not commandeered by the form.
+      // PINCH OUT EXITS, like every other depth of the G (GDepthStack's
+      // PINCH.ratio): a clear outward spread folds the form back to the G.
+      if(distance(e)/startDist>=FORM_PINCH_OUT){e.preventDefault();if(!exiting){exiting=true;holdGestureUntilLift();returnToG();}return;}
       if(delta < -8)zoom=true;
       if(zoom||delta<8)return;
       if(readyRef.current){startRef.current?.();cancelAnimationFrame(raf.current);readyRef.current=false;setReady(false);}
       e.preventDefault();paint(1-Math.max(0,Math.min(1,delta/(startDist*.55))));
     };
-    const end=(e:TouchEvent)=>{if(!active||e.touches.length>=2)return;active=false;if(zoom||readyRef.current)return;animate(progress.current<.55?0:1,240);};
+    const end=(e:TouchEvent)=>{if(exiting){if(e.touches.length===0){exiting=false;active=false;}return;}if(!active||e.touches.length>=2)return;active=false;if(zoom||readyRef.current)return;animate(progress.current<.55?0:1,240);};
     const cancel=()=>{if(!active)return;active=false;animate(1,240);};
     const key=(e:KeyboardEvent)=>{if(e.key==="Escape"){e.preventDefault();returnToG();}};
     const request=()=>returnToG();
@@ -263,6 +293,9 @@ export function VoiceEnclosure({ seat, children, onFold, onFoldStart }: { seat: 
         <MiddleLoopClose weight="middle" strokeWidth={visibleStroke(geometry.width)} />
       </g>:null}
     </svg> : null}
+    {/* THE TOGGLE NEVER DISAPPEARS: arm + part of the ring reach in from the
+        seat's edge, at a fixed screen weight (outside the scaled camera). */}
+    {isSeat(seat) ? <ToggleTether seat={seat} centre={{ x: 0.5, y: 0.5 }} opacity={Math.max(0, (t - 0.5) * 2)} /> : null}
     <div className="gv-review-content" inert={!ready}>{children}</div>
   </div>;
 }

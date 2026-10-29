@@ -61,6 +61,8 @@ const RIM = RING.RING_MID;
 const OUTER = RING.EAR.outerR;
 /* Camera: ring outer diameter fills ~80% of the width, a little air above. */
 const FIT_W = OUTER * 1.65;
+/** Outward spread (share of the starting span) that leaves My G, matching GDepthStack's PINCH.ratio. */
+export const MYG_PINCH_OUT = 1.32;
 const ENTRY_MS = 420;
 const PROFILE_LENS = 0.90;
 
@@ -113,6 +115,8 @@ export function MyGRing({
   const lastTick = useRef<number>(seatOf(start).at);
   const dockedOnMyg = useRef(start === 180);
   const pinch = useRef(0);
+  /* Last two-finger ratio: a clear outward spread also leaves (as every depth does). */
+  const spread = useRef(1);
 
   useEffect(() => {
     const node = root.current;
@@ -360,9 +364,10 @@ export function MyGRing({
         const a = e.touches[0], b = e.touches[1];
         if (!a || !b) return;
         const ratio = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY)/pinch.current;
+        spread.current = ratio;
         setSpan(FIT_W * Math.min(1.8, Math.max(1, 1/ratio)));
       }}
-      onTouchEnd={() => { if (pinch.current && span > FIT_W * 1.45) { onClose(); } else setSpan(FIT_W); pinch.current=0; }}
+      onTouchEnd={() => { if (pinch.current && (span > FIT_W * 1.45 || spread.current >= MYG_PINCH_OUT)) { onClose(); } else setSpan(FIT_W); pinch.current=0; spread.current=1; }}
       onTouchCancel={() => { pinch.current=0; setSpan(FIT_W); }}
       onWheel={(e) => {
         if ((e.target as HTMLElement).closest("[data-interior]")) return;

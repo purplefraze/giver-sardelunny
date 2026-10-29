@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { GMark } from "@/components/living-g/GMark";
 import { haptics } from "@/lib/haptics";
 
 /**
@@ -30,23 +29,6 @@ export function SendArrow() {
         strokeLinejoin="round"
       />
     </svg>
-  );
-}
-
-/** The small G, top left — the seat's own colour; a tap goes back. */
-export function FormG({ onBack, label = "back" }: { onBack: () => void; label?: string }) {
-  return (
-    <button
-      type="button"
-      className="uf-g"
-      aria-label={label}
-      onClick={() => {
-        haptics.exit();
-        onBack();
-      }}
-    >
-      <GMark colour="var(--form-seat)" height={32} />
-    </button>
   );
 }
 
@@ -194,7 +176,6 @@ export function FormQuestion({
   return (
     <div className="uf-question">
       <div className="uf-screen">
-        <FormG onBack={onBack} />
         <h1 className="uf-heading">{heading}</h1>
         <div className="uf-options" role="radiogroup" aria-label={heading}>
           {options.map((o) => (
@@ -242,7 +223,6 @@ export function FormAmount({
   return (
     <div className="uf-question">
       <div className="uf-screen">
-        <FormG onBack={onBack} />
         <h1 className="uf-heading">{heading}</h1>
         <input
           ref={ref}

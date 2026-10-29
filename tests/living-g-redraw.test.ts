@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { G_ANCHORS, G_GEOMETRY, G_REGION_NAMES, LIVING_G_PATH, LOOP_RIM_RADIUS, BOTTOM_LOOP_INTERIOR, EAR_GEOMETRY } from "../src/components/living-g/g-path";
+import { G_ANCHORS, G_GEOMETRY, G_REGION_NAMES, LIVING_G_PATH, LOOP_RIM_RADIUS, BOTTOM_LOOP_INTERIOR, EAR_GEOMETRY, LIVING_G_BOX } from "../src/components/living-g/g-path";
 import { SPARK_START, SPARK_END, SPARK_TRACK_D } from "../src/components/living-g/spark-track";
 
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -25,7 +25,7 @@ test("joins are tangent-continuous: circles touch exactly at the join points", (
 
 test("loops: middle unchanged, bottom is a circle sitting on the box foot, no ear", () => {
   expect(LOOP_RIM_RADIUS.middle).toBe(196.5);
-  expect(G_GEOMETRY.bottom.c.y + LOOP_RIM_RADIUS.bottom).toBeCloseTo(1133, 6);
+  expect(G_GEOMETRY.bottom.c.y + LOOP_RIM_RADIUS.bottom).toBeCloseTo(LIVING_G_BOX.height, 6);
   expect(BOTTOM_LOOP_INTERIOR.rx).toBe(BOTTOM_LOOP_INTERIOR.ry);
   expect(BOTTOM_LOOP_INTERIOR.rx).toBeCloseTo(G_GEOMETRY.bottom.r - 26.75, 6);
   expect(LIVING_G_PATH.match(/M/g)?.length).toBe(2); // one outer contour + the middle hole: no seams, no ear ring
@@ -41,4 +41,15 @@ test("spark rail runs on the exact centre line from middle loop to the cap", () 
   near(SPARK_START, at(G_GEOMETRY.middle.c, G_GEOMETRY.middle.r, 52));
   near(SPARK_END, at(G_GEOMETRY.bottom.c, G_GEOMETRY.bottom.r, -58));
   expect(SPARK_TRACK_D.startsWith("M")).toBe(true);
+});
+
+test("middle-to-lower gap matches the reference (visible gap ≈ 0.245 of the middle loop's outer width)", () => {
+  // visible (thin, middle-weight) edges: the eroded stroke moves each edge in by (53.5 − 28.5) / 2
+  const inset = (53.5 - 28.5) / 2;
+  const midBottom = G_GEOMETRY.middle.c.y + LOOP_RIM_RADIUS.middle - inset;
+  const lowTop = G_GEOMETRY.bottom.c.y - LOOP_RIM_RADIUS.bottom + inset;
+  const ratio = (lowTop - midBottom) / (2 * (LOOP_RIM_RADIUS.middle - inset));
+  expect(ratio).toBeGreaterThan(0.2);
+  expect(ratio).toBeLessThan(0.29);
+  expect(G_GEOMETRY.bottom.c.y + LOOP_RIM_RADIUS.bottom).toBeCloseTo(LIVING_G_BOX.height, 6);
 });

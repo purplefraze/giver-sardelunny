@@ -65,8 +65,8 @@ export const noonTop = (weight: GWeight = "normal") => LOOP_CENTRE.middle.y - to
 
 /**
  * The G's lowest painted point (the bottom loop's outer edge) in viewBox units.
- * The traced outline's lowest point is y ≈ 1132.5 (box 1133); eroding moves
- * that convex edge up by exactly the per-side inset: 1120.5 at middle.
+ * The traced outline's lowest point is the box foot (LIVING_G_BOX.height); eroding moves
+ * that convex edge up by exactly the per-side inset (box height − 12.5 at middle).
  */
 export const gBottom = (weight: GWeight = "normal") => LIVING_G_BOX.height - strokeInset(weight);
 

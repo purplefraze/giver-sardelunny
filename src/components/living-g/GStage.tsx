@@ -44,7 +44,7 @@ const CTA_BAND_PX = 20;
  * outer radius from the middle loop's centre (x 272, which is also the frame's
  * centre), so EDGE_AIR below is the exact paper between ring and screen edge.
  *   middle weight: reach 283.1 + 74.6 = 357.7 → x -85.7..629.7 (715.4 wide),
- *   y 298 − 357.7 = −59.7 (my g's ring, now a seat at 12:00) .. 1133 (the
+ *   y 298 − 357.7 = −59.7 (my g's ring, now a seat at 12:00) .. LIVING_G_BOX.height (the
  *   artwork's bottom; the 6:00 ring rides the middle loop, well above it —
  *   toggle-path.ts) = 1192.7 tall.
  * (Was 715.4 × 1353.4 while 6:00 docked outside the lower loop; 758 × 1218
@@ -87,7 +87,7 @@ const CANONICAL_WIDTH = `min(calc((100% - 2 * ${EDGE_AIR}) * ${FRAME_OVER_W.toFi
 /**
  * VERTICAL PLACE — CENTRED. The G's extent runs from its top (the toggle
  * ring's highest RESTING edge, give 1:30 / wish 10:30: viewBox y ≈ 23.2) to its
- * bottom (the bottom loop's lowest edge at the middle weight: y = 1120.5).
+ * bottom (the bottom loop's lowest edge at the middle weight: box height − 12.5).
  * That extent is centred in the stage's height, so the paper above equals the
  * paper below — but its top never rises above G_TOP_MIN, the line 10px under
  * the "sign in" / @name seal (whose box ends at 25.55px).

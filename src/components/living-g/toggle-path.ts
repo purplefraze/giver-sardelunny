@@ -82,7 +82,7 @@ export function togglePath(weight: GWeight = "normal"): TogglePath {
 /**
  * The lowest point the G's full resting extent reaches, in viewBox units:
  * the artwork's bottom (the toggle's 6:00 ring sits well above it, on the
- * middle loop), so the stage fits the G itself (1133).
+ * middle loop), so the stage fits the G itself (LIVING_G_BOX.height).
  */
 export const dockBottom = (weight: GWeight = "normal") =>
   Math.max(togglePath(weight).bottom, LIVING_G_BOX.height);

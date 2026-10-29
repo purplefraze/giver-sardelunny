@@ -10,29 +10,33 @@
 // weight G_GEOMETRY.stroke (53.5 units, = G_STROKE.normal); the paint layers
 // erode it evenly to the drawn weight (see g-weight.tsx).
 //   middle  closed circle, centre (272,298), centre-line radius 169.75
-//   S-curve leaves the middle circle at 82.77° (≈5:30) on a circle of radius 78.1
-//           about (303.2,543.87), turning the other way
-//   bottom  joins at 275.94° and runs round to a round cap at -58° (≈1 o'clock),
-//           centre (270,863.25), centre-line radius 243 — the open upper-right gap
+//   S-curve leaves the middle circle at 76.79° (≈5:30) on a circle of radius 57.39
+//           about (323.91,519.13), turning the other way
+//   bottom  joins at 280.34° and runs round to a round cap at -58° (≈1 o'clock),
+//           centre (270,814.65), centre-line radius 243 — the open upper-right gap
 // The small top ring of the old trace is gone: the toggle (seat marker) is a
 // separate piece that rides the middle loop (EarSelector / toggle-path.ts).
+// SPACING FIX (29 Oct 2026): the middle-to-lower gap closed from 99 to 50.4 units
+// (outer edges 494.5 / 544.9) so the visible gap is ≈0.245 of the middle loop's
+// outer width, as in the reference; the bottom loop moved up 48.6 and the box
+// is 1084.4 tall. The flip transform still uses 1133 (authoring space only).
 // Authored in potrace space (×10, y flipped) so the existing flip transform and
 // every erosion mask (×10 stroke widths) keep working unchanged.
 // ONE OUTLINE, NO INNER EDGES: the outline is the true union (outer contour +
 // the middle hole), because the erosion masks stroke every edge of the path; an
 // edge lying inside the ink (an overlap seam) would be eaten as a gap.
-export const LIVING_G_PATH = "M3736.1 6668.1A1965 1965 0 1 1 2967.4 6400.6A513.5 513.5 0 1 0 2978.9 5380.5A2697.5 2697.5 0 1 1 4129.5 4985.1A267.5 267.5 0 0 1 3846 4531.4A2162.5 2162.5 0 1 0 2923.6 4848.4A1048.5 1048.5 0 0 1 3736.1 6668.1ZM4150 8350A1430 1430 0 1 0 1290 8350A1430 1430 0 1 0 4150 8350Z";
+export const LIVING_G_PATH = "M3835.4 6732.3A1965 1965 0 1 1 3169 6437A306.4 306.4 0 1 0 3184.1 5837.2A2697.5 2697.5 0 1 1 4129.5 5471.1A267.5 267.5 0 0 1 3846 5017.4A2162.5 2162.5 0 1 0 3088.1 5310.9A841.4 841.4 0 0 1 3835.4 6732.3ZM4150 8350A1430 1430 0 1 0 1290 8350A1430 1430 0 1 0 4150 8350Z";
 
 /** The constructed centre-line geometry of the G, in viewBox units. */
 export const G_GEOMETRY = {
   stroke: 53.5,
   middle: { c: { x: 272, y: 298 }, r: 169.75 },
-  s: { c: { x: 303.2, y: 543.87 }, r: 78.1, leaveDeg: 82.77, joinDeg: 95.94 },
-  bottom: { c: { x: 270, y: 863.25 }, r: 243, joinDeg: -84.06, capDeg: -58 },
+  s: { c: { x: 323.91, y: 519.13 }, r: 57.39, leaveDeg: 76.79, joinDeg: 100.34 },
+  bottom: { c: { x: 270, y: 814.65 }, r: 243, joinDeg: -79.66, capDeg: -58 },
 } as const;
 
 /** The artwork's own box. Never scaled or moved. */
-export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
+export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1084.4 } as const;
 
 /**
  * The FRAME: the artwork's box plus the room the mode selector's assembly needs
@@ -47,7 +51,7 @@ export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
  * depends on where the selector currently sits. Nothing decorative lives here:
  * every extra unit shrinks the G on screen.
  */
-export const LIVING_G_FRAME = { x: -117, y: -95, width: 778, height: 1228 } as const;
+export const LIVING_G_FRAME = { x: -117, y: -95, width: 778, height: 1179.4 } as const;
 
 
 
@@ -71,19 +75,19 @@ const TOGGLE_HOME = { x: 272 + 300 * Math.SQRT1_2, y: 298 - 300 * Math.SQRT1_2 }
 export const G_ANCHORS = {
   toggle: TOGGLE_HOME,
   middle: { x: 272, y: 298 },
-  communiG: { x: 270, y: 863.25 },
+  communiG: { x: 270, y: 814.65 },
 } as const;
 
 /**
  * Invisible hit bands, in viewBox space, split at the drawn shape:
  *   toggle    above the middle circle (y < 101.5) — the toggle at home sits here
  *   middle    the middle circle down through the S-curve's upper half (to 570)
- *   communi-g the bottom loop (outer top 593.5) down to the box's foot
+ *   communi-g the bottom loop (outer top 544.9) down to the box's foot
  */
 export const G_REGION_BANDS = {
   top: { x: 0, y: 0, width: 576, height: 100 },
-  middle: { x: 0, y: 100, width: 576, height: 470 },
-  bottom: { x: 0, y: 570, width: 576, height: 563 },
+  middle: { x: 0, y: 100, width: 576, height: 420 },
+  bottom: { x: 0, y: 520, width: 576, height: 564.4 },
 } as const;
 
 /**
@@ -105,7 +109,7 @@ export const LOOP_SAFE_RADIUS = {
  */
 export const BOTTOM_LOOP_INTERIOR = {
   cx: 270,
-  cy: 863.25,
+  cy: 814.65,
   rx: 216.25,
   ry: 216.25,
   /** Clear paper retained between painted glyphs and the coloured stroke. */
@@ -119,7 +123,7 @@ export const BOTTOM_LOOP_INTERIOR = {
 export const LOOP_CENTRE = {
   top: TOGGLE_HOME,
   middle: { x: 272, y: 298 },
-  bottom: { x: 270, y: 863.25 },
+  bottom: { x: 270, y: 814.65 },
 } as const;
 
 /** OUTER rim radius of each loop's stroke (exact, at the baked 53.5 weight). */

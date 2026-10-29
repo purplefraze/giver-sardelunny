@@ -20,7 +20,6 @@ import { useSignInCanvas } from "@/components/onboarding/use-keyboard-fit";
 import { ConveyorToggle } from "@/components/onboarding/ConveyorToggle";
 import { useScreenPaint } from "@/components/living-g/use-screen-paint";
 import { CANONICAL_MIDDLE_PATH } from "@/components/living-g/canonical-rim";
-import { GIVE_DOT } from "@/components/onboarding/signin-emphasis";
 
 /**
  * THE SIGN-IN / ONBOARDING SCREEN — PRESENTATION ONLY (behaviour lives in
@@ -170,44 +169,12 @@ function SignInRingStroke() {
   );
 }
 
-/**
- * THE GIVE WORDMARK. At give the big G is the g: "ıver" (dotless i) is set
- * just right of the middle loop, the i's stem centred under the toggle's
- * give position so the toggle ring is its dot. Its presence is --give-mark
- * (0 away from give), written every frame by the conveyor.
+/*
+ * THE WORDMARK. "giver" is always set whole inside the upper ring
+ * (.signin-mark). The old give-seat overlay set only "ıver" beside the
+ * middle loop, relying on the big G to read as the g — on phones that read
+ * as "iver" pressed against the screen edge, so it was removed.
  */
-const GIVE_MARK = {
-  size: 96,
-  /** Paper between the ring's lowest point and the i's top (units). */
-  dotGap: 22,
-  xHeight: 0.52,
-  tracking: 0.02,
-};
-function GiveWordmark() {
-  const top = GIVE_DOT.y + GIVE_DOT.r + GIVE_MARK.dotGap;
-  const baseline = top + GIVE_MARK.size * GIVE_MARK.xHeight;
-  return (
-    <g
-      className="signin-give-mark"
-      style={{ opacity: "var(--give-mark, 0)" }}
-      fill="var(--world-g)"
-      pointerEvents="none"
-      aria-hidden="true"
-    >
-      <text x={GIVE_DOT.x} y={baseline} textAnchor="middle" style={{ fontSize: GIVE_MARK.size }}>
-        {"\u0131"}
-      </text>
-      <text
-        x={GIVE_DOT.x + GIVE_MARK.size * 0.16}
-        y={baseline}
-        style={{ fontSize: GIVE_MARK.size, letterSpacing: `${GIVE_MARK.tracking}em` }}
-      >
-        ver
-      </text>
-    </g>
-  );
-}
-
 /** How long the upper copy holds alone before the lower loop's sign-up fades in. */
 const FLIP_MS = 3000;
 
@@ -341,7 +308,6 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
             showLabels={false}
             overlay={
               <>
-                <GiveWordmark />
                 <ConveyorToggle root={root} start="give" under={<SignInRing />} />
               </>
             }

@@ -1378,12 +1378,11 @@
   align-items: center;
 }
 
-/* UPPER COPY: the wordmark over its line. At give the big G is the g of the
-   wordmark (SignInView GiveWordmark), so this one gives way (--give-mark). */
+/* UPPER COPY: the full "giver" wordmark over its line, at every seat and
+   every width — it never gives way (see SignInView). */
 .signin-mark {
   position: absolute;
   top: calc(50% - 22px);
-  opacity: calc(1 - var(--give-mark, 0));
   left: 0;
   right: 0;
   text-align: center;
@@ -1398,8 +1397,7 @@
 
 .signin-tag {
   position: absolute;
-  /* Centred alone while the wordmark is out at give (--give-mark 1). */
-  top: calc(50% + 4px - var(--give-mark, 0) * 12px);
+  top: calc(50% + 4px);
   left: 0;
   right: 0;
   text-align: center;
@@ -1410,15 +1408,6 @@
   text-indent: 0;
   text-transform: lowercase;
   color: var(--seat);
-}
-.signin-give-mark text {
-  font-family: var(--giver-font);
-  font-weight: 500;
-  /* A paper halo so the letters read over the feed (units of the G). */
-  paint-order: stroke;
-  stroke: var(--world-bg);
-  stroke-width: 16px;
-  stroke-linejoin: round;
 }
 
 /* LOWER COPY: the question, the field, the send circle, the quiet lines —

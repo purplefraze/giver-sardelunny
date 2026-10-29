@@ -260,7 +260,7 @@ export function ConveyorToggle({
       />
       {under}
       <g ref={piece} transform={`translate(${ring0.x} ${ring0.y}) rotate(${out0})`}>
-        <line x1={g.STEM_FROM - g.TRACK_R} y1={0} x2={-g.RING_MID} y2={0} stroke="var(--world-g)" strokeWidth={paint.width} vectorEffect="non-scaling-stroke" strokeLinecap="butt" pointerEvents="none" />
+        <line x1={g.STEM_FROM - g.TRACK_R} y1={0} x2={-g.RING_MID} y2={0} stroke="var(--seat)" strokeWidth={paint.width} vectorEffect="non-scaling-stroke" strokeLinecap="butt" pointerEvents="none" />
         {/* THE HOLE: opaque paper, so the feed never shows through the ring.
             Out to the stroke's inner edge (+ HOLE_TUCK, hidden under it). */}
         <circle
@@ -277,7 +277,7 @@ export function ConveyorToggle({
           cy={0}
           r={g.RING_MID}
           fill="none"
-          stroke="var(--world-g)"
+          stroke="var(--seat)"
           strokeWidth={paint.width} vectorEffect="non-scaling-stroke"
           pointerEvents="none"
         />
@@ -340,7 +340,7 @@ export function ConveyorToggle({
         x={ring0.x + T.dx}
         y={ring0.y + T.dy}
         textAnchor="middle"
-        fill="var(--world-g)"
+        fill="var(--seat)"
         pointerEvents="none"
         aria-hidden="true"
         data-toggle-title=""

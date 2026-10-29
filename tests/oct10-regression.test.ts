@@ -27,12 +27,12 @@ test("demo lends exist and read as lend", () => {
   expect(itemMode({ type: "borrow", side: "lend" })).toBe("lend");
 });
 
-test("every authored mode word is lowercase, except the two Communi-G nav labels", () => {
+test("every authored mode word is lowercase, except the Communi-G nav labels", () => {
   // COMMUNI-G NAV (29 Oct 2026 brief): the 6:00 seat reads exactly "Communi-G" and
-  // the lower loop's 6:00 reads "Community". Flagged for Frazer against the older
+  // the lower loop's 6:00 reads "Communi-G". Flagged for Frazer against the older
   // lowercase "communi-g" rule.
   expect(SEAT_TITLE.map).toBe("Communi-G");
-  expect(lowerWord("everything")).toBe("Community");
+  expect(lowerWord("everything")).toBe("Communi-G");
   const { map: _m, ...titles } = SEAT_TITLE;
   for (const w of [...Object.values(MODE_WORD), ...Object.values(titles), ...Object.values(NOUN), lowerWord("back"), sectionWord("fund"), sectionWord("everything")])
     expect(w).toBe(w.toLowerCase());

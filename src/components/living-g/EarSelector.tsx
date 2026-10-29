@@ -43,7 +43,7 @@ export type Seat = (typeof SEATS)[number];
 /**
  * Every seat on the wire, in travel order (one end of the break -> the other).
  * COMMUNI-G (6:00, seat key "map") is the door INTO the lower loop, entered
- * at ITS 6:00 ("Community"); the map is a list/map view inside it, never a
+ * at ITS 6:00 ("Communi-G"); the map is a list/map view inside it, never a
  * second community seat; communi-g itself is always the bottom loop.
  */
 export const FULL_SEATS = [

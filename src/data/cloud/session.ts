@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { consumeAuthCallback } from "@/lib/auth-callback";
 import { joinGiver } from "@/lib/invites.functions";
+import { TEST_BUILD_DIRECT_ENTRY } from "@/config/test-build";
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -29,6 +30,8 @@ export type SessionState = {
   email: string | null;
   profile: ProfileRow | null;
   isAdmin: boolean;
+  /** TEST BUILD: a local read-only guest — no auth user, no server session. */
+  guest?: boolean;
 };
 
 const EMPTY: SessionState = Object.freeze({
@@ -48,6 +51,48 @@ const SIGNED_OUT: SessionState = Object.freeze({
 });
 
 let state: SessionState = EMPTY;
+
+/* TEST BUILD DIRECT ENTRY: the guest lives in this tab only (sessionStorage). */
+const GUEST_KEY = "giver.test-guest.v1";
+const GUEST: SessionState = Object.freeze({
+  status: "ready",
+  userId: null,
+  email: null,
+  profile: null,
+  isAdmin: false,
+  guest: true,
+});
+function guestStored(): boolean {
+  if (!TEST_BUILD_DIRECT_ENTRY || typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(GUEST_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+/** True while this tab is the local read-only guest. */
+export function isGuest(): boolean {
+  return TEST_BUILD_DIRECT_ENTRY && state.guest === true;
+}
+/** Enter as the guest: no network call, no auth user, no email. */
+export function enterAsGuest() {
+  if (!TEST_BUILD_DIRECT_ENTRY) return;
+  try {
+    window.sessionStorage.setItem(GUEST_KEY, "1");
+  } catch {
+    /* private mode: guest for this page only */
+  }
+  commit(GUEST);
+}
+/** Leave the guest (e.g. "sign out" from My G). */
+export function leaveGuest() {
+  try {
+    window.sessionStorage.removeItem(GUEST_KEY);
+  } catch {
+    /* private mode */
+  }
+  if (state.guest) commit(SIGNED_OUT);
+}
 const listeners = new Set<() => void>();
 let started = false;
 
@@ -132,6 +177,7 @@ export function isAuthFailure(err: unknown, status?: number): boolean {
  */
 export async function ensureLiveSession(force = false): Promise<"live" | "ended" | "none"> {
   if (typeof window === "undefined") return "none";
+  if (isGuest()) return "none";
   const hadSession = state.userId !== null || stored(LAST_USER_KEY) !== null;
   const nowS = Math.floor(Date.now() / 1000);
   renewing = true;
@@ -229,6 +275,11 @@ export const sessionStore = {
   start() {
     if (started || typeof window === "undefined") return;
     started = true;
+    /* The guest never asks the server who it is. */
+    if (guestStored()) {
+      commit(GUEST);
+      return;
+    }
     /* An email link (token_hash / code / error) is settled first, so the
        sign-in screen never flashes before a link session, and a failed link
        arrives as one plain line instead of "access_denied" in the address. */
@@ -300,6 +351,7 @@ export const sessionStore = {
   /** Write my own profile row. The Living G's own store stays the author. */
   async saveProfile(fields: Partial<ProfileRow>) {
     const { userId, profile } = state;
+    if (isGuest()) throw new Error("sign in first");
     if (!userId) throw new Error("sign in first");
     if (profile) {
       const { error } = await supabase

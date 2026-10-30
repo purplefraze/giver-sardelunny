@@ -3,7 +3,8 @@ import { connectionsStore, type Connection } from "@/data/connections";
 import { itemsStore, ME_ID, type ItemType } from "@/data/items";
 import { giveCapState } from "@/data/give-cap";
 import { receiveBlock, startBlock } from "@/data/community-access";
-import { sessionStore } from "@/data/cloud/session";
+import { sessionStore, isGuest } from "@/data/cloud/session";
+import { GUEST_WRITE_LINE } from "@/config/test-build";
 import { localIdForProfile, profileIdForLocal } from "@/data/cloud/directory";
 import { changeConnectionState } from "@/lib/connections.functions";
 import { notify } from "@/data/cloud/notifications";
@@ -51,6 +52,7 @@ export async function loadConnections() {
 }
 
 export async function startConnection(itemId: string): Promise<string> {
+  if (isGuest()) throw new Error(GUEST_WRITE_LINE);
   const me = sessionStore.get().profile?.id;
   if (!me) throw new Error("finish joining giver first");
   const item = itemsStore.get().items.find((candidate) => candidate.id === itemId);
@@ -90,6 +92,7 @@ export async function startConnection(itemId: string): Promise<string> {
 }
 
 export async function updateConnection(connectionId: string, action: "handover" | "return" | "claim" | "confirm" | "dispute" | "cancel", value?: boolean) {
+  if (isGuest()) throw new Error(GUEST_WRITE_LINE);
   /* NOBODY RECEIVES WITHOUT A LIVE GIVE: nothing settles until they have one. */
   if (action === "claim" || action === "confirm") {
     const c = connectionsStore.get().connections.find((x) => x.id === connectionId);

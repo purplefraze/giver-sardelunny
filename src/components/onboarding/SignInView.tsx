@@ -1,3 +1,4 @@
+import { TEST_BUILD_DIRECT_ENTRY } from "@/config/test-build";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { GStage } from "@/components/living-g/GStage";
@@ -307,7 +308,7 @@ function SendCircle({ label, busy }: { label: string; busy: boolean }) {
   );
 }
 
-export function SignInView({ otp }: { otp: OtpSignIn }) {
+export function SignInView({ otp, onEnter }: { otp: OtpSignIn; onEnter?: (() => void) | undefined }) {
   const codeRef = useRef<HTMLInputElement | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
   useSignInCanvas(root);
@@ -355,7 +356,20 @@ export function SignInView({ otp }: { otp: OtpSignIn }) {
 
           {/* LOWER: quiet, then the sign-up; after sending, the code. */}
           <div className="signin-lower" style={LOWER_BOX} data-shown={lower}>
-            {otp.step === "email" ? (
+            {TEST_BUILD_DIRECT_ENTRY && onEnter ? (
+              /* TEST BUILD: one button straight in — no email, no link. */
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onEnter();
+                }}
+                className="signin-inner"
+                inert={!lower}
+              >
+                <p className="signin-ask">are you a giver?</p>
+                <SendCircle label="enter giver" busy={false} />
+              </form>
+            ) : otp.step === "email" ? (
               <form
                 onSubmit={(e) => void otp.submitEmail(e)}
                 className="signin-inner"

@@ -1,3 +1,4 @@
+import { leaveGuest } from "@/data/cloud/session";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { passwordStrongEnough } from "@/data/account";
 import { birthdayBounds, profileBirthdaySchema } from "@/lib/profile-birthday";
@@ -627,7 +628,7 @@ function Area({
         ) : null}
         <div className="flex flex-col items-start gap-2">
           <Button variant="ghost" type="button" className={btn} onClick={() => onAccount?.()}>account, birthday & privacy</Button>
-          {session.userId ? <Button variant="ghost" type="button" className={btn} onClick={() => void supabase.auth.signOut()}>sign out</Button> : null}
+          {session.userId ? <Button variant="ghost" type="button" className={btn} onClick={() => void supabase.auth.signOut()}>sign out</Button> : session.guest ? <Button variant="ghost" type="button" className={btn} onClick={() => leaveGuest()}>leave</Button> : null}
         </div>
       </div>
     );

@@ -2225,3 +2225,18 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .cg-map-note { align-self:stretch; }
 [data-cg-view="map"] .cg-list { background:transparent; padding:0; }
 [data-cg-view="map"] .cg-list > li { background:var(--background); }
+
+/* anna pass2 #4: the list never scrolls sideways (rows wrap/ellipsize inside it). The filter chip row keeps its own layout. */
+.cg-list { overflow-x:hidden; }
+/* anna pass2 #5: over the map, controls no longer sit as full-width opaque bands
+   over the pins. Each control keeps its own small backing; the count + "show list"
+   note sits at the bottom of the hollow, above the attribution. */
+[data-cg-active-view="map"] .cg-filters, [data-cg-interior-page][data-cg-view="map"] .cg-filters, [data-cg-interior-page][data-cg-view="map"] .cg-tools { background:transparent; padding-left:0; padding-right:0; pointer-events:none; }
+[data-cg-active-view="map"] .cg-filters > *, [data-cg-interior-page][data-cg-view="map"] .cg-filters > *, [data-cg-interior-page][data-cg-view="map"] .cg-tools > * { pointer-events:auto; background:var(--background); border-radius:4px; padding-left:6px; padding-right:6px; }
+[data-cg-interior-page][data-cg-view="map"] [data-cg-results] { justify-content:flex-end !important; padding-bottom:var(--cg-map-note-gap,36px); }
+[data-cg-interior-page][data-cg-view="map"] .cg-map-note { align-self:flex-start; }
+/* anna pass2 #1/#2: inline amount hint and the fund trust placeholder slots span the form width. */
+.gv-inline-note, .gv-trust { grid-column:1 / -1; padding:4px 0 8px; }
+.gv-trust { border-top:1px solid var(--edit-rule); padding-top:8px; }
+.gv-trust p { margin:2px 0; }
+.gv-form .gv-fields > .gv-trust, .gv-form .gv-fields > .gv-inline-note { grid-column:1 / -1; display:block; }

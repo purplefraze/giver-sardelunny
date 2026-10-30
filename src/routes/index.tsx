@@ -846,7 +846,7 @@ function Index() {
       {reviewing ? (
         <VoiceEnclosure seat={talk.session?.action ?? seat} onFold={() => conversation.closeForm()} onFoldStart={() => conversation.stopLocked()}>
           <VoiceReview
-            onDone={() => conversation.close()}
+            onDone={() => conversation.discard()}
             onSeeInCommunity={(itemId) => {
               const a = talk.session?.action;
               conversation.close();

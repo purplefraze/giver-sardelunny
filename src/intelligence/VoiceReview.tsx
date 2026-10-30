@@ -5,7 +5,8 @@ import { haptics } from "@/lib/haptics";
 import { conversation } from "@/intelligence/voice-conversation";
 import { shareCoordinator } from "@/intelligence/share-live";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { canGoLive, fundTargetOf, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
+import { canGoLive, fundTargetOf, photoReminder, whyNotLive, type VoiceFields } from "@/intelligence/voice-flow";
+import { FUND_TRUST_PLACEHOLDERS } from "@/intelligence/fund-trust-placeholders";
 import { NOUN } from "@/intelligence/voice-session";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -120,13 +121,16 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     </label>
   );
 
+  /* anna pass2 #1: share stays disabled until the draft is valid; say why once something is typed. */
+  const notReady = whyNotLive(action, f);
+  const touched = [f.what, f.title, f.want, f.amount, f.note].some(v => String(v ?? "").trim().length > 0);
   const share = async (skipPhoto = false) => {
     setProblem(null);
     /* Everything the Share is about, captured NOW — before any await. */
     const input = { draftId: s.draftId, action, fields: f, photo: c.photo, pin: c.pin };
     if (!canGoLive(action, f)) {
       haptics.warning();
-       setProblem(f.what.trim().length < 2 ? "what is it?" : action === "fund" ? "how much are you raising? enter a goal, like 1200." : action === "give" && !f.kind ? "what kind of give is it?" : collection && !f.collectionLocation ? "confirm a real approximate collection area" : collection && f.kind === "food" && !f.timing?.date ? "choose a collection date" : action === "trade" ? "what would you like for it?" : "where is it?");
+       setProblem(whyNotLive(action, f) ?? (collection && !f.collectionLocation ? "confirm a real approximate collection area" : collection && f.kind === "food" && !f.timing?.date ? "choose a collection date" : "where is it?"));
       return;
     }
     if (!skipPhoto && photoReminder(action, f.kind, !!c.photo)) {
@@ -185,7 +189,12 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         {field("title","listing title")}
         {field("what", service || action === "trade" ? "offer" : action === "fund" ? "cause" : action === "borrow" ? "need" : "what")}
         {action === "trade" ? field("want", "for") : null}
-        {action === "fund" ? field("amount", "raising", "amount") : null}
+        {action === "fund" ? field("amount", "raising", "amount, like 1200") : null}
+        {action === "fund" && f.amount?.trim() && fundTargetOf(f) === null ? <p className="g-meta gv-inline-note" role="status" data-amount-hint="">enter the goal as a number, like 1200.</p> : null}
+        {action === "fund" ? <div className="gv-trust" data-fund-trust="" data-placeholder="needs-frazer-approval">
+          {/* PLACEHOLDER TRUST COPY — needs frazer's approval. No policy is stated here. */}
+          {FUND_TRUST_PLACEHOLDERS.map(t => <p key={t.key} className="g-meta" data-fund-trust-slot={t.key}><span>{t.label}: </span>{t.text}</p>)}
+        </div> : null}
         {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
           {collection ? <CollectionLocation compact={level >= 3} draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
          {collection ? <label className="gv-field"><span>collection date</span><input type="date" aria-label="collection date" value={f.timing?.date ?? ""} onChange={e => chooseDate(e.target.value)} /></label> : null}
@@ -231,9 +240,9 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           </div>
         </div>
       ) : null}
-      {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
+      {problem ? <p className="gv-problem" role="alert">{problem}</p> : notReady && touched && !(action === "fund" && f.amount?.trim() && notReady.startsWith("enter the goal")) ? <p className="gv-problem" role="status" data-not-ready="">{notReady}</p> : null}
       <div className="gv-taps gv-actions">
-        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>share with communi-g</Button>
+        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId) || !canGoLive(action, f)}>share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
         {!canGoLive(action,f)||s.stage==="talk"?<Button variant="ghost" type="button" onClick={()=>conversation.continueQuestions()}>continue questions</Button>:null}
       </div>

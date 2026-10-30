@@ -127,9 +127,9 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
 
 /** Required to go live — mirrors the existing forms' minimums. */
 export function canGoLive(action: GiverAction, f: VoiceFields): boolean {
-  if (f.what.trim().length < 2 || incompleteLead(f.what)) return false;
+  if (f.what.trim().length < 2 || incompleteLead(f.what) || !looksLikeWords(f.what)) return false;
    if (action === "give") return f.kind !== null && (f.context === "lesson" || f.context === "service" ? f.ctx.format === "online" || !!f.ctx.area : validCollectionLocation(f.collectionLocation, f.where) && (f.kind !== "food" || !!f.timing?.date));
-  if (action === "trade") return f.want.trim().length > 0;
+  if (action === "trade") return f.want.trim().length > 0 && looksLikeWords(f.want);
   if (action === "fund") return fundTargetOf(f) !== null;
   return true;
 }
@@ -199,4 +199,34 @@ export function photoReminder(action: GiverAction, kind: GiveType | null, hasPho
   if (hasPhoto) return false;
   if (action === "give") return kind === null || kind === "a thing" || kind === "clothes" || kind === "food";
   return action === "lend" || action === "trade";
+}
+
+/**
+ * anna pass2 #1 — a light keyboard-mash check, NOT a language model: rejects
+ * text with no letters, a 4+ letter token with no vowel ("zzzz"), a run of 5+
+ * consonants ("asdfgh") or one letter 4+ times in a row ("aaaa"). Real words
+ * used as nonsense ("purple banana") still pass.
+ */
+export function looksLikeWords(text: string): boolean {
+  const t = text.toLowerCase();
+  if (!/\p{L}/u.test(t)) return false;
+  for (const tok of t.split(/[^\p{L}]+/u).filter(Boolean)) {
+    if (!/^[a-z]+$/.test(tok)) continue; // non-latin scripts: don't judge
+    if (tok.length >= 4 && !/[aeiouy]/.test(tok)) return false;
+    if (/[^aeiouy]{5,}/.test(tok)) return false;
+    if (/(.)\1{3,}/.test(tok)) return false;
+  }
+  return true;
+}
+
+/** Why a draft can't go live yet, in plain words; null when it can. */
+export function whyNotLive(action: GiverAction, f: VoiceFields): string | null {
+  if (canGoLive(action, f)) return null;
+  const what = f.what.trim();
+  if (what.length < 2 || incompleteLead(f.what)) return action === "fund" ? "what are you raising funds for?" : "what is it?";
+  if (!looksLikeWords(f.what)) return "that doesn't look like words yet — describe it in a few words.";
+  if (action === "fund") return f.amount?.trim() ? "enter the goal as a number, like 1200." : "how much are you raising? enter a goal, like 1200.";
+  if (action === "trade") return !f.want.trim() ? "what would you like for it?" : "that doesn't look like words yet — say what you'd like for it.";
+  if (action === "give" && !f.kind) return "what kind of give is it?";
+  return null;
 }

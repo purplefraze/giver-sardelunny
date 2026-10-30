@@ -6,7 +6,8 @@ import { conversation } from "@/intelligence/voice-conversation";
 import { shareCoordinator } from "@/intelligence/share-live";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { canGoLive, fundTargetOf, photoReminder, whyNotLive, type VoiceFields } from "@/intelligence/voice-flow";
-import { FUND_TRUST_PLACEHOLDERS } from "@/intelligence/fund-trust-placeholders";
+import { FUND_TRUST_PLACEHOLDERS, FUND_TRUST_VISIBLE } from "@/intelligence/fund-trust-placeholders";
+import { fundGoalProblem } from "@/data/fund-rules";
 import { NOUN } from "@/intelligence/voice-session";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -190,8 +191,8 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         {field("what", service || action === "trade" ? "offer" : action === "fund" ? "cause" : action === "borrow" ? "need" : "what")}
         {action === "trade" ? field("want", "for") : null}
         {action === "fund" ? field("amount", "raising", "amount, like 1200") : null}
-        {action === "fund" && f.amount?.trim() && fundTargetOf(f) === null ? <p className="g-meta gv-inline-note" role="status" data-amount-hint="">enter the goal as a number, like 1200.</p> : null}
-        {action === "fund" ? <div className="gv-trust" data-fund-trust="" data-placeholder="needs-frazer-approval">
+        {action === "fund" && f.amount?.trim() && fundTargetOf(f) === null ? <p className="g-meta gv-inline-note" role="status" data-amount-hint="">{fundGoalProblem(f.amount)}</p> : null}
+        {action === "fund" && FUND_TRUST_VISIBLE ? <div className="gv-trust" data-fund-trust="" data-placeholder="needs-frazer-approval">
           {/* PLACEHOLDER TRUST COPY — needs frazer's approval. No policy is stated here. */}
           {FUND_TRUST_PLACEHOLDERS.map(t => <p key={t.key} className="g-meta" data-fund-trust-slot={t.key}><span>{t.label}: </span>{t.text}</p>)}
         </div> : null}
@@ -240,7 +241,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           </div>
         </div>
       ) : null}
-      {problem ? <p className="gv-problem" role="alert">{problem}</p> : notReady && touched && !(action === "fund" && f.amount?.trim() && notReady.startsWith("enter the goal")) ? <p className="gv-problem" role="status" data-not-ready="">{notReady}</p> : null}
+      {problem ? <p className="gv-problem" role="alert">{problem}</p> : notReady && touched && !(action === "fund" && f.amount?.trim() && fundTargetOf(f) === null) ? <p className="gv-problem" role="status" data-not-ready="">{notReady}</p> : null}
       <div className="gv-taps gv-actions">
         <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId) || !canGoLive(action, f)}>share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>

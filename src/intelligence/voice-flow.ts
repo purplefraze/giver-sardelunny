@@ -1,4 +1,4 @@
-import { parseAmount, validTarget } from "@/data/fund-rules";
+import { fundGoalProblem, parseAmount, validTarget } from "@/data/fund-rules";
 import { inferGiveType, type GiveType } from "@/data/give-lexicon";
 import type { ActionDraft, GiverAction } from "@/intelligence/action-draft";
 import { bindUtterance } from "@/intelligence/bind";
@@ -112,7 +112,7 @@ export function missingAsks(action: GiverAction, f: VoiceFields): { field: keyof
   const tangible = f.kind === "a thing" || f.kind === "clothes" || f.kind === "food" || f.kind === null;
   if (!f.what.trim() || incompleteLead(f.what)) out.push({ field: "what", ask: action === "give" ? "what are you giving?" : "what is it?" });
   if (action === "trade" && !f.want.trim()) out.push({ field: "want", ask: "what would you like for it?" });
-  if (action === "fund" && !f.amount.trim()) out.push({ field: "amount", ask: "how much are you raising?" });
+  if (action === "fund" && fundTargetOf(f) === null) out.push({ field: "amount", ask: f.amount.trim() ? fundGoalProblem(f.amount) ?? "how much are you raising?" : "how much are you raising?" });
   if (!service && (action === "give" || action === "lend") && !f.where.trim()) out.push({ field: "where", ask: action === "give" ? (tangible ? "where can someone collect it?" : "where are you based? an area is fine.") : "where is it?" });
   if (!service && action === "give" && !f.when.trim())
     out.push({ field: "when", ask: tangible ? "when can it be collected?" : "when are you free?" });
@@ -225,7 +225,7 @@ export function whyNotLive(action: GiverAction, f: VoiceFields): string | null {
   const what = f.what.trim();
   if (what.length < 2 || incompleteLead(f.what)) return action === "fund" ? "what are you raising funds for?" : "what is it?";
   if (!looksLikeWords(f.what)) return "that doesn't look like words yet — describe it in a few words.";
-  if (action === "fund") return f.amount?.trim() ? "enter the goal as a number, like 1200." : "how much are you raising? enter a goal, like 1200.";
+  if (action === "fund") return fundGoalProblem(f.amount);
   if (action === "trade") return !f.want.trim() ? "what would you like for it?" : "that doesn't look like words yet — say what you'd like for it.";
   if (action === "give" && !f.kind) return "what kind of give is it?";
   return null;

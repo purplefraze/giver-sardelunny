@@ -9,3 +9,6 @@ export const FUND_TRUST_PLACEHOLDERS = [
   { key: "verification", label: "who verifies", text: `[${FUND_TRUST_PLACEHOLDER_TAG}]` },
   { key: "destination", label: "where the money goes", text: `[${FUND_TRUST_PLACEHOLDER_TAG}]` },
 ] as const;
+
+/** HIDDEN from users until frazer approves real copy (anna pass3). Flip only with approved text. */
+export const FUND_TRUST_VISIBLE = false;

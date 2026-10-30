@@ -410,6 +410,23 @@ export const conversation = {
     if (s) set({ mode: "off", session: { ...s, stage: "live" } });
     voiceCapture.cancel();
   },
+  /** A resolved place (never free text) as the public where, with its pin. */
+  placeWhere(label: string, pin: Pin | null) {
+    conversation.edit("where", label);
+    set({ pin });
+  },
+  /** A storable copy of the draft on screen (no photo: a File cannot be stored). */
+  exportDraft(): { seat: string; session: VoiceSession; edited: string[]; pin: Pin | null } | null {
+    const s = snap.session;
+    if (!s?.action || s.stage === "live" || !currentSeat) return null;
+    return JSON.parse(JSON.stringify({ seat: currentSeat, session: s, edited: snap.edited, pin: snap.pin }));
+  },
+  /** Reopen a stored draft at review, form unfolded (guest -> sign-in handoff). */
+  importDraft(d: { seat: string; session: VoiceSession; edited?: string[]; pin?: Pin | null }) {
+    parked.delete(d.seat);
+    currentSeat = d.seat;
+    set({ ...BLANK, mode: "off", form: true, edited: d.edited ?? [], pin: d.pin ?? null, session: { ...d.session, stage: "review" } });
+  },
   close() {
     voiceCapture.cancel();
     spokenPrompt = "";

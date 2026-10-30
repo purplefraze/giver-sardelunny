@@ -1,4 +1,5 @@
 import { TEST_BUILD_DIRECT_ENTRY } from "@/config/test-build";
+import { signInRequested } from "@/intelligence/guest-handoff";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { GStage } from "@/components/living-g/GStage";
@@ -210,6 +211,8 @@ function GiveWordmark() {
 }
 
 /** How long the upper copy holds alone before the lower loop's sign-up fades in. */
+const TAG_MS = 900;
+const ASK_MS = 2000;
 const FLIP_MS = 3000;
 
 /** A tiny deterministic PRNG, so the feed reads the same on every visit. */
@@ -313,7 +316,9 @@ export function SignInView({ otp, onEnter }: { otp: OtpSignIn; onEnter?: (() => 
   const root = useRef<HTMLDivElement | null>(null);
   useSignInCanvas(root);
   /* THE FLIP: the lower loop stays quiet, then the sign-up fades in. */
-  const [flipped, setFlipped] = useState(false);
+  /* Asked for (a guest's blocked share): the sign-in is ready at once. */
+  const asked = useMemo(() => signInRequested(), []);
+  const [flipped, setFlipped] = useState(asked);
   useEffect(() => {
     const t = window.setTimeout(() => setFlipped(true), FLIP_MS);
     return () => window.clearTimeout(t);
@@ -324,6 +329,14 @@ export function SignInView({ otp, onEnter }: { otp: OtpSignIn; onEnter?: (() => 
     if (otp.step === "code") codeRef.current?.focus();
   }, [otp.step]);
 
+  /* THE ORDER: "giver", then its line fades in, then the question. */
+  const [stage, setStage] = useState(asked ? 2 : 0);
+  useEffect(() => {
+    const a = window.setTimeout(() => setStage(1), TAG_MS);
+    const b = window.setTimeout(() => setStage(2), ASK_MS);
+    return () => { window.clearTimeout(a); window.clearTimeout(b); };
+  }, []);
+  const guestEntry = TEST_BUILD_DIRECT_ENTRY && !!onEnter;
   const line = otp.error ?? otp.notice;
   const lower = flipped || otp.step !== "email";
 
@@ -351,31 +364,30 @@ export function SignInView({ otp, onEnter }: { otp: OtpSignIn; onEnter?: (() => 
           {/* UPPER: the wordmark and its line, always. */}
           <div className="signin-upper" style={UPPER_BOX}>
             <h1 className="signin-mark">giver</h1>
-            <p className="signin-tag">kindness as currency</p>
+            <p className="signin-tag" data-shown={stage >= 1}>kindness as currency</p>
+            {guestEntry ? (
+              /* TEST BUILD: the guest way in is the question itself, last to appear. */
+              <button
+                type="button"
+                className="signin-enter"
+                data-shown={stage >= 2}
+                inert={stage < 2}
+                onClick={() => onEnter?.()}
+              >
+                are you a giver?
+              </button>
+            ) : null}
           </div>
 
           {/* LOWER: quiet, then the sign-up; after sending, the code. */}
           <div className="signin-lower" style={LOWER_BOX} data-shown={lower}>
-            {TEST_BUILD_DIRECT_ENTRY && onEnter ? (
-              /* TEST BUILD: one button straight in — no email, no link. */
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onEnter();
-                }}
-                className="signin-inner"
-                inert={!lower}
-              >
-                <p className="signin-ask">are you a giver?</p>
-                <SendCircle label="enter giver" busy={false} />
-              </form>
-            ) : otp.step === "email" ? (
+            {otp.step === "email" ? (
               <form
                 onSubmit={(e) => void otp.submitEmail(e)}
                 className="signin-inner"
                 inert={!lower}
               >
-                <p className="signin-ask">are you a giver?</p>
+                <p className="signin-ask">{guestEntry ? "or sign in with email" : "are you a giver?"}</p>
                 <EmailField value={otp.email} onChange={otp.setEmail} />
                 <SendCircle
                   label={otp.busy ? "sending" : EMAIL_HAS_CODE ? "send code" : "send link"}

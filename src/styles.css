@@ -1411,6 +1411,35 @@
   text-transform: lowercase;
   color: var(--seat);
 }
+/* THE ORDER: the line, then the guest question, fade in after "giver". */
+.signin-tag,
+.signin-enter { transition: opacity 900ms cubic-bezier(0.32, 0, 0.24, 1); }
+.signin-tag[data-shown="false"],
+.signin-enter[data-shown="false"] { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .signin-tag, .signin-enter { transition-duration: 250ms; }
+}
+/* The guest way in, inside the upper ring: the question is the button. */
+.signin-enter {
+  position: absolute;
+  top: calc(50% + 24px - var(--give-mark, 0) * 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  min-height: 32px;
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: min(13px, 7cqw);
+  line-height: 18px;
+  text-transform: lowercase;
+  color: var(--seat);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
 .signin-give-mark text {
   font-family: var(--giver-font);
   font-weight: 500;
@@ -2225,3 +2254,27 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .cg-map-note { align-self:stretch; }
 [data-cg-view="map"] .cg-list { background:transparent; padding:0; }
 [data-cg-view="map"] .cg-list > li { background:var(--background); }
+
+/* WHERE AS OPTIONS (WhereField): chips, then a search for the typed kinds. */
+.gv-where { grid-column:1 / -1; display:flex; flex-direction:column; gap:6px; min-width:0; }
+.gv-where-label { font-size:12px; line-height:16px; opacity:.72; margin:0; }
+.gv-where-value { opacity:1; font-weight:600; }
+.gv-where-modes { display:flex; flex-wrap:nowrap; gap:5px; overflow-x:auto; scrollbar-width:none; margin-inline:-2px; padding:1px 2px; }
+.gv-where-modes::-webkit-scrollbar { display:none; }
+.gv-where-mode { flex:none; white-space:nowrap; font:inherit; font-size:12px; line-height:16px; padding:4px 9px; min-height:30px; border:1px solid currentColor; border-radius:999px; background:none; color:inherit; opacity:.8; cursor:pointer; }
+.gv-where-mode[aria-pressed="true"] { opacity:1; font-weight:700; box-shadow:inset 0 0 0 1px currentColor; }
+.gv-where-search { display:flex; gap:8px; align-items:flex-end; }
+.gv-where-search .gv-field { flex:1; min-width:0; }
+.gv-where-result { justify-content:flex-start; text-align:left; white-space:normal; height:auto; }
+
+/* KEYBOARD OPEN: the header compacts so the focused field has the room. */
+.gv-form[data-keyboard="1"] .gv-title { font-size:16px; line-height:20px; margin:0; }
+.gv-form[data-keyboard="1"] .gv-question { font-size:19px; line-height:23px; margin:0; }
+.gv-form[data-keyboard="1"] .gv-guided > .g-meta,
+.gv-form[data-keyboard="1"] .gv-live .gv-ask { display:none; }
+.gv-form[data-keyboard="1"] .gv-sheet { gap:6px; }
+
+/* LIVING G — rendering only (geometry, weight and proportions untouched). */
+[data-living-g] path, [data-living-g] mask path { shape-rendering: geometricPrecision; stroke-linejoin: round; stroke-linecap: round; }
+[data-living-g] { text-rendering: geometricPrecision; }
+.gv-inline-link { font:inherit; color:inherit; background:none; border:0; padding:0; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }

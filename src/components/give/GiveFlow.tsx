@@ -1,5 +1,6 @@
 import { isGuest } from "@/data/cloud/session";
 import { GUEST_WRITE_LINE } from "@/config/test-build";
+import { signInToShare } from "@/intelligence/guest-handoff";
 import { useEffect, useRef, useState } from "react";
 import { FormG, FormQuestion, FormSend } from "@/components/forms/UnifiedForm";
 import { GIVE_LEXICON, GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
@@ -574,6 +575,7 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: (P
           </>
         ) : null}
         {problem ? <p className="uf-say gf-rise">{problem}</p> : null}
+        {problem === GUEST_WRITE_LINE ? <button type="button" className="uf-say gf-rise underline" data-guest-sign-in="" onClick={() => signInToShare()}>sign in to share</button> : null}
       </div>
       {minimum ? <FormSend label="give it" disabled={busy} onSend={() => void send()} /> : null}
     </div>

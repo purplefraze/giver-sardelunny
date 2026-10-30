@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { GIVE_TYPES, type GiveType } from "@/data/give-lexicon";
 import { haptics } from "@/lib/haptics";
 import { conversation } from "@/intelligence/voice-conversation";
+import { GUEST_WRITE_LINE } from "@/config/test-build";
+import { signInToShare } from "@/intelligence/guest-handoff";
 import { shareCoordinator } from "@/intelligence/share-live";
 import { voiceCapture } from "@/intelligence/voice-capture";
 import { canGoLive, fundTargetOf, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
@@ -15,6 +17,7 @@ import { toDateOnly, parseDateOnly } from "@/lib/date-only";
 import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
 import { formKeyboardBounds } from "@/lib/form-keyboard";
 import { CollectionLocation } from "./CollectionLocation";
+import { WhereField } from "./WhereField";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -38,8 +41,11 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   useEffect(() => {
     const vv = typeof window !== "undefined" ? window.visualViewport : null;
     if (!vv) return;
-    const height = sheet.current?.closest("[data-voice-frame]")?.getBoundingClientRect().height ?? window.innerHeight;
-    const on = () => setKeyboard(formKeyboardBounds(height, vv.height, vv.offsetTop, vv.scale).keyboard);
+    /* The frame is measured each time: the layout height, not the visual one. */
+    const on = () => {
+      const height = sheet.current?.closest("[data-voice-frame]")?.getBoundingClientRect().height ?? window.innerHeight;
+      setKeyboard(formKeyboardBounds(Math.max(height, window.innerHeight), vv.height, vv.offsetTop, vv.scale).keyboard);
+    };
     on(); vv.addEventListener("resize", on); vv.addEventListener("scroll", on);
     return () => { vv.removeEventListener("resize", on); vv.removeEventListener("scroll", on); };
   }, []);
@@ -51,8 +57,12 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       if (!keyboard || !(active instanceof HTMLElement) || !el.contains(active)) return;
       const field = active.getBoundingClientRect();
       const band = el.getBoundingClientRect();
-      if (field.bottom > band.bottom - 12) el.scrollTop += field.bottom - band.bottom + 12;
-      else if (field.top < band.top + 12) el.scrollTop -= band.top + 12 - field.top;
+      /* The visible band is the sheet clipped to the visual viewport (above the keyboard). */
+      const vv = window.visualViewport;
+      const bottom = Math.min(band.bottom, vv ? vv.offsetTop + vv.height : band.bottom);
+      const top = Math.max(band.top, vv ? vv.offsetTop : band.top);
+      if (field.bottom > bottom - 12) el.scrollTop += field.bottom - bottom + 12;
+      else if (field.top < top + 12) el.scrollTop -= top + 12 - field.top;
     };
     if (!keyboard) el.scrollTop = 0;
     const raf = requestAnimationFrame(reveal);
@@ -187,7 +197,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         {action === "trade" ? field("want", "for") : null}
         {action === "fund" ? field("amount", "raising", "amount") : null}
         {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
-          {collection ? <CollectionLocation compact={level >= 3} draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
+          {collection ? <CollectionLocation compact={level >= 3} draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? <WhereField draftId={s.draftId} value={f.where} /> : null}
          {collection ? <label className="gv-field"><span>collection date</span><input type="date" aria-label="collection date" value={f.timing?.date ?? ""} onChange={e => chooseDate(e.target.value)} /></label> : null}
         {f.context
           ? FIELDS_OF[f.context]
@@ -231,7 +241,13 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           </div>
         </div>
       ) : null}
-      {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
+      {problem === GUEST_WRITE_LINE ? (
+        /* A guest's blocked share: the way to sign in is right in the line; the draft is kept. */
+        <p className="gv-problem" role="alert" data-guest-sign-in="">
+          {problem}{" "}
+          <button type="button" className="gv-inline-link" onClick={() => { haptics.light(); signInToShare(); }}>sign in to share</button>
+        </p>
+      ) : problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
       <div className="gv-taps gv-actions">
         <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>

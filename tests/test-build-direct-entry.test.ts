@@ -13,16 +13,20 @@ describe("test build direct entry", () => {
     expect(cfg).toMatch(/export const TEST_BUILD_DIRECT_ENTRY = (true|false);/);
   });
 
-  test("the sign-in asks the question and has one enter button, no email field in that branch", () => {
-    const i = view.indexOf("TEST_BUILD_DIRECT_ENTRY && onEnter");
+  test("guest entry is the question in the top loop, after giver and its line; no arrow; email sign-in alongside", () => {
+    const i = view.indexOf('className="signin-enter"');
     expect(i).toBeGreaterThan(-1);
-    const branch = view.slice(i, view.indexOf(') : otp.step === "email"', i));
-    expect(branch).toContain("are you a giver?");
-    expect(branch).toContain("SendCircle");
-    expect(branch).not.toContain("EmailField");
-    expect(branch).not.toMatch(/password|otp\./);
-    expect(view).toContain("kindness as currency");
-    expect(view).toContain(">giver</h1>");
+    const btn = view.slice(i, view.indexOf("</button>", i));
+    expect(btn).toContain("are you a giver?");
+    expect(btn).toContain("onEnter");
+    expect(btn).not.toContain("SendCircle");
+    expect(view).not.toContain('label="enter giver"');
+    const mark = view.indexOf(">giver</h1>"), tag = view.indexOf("kindness as currency</p>"), ask = view.indexOf("are you a giver?", tag);
+    expect(mark).toBeGreaterThan(-1);
+    expect(tag).toBeGreaterThan(mark);
+    expect(ask).toBeGreaterThan(tag);
+    expect(view).toMatch(/TAG_MS = \d+;\nconst ASK_MS = \d+;/);
+    expect(view).toContain("<EmailField");
   });
 
   test("the email/code sign-in is kept, only bypassed", () => {

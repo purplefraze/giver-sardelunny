@@ -1,3 +1,5 @@
+import { isGuest } from "@/data/cloud/session";
+import { GUEST_WRITE_LINE } from "@/config/test-build";
 import { useEffect, useRef, useState } from "react";
 import { FormG, FormQuestion, FormSend } from "@/components/forms/UnifiedForm";
 import { GIVE_LEXICON, GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
@@ -270,6 +272,12 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: (P
           }
         : {}),
     };
+    /* TEST BUILD GUEST: looking only — nothing is saved or sent. */
+    if (isGuest()) {
+      haptics.warning();
+      setProblem(GUEST_WRITE_LINE);
+      return;
+    }
     setBusy(true);
     /* A dead session goes back to the G sign-in — never a login email. */
     if ((await ensureLiveSession()) === "ended") {

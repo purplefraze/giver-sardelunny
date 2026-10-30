@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { wallStore, type Compliment } from "@/data/wall";
-import { sessionStore } from "@/data/cloud/session";
+import { sessionStore, isGuest } from "@/data/cloud/session";
+import { GUEST_WRITE_LINE } from "@/config/test-build";
 import { localIdForProfile, profileIdForLocal } from "@/data/cloud/directory";
 
 let started = false;
@@ -18,6 +19,7 @@ export async function loadCompliments() {
 }
 
 export async function saveCompliment(aboutLocalId: string, text: string) {
+  if (isGuest()) throw new Error(GUEST_WRITE_LINE);
   const from = sessionStore.get().profile?.id;
   const about = profileIdForLocal(aboutLocalId);
   if (!from || !about) throw new Error("finish joining giver first");

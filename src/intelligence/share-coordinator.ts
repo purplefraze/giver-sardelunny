@@ -30,6 +30,9 @@ export type ShareOutcome =
 type AddResult = { ok: boolean; reason?: string; say?: string; id?: string };
 export type ShareDeps = {
   ensureLiveSession: () => Promise<"live" | "ended" | "none">;
+  /** TEST BUILD: a local read-only guest never shares (optional). */
+  isGuest?: () => boolean;
+  guestLine?: string;
   addItem: (
     category: "give" | "trade" | "borrow" | "wish",
     text: string,
@@ -131,6 +134,7 @@ export function createShareCoordinator(deps: ShareDeps) {
     async share(input: ShareInput): Promise<ShareOutcome> {
       const { draftId, action, fields } = input;
       if (inflight.has(draftId)) return { kind: "busy" };
+      if (deps.isGuest?.()) return { kind: "invalid", say: deps.guestLine ?? "sign in to share." };
       if (!canGoLive(action, fields)) return { kind: "invalid", say: INVALID(action, fields) };
       const payload = buildPayload(action, fields, deps.giveMeta);
       if (!payload) return { kind: "invalid", say: "how much are you raising? enter a goal, like 1200." };

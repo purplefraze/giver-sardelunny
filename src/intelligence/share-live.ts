@@ -2,7 +2,8 @@ import { defaultExpiry, expiresAt } from "@/data/give-when";
 import { removePin, savePin } from "@/data/give-pins";
 import { itemsStore } from "@/data/items";
 import { myProfileStore } from "@/data/my-profile";
-import { ensureLiveSession } from "@/data/cloud/session";
+import { ensureLiveSession, isGuest } from "@/data/cloud/session";
+import { GUEST_WRITE_LINE } from "@/config/test-build";
 import { confirmItemSaved, pullItems } from "@/data/cloud/items-sync";
 import { prepareGivePhoto, uploadGivePhoto } from "@/lib/give-photo";
 import { TOPIC_OF } from "@/components/give/GiveFlow";
@@ -12,6 +13,8 @@ import { createShareCoordinator } from "@/intelligence/share-coordinator";
 /** The production Share coordinator, wired to the real stores and backend. */
 export const shareCoordinator = createShareCoordinator({
   ensureLiveSession: () => ensureLiveSession(),
+  isGuest: () => isGuest(),
+  guestLine: GUEST_WRITE_LINE,
   addItem: (category, text, parts, note, extra) => myProfileStore.addItem(category, text, parts, note, extra),
   getItem: (id) => itemsStore.get().items.find((i) => i.id === id),
   patchItem: (id, fields, remove) => itemsStore.patch(id, fields, remove),

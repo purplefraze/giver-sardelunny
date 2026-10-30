@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { joinGiver } from "@/lib/invites.functions";
-import { sessionStore } from "@/data/cloud/session";
+import { sessionStore, enterAsGuest } from "@/data/cloud/session";
+import { TEST_BUILD_DIRECT_ENTRY } from "@/config/test-build";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
 import { haptics } from "@/lib/haptics";
@@ -53,6 +54,7 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     const current = sessionStore.get();
+    if (current.guest) return;
     if (current.status === "ready") {
       void finish(current.email);
       return;
@@ -64,7 +66,7 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
        tab (sessionStore's storage / focus re-check). */
     const unsub = sessionStore.subscribe(() => {
       const s = sessionStore.get();
-      if (s.status === "ready") void finish(s.email);
+      if (s.status === "ready" && !s.guest) void finish(s.email);
     });
     return () => {
       sub.subscription.unsubscribe();
@@ -73,5 +75,14 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once gate
   }, []);
 
-  return <SignInView otp={otp} />;
+  /* TEST BUILD: the guest skips joinGiver and every server call. */
+  const enter = () => {
+    if (finishing.current) return;
+    finishing.current = true;
+    enterAsGuest();
+    haptics.light();
+    onDone();
+  };
+
+  return <SignInView otp={otp} onEnter={TEST_BUILD_DIRECT_ENTRY ? enter : undefined} />;
 }

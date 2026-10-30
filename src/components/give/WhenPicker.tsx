@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { FormG } from "@/components/forms/UnifiedForm";
 import { MONTH_NAMES, isoDay, monthGrid, type WhenPick } from "@/data/give-when";
 import { haptics } from "@/lib/haptics";
 
@@ -52,7 +51,6 @@ export function WhenPicker({
   return (
     <div className="uf-question gf-when" data-testid="give-when">
       <div className="uf-screen gf-when-screen">
-        <FormG onBack={onBack} />
         <h1 className="uf-heading">{heading}</h1>
         <div className="gf-month">
           <button type="button" className="gf-month-nav" disabled={!canPrev} onClick={() => shift(-1)} aria-label="previous month">

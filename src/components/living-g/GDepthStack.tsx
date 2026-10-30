@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { GDepthLevel } from "./GDepthLevel";
 import { PINCH, isEditingTarget, type GDepthSlot } from "./g-depth";
 import { haptics } from "@/lib/haptics";
+import { ToggleTether } from "./ToggleTether";
+import type { Seat } from "./EarSelector";
 
 /**
  * THE PERSISTENT LIVING G ENVIRONMENT.
@@ -19,7 +21,10 @@ export function GDepthStack({
   slots,
   onPop,
   gestures = true,
+  seat,
 }: {
+  /** The toggle's seat: kept in view inside every open depth (ToggleTether). */
+  seat?: Seat;
   /** Destinations in canonical depth order — deeper ones later in the list. */
   slots: GDepthSlot[];
   /** Leave the deepest open destination (identical to its own back control). */
@@ -162,6 +167,13 @@ export function GDepthStack({
           </div>
         );
       })}
+      {/* THE TOGGLE NEVER DISAPPEARS: drawn over the deepest open depth, in
+          that depth's world colour, outside every scaled camera layer. */}
+      {seat && deepest ? (
+        <div className="pointer-events-none absolute inset-0" style={{ zIndex: 80 }} data-world={slots.find((s) => s.id === deepest)?.world}>
+          <ToggleTether seat={seat} anchor={slots.find((s) => s.id === deepest)?.anchor ?? "middle"} />
+        </div>
+      ) : null}
     </div>
   );
 }

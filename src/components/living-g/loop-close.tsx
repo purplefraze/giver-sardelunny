@@ -2,7 +2,10 @@ import { LOOP_CENTRE } from "./g-path";
 import { G_STROKE } from "./g-weight";
 
 /**
- * THE MIDDLE LOOP IS CLOSED (Frazer, 28 Sep 2026).
+ * THE MIDDLE LOOP IS CLOSED (Frazer, 28 Sep 2026). Since the 29 Oct redraw the
+ * middle loop is drawn closed (a true circle, radius 169.75); this band now
+ * retraces that exact circle and is kept only so the render stack is unchanged.
+ *
  *
  * The traced artwork (g-path.ts, locked) leaves a narrow opening in the
  * middle loop's stroke between about 4:30 and 5:30, where the S-curve leaves
@@ -24,8 +27,8 @@ export const MIDDLE_CLOSE = {
   from: 38,
   to: 88,
   /** The centre line eases from `rFrom` (by `easeFrom`) to `rTo` (by `easeTo`). */
-  rFrom: 170.75,
-  rTo: 177.75,
+  rFrom: 169.75,
+  rTo: 169.75,
   easeFrom: 50,
   easeTo: 78,
 } as const;

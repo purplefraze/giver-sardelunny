@@ -1,7 +1,7 @@
 import { isGuest } from "@/data/cloud/session";
 import { GUEST_WRITE_LINE } from "@/config/test-build";
 import { useEffect, useRef, useState } from "react";
-import { FormG, FormQuestion, FormSend } from "@/components/forms/UnifiedForm";
+import { FormQuestion, FormSend } from "@/components/forms/UnifiedForm";
 import { GIVE_LEXICON, GIVE_TYPES, inferGiveType, type GiveType } from "@/data/give-lexicon";
 import { giveFirstRunStore } from "@/data/give-firstrun";
 import {
@@ -393,7 +393,6 @@ export function GiveFlow({ onDone, prefill }: { onDone: () => void; prefill?: (P
   /* ---- THE FORM ---- */
   return (
     <div className="uf-screen gf-screen" data-testid="give-flow">
-      <FormG onBack={leave} />
       <h1 className="uf-heading">give something</h1>
       {live ? <p className="uf-say gf-live">{live}</p> : null}
       {firstRun && !what ? (

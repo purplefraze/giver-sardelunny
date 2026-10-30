@@ -32,7 +32,6 @@ import {
 } from "@/data/fund-rules";
 import {
   FormAmount,
-  FormG,
   FormLine,
   FormPickLine,
   FormQuestion,
@@ -632,7 +631,6 @@ export function CategoryForm({
   return (
     <div data-world={seat} className="g-form relative h-full w-full overflow-y-auto">
       <div className="uf-screen">
-        <FormG onBack={leave} />
         <h1 className="uf-heading">{copy.heading}</h1>
         <div className="uf-fields">
           <FormLine

@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { Category } from "@/data/my-profile";
 import { CATEGORY_PLURAL } from "@/data/my-profile";
 import { buzz } from "@/lib/haptics";
-import { GMark } from "@/components/living-g/GMark";
 import { SendArrow } from "@/components/forms/UnifiedForm";
 
 /**
@@ -228,9 +227,6 @@ function PagedIntro({
       className="g-form uf-screen block h-full w-full text-left"
       aria-label={last ? "continue" : "next"}
     >
-      <span className="uf-g" aria-hidden="true">
-        <GMark colour="var(--form-seat)" height={32} />
-      </span>
       <div key={beat} className="animate-in fade-in duration-200">
         <h1 className="uf-heading">{page.h}</h1>
         {page.lines.map((line, i) => (

@@ -1,10 +1,42 @@
-// Traced from the canonical Living G reference (IMG_2366). Geometry is LOCKED:
-// never edit, redraw or approximate it. Authored in potrace space; the component
-// applies the flip transform below.
-export const LIVING_G_PATH = "M4846 11320 c-66 -12 -173 -49 -218 -77 -21 -13 -42 -23 -47 -23 -27 0 -181 -144 -227 -212 -16 -24 -31 -45 -34 -48 -23 -22 -75 -147 -96 -232 -42 -163 -27 -367 35 -511 29 -67 30 -143 1 -202 -26 -54 -94 -123 -130 -131 -14 -3 -33 -9 -42 -15 -52 -27 -137 7 -263 107 -43 34 -90 63 -145 90 -19 10 -48 27 -65 38 -16 12 -68 36 -115 55 -47 18 -103 42 -126 52 -22 10 -60 23 -85 29 -24 5 -82 19 -129 30 -245 60 -623 60 -860 1 -47 -12 -92 -23 -101 -25 -27 -7 -103 -33 -139 -49 -19 -9 -60 -25 -90 -37 -133 -52 -288 -145 -440 -262 -100 -77 -340 -323 -340 -347 0 -5 -3 -11 -7 -13 -39 -17 -189 -279 -278 -483 -28 -65 -32 -77 -55 -155 -12 -41 -25 -84 -29 -95 -5 -11 -19 -76 -32 -145 -30 -158 -34 -573 -7 -695 48 -212 81 -319 133 -430 98 -211 140 -293 177 -341 24 -31 55 -76 71 -101 43 -70 232 -280 281 -312 13 -9 51 -41 86 -71 34 -30 70 -59 80 -65 20 -11 56 -35 118 -76 23 -16 46 -29 51 -29 4 0 24 -11 43 -23 19 -13 46 -27 61 -31 15 -3 27 -11 27 -16 0 -6 8 -10 18 -10 10 0 26 -6 37 -14 11 -7 31 -16 45 -19 14 -3 70 -22 125 -42 238 -85 544 -114 885 -81 199 19 238 15 340 -32 38 -18 130 -100 130 -117 0 -5 7 -23 16 -40 41 -78 22 -252 -33 -294 -12 -11 -23 -23 -23 -28 0 -13 -58 -61 -83 -68 -12 -4 -33 -14 -46 -23 -31 -19 -159 -20 -359 -2 -301 27 -699 -5 -893 -71 -30 -10 -67 -19 -82 -19 -15 0 -27 -4 -27 -10 0 -5 -18 -10 -40 -10 -22 0 -40 -4 -40 -10 0 -5 -5 -10 -11 -10 -6 0 -25 -6 -42 -14 -18 -8 -74 -31 -126 -51 -52 -21 -111 -47 -130 -58 -20 -11 -49 -27 -66 -34 -16 -8 -37 -18 -45 -23 -8 -5 -31 -17 -50 -27 -19 -9 -37 -19 -40 -22 -13 -14 -68 -48 -97 -60 -18 -8 -33 -16 -33 -20 0 -4 -14 -15 -31 -25 -44 -26 -197 -151 -303 -248 -108 -99 -133 -124 -142 -139 -11 -19 -109 -133 -141 -165 -13 -12 -23 -24 -23 -28 0 -9 -83 -120 -92 -124 -5 -2 -8 -8 -8 -14 0 -6 -12 -27 -27 -47 -32 -41 -43 -60 -91 -151 -19 -36 -49 -92 -68 -126 -19 -33 -34 -68 -34 -76 0 -9 -7 -21 -15 -28 -8 -7 -15 -19 -15 -27 0 -8 -6 -29 -14 -46 -52 -114 -125 -328 -142 -417 -3 -14 -11 -52 -19 -85 -121 -518 -78 -1169 110 -1660 19 -50 35 -94 35 -98 0 -4 18 -46 41 -94 52 -113 66 -145 73 -163 4 -8 15 -28 26 -45 11 -16 26 -43 33 -60 37 -78 241 -375 258 -375 5 0 9 -5 9 -11 0 -6 15 -27 33 -46 59 -66 144 -158 173 -189 58 -62 324 -284 340 -284 4 0 26 -16 50 -35 23 -19 47 -35 53 -35 5 0 16 -8 23 -18 7 -11 30 -24 50 -31 21 -7 40 -16 43 -21 10 -16 298 -160 320 -160 4 0 21 -7 38 -14 46 -21 173 -65 237 -82 30 -8 69 -19 85 -24 76 -23 295 -52 450 -61 406 -21 725 33 1120 190 58 23 327 160 345 175 8 8 30 21 48 30 18 10 42 26 53 37 10 10 24 19 29 19 6 0 16 4 23 10 89 73 135 108 150 113 9 3 17 11 17 16 0 5 11 12 24 15 14 3 28 15 31 26 3 11 10 20 14 20 19 0 272 268 351 370 30 40 67 86 81 104 14 17 29 38 32 46 4 8 34 56 67 105 144 218 288 559 357 845 35 141 53 223 57 260 3 19 10 71 18 115 20 129 17 642 -5 780 -30 189 -90 457 -107 480 -4 6 -10 24 -14 40 -4 17 -18 58 -32 93 -13 34 -36 92 -50 130 -32 82 -126 268 -171 340 -18 29 -33 57 -33 62 0 6 -4 10 -8 10 -4 0 -16 14 -26 31 -147 249 -464 571 -743 757 -51 33 -109 64 -129 68 -44 8 -149 -3 -177 -19 -79 -45 -144 -124 -170 -206 -40 -125 -7 -201 123 -287 36 -24 83 -57 105 -73 22 -17 56 -42 76 -55 53 -36 321 -304 354 -353 15 -24 31 -43 36 -43 4 0 11 -10 15 -22 3 -13 13 -30 20 -38 33 -36 63 -79 90 -130 16 -30 34 -60 41 -67 33 -36 171 -352 193 -443 76 -307 90 -395 96 -645 7 -237 -8 -373 -70 -625 -25 -102 -69 -240 -83 -263 -4 -7 -8 -16 -9 -22 -4 -25 -120 -272 -148 -315 -13 -19 -38 -61 -56 -92 -19 -32 -44 -68 -56 -81 -12 -13 -25 -33 -28 -45 -4 -12 -11 -22 -15 -22 -5 0 -28 -26 -52 -57 -81 -108 -337 -353 -368 -353 -7 0 -10 -4 -6 -10 3 -5 -9 -17 -27 -26 -18 -9 -58 -36 -88 -59 -30 -23 -68 -48 -85 -57 -16 -8 -73 -37 -125 -64 -223 -115 -457 -186 -713 -215 -220 -25 -586 5 -737 60 -14 5 -71 24 -127 42 -57 18 -103 36 -103 41 0 4 -7 8 -16 8 -48 0 -389 196 -434 250 -3 3 -18 14 -34 24 -113 72 -476 461 -476 510 0 3 -11 17 -25 32 -14 15 -25 31 -25 36 0 4 -23 45 -50 89 -28 44 -50 83 -50 86 0 3 -18 41 -41 86 -22 45 -50 106 -61 137 -11 30 -23 64 -28 75 -27 61 -97 310 -92 327 1 4 -5 34 -13 65 -51 190 -56 508 -14 778 30 196 130 522 194 634 19 35 35 67 35 72 0 15 40 90 65 124 12 17 26 41 30 54 4 14 12 29 17 35 5 6 34 45 66 87 31 41 71 93 87 115 43 57 283 293 325 319 19 12 51 36 70 54 19 17 38 31 42 31 4 0 13 6 21 14 7 8 38 26 68 42 30 15 68 37 84 49 17 11 50 29 75 39 25 10 61 27 80 36 246 127 669 204 990 180 438 -33 620 -17 776 71 17 9 42 23 55 31 92 52 201 159 284 283 25 36 90 187 100 230 4 17 14 52 23 78 11 38 14 78 9 185 -7 177 -24 243 -99 390 -111 220 -270 355 -515 437 -106 35 -109 36 -278 36 -105 0 -209 -6 -272 -15 -151 -23 -246 -21 -478 12 -53 8 -152 33 -195 49 -8 3 -35 13 -60 22 -56 20 -168 83 -197 110 -12 12 -29 21 -37 21 -61 0 -375 321 -441 451 -10 19 -26 45 -36 58 -11 13 -19 30 -19 38 0 8 -9 27 -20 43 -73 102 -138 352 -157 604 -18 238 103 654 244 842 13 17 23 34 23 38 0 13 93 122 172 203 118 120 403 303 471 303 10 0 28 7 41 15 22 15 111 42 236 71 86 21 379 24 475 6 134 -26 270 -65 341 -99 39 -18 75 -33 81 -33 6 0 21 -11 34 -25 13 -13 31 -25 39 -25 16 0 54 -25 155 -99 61 -45 265 -245 265 -260 0 -5 13 -24 30 -42 16 -19 30 -38 30 -43 0 -5 18 -35 40 -68 22 -33 40 -66 40 -73 0 -7 3 -15 8 -17 37 -17 123 -327 142 -517 17 -166 -11 -423 -58 -534 -7 -16 -12 -35 -12 -43 0 -8 -4 -22 -9 -32 -5 -9 -28 -55 -50 -102 -50 -103 -84 -163 -120 -210 -15 -19 -34 -46 -43 -60 -9 -14 -67 -77 -130 -141 -97 -98 -117 -123 -126 -162 -24 -92 -11 -172 34 -223 86 -96 95 -104 136 -113 67 -15 182 -7 205 16 11 10 55 50 98 88 69 63 225 235 225 249 0 3 19 32 43 63 47 63 117 179 117 194 0 5 4 9 10 9 5 0 12 12 16 28 3 15 17 45 29 67 53 94 129 369 150 545 53 441 -55 926 -282 1268 -111 166 -72 322 101 407 73 36 133 36 251 0 187 -57 457 -24 615 76 8 5 23 12 33 15 9 4 17 10 17 15 0 5 4 9 10 9 24 0 186 178 214 235 16 33 35 67 42 75 7 9 20 40 28 70 8 30 22 80 31 110 37 125 9 378 -55 498 -11 20 -20 40 -20 45 0 5 -11 23 -25 41 -14 18 -25 37 -25 43 0 21 -176 184 -239 221 -151 88 -366 130 -525 102z m284 -301 c80 -30 126 -58 141 -85 7 -13 18 -24 25 -24 20 0 87 -90 124 -166 133 -276 -21 -617 -325 -716 -101 -33 -301 -6 -366 49 -8 7 -22 13 -30 13 -22 0 -134 113 -165 166 -31 52 -74 201 -74 256 0 42 27 176 38 192 5 6 14 29 21 51 7 22 30 60 52 85 21 24 39 48 39 52 0 4 5 8 11 8 6 0 24 14 40 31 32 34 137 89 172 89 12 0 29 5 37 10 29 19 200 12 260 -11z";
+// LIVING G — REDRAWN 29 Oct 2026 to Frazer's reference
+// /workspace/giver-g/frazer_reference_2026-09-28.jpg (Sep 28 phone screenshot of
+// the orange G; text, background and the trade ring ignored). This replaces the
+// old IMG_2366 trace. Geometry is LOCKED to that reference: change it only with
+// Frazer's explicit approval.
+//
+// CONSTRUCTED, NOT TRACED: one line of even weight built from three true
+// circles joined tangent-continuously (G_GEOMETRY below), so the stroke has one
+// thickness everywhere. The filled outline carries the stroke at the baked
+// weight G_GEOMETRY.stroke (53.5 units, = G_STROKE.normal); the paint layers
+// erode it evenly to the drawn weight (see g-weight.tsx).
+//   middle  closed circle, centre (272,298), centre-line radius 169.75
+//   S-curve leaves the middle circle at 76.79° (≈5:30) on a circle of radius 57.39
+//           about (323.91,519.13), turning the other way
+//   bottom  joins at 280.34° and runs round to a round cap at -58° (≈1 o'clock),
+//           centre (270,814.65), centre-line radius 243 — the open upper-right gap
+// The small top ring of the old trace is gone: the toggle (seat marker) is a
+// separate piece that rides the middle loop (EarSelector / toggle-path.ts).
+// SPACING FIX (29 Oct 2026): the middle-to-lower gap closed from 99 to 50.4 units
+// (outer edges 494.5 / 544.9) so the visible gap is ≈0.245 of the middle loop's
+// outer width, as in the reference; the bottom loop moved up 48.6 and the box
+// is 1084.4 tall. The flip transform still uses 1133 (authoring space only).
+// Authored in potrace space (×10, y flipped) so the existing flip transform and
+// every erosion mask (×10 stroke widths) keep working unchanged.
+// ONE OUTLINE, NO INNER EDGES: the outline is the true union (outer contour +
+// the middle hole), because the erosion masks stroke every edge of the path; an
+// edge lying inside the ink (an overlap seam) would be eaten as a gap.
+export const LIVING_G_PATH = "M3835.4 6732.3A1965 1965 0 1 1 3169 6437A306.4 306.4 0 1 0 3184.1 5837.2A2697.5 2697.5 0 1 1 4129.5 5471.1A267.5 267.5 0 0 1 3846 5017.4A2162.5 2162.5 0 1 0 3088.1 5310.9A841.4 841.4 0 0 1 3835.4 6732.3ZM4150 8350A1430 1430 0 1 0 1290 8350A1430 1430 0 1 0 4150 8350Z";
+
+/** The constructed centre-line geometry of the G, in viewBox units. */
+export const G_GEOMETRY = {
+  stroke: 53.5,
+  middle: { c: { x: 272, y: 298 }, r: 169.75 },
+  s: { c: { x: 323.91, y: 519.13 }, r: 57.39, leaveDeg: 76.79, joinDeg: 100.34 },
+  bottom: { c: { x: 270, y: 814.65 }, r: 243, joinDeg: -79.66, capDeg: -58 },
+} as const;
 
 /** The artwork's own box. Never scaled or moved. */
-export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
+export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1084.4 } as const;
 
 /**
  * The FRAME: the artwork's box plus the room the mode selector's assembly needs
@@ -19,7 +51,7 @@ export const LIVING_G_BOX = { x: 0, y: 0, width: 576, height: 1133 } as const;
  * depends on where the selector currently sits. Nothing decorative lives here:
  * every extra unit shrinks the G on screen.
  */
-export const LIVING_G_FRAME = { x: -117, y: -95, width: 778, height: 1228 } as const;
+export const LIVING_G_FRAME = { x: -117, y: -95, width: 778, height: 1179.4 } as const;
 
 
 
@@ -27,83 +59,90 @@ export const LIVING_G_FRAME = { x: -117, y: -95, width: 778, height: 1228 } as c
 export const LIVING_G_VIEWBOX = `${LIVING_G_FRAME.x} ${LIVING_G_FRAME.y} ${LIVING_G_FRAME.width} ${LIVING_G_FRAME.height}`;
 export const LIVING_G_TRANSFORM = "translate(0,1133) scale(0.1,-0.1)";
 
-/** Measured feature centres in viewBox space (label / content placement only). */
-export const G_ANCHORS = {
-  smallRing: { x: 496, y: 80 },
-  upperRing: { x: 284, y: 311 },
-  lowerRing: { x: 270, y: 853 },
-} as const;
+/**
+ * The three regions, named. Internal keys stay top / middle / bottom.
+ *   top     the TOGGLE: the movable seat marker riding the middle loop
+ *           (home 1:30 = give); its label follows its seat.
+ *   middle  the middle loop (the upper big circle of the drawn G)
+ *   bottom  communi-g, the community loop (the lower big loop)
+ */
+export const G_REGION_NAMES = { top: "toggle", middle: "middle", bottom: "communi-g" } as const;
 
-/** Generous invisible hit bands, in viewBox space. */
-export const G_REGION_BANDS = {
-  top: { x: 0, y: 0, width: 576, height: 180 },
-  middle: { x: 0, y: 180, width: 576, height: 420 },
-  bottom: { x: 0, y: 600, width: 576, height: 533 },
+/** The toggle's home seat (1:30, give) on its orbit: rim 196.5 + gap 24.5 + ring 79 = 300. */
+const TOGGLE_HOME = { x: 272 + 300 * Math.SQRT1_2, y: 298 - 300 * Math.SQRT1_2 };
+
+/** Feature centres in viewBox space (label / content placement, swell origins). */
+export const G_ANCHORS = {
+  toggle: TOGGLE_HOME,
+  middle: { x: 272, y: 298 },
+  communiG: { x: 270, y: 814.65 },
 } as const;
 
 /**
- * Largest circle that fits inside each loop's negative space (measured), pulled
- * in for breathing room. CONTENT-ONLY constants: they never affect geometry.
+ * Invisible hit bands, in viewBox space, split at the drawn shape:
+ *   toggle    above the middle circle (y < 101.5) — the toggle at home sits here
+ *   middle    the middle circle down through the S-curve's upper half (to 570)
+ *   communi-g the bottom loop (outer top 544.9) down to the box's foot
+ */
+export const G_REGION_BANDS = {
+  top: { x: 0, y: 0, width: 576, height: 100 },
+  middle: { x: 0, y: 100, width: 576, height: 420 },
+  bottom: { x: 0, y: 520, width: 576, height: 564.4 },
+} as const;
+
+/**
+ * Largest circle that fits inside each loop's negative space, pulled in for
+ * breathing room. CONTENT-ONLY constants: they never affect geometry.
+ *   top     the toggle ring's hole (inner 50)
+ *   middle  inner edge 143 (169.75 − 26.75)
+ *   bottom  inner edge 216.25 (243 − 26.75)
  */
 export const LOOP_SAFE_RADIUS = {
   top: 40,
   middle: 122,
-  bottom: 172,
+  bottom: 180,
 } as const;
 
 /**
- * Measured white opening of the lower loop. Unlike LOOP_SAFE_RADIUS (the
- * largest conservative circle), this ellipse records the lower loop's real
- * wider/taller negative space. Typography may read it; artwork may not.
+ * The lower loop's white opening (exact: a circle of radius 216.25). Typography
+ * may read it; artwork may not.
  */
 export const BOTTOM_LOOP_INTERIOR = {
   cx: 270,
-  cy: 840,
-  rx: 202,
-  ry: 211,
+  cy: 814.65,
+  rx: 216.25,
+  ry: 216.25,
   /** Clear paper retained between painted glyphs and the coloured stroke. */
   inset: 15,
 } as const;
 
 /**
- * TRUE optical centre of each loop's negative space, measured off the canonical
- * path (largest inscribed circle per loop). CONTENT-ONLY: in-loop typography is
- * centred here, while G_ANCHORS keeps owning swell origins and hit bands.
- * Never used to move, scale or redraw the G itself.
+ * Centre of each loop's negative space. CONTENT-ONLY: in-loop typography is
+ * centred here. top = the toggle at its home seat.
  */
 export const LOOP_CENTRE = {
-  top: { x: 496, y: 78 },
+  top: TOGGLE_HOME,
   middle: { x: 272, y: 298 },
-  bottom: { x: 270, y: 840 },
+  bottom: { x: 270, y: 814.65 },
 } as const;
 
-/**
- * OUTER rim radius of each loop's stroke, measured off the canonical path by
- * ray-casting from that loop's optical centre. READ-ONLY measurement: it lets
- * the mode selector ride the middle loop's real circumference instead of
- * arbitrary screen coordinates. Never used to move, scale or redraw the G.
- */
+/** OUTER rim radius of each loop's stroke (exact, at the baked 53.5 weight). */
 export const LOOP_RIM_RADIUS = {
-  top: 84,
+  top: 79,
   middle: 196.5,
-  bottom: 246,
+  bottom: 269.75,
 } as const;
 
-
 /**
- * THE MODE SELECTOR, AUTHORED. The moving piece is the G's own small circular
- * end plus its stem, re-authored as explicit geometry (a ring and a tapered
- * stem) measured off the canonical path by ray-casting. READ-ONLY: the
- * canonical path is never edited, rotated or deformed to make the selector.
- *
- *   home      canonical centre of the small circle
- *   innerR/outerR   the ring's measured hole and outer edge
- *   stemWidth measured width of the stem that joins it to the middle loop
+ * THE TOGGLE (seat marker), authored: a ring and a stem riding the middle
+ * loop. It is NOT part of the letterform.
+ *   home      the ring centre at its home seat (1:30)
+ *   innerR/outerR   ring hole and outer edge
+ *   stemWidth width of the stem that joins it to the middle loop
  *   gap       clearance between the middle loop's rim and the ring's outer edge
- *   cut*      the TIGHT static cut that removes the original ear + stem only
  */
 export const EAR_GEOMETRY = {
-  home: { x: 499.4, y: 78.5 },
+  home: TOGGLE_HOME,
   innerR: 50,
   outerR: 79,
   stemWidth: 34,
@@ -113,19 +152,14 @@ export const EAR_GEOMETRY = {
 } as const;
 
 /**
- * THE STATIC EAR CUT — one clean angular wedge around the canonical ear and its
- * stem, measured from the MIDDLE LOOP'S centre. It begins just INSIDE the rim's
- * outer edge so no fragment of the old stem flare survives, and the rim itself
- * is then restored by RIM_PATCH below: one smooth arc of the loop's own stroke.
- * The canonical path is never edited.
+ * THE STATIC EAR CUT. The redrawn G has no ear, so this wedge (upper right of
+ * the middle circle) now removes nothing but the middle rim's own arc, which
+ * RIM_PATCH redraws as the IDENTICAL circle (169.75, 53.5 wide). Kept so the
+ * render stack is unchanged.
  */
 export const EAR_CUT = { a0: -64, a1: -24, r0: 184, r1: 440 } as const;
 
-/**
- * THE RIM PATCH — the middle loop's measured stroke (inner 143, outer 196.5)
- * redrawn as a perfect arc across the cut, a little wider on both sides, so the
- * 2 o'clock section reads as ONE continuous circular curve in every mode.
- */
+/** THE RIM PATCH — exactly the middle circle's stroke (169.75 ± 26.75). */
 export const RIM_PATCH = {
   a0: -80,
   a1: -8,

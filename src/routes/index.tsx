@@ -1046,6 +1046,7 @@ function Index() {
           */}
           <GDepthStack
             gestures={!myG && !browse}
+            seat={seat}
             onPop={(id) => {
               if (id === "talking") setTalking(null);
               else if (id === "detail") setDetail(null);

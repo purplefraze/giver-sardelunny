@@ -271,9 +271,6 @@ export function LocationPicker({
         </svg>
       ) : null}
       <div className="gf-map-top">
-        <button type="button" className="gf-map-back" onClick={onBack} aria-label="back">
-          ‹
-        </button>
         <span className="uf-label">{prompt}</span>
         <input
           className="gf-search"

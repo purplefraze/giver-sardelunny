@@ -155,6 +155,8 @@ export function GDepthStack({
               {...(slot.anchor ? { anchor: slot.anchor } : {})}
               {...(slot.world ? { world: slot.world } : {})}
               {...(slot.bare ? { bare: true } : {})}
+              {...(slot.focus ? { focus: slot.focus } : {})}
+              {...(slot.holdArtwork ? { holdArtwork: true } : {})}
               retreat={index >= 0 && above === 0 ? retreat : 0}
             >
               {slot.children}

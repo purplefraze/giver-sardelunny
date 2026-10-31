@@ -1,7 +1,7 @@
 import { leaveGuest } from "@/data/cloud/session";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { passwordStrongEnough } from "@/data/account";
-import { birthdayBounds, profileBirthdaySchema } from "@/lib/profile-birthday";
+import { profileBirthdaySchema } from "@/lib/profile-birthday";
 import { myProfileStore, reservedTotal } from "@/data/my-profile";
 import { ME_ID, itemLine, type Item } from "@/data/items";
 import { memberById } from "@/data/giver";
@@ -35,6 +35,7 @@ import {
 } from "@/components/living-g/g-path";
 import { Button } from "@/components/ui/button";
 import { seatCentre, toggleGeometry } from "@/components/living-g/EarSelector";
+import { BirthdayInput } from "@/components/profile/BirthdayInput";
 
 /**
  * MY G PROFILE LOOP. Tapping My G zooms into the ACTUAL toggle circle at 12;
@@ -90,8 +91,11 @@ export function MyGRing({
   onTalk,
   onDetail,
   area,
+  onReady,
 }: {
   onClose: () => void;
+  /** OCT 30 (item 1): fired once the ring has mounted, so the depth can clear its artwork. */
+  onReady?: () => void;
   onMessages?: () => void;
   onAccount?: () => void;
   onTalk?: (connectionId: string) => void;
@@ -126,6 +130,7 @@ export function MyGRing({
     const obs = new ResizeObserver(read);
     obs.observe(node);
     node.focus({ preventScroll: true });
+    onReady?.();
     return () => obs.disconnect();
   }, []);
 
@@ -187,7 +192,8 @@ export function MyGRing({
   const settledSeat = seatOf(degRef.current);
 
   const bioFrom = () => ({
-    username: (me.username ?? "").replace(/^@/, ""),
+    /* OCT 30 (item 5): "@you" is the internal stand-in, never shown as a name. */
+    username: ((u) => (u === "you" ? "" : u))((me.username ?? "").replace(/^@/, "")),
     about: me.aboutMe ?? "",
     birthday: me.birthday ?? "",
   });
@@ -463,11 +469,19 @@ function Area({
     );
     return (
       <div data-profile-bio="">
-        {row("username", "username")}
+        <label className="mb-1 block">
+          <span className="g-meta block opacity-60">username</span>
+          {/* OCT 30 (item 5): a fixed "@" and a blank field, as AboutForm does. */}
+          <span className="flex items-baseline gap-0.5">
+            <span aria-hidden="true">@</span>
+            <input className={field} aria-label="username" placeholder="yourname" maxLength={20} value={d.username ?? ""} onChange={(e) => set("username", e.target.value.replace(/^@+/, ""))} />
+          </span>
+        </label>
         {row("about", "about me", true)}
         <label className="mb-1 block">
           <span className="g-meta block">birthday · only you</span>
-          <input type="date" aria-label="birthday" aria-invalid={Boolean(birthdayError)} aria-describedby={birthdayError ? "profile-birthday-error" : undefined} {...birthdayBounds()} className={`${field} min-h-11 min-w-0 max-w-full`} value={d.birthday} onChange={e => set("birthday", e.target.value)} />
+          {/* OCT 30 (item 5): the same typed day/month/year places as the about form. */}
+          <BirthdayInput birthday={d.birthday} onChange={(v) => set("birthday", v)} />
         </label>
         {birthdayError ? <p id="profile-birthday-error" role="alert" className="g-meta mb-1">{birthdayError}</p> : null}
         <div className="flex gap-4">

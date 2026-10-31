@@ -28,6 +28,15 @@ export type GDepthSlot = {
    * the room is pure white edge to edge — no G border ("blobs") behind a form.
    */
   bare?: boolean;
+  /**
+   * OCT 30 (item 1): an exact viewBox point for the camera to travel toward,
+   * overriding the anchor ring's centre for the zoom origin only. My G uses it
+   * so the zoom lands on the toggle at 12:00, not the small ring at 1:30.
+   */
+  focus?: { x: number; y: number };
+  /** OCT 30 (item 1): keep the unfurled artwork showing on a bare level until
+   * its content has mounted, so the arrival never flashes empty paper. */
+  holdArtwork?: boolean;
   children: React.ReactNode;
 };
 
@@ -59,8 +68,8 @@ const RING = {
  * The pressed loop stays exactly where it is; the G grows around it — so the
  * transform origin is that loop's own centre, in percentages of the frame.
  */
-export function anchorOrigin(anchor: GAnchorKey = "middle") {
-  const ring = RING[anchor];
+export function anchorOrigin(anchor: GAnchorKey | { x: number; y: number } = "middle") {
+  const ring = typeof anchor === "string" ? RING[anchor] : anchor;
   return {
     x: ((ring.x - LIVING_G_FRAME.x) / LIVING_G_FRAME.width) * 100,
     y: ((ring.y - LIVING_G_FRAME.y) / LIVING_G_FRAME.height) * 100,

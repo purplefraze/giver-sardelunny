@@ -23,6 +23,8 @@ import { devRoutesOpen } from "@/lib/dev-routes";
 import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { MyGRing } from "@/components/profile/MyGRing";
+import { seatCentre as myGSeatCentre } from "@/components/living-g/EarSelector";
+const MY_G_FOCUS = myGSeatCentre("giver");
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { GiveFlow } from "@/components/give/GiveFlow";
 import { IntentIntake } from "@/intelligence/IntentIntake";
@@ -453,6 +455,9 @@ function Index() {
   /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
   const [choose, setChoose] = useState(false);
   const [myG, setMyG] = useState(false);
+  /** OCT 30 (item 1): the ring has mounted; until then the bare level keeps its artwork. */
+  const [myGReady, setMyGReady] = useState(false);
+  useEffect(() => { if (!myG) setMyGReady(false); }, [myG]);
   const [myGArea, setMyGArea] = useState<{ id: ProfileAreaId; n: number } | null>(null);
   const lastToggleTap = useRef(0);
   /** The voluntary help area — every explanation, on demand. */
@@ -1308,10 +1313,14 @@ function Index() {
                 id: "my-g",
                 open: myG,
                 anchor: "top",
+                /* OCT 30 (item 1): zoom into the toggle at 12:00 (My G), not the 1:30 ring. */
+                focus: MY_G_FOCUS,
+                holdArtwork: !myGReady,
                 bare: true,
                 world: "me",
                 children: myG ? (
                   <MyGRing
+                    onReady={() => setMyGReady(true)}
                     {...(myGArea ? { area: myGArea } : {})}
                     onClose={() => {
                       setMyG(false);

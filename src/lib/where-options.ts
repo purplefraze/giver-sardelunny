@@ -1,4 +1,4 @@
-import { collectionPinSchema, coarseCollectionPin } from "./collection-location";
+import { collectionLabelSchema, collectionPinSchema, coarseCollectionPin } from "./collection-location";
 
 /**
  * WHERE — never free text. The public "where" is only ever one of these,
@@ -64,3 +64,14 @@ export async function searchWhere(mode: "intersection" | "neighbourhood" | "stre
   const seen = new Set<string>();
   return hits.flatMap((h: Hit) => { const p = whereFromHit(mode, h, query); if (!p || seen.has(p.label)) return []; seen.add(p.label); return [p]; });
 }
+
+/**
+ * A WHERE IS A PICK, NEVER FREE TEXT. Voice (or an old draft) can leave words in
+ * `where` ("the moon"); only a where that came with a pin from WhereField's
+ * options (device or a search result) may be shared. Empty is fine (optional).
+ */
+export function whereResolved(where: string, pin: { lat: number; lng: number } | null | undefined): boolean {
+  if (!where.trim()) return true;
+  return collectionPinSchema.safeParse(pin ?? null).success && collectionLabelSchema.safeParse(where).success;
+}
+export const WHERE_UNRESOLVED = "pick where from the options — exact, approximate, intersection, neighbourhood or street";

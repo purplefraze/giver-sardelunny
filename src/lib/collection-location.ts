@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const collectionPinSchema = z.object({ lat: z.number().finite().min(-85).max(85), lng: z.number().finite().min(-180).max(180) });
-export const collectionLabelSchema = z.string().trim().min(2).max(100).refine(value => !/\b(pluto|mars|jupiter|saturn|neptune|uranus|outer space)\b/i.test(value), "choose a real collection area on earth");
+export const collectionLabelSchema = z.string().trim().min(2).max(100).refine(value => !/\b(pluto|mars|jupiter|saturn|neptune|uranus|outer space|moon|the sun|space station)\b/i.test(value), "choose a real collection area on earth");
 export const collectionLocationSchema = z.object({ label: collectionLabelSchema, pin: collectionPinSchema, source: z.enum(["device", "place"]) });
 export type CollectionLocation = z.infer<typeof collectionLocationSchema>;
 

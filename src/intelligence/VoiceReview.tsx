@@ -18,6 +18,7 @@ import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "
 import { formKeyboardBounds } from "@/lib/form-keyboard";
 import { CollectionLocation } from "./CollectionLocation";
 import { WhereField } from "./WhereField";
+import { WHERE_UNRESOLVED, whereResolved } from "@/lib/where-options";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -137,6 +138,12 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     if (!canGoLive(action, f)) {
       haptics.warning();
        setProblem(f.what.trim().length < 2 ? "what is it?" : action === "fund" ? "how much are you raising? enter a goal, like 1200." : action === "give" && !f.kind ? "what kind of give is it?" : collection && !f.collectionLocation ? "confirm a real approximate collection area" : collection && f.kind === "food" && !f.timing?.date ? "choose a collection date" : action === "trade" ? "what would you like for it?" : "where is it?");
+      return;
+    }
+    /* Item 4 (Oct 30): a typed or heard where ("the moon") is a search, not a place. */
+    if (!collection && !service && action !== "wish" && action !== "fund" && !whereResolved(f.where, c.pin)) {
+      haptics.warning();
+      setProblem(WHERE_UNRESOLVED);
       return;
     }
     if (!skipPhoto && photoReminder(action, f.kind, !!c.photo)) {

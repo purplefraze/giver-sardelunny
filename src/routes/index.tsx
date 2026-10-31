@@ -303,9 +303,10 @@ function Index() {
     /* A magic-link opening waits for a real session; the dev skip does not. */
     if (owed === "auth" && session.status !== "ready") return;
     clearOpening();
-    /* The wheel the opening hands over to starts at Give (1:30). */
+    /* The wheel starts at Give (1:30). OCT 30 (item 8): the owed wordmark
+       opening (the black "g iver" splash) no longer plays after sign-in or
+       the magic link — the G is shown directly. */
     setSeatState("give");
-    setOpening(true);
   }, [owed, session.status]);
   /** No corner chrome ("sign in" / @name, "dev") while the opening owns the screen. */
   const chromeQuiet = opening || openingCover || launchVeil;

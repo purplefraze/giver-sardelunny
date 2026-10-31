@@ -2278,3 +2278,27 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 [data-living-g] path, [data-living-g] mask path { shape-rendering: geometricPrecision; stroke-linejoin: round; stroke-linecap: round; }
 [data-living-g] { text-rendering: geometricPrecision; }
 .gv-inline-link { font:inherit; color:inherit; background:none; border:0; padding:0; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+
+/* OCT30 FOLLOW-UP (items 2 + 6): one layout for every seat's review.
+   - no two-column "dense" grid: it jumbled the trade review (offer/for and
+     where/condition side by side, details clipped). Type shrinks via --gv-fit
+     instead, and the sheet may scroll as the last resort.
+   - nothing in the sheet may be wider than the loop's inner box: long words
+     wrap, the where chips wrap onto a second row.
+   - the record dock stays in the form's own row (never over share) and steps
+     away while the keyboard is up. */
+.gv-form[data-dense="1"] .gv-fields { display:flex; flex-direction:column; }
+.gv-form[data-dense="1"] .gv-field,
+.gv-form[data-dense="1"] .gv-field-wide,
+.gv-form[data-dense="1"] .gv-field-wide:has(textarea),
+.gv-form[data-dense="1"] .gv-field-wide:has(textarea[maxlength="60"]):first-child { grid-column:auto; grid-template-columns:76px minmax(0,1fr); gap:10px; }
+.gv-form[data-dense="1"] .gv-collection .gv-field { grid-template-columns:minmax(0,1fr); gap:2px; }
+.gv-form[data-dense="1"] .gv-actions { flex-direction:column; align-items:stretch; }
+.gv-form[data-dense="1"] .gv-actions > button:last-child:not(.gv-tap) { max-width:none; padding-inline:8px; }
+.gv-form[data-overflow="1"] .gv-scroll { overflow-y:auto; }
+.gv-scroll, .gv-sheet, .gv-fields, .gv-field, .gv-actions { min-width:0; max-width:100%; }
+.gv-sheet > *, .gv-fields > * { min-width:0; max-width:100%; }
+.gv-field input, .gv-field textarea, .gv-field select, .gv-field > * { overflow-wrap:anywhere; word-break:break-word; }
+.gv-share { max-width:100%; white-space:normal; }
+.gv-where-modes { flex-wrap:wrap; overflow-x:visible; }
+.gv-form[data-keyboard="1"] .gv-rec-dock { display:none; }

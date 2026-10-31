@@ -1,3 +1,5 @@
+import { UNDERSTANDING_UNAVAILABLE } from "@/lib/understanding-copy";
+import { clearDraft, loadDraft, saveDraft } from "@/intelligence/draft-persist";
 import { askLocation } from "@/data/my-location";
 import type { Pin } from "@/data/give-pins";
 import { pickImages, readImage, shrinkImage } from "@/lib/pick-image";
@@ -52,6 +54,7 @@ let wired = false;
 const set = (next: Partial<Conversation>) => {
   if (next.session !== undefined) revision++;
   snap = { ...snap, ...next };
+  if (next.session !== undefined || next.edited !== undefined || next.pin !== undefined) saveDraft(snap.session, snap.edited, snap.pin);
   subs.forEach((f) => f());
 };
 
@@ -124,6 +127,11 @@ const advance = (heardWords: string) => {
  * meanwhile, only fills EMPTY details, and never saves or shares anything.
  * Any failure leaves the rule question standing.
  */
+/** OCT 30 (frazer, item 6): a failed automatic reading is never shown to the
+ * person — the scripted questions simply carry on. The failure is logged. */
+function logUnderstanding(err: unknown) {
+  console.warn("giver: understanding unavailable, using scripted questions", err instanceof Error ? err.message : err === UNDERSTANDING_UNAVAILABLE ? "unavailable" : err);
+}
 async function refine() {
   const s = snap.session;
   const kind = s?.fields.context;
@@ -139,8 +147,9 @@ async function refine() {
       let fields={...cur.fields};
       if(v){if(!fields.what&&v.subject&&!snap.edited.includes("what"))fields.what=v.subject;if(v.title&&!snap.edited.includes("title"))fields.title=v.title;if(v.category&&!snap.edited.includes("kind"))fields.kind=v.category;if(v.want&&!fields.want&&!snap.edited.includes("want"))fields.want=v.want;if(v.amount&&!fields.amount&&!snap.edited.includes("amount"))fields.amount=v.amount;}
       const next=nextAsk({...cur,fields});
-      set({understanding:false,understandingError:result.error,session:snap.timePending?{...next,prompt:snap.timePending.question,asking:"when",choices:snap.timePending.choices,stage:"talk"}:next});
-    }catch {if(snap.session?.draftId===draft&&revision===turn)set({understanding:false,understandingError:"understanding is unavailable. you can keep typing or review your draft."});}
+      if(result.error)logUnderstanding(result.error);
+      set({understanding:false,understandingError:null,session:snap.timePending?{...next,prompt:snap.timePending.question,asking:"when",choices:snap.timePending.choices,stage:"talk"}:next});
+    }catch(err) {logUnderstanding(err);if(snap.session?.draftId===draft&&revision===turn){const cur=snap.session;set({understanding:false,understandingError:null,...(cur&&cur.stage!=="live"&&!snap.timePending?{session:nextAsk(cur)}:{})});}}
     return;
   }
   if (s.stage !== "talk" && s.stage !== "anything") return;
@@ -212,7 +221,8 @@ export const conversation = {
     currentSeat = seat;
     spokenPrompt = "";
     recentSpoken = [];
-    set({ ...(parked.get(seat) ?? { session:sessionForSeat(seat), ...BLANK }), mode:"off" });
+    const stored = parked.has(seat) ? null : loadDraft(seat);
+    set({ ...(parked.get(seat) ?? (stored ? { ...BLANK, session: stored.session, edited: stored.edited, pin: stored.pin } : { session:sessionForSeat(seat), ...BLANK })), mode:"off" });
     voiceCapture.cancel();
   },
   toggle(seat: string) {
@@ -399,16 +409,22 @@ export const conversation = {
   finishDraft(draftId: string): "shown" | "retired" | "gone" {
     if (snap.session?.draftId === draftId) {
       if (snap.form) { conversation.live(); return "shown"; }
+      clearDraft(snap.session.action);
       set({ ...BLANK, mode: "off", session: sessionForSeat(currentSeat) });
       return "retired";
     }
-    for (const [seat, p] of parked) if (p.session?.draftId === draftId) { parked.delete(seat); return "retired"; }
+    for (const [seat, p] of parked) if (p.session?.draftId === draftId) { parked.delete(seat); clearDraft(p.session.action); return "retired"; }
     return "gone";
   },
   live() {
     const s = snap.session;
-    if (s) set({ mode: "off", session: { ...s, stage: "live" } });
+    if (s) { clearDraft(s.action); set({ mode: "off", session: { ...s, stage: "live" } }); }
     voiceCapture.cancel();
+  },
+  /** The person discarded this draft (or closed a shared one): forget it, including the saved copy. */
+  discard() {
+    clearDraft(snap.session?.action ?? currentSeat);
+    conversation.close();
   },
   close() {
     voiceCapture.cancel();

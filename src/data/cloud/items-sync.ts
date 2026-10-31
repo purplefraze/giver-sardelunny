@@ -13,6 +13,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { fundDetailsOk } from "@/data/fund-rules";
 import {
   ME_ID,
   itemsStore,
@@ -102,7 +103,7 @@ export async function pushItems() {
   }
   pushing = true;
   try {
-    const mine = itemsStore.get().items.filter((i) => i.ownerId === ME_ID);
+    const mine = itemsStore.get().items.filter((i) => i.ownerId === ME_ID && fundDetailsOk(i.details));
     if (mine.length) {
       const write = () =>
         supabase.from("items").upsert(
@@ -151,7 +152,7 @@ export async function pushItems() {
 export async function confirmItemSaved(localId: string): Promise<string | null> {
   const profileId = sessionStore.get().profile?.id;
   const i = itemsStore.get().items.find((x) => x.id === localId && x.ownerId === ME_ID);
-  if (!profileId || !i) return null;
+  if (!profileId || !i || !fundDetailsOk(i.details)) return null;
   const row = {
     owner_id: profileId,
     local_id: i.id,

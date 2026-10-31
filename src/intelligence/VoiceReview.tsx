@@ -177,7 +177,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         </div>:null}
          <div className="gv-answer-actions">{!collectionQuestion ? <Button variant="ghost" type="button" disabled={!answer.trim()} onClick={()=>{conversation.answer(answer);setAnswer("");}}>next →</Button> : null}<Button variant="ghost" type="button" onClick={()=>conversation.inspect()}>review draft</Button></div>
         {c.understanding?<p className="g-meta" role="status">understanding…</p>:null}
-        {c.understandingError?<p className="g-meta" role="status">{c.understandingError.toLowerCase()}</p>:null}
+        {/* OCT 30 (item 6): understanding failures are silent — scripted questions continue. */}
       </section> : <>
       <p className="gv-title">your {noun}</p>
       {ask || listening || v.transcript ? (

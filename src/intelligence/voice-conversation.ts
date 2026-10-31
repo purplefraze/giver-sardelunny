@@ -127,6 +127,11 @@ const advance = (heardWords: string) => {
  * meanwhile, only fills EMPTY details, and never saves or shares anything.
  * Any failure leaves the rule question standing.
  */
+/** OCT 30 (frazer, item 6): a failed automatic reading is never shown to the
+ * person — the scripted questions simply carry on. The failure is logged. */
+function logUnderstanding(err: unknown) {
+  console.warn("giver: understanding unavailable, using scripted questions", err instanceof Error ? err.message : err === UNDERSTANDING_UNAVAILABLE ? "unavailable" : err);
+}
 async function refine() {
   const s = snap.session;
   const kind = s?.fields.context;
@@ -142,8 +147,9 @@ async function refine() {
       let fields={...cur.fields};
       if(v){if(!fields.what&&v.subject&&!snap.edited.includes("what"))fields.what=v.subject;if(v.title&&!snap.edited.includes("title"))fields.title=v.title;if(v.category&&!snap.edited.includes("kind"))fields.kind=v.category;if(v.want&&!fields.want&&!snap.edited.includes("want"))fields.want=v.want;if(v.amount&&!fields.amount&&!snap.edited.includes("amount"))fields.amount=v.amount;}
       const next=nextAsk({...cur,fields});
-      set({understanding:false,understandingError:result.error,session:snap.timePending?{...next,prompt:snap.timePending.question,asking:"when",choices:snap.timePending.choices,stage:"talk"}:next});
-    }catch {if(snap.session?.draftId===draft&&revision===turn)set({understanding:false,understandingError:UNDERSTANDING_UNAVAILABLE});}
+      if(result.error)logUnderstanding(result.error);
+      set({understanding:false,understandingError:null,session:snap.timePending?{...next,prompt:snap.timePending.question,asking:"when",choices:snap.timePending.choices,stage:"talk"}:next});
+    }catch(err) {logUnderstanding(err);if(snap.session?.draftId===draft&&revision===turn){const cur=snap.session;set({understanding:false,understandingError:null,...(cur&&cur.stage!=="live"&&!snap.timePending?{session:nextAsk(cur)}:{})});}}
     return;
   }
   if (s.stage !== "talk" && s.stage !== "anything") return;

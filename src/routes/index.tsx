@@ -16,6 +16,7 @@ import { useAppHeight } from "@/hooks/use-app-height";
 
 import { Onboarding } from "@/components/Onboarding";
 import { AuthGate } from "@/components/onboarding/AuthGate";
+import { signInRequested, takeGuestDraft } from "@/intelligence/guest-handoff";
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { useSession } from "@/hooks/use-session";
 import { sessionEndedPending } from "@/data/cloud/session";
@@ -286,7 +287,14 @@ function Index() {
      but is signed out (their session ended) gets the home-page sign-in here,
      the same AuthGate onboarding uses. It says the session ended; once the
      session is back the workspace returns. No navigation, so no loop. */
-  const reSignIn = !devRoutesOpen() && entered && session.status === "signed-out";
+  /* A guest who asked to sign in (blocked share) gets the same gate, dev or not. */
+  const reSignIn = entered && session.status === "signed-out" && (!devRoutesOpen() || signInRequested());
+  /* GUEST -> SIGNED IN: the draft they were sharing reopens at review. */
+  useEffect(() => {
+    if (session.status !== "ready" || session.guest) return;
+    const d = takeGuestDraft();
+    if (d) conversation.importDraft(d);
+  }, [session.status, session.guest]);
   const [opening, setOpening] = useState(false);
   const owed = hydrated && entered && !opening ? openingPending() : null;
   const openingCover = owed !== null && session.status === "loading";
@@ -295,9 +303,10 @@ function Index() {
     /* A magic-link opening waits for a real session; the dev skip does not. */
     if (owed === "auth" && session.status !== "ready") return;
     clearOpening();
-    /* The wheel the opening hands over to starts at Give (1:30). */
+    /* The wheel starts at Give (1:30). OCT 30 (item 8): the owed wordmark
+       opening (the black "g iver" splash) no longer plays after sign-in or
+       the magic link — the G is shown directly. */
     setSeatState("give");
-    setOpening(true);
   }, [owed, session.status]);
   /** No corner chrome ("sign in" / @name, "dev") while the opening owns the screen. */
   const chromeQuiet = opening || openingCover || launchVeil;
@@ -843,7 +852,7 @@ function Index() {
          (DevControls is also DEV-build-only; its "replay onboarding" now
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
       {entered && !chromeQuiet && !reviewing ? <DevControls /> : null}
-      {reviewing ? (
+      {reviewing && !reSignIn ? (
         <VoiceEnclosure seat={talk.session?.action ?? seat} onFold={() => conversation.closeForm()} onFoldStart={() => conversation.stopLocked()}>
           <VoiceReview
             onDone={() => conversation.close()}

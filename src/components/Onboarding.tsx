@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { AuthGate } from "@/components/onboarding/AuthGate";
 import { sessionStore, type SessionState } from "@/data/cloud/session";
 import { clearOpening } from "@/data/opening";
@@ -68,8 +67,14 @@ export function Onboarding({
     /* The opening has played here; nothing else owes it. */
     clearOpening();
     /* TESTING SKIP: earned:false — no spark grant. Not shipped behaviour. */
-    onDone({ gaveTo: null, earned: false, fromLaunch: true });
+    /* OCT 30 (item 8, frazer: "remove the black splash"): no wordmark
+       opening after sign-in — straight to the G at Give, no veil. */
+    onDone({ gaveTo: null, earned: false, fromLaunch: false });
   };
+  useEffect(() => {
+    if (stage === "opening") complete();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
 
   if (stage === "wait") {
     return <div className="h-full w-full" style={{ background: "var(--seat-bg)" }} />;
@@ -78,5 +83,7 @@ export function Onboarding({
     /* Code (or link) success hands over to the opening. */
     return <AuthGate onDone={() => setStage("opening")} />;
   }
-  return <LaunchScreen onDone={complete} />;
+  /* The opening is gone (item 8): hold the plain seat background for the one
+     frame before the effect above hands over to the wheel. */
+  return <div className="h-full w-full" style={{ background: "var(--seat-bg)" }} />;
 }

@@ -79,7 +79,7 @@ export function GThinMask({ id, weight, transformed = false, paintWidth }: { id:
   const w = Math.max(0, (G_STROKE.normal - (paintWidth ?? G_STROKE[weight])) * 10);
   const path = (
     <>
-      <path d={LIVING_G_PATH} fill="#fff" stroke="#000" strokeWidth={w} strokeLinejoin="round" />
+      <path d={LIVING_G_PATH} fill="#fff" stroke="#000" strokeWidth={w} strokeLinejoin="round" strokeLinecap="round" shapeRendering="geometricPrecision" />
     </>
   );
   return transformed ? (

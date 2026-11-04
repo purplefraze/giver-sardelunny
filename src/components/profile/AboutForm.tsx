@@ -256,8 +256,8 @@ export function AboutForm({
               autoEdit={onboarding && !named}
 
               /* THE ONLY THING WORTH SAYING IS WHEN A NAME CANNOT BE HAD. */
-              {...(named && handleState.state === "taken"
-                ? { note: HANDLE_MESSAGE.taken }
+              {...(named && (handleState.state === "taken" || handleState.state === "short" || handleState.state === "format")
+                ? { note: HANDLE_MESSAGE[handleState.state] }
                 : {})}
             />
 

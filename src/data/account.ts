@@ -53,9 +53,19 @@ const TAKEN = new Set(
   MEMBERS.map((m) => normaliseHandle(m.username)).filter(Boolean),
 );
 
+/** Existing rule (normaliseHandle + handleAvailable): a-z 0-9 . _ -, 3..20. */
+export const HANDLE_MIN = 3;
+export const HANDLE_MAX = 20;
+/**
+ * PROPOSAL (anna pass3, not yet approved by frazer): a handle must start and
+ * end with a letter or number, so "...", "_-_" or "me." cannot be names.
+ */
+export const HANDLE_SHAPE = /^[a-z0-9](?:[a-z0-9._-]{1,18})[a-z0-9]$/;
+
 export type HandleCheck =
   | { state: "empty" }
   | { state: "short" }
+  | { state: "format" }
   | { state: "taken" }
   | { state: "free" };
 
@@ -67,6 +77,7 @@ export async function checkHandle(raw: string): Promise<HandleCheck> {
   const handle = normaliseHandle(raw);
   if (!handle) return { state: "empty" };
   if (handle.length < 3) return { state: "short" };
+  if (!HANDLE_SHAPE.test(handle)) return { state: "format" };
   /* A tiny pause keeps the feedback honest: it is a check, not a guess. */
   await new Promise((r) => setTimeout(r, 220));
   if (RESERVED.has(handle) || TAKEN.has(handle)) return { state: "taken" };
@@ -81,7 +92,8 @@ export async function checkHandle(raw: string): Promise<HandleCheck> {
 
 export const HANDLE_MESSAGE: Record<HandleCheck["state"], string> = {
   empty: "",
-  short: "a little longer, please",
+  short: "at least 3 letters or numbers, please",
+  format: "start and end with a letter or number",
   taken: "that one is taken — try another",
   /* A FREE NAME SAYS NOTHING: the name itself is the answer. */
   free: "",

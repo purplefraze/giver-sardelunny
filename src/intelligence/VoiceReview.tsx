@@ -3,9 +3,13 @@ import { Button } from "@/components/ui/button";
 import { GIVE_TYPES, type GiveType } from "@/data/give-lexicon";
 import { haptics } from "@/lib/haptics";
 import { conversation } from "@/intelligence/voice-conversation";
+import { GUEST_WRITE_LINE } from "@/config/test-build";
+import { signInToShare } from "@/intelligence/guest-handoff";
 import { shareCoordinator } from "@/intelligence/share-live";
 import { voiceCapture } from "@/intelligence/voice-capture";
-import { canGoLive, fundTargetOf, photoReminder, type VoiceFields } from "@/intelligence/voice-flow";
+import { canGoLive, fundTargetOf, photoReminder, whyNotLive, type VoiceFields } from "@/intelligence/voice-flow";
+import { FUND_TRUST_PLACEHOLDERS, FUND_TRUST_VISIBLE } from "@/intelligence/fund-trust-placeholders";
+import { fundGoalProblem } from "@/data/fund-rules";
 import { NOUN } from "@/intelligence/voice-session";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +19,8 @@ import { toDateOnly, parseDateOnly } from "@/lib/date-only";
 import { CTX_LABEL, FIELDS_OF, privatePlaces, publicExtras, publicPlace } from "@/intelligence/contextual-needs";
 import { formKeyboardBounds } from "@/lib/form-keyboard";
 import { CollectionLocation } from "./CollectionLocation";
+import { WhereField } from "./WhereField";
+import { WHERE_UNRESOLVED, whereResolved } from "@/lib/where-options";
 
 /**
  * THE EDITABLE PREVIEW, framed by the unfolded G. One compact block, top to
@@ -38,8 +44,11 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
   useEffect(() => {
     const vv = typeof window !== "undefined" ? window.visualViewport : null;
     if (!vv) return;
-    const height = sheet.current?.closest("[data-voice-frame]")?.getBoundingClientRect().height ?? window.innerHeight;
-    const on = () => setKeyboard(formKeyboardBounds(height, vv.height, vv.offsetTop, vv.scale).keyboard);
+    /* The frame is measured each time: the layout height, not the visual one. */
+    const on = () => {
+      const height = sheet.current?.closest("[data-voice-frame]")?.getBoundingClientRect().height ?? window.innerHeight;
+      setKeyboard(formKeyboardBounds(Math.max(height, window.innerHeight), vv.height, vv.offsetTop, vv.scale).keyboard);
+    };
     on(); vv.addEventListener("resize", on); vv.addEventListener("scroll", on);
     return () => { vv.removeEventListener("resize", on); vv.removeEventListener("scroll", on); };
   }, []);
@@ -51,8 +60,12 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
       if (!keyboard || !(active instanceof HTMLElement) || !el.contains(active)) return;
       const field = active.getBoundingClientRect();
       const band = el.getBoundingClientRect();
-      if (field.bottom > band.bottom - 12) el.scrollTop += field.bottom - band.bottom + 12;
-      else if (field.top < band.top + 12) el.scrollTop -= band.top + 12 - field.top;
+      /* The visible band is the sheet clipped to the visual viewport (above the keyboard). */
+      const vv = window.visualViewport;
+      const bottom = Math.min(band.bottom, vv ? vv.offsetTop + vv.height : band.bottom);
+      const top = Math.max(band.top, vv ? vv.offsetTop : band.top);
+      if (field.bottom > bottom - 12) el.scrollTop += field.bottom - bottom + 12;
+      else if (field.top < top + 12) el.scrollTop -= top + 12 - field.top;
     };
     if (!keyboard) el.scrollTop = 0;
     const raf = requestAnimationFrame(reveal);
@@ -120,13 +133,22 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
     </label>
   );
 
+  /* anna pass2 #1: share stays disabled until the draft is valid; say why once something is typed. */
+  const notReady = whyNotLive(action, f);
+  const touched = [f.what, f.title, f.want, f.amount, f.note].some(v => String(v ?? "").trim().length > 0);
   const share = async (skipPhoto = false) => {
     setProblem(null);
     /* Everything the Share is about, captured NOW — before any await. */
     const input = { draftId: s.draftId, action, fields: f, photo: c.photo, pin: c.pin };
     if (!canGoLive(action, f)) {
       haptics.warning();
-       setProblem(f.what.trim().length < 2 ? "what is it?" : action === "fund" ? "how much are you raising? enter a goal, like 1200." : action === "give" && !f.kind ? "what kind of give is it?" : collection && !f.collectionLocation ? "confirm a real approximate collection area" : collection && f.kind === "food" && !f.timing?.date ? "choose a collection date" : action === "trade" ? "what would you like for it?" : "where is it?");
+       setProblem(whyNotLive(action, f) ?? (collection && !f.collectionLocation ? "confirm a real approximate collection area" : collection && f.kind === "food" && !f.timing?.date ? "choose a collection date" : "where is it?"));
+      return;
+    }
+    /* Item 4 (Oct 30): a typed or heard where ("the moon") is a search, not a place. */
+    if (!collection && !service && action !== "wish" && action !== "fund" && !whereResolved(f.where, c.pin)) {
+      haptics.warning();
+      setProblem(WHERE_UNRESOLVED);
       return;
     }
     if (!skipPhoto && photoReminder(action, f.kind, !!c.photo)) {
@@ -172,7 +194,7 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         </div>:null}
          <div className="gv-answer-actions">{!collectionQuestion ? <Button variant="ghost" type="button" disabled={!answer.trim()} onClick={()=>{conversation.answer(answer);setAnswer("");}}>next →</Button> : null}<Button variant="ghost" type="button" onClick={()=>conversation.inspect()}>review draft</Button></div>
         {c.understanding?<p className="g-meta" role="status">understanding…</p>:null}
-        {c.understandingError?<p className="g-meta" role="status">{c.understandingError.toLowerCase()}</p>:null}
+        {/* OCT 30 (item 6): understanding failures are silent — scripted questions continue. */}
       </section> : <>
       <p className="gv-title">your {noun}</p>
       {ask || listening || v.transcript ? (
@@ -185,9 +207,14 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
         {field("title","listing title")}
         {field("what", service || action === "trade" ? "offer" : action === "fund" ? "cause" : action === "borrow" ? "need" : "what")}
         {action === "trade" ? field("want", "for") : null}
-        {action === "fund" ? field("amount", "raising", "amount") : null}
+        {action === "fund" ? field("amount", "raising", "amount, like 1200") : null}
+        {action === "fund" && f.amount?.trim() && fundTargetOf(f) === null ? <p className="g-meta gv-inline-note" role="status" data-amount-hint="">{fundGoalProblem(f.amount)}</p> : null}
+        {action === "fund" && FUND_TRUST_VISIBLE ? <div className="gv-trust" data-fund-trust="" data-placeholder="needs-frazer-approval">
+          {/* PLACEHOLDER TRUST COPY — needs frazer's approval. No policy is stated here. */}
+          {FUND_TRUST_PLACEHOLDERS.map(t => <p key={t.key} className="g-meta" data-fund-trust-slot={t.key}><span>{t.label}: </span>{t.text}</p>)}
+        </div> : null}
         {action === "give" ? <label className="gv-field"><span>category</span><select aria-label="category" value={f.kind ?? ""} onChange={e => conversation.edit("kind", e.target.value)}><option value="">choose category</option>{GIVE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></label> : null}
-          {collection ? <CollectionLocation compact={level >= 3} draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? field("where", "where", "an area is fine") : null}
+          {collection ? <CollectionLocation compact={level >= 3} draftId={s.draftId} value={f.where} location={f.collectionLocation} /> : !service && action !== "wish" && action !== "fund" ? <WhereField draftId={s.draftId} value={f.where} /> : null}
          {collection ? <label className="gv-field"><span>collection date</span><input type="date" aria-label="collection date" value={f.timing?.date ?? ""} onChange={e => chooseDate(e.target.value)} /></label> : null}
         {f.context
           ? FIELDS_OF[f.context]
@@ -231,9 +258,15 @@ export function VoiceReview({ onDone, onSeeInCommunity }: { onDone: () => void; 
           </div>
         </div>
       ) : null}
-      {problem ? <p className="gv-problem" role="alert">{problem}</p> : null}
+      {problem === GUEST_WRITE_LINE ? (
+        /* A guest's blocked share: the way to sign in is right in the line; the draft is kept. */
+        <p className="gv-problem" role="alert" data-guest-sign-in="">
+          {problem}{" "}
+          <button type="button" className="gv-inline-link" onClick={() => { haptics.light(); signInToShare(); }}>sign in to share</button>
+        </p>
+      ) : problem ? <p className="gv-problem" role="alert">{problem}</p> : notReady && touched && !(action === "fund" && f.amount?.trim() && fundTargetOf(f) === null) ? <p className="gv-problem" role="status" data-not-ready="">{notReady}</p> : null}
       <div className="gv-taps gv-actions">
-        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId)}>share with communi-g</Button>
+        <Button variant="ghost" type="submit" data-share="1" className="gv-share" disabled={busy || shareCoordinator.isPending(s.draftId) || !canGoLive(action, f)}>share with communi-g</Button>
         <Button variant="ghost" type="button" className="gv-tap" onClick={onDone}>discard</Button>
         {!canGoLive(action,f)||s.stage==="talk"?<Button variant="ghost" type="button" onClick={()=>conversation.continueQuestions()}>continue questions</Button>:null}
       </div>

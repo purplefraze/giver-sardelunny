@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { joinGiver } from "@/lib/invites.functions";
 import { sessionStore, enterAsGuest } from "@/data/cloud/session";
+import { clearSignInRequest } from "@/intelligence/guest-handoff";
 import { TEST_BUILD_DIRECT_ENTRY } from "@/config/test-build";
 import { myProfileStore } from "@/data/my-profile";
 import { normaliseHandle } from "@/data/account";
@@ -79,6 +80,7 @@ export function AuthGate({ onDone }: { onDone: () => void }) {
   const enter = () => {
     if (finishing.current) return;
     finishing.current = true;
+    clearSignInRequest();
     enterAsGuest();
     haptics.light();
     onDone();

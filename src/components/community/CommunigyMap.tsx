@@ -27,16 +27,49 @@ import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "./map-view";
 const pinSvg = (colour: string) =>
   `<svg viewBox="0 0 30 40" width="26" height="35" aria-hidden="true"><path d="M15 39C15 39 28 23.5 28 14.5A13 13 0 0 0 2 14.5C2 23.5 15 39 15 39Z" style="fill:${colour}" stroke="var(--background)" stroke-width="1.6"/><circle cx="15" cy="14" r="4.4" fill="var(--background)"/></svg>`;
 
+/** Overlays drawn above the full-bleed map (heading, filters, tools, note, ring). */
+const MAP_OVERLAYS = ".cg-heading-row, [data-cg-upper-tools], [data-cg-results] > *, [data-cg-ring], .cg-map-attribution";
+const PIN_W = 26, PIN_H = 35, EDGE = 12;
+
+/**
+ * Padding (px, from each edge of the map box) that keeps a whole pin clear of
+ * every overlay and the screen edges. Overlays in the upper half push the top
+ * down; those in the lower half push the bottom up. Null when there is no room.
+ */
+export function mapFreeInsets(el: HTMLElement): { top: number; bottom: number; left: number; right: number } | null {
+  const box = el.getBoundingClientRect();
+  if (box.width < 1 || box.height < 1) return null;
+  const mid = box.top + box.height / 2;
+  let top = box.top, bottom = box.bottom;
+  for (const o of Array.from(document.querySelectorAll<HTMLElement>(MAP_OVERLAYS))) {
+    if (el.contains(o) && !o.classList.contains("cg-map-attribution")) continue;
+    const r = o.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1 || getComputedStyle(o).visibility === "hidden") continue;
+    if (r.top + r.height / 2 < mid) top = Math.max(top, r.bottom);
+    else bottom = Math.min(bottom, r.top);
+  }
+  const insets = {
+    top: Math.round(top - box.top) + PIN_H + EDGE,
+    bottom: Math.round(box.bottom - bottom) + EDGE,
+    left: PIN_W / 2 + EDGE + 8,
+    right: PIN_W / 2 + EDGE + 8,
+  };
+  return insets.top + insets.bottom < box.height - 40 ? insets : null;
+}
+
 export function CommunigyMap({
   pins,
   centre,
   radiusKm,
   onOpen,
+  active = true,
 }: {
   pins: MapPin[];
   centre: Pin | null;
   radiusKm: number | null;
   onOpen: (itemId: string) => void;
+  /** true while the map view is showing (overlays laid out for the map). */
+  active?: boolean;
 }) {
   const box = useRef<HTMLDivElement | null>(null);
   const map = useRef<Leaflet.Map | null>(null);
@@ -59,7 +92,7 @@ export function CommunigyMap({
       if (dead || !box.current) return;
       L.current = lib;
       const m = lib
-        .map(box.current, { zoomControl: false, attributionControl: false, zoomAnimation:false, fadeAnimation:false, markerZoomAnimation:false })
+        .map(box.current, { zoomControl: false, attributionControl: false, zoomSnap: 0.25, zoomAnimation:false, fadeAnimation:false, markerZoomAnimation:false })
         .setView(mapCentre ? [mapCentre.lat, mapCentre.lng] : [0, 0], mapCentre ? NEIGHBOURHOOD_ZOOM : 1);
       lib
         .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -123,6 +156,31 @@ export function CommunigyMap({
       .addTo(m);
 
   }, [ready, centre?.lat, centre?.lng, mapCentre?.lat, mapCentre?.lng, radiusKm]);
+
+  /* PINS NEVER START UNDER A CONTROL (anna pass3). Frame the pins once per pin set, when the map is actually on screen. */
+  const fitted = useRef<MapPin[] | null>(null);
+  useEffect(() => {
+    const lib = L.current;
+    const m = map.current;
+    if (!ready || !lib || !m || !active || !pins.length || fitted.current === pins) return;
+    const fit = () => {
+      const el = box.current;
+      if (!el || !map.current) return;
+      const pad = mapFreeInsets(el);
+      if (!pad) return;
+      fitted.current = pins;
+      m.invalidateSize(false);
+      m.fitBounds(lib.latLngBounds(pins.map(p => [p.pin.lat, p.pin.lng] as [number, number])), {
+        paddingTopLeft: [pad.left, pad.top],
+        paddingBottomRight: [pad.right, pad.bottom],
+        maxZoom: NEIGHBOURHOOD_ZOOM,
+        animate: false,
+      });
+    };
+    const raf = requestAnimationFrame(fit);
+    const late = window.setTimeout(fit, 450);
+    return () => { cancelAnimationFrame(raf); window.clearTimeout(late); };
+  }, [ready, pins, active]);
 
   /* One pin per listing, in its mode colour. */
   useEffect(() => {

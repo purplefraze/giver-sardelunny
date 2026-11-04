@@ -16,6 +16,7 @@ import { useAppHeight } from "@/hooks/use-app-height";
 
 import { Onboarding } from "@/components/Onboarding";
 import { AuthGate } from "@/components/onboarding/AuthGate";
+import { signInRequested, takeGuestDraft } from "@/intelligence/guest-handoff";
 import { LaunchScreen } from "@/components/onboarding/LaunchScreen";
 import { useSession } from "@/hooks/use-session";
 import { sessionEndedPending } from "@/data/cloud/session";
@@ -23,6 +24,8 @@ import { devRoutesOpen } from "@/lib/dev-routes";
 import { clearOpening, openingPending } from "@/data/opening";
 import { AboutForm } from "@/components/profile/AboutForm";
 import { MyGRing } from "@/components/profile/MyGRing";
+import { seatCentre as myGSeatCentre } from "@/components/living-g/EarSelector";
+const MY_G_FOCUS = myGSeatCentre("giver");
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { GiveFlow } from "@/components/give/GiveFlow";
 import { IntentIntake } from "@/intelligence/IntentIntake";
@@ -286,7 +289,14 @@ function Index() {
      but is signed out (their session ended) gets the home-page sign-in here,
      the same AuthGate onboarding uses. It says the session ended; once the
      session is back the workspace returns. No navigation, so no loop. */
-  const reSignIn = !devRoutesOpen() && entered && session.status === "signed-out";
+  /* A guest who asked to sign in (blocked share) gets the same gate, dev or not. */
+  const reSignIn = entered && session.status === "signed-out" && (!devRoutesOpen() || signInRequested());
+  /* GUEST -> SIGNED IN: the draft they were sharing reopens at review. */
+  useEffect(() => {
+    if (session.status !== "ready" || session.guest) return;
+    const d = takeGuestDraft();
+    if (d) conversation.importDraft(d);
+  }, [session.status, session.guest]);
   const [opening, setOpening] = useState(false);
   const owed = hydrated && entered && !opening ? openingPending() : null;
   const openingCover = owed !== null && session.status === "loading";
@@ -295,9 +305,10 @@ function Index() {
     /* A magic-link opening waits for a real session; the dev skip does not. */
     if (owed === "auth" && session.status !== "ready") return;
     clearOpening();
-    /* The wheel the opening hands over to starts at Give (1:30). */
+    /* The wheel starts at Give (1:30). OCT 30 (item 8): the owed wordmark
+       opening (the black "g iver" splash) no longer plays after sign-in or
+       the magic link — the G is shown directly. */
     setSeatState("give");
-    setOpening(true);
   }, [owed, session.status]);
   /** No corner chrome ("sign in" / @name, "dev") while the opening owns the screen. */
   const chromeQuiet = opening || openingCover || launchVeil;
@@ -453,6 +464,9 @@ function Index() {
   /** THE EMPTY MIDDLE LOOP'S QUESTION: what would you like to do? */
   const [choose, setChoose] = useState(false);
   const [myG, setMyG] = useState(false);
+  /** OCT 30 (item 1): the ring has mounted; until then the bare level keeps its artwork. */
+  const [myGReady, setMyGReady] = useState(false);
+  useEffect(() => { if (!myG) setMyGReady(false); }, [myG]);
   const [myGArea, setMyGArea] = useState<{ id: ProfileAreaId; n: number } | null>(null);
   const lastToggleTap = useRef(0);
   /** The voluntary help area — every explanation, on demand. */
@@ -843,10 +857,10 @@ function Index() {
          (DevControls is also DEV-build-only; its "replay onboarding" now
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
       {entered && !chromeQuiet && !reviewing ? <DevControls /> : null}
-      {reviewing ? (
+      {reviewing && !reSignIn ? (
         <VoiceEnclosure seat={talk.session?.action ?? seat} onFold={() => conversation.closeForm()} onFoldStart={() => conversation.stopLocked()}>
           <VoiceReview
-            onDone={() => conversation.close()}
+            onDone={() => conversation.discard()}
             onSeeInCommunity={(itemId) => {
               const a = talk.session?.action;
               conversation.close();
@@ -1308,10 +1322,14 @@ function Index() {
                 id: "my-g",
                 open: myG,
                 anchor: "top",
+                /* OCT 30 (item 1): zoom into the toggle at 12:00 (My G), not the 1:30 ring. */
+                focus: MY_G_FOCUS,
+                holdArtwork: !myGReady,
                 bare: true,
                 world: "me",
                 children: myG ? (
                   <MyGRing
+                    onReady={() => setMyGReady(true)}
                     {...(myGArea ? { area: myGArea } : {})}
                     onClose={() => {
                       setMyG(false);

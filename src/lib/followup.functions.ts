@@ -1,3 +1,4 @@
+import { UNDERSTANDING_UNAVAILABLE } from "@/lib/understanding-copy";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -117,6 +118,6 @@ export const interpretDraft = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ action: z.enum(["give","wish","trade","borrow","lend","fund"]), fields: z.custom<VoiceFields>((v)=>!!v&&typeof v==="object"&&"what" in v&&typeof v.what==="string"), said:z.array(z.string().max(400)).max(30) }).parse(d))
   .handler(async ({data}) => {
     const key=process.env["LOVABLE_API_KEY"];
-    if(!key)return {reading:null,error:"understanding is unavailable. you can keep typing or review your draft."};
+    if(!key)return {reading:null,error:UNDERSTANDING_UNAVAILABLE};
     try{return await interpretOrdinaryDraft(data,key,FOLLOWUP_MODEL);}catch{return {reading:null,error:"Understanding is unavailable. Your draft is kept."};}
   });

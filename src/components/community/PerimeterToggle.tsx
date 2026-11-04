@@ -150,8 +150,9 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
         const bounds = hollowBand(size.w,size.h,Math.min(0,angle),box.top-rect.top,box.height,0);
         const parent = row.parentElement?.getBoundingClientRect();
         if (!parent) return;
-        row.style.marginLeft = `${Math.max(0,bounds.l-(parent.left-rect.left))}px`;
-        row.style.marginRight = `${Math.max(0,(parent.right-rect.left)-bounds.r)}px`;
+        const inset = clampRowInset(bounds.l-(parent.left-rect.left), (parent.right-rect.left)-bounds.r, parent.width);
+        row.style.marginLeft = `${inset.l}px`;
+        row.style.marginRight = `${inset.r}px`;
         row.dataset["safeL"] = String(bounds.l); row.dataset["safeR"] = String(bounds.r);
       });
       const tools=root.querySelector<HTMLElement>("[data-cg-upper-tools]");
@@ -245,4 +246,14 @@ export function beadFlow(size: { w: number; h: number }, bead: Point, box: { l: 
   const w = Math.max(0, Math.min(boxW, side === "left" ? leftW : rightW));
   if (w <= 0 || w > boxW * 0.6) return null;
   return { side, top: Math.round(top), w: Math.round(w), h: Math.round(boxH - top) };
+}
+
+/** Rows near the narrow ends of the hollow can get a degenerate band (left edge
+ * past the right edge). Never let a row's insets exceed its list width — that
+ * pushed rows off to the side and made the list scroll sideways. */
+export function clampRowInset(l: number, r: number, width: number, min = 160): { l: number; r: number } {
+  let L = Number.isFinite(l) ? Math.max(0, l) : 0, R = Number.isFinite(r) ? Math.max(0, r) : 0;
+  const room = Math.max(0, width - Math.min(min, width));
+  if (L + R > room) { const k = (L + R) > 0 ? room / (L + R) : 0; L *= k; R *= k; }
+  return { l: Math.round(L * 100) / 100, r: Math.round(R * 100) / 100 };
 }

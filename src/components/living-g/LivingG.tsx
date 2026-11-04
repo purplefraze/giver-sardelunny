@@ -248,6 +248,8 @@ export function LivingG({
       ref={svgRef}
       data-living-g=""
       data-visible-stroke={paint.width}
+      /* RENDERING ONLY: full antialiasing on the outline and its masks. */
+      shapeRendering="geometricPrecision"
       viewBox={LIVING_G_VIEWBOX}
       className={cn("h-full w-full select-none overflow-visible", className)}
       // DIRECT MANIPULATION SURFACE. The G is dragged, not scrolled: the browser

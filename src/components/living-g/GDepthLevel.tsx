@@ -31,6 +31,8 @@ export function GDepthLevel({
   world = "others",
   retreat = 0,
   bare = false,
+  focus,
+  holdArtwork = false,
   children,
 }: {
   open: boolean;
@@ -45,6 +47,10 @@ export function GDepthLevel({
   retreat?: number;
   /** Plain white room at rest: the unfurled artwork clears once arrived. */
   bare?: boolean;
+  /** Exact viewBox point the camera zooms toward (my-g only). */
+  focus?: { x: number; y: number } | undefined;
+  /** Bare level: keep the artwork visible until the content has mounted. */
+  holdArtwork?: boolean;
   children: React.ReactNode;
 }) {
   const [phase, setPhase] = useState<Phase>("shut");
@@ -85,7 +91,7 @@ export function GDepthLevel({
   const ease = open ? CAMERA.openEase : CAMERA.closeEase;
   /** Only promote the big artwork layer while it is actually moving. */
   const moving = phase === "opening" || phase === "closing";
-  const origin = anchorOrigin(anchor);
+  const origin = anchorOrigin(focus ?? anchor);
   const lens = anchorLens(anchor);
   /* A BARE ROOM fills the screen (safe areas only), like the form stills.
    * inset-0 (top/right/bottom/left 0) then safe-area PAD — so CommunityFeed
@@ -143,7 +149,7 @@ export function GDepthLevel({
           transformOrigin: `${origin.x}% ${origin.y}%`,
           /* BARE: the artwork is the camera's travel, not the room — it clears
              once the level has arrived and returns for the fold back. */
-          opacity: bare && phase === "in" ? 0 : 1,
+          opacity: bare && phase === "in" && !holdArtwork ? 0 : 1,
           transition: `transform ${ms}ms ${ease}, opacity 220ms ease-out`,
           willChange: moving ? "transform" : "auto",
           backfaceVisibility: "hidden",

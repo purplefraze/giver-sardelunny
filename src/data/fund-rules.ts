@@ -123,3 +123,32 @@ export function checkContribution(input: {
  */
 export const fullyFunded = (target: Cents | null, fundedCents: Cents) =>
   target !== null && fundedCents >= target;
+
+/**
+ * Why a stated Fund GOAL is not acceptable, in plain words; null when it is.
+ * Uses only the existing target limits (FUND_MIN_CENTS .. FUND_TARGET_MAX_CENTS).
+ */
+export function fundGoalProblem(raw: string | null | undefined): string | null {
+  const t = (raw ?? "").trim();
+  if (!t) return "how much are you raising? enter a goal, like 1200.";
+  const clean = t.replace(/^\$/, "").replace(/,/g, "").trim();
+  if (/^[-−]/.test(clean)) return "the goal has to be more than zero.";
+  if (!/^[\d.]+$/.test(clean) || !/\d/.test(clean)) return "enter the goal as a number, like 1200.";
+  if (!/^\d+(\.\d+)?$/.test(clean) || /\.\d{3,}$/.test(clean)) return "use a plain number with at most two decimals, like 1200 or 1200.50.";
+  const cents = parseAmount(clean);
+  if (cents === null) return /^0*(\.0*)?$/.test(clean) ? "the goal has to be more than zero." : "that goal is too large to read. the largest goal is " + formatCents(FUND_TARGET_MAX_CENTS) + ".";
+  if (cents < FUND_MIN_CENTS) return `the smallest goal is ${formatCents(FUND_MIN_CENTS)}.`;
+  if (cents > FUND_TARGET_MAX_CENTS) return `the largest goal is ${formatCents(FUND_TARGET_MAX_CENTS)}.`;
+  return null;
+}
+
+/**
+ * WRITE GUARD for item details: a fundTarget, when present, must be a whole
+ * number of cents within the existing target limits. Items without one pass.
+ * (Client-side: items are written straight to Supabase; the DB has no check.)
+ */
+export function fundDetailsOk(details: unknown): boolean {
+  if (!details || typeof details !== "object" || !("fundTarget" in details)) return true;
+  const t = (details as { fundTarget?: unknown }).fundTarget;
+  return typeof t === "number" && validTarget(t) !== null;
+}

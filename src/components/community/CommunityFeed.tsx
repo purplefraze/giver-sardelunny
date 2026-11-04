@@ -271,7 +271,7 @@ export function CommunityFeed({
             <Button variant="ghost" className="cg-filter" onClick={() => void allowLocation()}>near me</Button>
           </div>
         </div>}
-        backdrop={<Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={openItem} /></Suspense>}
+        backdrop={<Suspense fallback={null}><CommunigyMap pins={pins} centre={centre} radiusKm={radius} onOpen={openItem} active={!showDetail && view === "map"} /></Suspense>}
         backdropHidden={showDetail || view !== "map"}
         record={record}
         listening={listening}

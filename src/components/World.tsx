@@ -74,6 +74,7 @@ export function World({
 
   overlay,
   earCut = false,
+  home = false,
   children,
 }: Props) {
   const [open, setOpen] = useState<RegionKey | null>(null);
@@ -100,6 +101,7 @@ export function World({
   return (
     <div
       data-world={world}
+      data-home-g={home || undefined}
       className="relative flex h-full w-full flex-col overflow-hidden"
       style={{
         background: "var(--world-bg)",

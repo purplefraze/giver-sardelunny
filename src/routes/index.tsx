@@ -902,6 +902,7 @@ function Index() {
             /* THE CEREMONY starts from My G blue; its purple → green tint is
                applied by the ceremony itself (FirstLand.tsx), never here. */
             world={ceremony ? "home" : atMap ? "map" : (activity ?? "profile")}
+            home
             /* Seat change: LoopLabels crossfade; LivingG surface stays (no remount). */
             contentKey={seat}
             active={

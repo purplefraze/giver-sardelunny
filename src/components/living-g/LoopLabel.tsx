@@ -55,9 +55,9 @@ function useUnitsPerPx(ref: React.RefObject<SVGGElement | null>) {
 }
 
 /** The seat's app-wide colour, read from the one source (:root --mode-*). */
-function seatHex(seat: Seat): string | null {
+function seatHex(seat: Seat, el?: Element | null): string | null {
   if (typeof window === "undefined") return null;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(`--mode-${seat}`).trim();
+  const v = getComputedStyle(el ?? document.documentElement).getPropertyValue(`--mode-${seat}`).trim();
   return /^#[0-9a-f]{3,8}$/i.test(v) ? v : null;
 }
 
@@ -84,6 +84,9 @@ export function LoopLabels({
   const root = useRef<SVGGElement | null>(null);
   const upp = useUnitsPerPx(root);
   const next = useRef(1);
+  /* Re-read seat colours once mounted so scoped overrides (e.g. [data-home-g]) apply. */
+  const [, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [shown, setShown] = useState<Shown[]>([{ key: 0, seat, leaving: false }]);
 
   useEffect(() => {
@@ -119,7 +122,7 @@ export function LoopLabels({
     <g ref={root} pointerEvents="none" aria-hidden="true">
       {shown.map(({ key, seat: s, leaving }) => {
         const copy = loopCopyFor(s);
-        const hex = seatHex(s);
+        const hex = seatHex(s, root.current);
         const fill = hex ? loopInk(hex) : "var(--world-text)";
         return (
           <g

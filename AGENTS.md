@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Communi-G perimeter
+- The isolated `/review/wish` route uses an exact preview-host allowlist in production and skips root cloud startup; this enables zero-write review without weakening dev/admin/auth gates.
 - Review routes mount real components without write handlers for safe visual QA.
 - Derive paint, attachment normals, and camera from the smooth measured lower-loop curve in `perimeter-geometry.ts`; this prevents erosion seams and quantized ray-cache movement without altering the full Living G artwork.
 - Keep one unwrapped angle as the only motion state and freeze only gesture input coordinates, never the camera; this avoids input feedback and preserves immediate reversal/stop behavior.

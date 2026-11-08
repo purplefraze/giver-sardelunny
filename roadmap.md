@@ -1,3 +1,13 @@
+# November 8 authoritative Figma handoff — active
+- [x] Confirm existing Giver Dev Prototype and check current saved baseline: 7582961.
+- [x] Verify native design access: no connected Figma MCP/active desktop session; no attached native design export available in this conversation or project files.
+- [x] Record founder-authorized replacement scope and superseding requirements without changing the app.
+- [ ] Import approved Figma selections into this existing project's chat — blocked on founder attaching exported designs via + → Add context → Figma designs, or enabling desktop-local Figma MCP.
+- [ ] Inspect approved B framing and all six journeys/Fund extensions; enumerate actual screens and branches — blocked on native design access.
+- [ ] Replace legacy middle-loop journeys in isolated preview fixtures, preserving integrity/security — blocked on verified design source.
+- [ ] Test verified paths at actual320/390/430 viewports and report coverage/evidence — blocked on implementation from approved layers.
+- No application code, database/auth settings or production publication changed during access verification.
+
 # October 12 final voice corrections — active
 - [x] White main community entry at12, explicit map at6 and wish-first filters; preserve context.
 - [x] Canonical upward S return with shared projected attachment and continuous reversible motion.

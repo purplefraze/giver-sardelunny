@@ -1,7 +1,7 @@
 # November 8 Wish review access fix
 - [x] Add exact-host preview review route without loosening dev/admin/auth gates.
 - [x] Exclude this direct review entry from shared cloud startup.
-- [ ] Verify production-host decisions, item/food access, hosted URL and phone screenshots.
+- [x] Verify exact-host decisions with DEV=false, item/food/back/retention at320/390/430, and automatic build. Hosted attempt reaches Lovable platform login; authenticated external rendering remains unverified.
 
 # November 8 authoritative Figma handoff — active
 - [x] Confirm existing Giver Dev Prototype and check current saved baseline: 7582961.

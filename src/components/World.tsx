@@ -56,6 +56,8 @@ type Props = {
   overlay?: React.ReactNode;
   /** True when the mode selector owns the small top circle (static ear cut). */
   earCut?: boolean;
+  /** Opening/home G: applies home-only seat colours (provisional Lend, approved-B Fund). */
+  home?: boolean;
   children?: React.ReactNode;
 };
 

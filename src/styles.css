@@ -293,6 +293,13 @@
   /* The 6:00 seat IS communi-g's door, so it wears the same red (a literal,
      not var(), because LoopLabel reads --mode-<seat> as a hex). */
   --mode-map: #e8322b;
+  /* HOME-ONLY seat colours (Nov 8 2026, approved Figma B 554:2256).
+     Fund #FF298E matches approved B. Lend #BEF43D (Electric Lime, node 571:2875)
+     is PROVISIONAL — awaiting the founder's final choice vs #D5F238. Applied only
+     inside [data-home-g]; every other screen keeps --mode-lend/--mode-fund. */
+  --home-fund: #ff298e;
+  --home-fund-dark: #9e1853;
+  --home-lend-provisional: #bef43d;
   --mode-lend-text: #6e9200;
   --mode-borrow-text: #a64db8;
   /* Legacy name kept so nothing dangles: My G's colour IS the map's. */
@@ -429,6 +436,12 @@
                    loops any more: they are reserved for FORMS (headings), see
                    --form-heading below.
    --------------------------------------------------------------- */
+
+/* Opening/home G only: provisional Lend + approved-B Fund seat colours. */
+[data-home-g] {
+  --mode-lend: var(--home-lend-provisional);
+  --mode-fund: var(--home-fund);
+}
 
 /* Home / Giver — my own world: green. */
 [data-world="home"] {

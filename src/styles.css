@@ -2365,3 +2365,4 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .wj-actions { display: flex; justify-content: space-between; align-items: center; height: 42px; margin-top: 18px; }
 .wj-action { background: none; border: 0; padding: 0 4px; min-height: 42px; font: 600 17px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--wish-question); cursor: pointer; }
 .wj-select-wrap > .wj-select { width: 100%; }
+.wj > .wj-field { width: calc(280 / 390 * 100cqw); }

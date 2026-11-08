@@ -17,6 +17,7 @@ import { Route as DevCommuniGRouteImport } from './routes/dev.communi-g'
 import { Route as DevLunaRouteImport } from './routes/dev.luna'
 import { Route as DevMiddleLoopRouteImport } from './routes/dev.middle-loop'
 import { Route as DevMyGRouteImport } from './routes/dev.my-g'
+import { Route as DevWishRouteImport } from './routes/dev.wish'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 
 const IndexRoute = IndexRouteImport.update({
@@ -59,6 +60,11 @@ const DevMyGRoute = DevMyGRouteImport.update({
   path: '/dev/my-g',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevWishRoute = DevWishRouteImport.update({
+  id: '/dev/wish',
+  path: '/dev/wish',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/dev/luna': typeof DevLunaRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
   '/dev/my-g': typeof DevMyGRoute
+  '/dev/wish': typeof DevWishRoute
   '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/dev/luna': typeof DevLunaRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
   '/dev/my-g': typeof DevMyGRoute
+  '/dev/wish': typeof DevWishRoute
   '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/dev/luna': typeof DevLunaRoute
   '/dev/middle-loop': typeof DevMiddleLoopRoute
   '/dev/my-g': typeof DevMyGRoute
+  '/dev/wish': typeof DevWishRoute
   '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/dev/luna'
     | '/dev/middle-loop'
     | '/dev/my-g'
+    | '/dev/wish'
     | '/invite/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/dev/luna'
     | '/dev/middle-loop'
     | '/dev/my-g'
+    | '/dev/wish'
     | '/invite/$token'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/dev/luna'
     | '/dev/middle-loop'
     | '/dev/my-g'
+    | '/dev/wish'
     | '/invite/$token'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   DevLunaRoute: typeof DevLunaRoute
   DevMiddleLoopRoute: typeof DevMiddleLoopRoute
   DevMyGRoute: typeof DevMyGRoute
+  DevWishRoute: typeof DevWishRoute
   InviteTokenRoute: typeof InviteTokenRoute
 }
 
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevMyGRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/wish': {
+      id: '/dev/wish'
+      path: '/dev/wish'
+      fullPath: '/dev/wish'
+      preLoaderRoute: typeof DevWishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invite/$token': {
       id: '/invite/$token'
       path: '/invite/$token'
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevLunaRoute: DevLunaRoute,
   DevMiddleLoopRoute: DevMiddleLoopRoute,
   DevMyGRoute: DevMyGRoute,
+  DevWishRoute: DevWishRoute,
   InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport

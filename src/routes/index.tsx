@@ -27,6 +27,7 @@ import { MyGRing } from "@/components/profile/MyGRing";
 import { seatCentre as myGSeatCentre } from "@/components/living-g/EarSelector";
 const MY_G_FOCUS = myGSeatCentre("giver");
 import { CategoryForm } from "@/components/profile/CategoryForm";
+import { WishJourney } from "@/intelligence/WishJourney";
 import { GiveFlow } from "@/components/give/GiveFlow";
 import { IntentIntake } from "@/intelligence/IntentIntake";
 import { VoiceIntake } from "@/intelligence/VoiceIntake";
@@ -317,6 +318,7 @@ function Index() {
    * the G; closing it returns to the SAME seat, with the saved data already
    * alive inside the loop. Forms are never appended beneath the G.
    */
+  const [wishJourney, setWishJourney] = useState(false);
   const [editor, setEditor] = useState<
     | { kind: "about" }
     | { kind: "category"; category: Category; side?: BorrowSide; prefillId?: string; seed?: FormSeed }
@@ -815,6 +817,11 @@ function Index() {
        editable form at once inside the unfolded G — fresh, or the seat's
        kept draft. Never listens, never saves. */
     haptics.light();
+    /* FIGMA HANDOFF PHASE 1: Wish opens the approved guided journey, not the old form. */
+    if (seat === "wish") {
+      setWishJourney(true);
+      return;
+    }
     conversation.openForm(seat);
   };
 
@@ -870,6 +877,11 @@ function Index() {
               setBrowse({ type, selection, ...(itemId ? { highlight: itemId } : {}), ...(a === "borrow" || a === "lend" ? { side: a } : {}) });
             }}
           />
+        </VoiceEnclosure>
+      ) : null}
+      {wishJourney && !reviewing && !reSignIn ? (
+        <VoiceEnclosure seat="wish" onFold={() => setWishJourney(false)}>
+          <WishJourney onExit={() => document.querySelector("[data-voice-frame]")?.dispatchEvent(new Event("giver:fold"))} />
         </VoiceEnclosure>
       ) : null}
       {entered && !chromeQuiet && !browse && !reviewing ? <DevSeal /> : null}

@@ -2331,3 +2331,39 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .gv-form .gv-fields > .gv-trust, .gv-form .gv-fields > .gv-inline-note { grid-column:1 / -1; display:block; }
 /* ANNA PASS3: the last list row ends clear of the communi-g ring (>= 24px). */
 [data-cg-interior-page][data-cg-view="list"] .cg-list { padding-bottom:20px; scroll-padding-bottom:20px; margin-bottom:8px; }
+
+/* ---- WISH GUIDED JOURNEY (Figma 427:2096 / 429:2100 / 429:2998, Nov 8 2026) ----
+   Figma frame 390x844: content x=55 y=130 w=280. Scaled by app width (cqw).
+   Figma names Inter; the project canon keeps Helvetica Neue (fallback) — flagged
+   in the handoff report rather than silently switching typeface. */
+:root {
+  --wish-heading: #993df4;
+  --wish-question: #673d9a;
+  --wish-field-border: #8b4fe8;
+}
+.gv-review-content:has(> .wj) { inset: 0; border-radius: 0; overflow: visible; }
+.wj {
+  container-type: inline-size;
+  position: absolute; inset: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0;
+}
+.wj > * { margin-left: calc(55 / 390 * 100cqw); width: calc(280 / 390 * 100cqw); }
+.wj-heading { margin-top: calc(130 / 390 * 100cqw); font-weight: 700; color: var(--wish-heading); font-size: clamp(26px, calc(32 / 390 * 100cqw), 34px); line-height: 1.22; }
+.wj-question { display: block; margin-top: 8px; font-weight: 400; color: var(--wish-question); font-size: clamp(21px, calc(26 / 390 * 100cqw), 28px); line-height: 1.27; }
+.wj-field {
+  display: block; box-sizing: border-box; margin-top: 18px; width: 100%; height: 52px; padding: 0 14px;
+  background: var(--background, white); border: 1.2px solid var(--wish-field-border); border-radius: 11px;
+  font: 500 17px/1.2 "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--wish-question); outline: none;
+}
+.wj-field::placeholder { color: var(--wish-question); opacity: .85; }
+.wj-field:focus-visible { box-shadow: 0 0 0 2px var(--wish-field-border); }
+.wj-select-wrap { position: relative; }
+.wj-select-wrap > .wj-select { appearance: none; -webkit-appearance: none; }
+.wj-caret { position: absolute; right: 18px; top: calc(18px + 26px); transform: translateY(-50%); font-size: 12px; color: var(--mode-give); pointer-events: none; }
+.wj-note { margin-top: 14px; font-size: 14px; line-height: 1.35; color: var(--wish-question); }
+.wj-actions { display: flex; justify-content: space-between; align-items: center; height: 42px; margin-top: 18px; }
+.wj-action { background: none; border: 0; padding: 0 4px; min-height: 42px; font: 600 17px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--wish-question); cursor: pointer; }
+.wj-select-wrap > .wj-select { width: 100%; }
+.wj > .wj-field { width: calc(280 / 390 * 100cqw); }
+.wj-select-wrap { margin-top: 18px; } .wj-select-wrap > .wj-select { margin-top: 0; } .wj-select-wrap > .wj-caret { top: 50%; }

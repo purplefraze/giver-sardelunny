@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -13,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { bootCloud } from "../data/cloud/boot";
+import { isWishReviewPath } from "../lib/wish-review-access";
 
 function NotFoundComponent() {
   return (
@@ -138,10 +140,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useLocation({ select: (location) => location.pathname });
   /* THE SHARED DEV BACKEND, STARTED ONCE FOR EVERY ROUTE. */
   useEffect(() => {
+    if (isWishReviewPath(pathname)) return;
     bootCloud();
-  }, []);
+  }, [pathname]);
   /* A stale code chunk (after an update/restart) reloads once instead of blanking. */
   useEffect(() => {
     const KEY = "giver:chunk-reload";

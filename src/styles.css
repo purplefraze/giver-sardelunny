@@ -286,7 +286,7 @@
   --mode-lend: #b5d334;
   --mode-giver: #1e7bff;
   --mode-trade: #ff6a13;
-  --mode-fund: #9e4b2c;
+  --mode-fund: #ff298e; /* Nov 10 founder rule: Fund is pink everywhere (supersedes clay brown) */
   --mode-borrow: #c77dd6;
   --mode-wish: #9d00ff;
   --mode-communigy: #e8322b;

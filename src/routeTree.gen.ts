@@ -19,6 +19,7 @@ import { Route as DevMiddleLoopRouteImport } from './routes/dev.middle-loop'
 import { Route as DevMyGRouteImport } from './routes/dev.my-g'
 import { Route as DevWishRouteImport } from './routes/dev.wish'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as ReviewNovemberRouteImport } from './routes/review.november'
 import { Route as ReviewWishRouteImport } from './routes/review.wish'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewNovemberRoute = ReviewNovemberRouteImport.update({
+  id: '/review/november',
+  path: '/review/november',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReviewWishRoute = ReviewWishRouteImport.update({
   id: '/review/wish',
   path: '/review/wish',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/dev/my-g': typeof DevMyGRoute
   '/dev/wish': typeof DevWishRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/review/november': typeof ReviewNovemberRoute
   '/review/wish': typeof ReviewWishRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/dev/my-g': typeof DevMyGRoute
   '/dev/wish': typeof DevWishRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/review/november': typeof ReviewNovemberRoute
   '/review/wish': typeof ReviewWishRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/dev/my-g': typeof DevMyGRoute
   '/dev/wish': typeof DevWishRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/review/november': typeof ReviewNovemberRoute
   '/review/wish': typeof ReviewWishRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/dev/my-g'
     | '/dev/wish'
     | '/invite/$token'
+    | '/review/november'
     | '/review/wish'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/dev/my-g'
     | '/dev/wish'
     | '/invite/$token'
+    | '/review/november'
     | '/review/wish'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/dev/my-g'
     | '/dev/wish'
     | '/invite/$token'
+    | '/review/november'
     | '/review/wish'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   DevMyGRoute: typeof DevMyGRoute
   DevWishRoute: typeof DevWishRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ReviewNovemberRoute: typeof ReviewNovemberRoute
   ReviewWishRoute: typeof ReviewWishRoute
 }
 
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/review/november': {
+      id: '/review/november'
+      path: '/review/november'
+      fullPath: '/review/november'
+      preLoaderRoute: typeof ReviewNovemberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/review/wish': {
       id: '/review/wish'
       path: '/review/wish'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevMyGRoute: DevMyGRoute,
   DevWishRoute: DevWishRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ReviewNovemberRoute: ReviewNovemberRoute,
   ReviewWishRoute: ReviewWishRoute,
 }
 export const routeTree = rootRouteImport

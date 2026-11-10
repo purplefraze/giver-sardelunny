@@ -182,7 +182,7 @@
      saturated, clean, editorial, playful — never pastel, muted or corporate.
 
      BLUE     = me / the current user, always.
-     CLAY     = FUND, and only Fund (#9E4B2C, --mode-fund below).
+     PINK     = FUND, and only Fund (#FF298E, --mode-fund below).
      ORCHID   = the other person on the asking (wish / borrow) side (#C154C1).
      PURPLE   = WISH — and the world a wish / borrow interaction lives in.
      SEAFOAM  = LEND.
@@ -197,9 +197,9 @@
   /* ORCHID — the Wish world's "other" colour (#C154C1). Recast from hot pink
      (--giver-pink, #E85088) so FUND alone owns hot pink. */
   --giver-orchid: oklch(0.624 0.191 327.6); /* #C154C1 */
-  /* FUND — deep clay brown (#9E4B2C), read from the seat map. The token keeps
+  /* FUND — pink (#FF298E, Nov 10), read from the seat map. The token keeps
      its legacy name (--giver-hot-pink) so nothing that references it moves. */
-  --giver-hot-pink: var(--mode-fund); /* #9E4B2C — read from the seat map */
+  --giver-hot-pink: var(--mode-fund); /* #FF298E — read from the seat map */
   --giver-blue: oklch(0.58 0.2 250); /* BLUE — me, the current user */
   --giver-yellow: oklch(0.82 0.17 92); /* YELLOW — the receiving person */
   --giver-orange: oklch(0.7 0.2 46); /* ORANGE — community, trade partner */
@@ -263,7 +263,7 @@
        clockwise from 6:00 (12:00 is my g's seat):
          seat    clock  colour
          map     6:00   #E8322B  communi-g red (the door into communi-g)
-         fund    7:30   #9E4B2C  deep clay brown
+         fund    7:30   #FF298E  pink (Nov 10)
          borrow  9:00   #C77DD6  pinkish purple (orchid): pinker and softer
                                  than wish, never lavender-grey
          wish    10:30  #9D00FF  bright purple (prince purple)
@@ -286,7 +286,7 @@
   --mode-lend: #b5d334;
   --mode-giver: #1e7bff;
   --mode-trade: #ff6a13;
-  --mode-fund: #9e4b2c;
+  --mode-fund: #ff298e; /* Nov 10 founder rule: Fund is pink everywhere (supersedes clay brown) */
   --mode-borrow: #c77dd6;
   --mode-wish: #9d00ff;
   --mode-communigy: #e8322b;

@@ -210,7 +210,7 @@ export function ActivityDetail({
           {owner.photo ? <img src={owner.photo} alt="" className="cg-d-avatar" /> : <span aria-hidden className="cg-d-avatar" style={{ background: "var(--giver-ink)", opacity: 0.08 }} />}
           <span className="min-w-0">
             <span className="cg-d-name" style={{ color: personInk }}>{owner.username}</span>
-            <span className="cg-d-meta">{[owner.age || null, owner.gender || null, item.distanceKm === undefined ? owner.distance || null : `${item.distanceKm} km away`, statusWord].filter(Boolean).join(" · ")}</span>
+            <span className="cg-d-meta">{[item.distanceKm === undefined ? owner.distance || null : `${item.distanceKm} km away`, statusWord].filter(Boolean).join(" · ")}</span>
           </span>
         </Button>
       ) : <p className="cg-d-meta">{who} · {statusWord}</p>}

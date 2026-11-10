@@ -2374,5 +2374,5 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .cg-suggestions { color:var(--foreground); font:400 16px var(--giver-font); padding:8px 0; }
 .cg-suggestions input { font:400 16px var(--giver-font); }
 .cg-d-actions > button { height:auto; min-height:36px; white-space:normal; justify-content:flex-start; padding:4px 0; }
-.cg-d-owner { height:auto; justify-content:flex-start; white-space:normal; padding:0; }
+.cg-d-owner { height:auto; flex-shrink:0; justify-content:flex-start; white-space:normal; padding:6px 0; }
 @media (prefers-reduced-motion: reduce) { [data-g-depth], [data-g-depth] * { transition:none !important; animation:none !important; } }

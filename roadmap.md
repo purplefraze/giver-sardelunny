@@ -1,12 +1,12 @@
 # November 10 founder tasks — current, preview only
 - Evidence: docs/november-founder-verification.md. Physical-device and hosted signed-in checks remain unverified.
-- [x] 1. Shared spatial camera between lower, middle and upper; preserve return context and gestures.
+- [ ] 1. Shared spatial camera wired; finish renderer handoff/rim continuity and all cross-loop gesture checks. Current overlay does not yet prove seamless optical navigation across every entry.
 - [x] 2. Lower communi-g at6, own-only My G at12, contextual maps/search/filters/radius; preserve Fund pink.
 - [x] 3. Listing/profile identity and private contextual contact; remove public interest counts.
-- [x] 4. Blue upper conversations with in-place linked listing summary.
+- [ ] 4. Conversations now target blue upper depth with in-place summary; integrate the settled conversation into the actual profile-ring enclosure (currently a readable plain room).
 - [x] 5. Contextual lower add actions to middle wizards with retained drafts and eligibility.
 - [x] 6. Safe local semantic suggestions from existing offers, optional and coarse-location only.
-- [x] 7. Phone QA, regressions, automatic build, documentation and honest remaining backlog.
+- [ ] 7. 320/390/430 isolated checks and regressions pass; exhaustive main-app account/keyboard, all seats/maps and motion-frame QA remains unfinished. Hosted browser is blocked by Lovable login.
 
 # November 8 Wish review access fix
 - [x] Add exact-host preview review route without loosening dev/admin/auth gates.

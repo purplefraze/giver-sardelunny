@@ -1,3 +1,12 @@
+# November 10 founder tasks — current, preview only
+- [ ] 1. Shared spatial camera between lower, middle and upper; preserve return context and gestures.
+- [ ] 2. Lower communi-g at6, own-only My G at12, contextual maps/search/filters/radius; preserve Fund pink.
+- [ ] 3. Listing/profile identity and private contextual contact; remove public interest counts.
+- [ ] 4. Blue upper conversations with in-place linked listing summary.
+- [ ] 5. Contextual lower add actions to middle wizards with retained drafts and eligibility.
+- [ ] 6. Safe local semantic suggestions from existing offers, optional and coarse-location only.
+- [ ] 7. Phone QA, regressions, automatic build, documentation and honest remaining backlog.
+
 # November 8 Wish review access fix
 - [x] Add exact-host preview review route without loosening dev/admin/auth gates.
 - [x] Exclude this direct review entry from shared cloud startup.

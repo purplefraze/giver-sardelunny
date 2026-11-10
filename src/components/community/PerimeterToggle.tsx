@@ -65,7 +65,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
   const show = (station: CgStation) => {
     if (station === shownRef.current) return;
     shownRef.current = station; setShown(station);
-    // Content changes at real station crossings; 12:00 is the white overview; no wrapped station crossings.
+    // Content changes at real stations: My G at12, communi-g at6; never wrap across the opening.
     if (station === "back") return; // reaching back never leaves, never changes content
     if (!external.current) { previousValue.current = station; callbacks.current.onChange(station); }
   };
@@ -219,7 +219,7 @@ export function PerimeterToggle({ value, onChange, onTap, onHold, onBack, record
       <svg width={88} height={88} viewBox="-44 -44 88 88" aria-hidden="true" data-cg-bead-shape="circle-arm">
         <circle r={BEAD_SCREEN_RADIUS} fill="var(--world-bg)" />
         <circle r={BEAD_SCREEN_RADIUS} fill="none" stroke={colour} style={{ stroke: colour }} strokeWidth={visibleStroke(size.w)} data-cg-ring="" />
-        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} data-cg-seat-label="" style={{ fontFamily: "var(--giver-font)", fontSize: 11, fontWeight: 700, letterSpacing: 0 }}>{word}</text>}
+        {record ? <circle r={listening ? 9 : 11} fill={colour} data-cg-record="" opacity={listening ? 1 : .85} /> : <text textAnchor="middle" dominantBaseline="central" y={.4} fill={colour} data-cg-seat-label="" style={{ fontFamily: "var(--giver-font)", fontSize: 11, fontWeight: shown === "everything" ? 500 : 700, letterSpacing: 0 }}>{word}</text>}
       </svg>
     </Button>
   </div>;

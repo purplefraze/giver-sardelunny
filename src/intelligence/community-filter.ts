@@ -4,7 +4,7 @@ import type { CgMode } from "@/data/communigy";
  * LOWER-LOOP SELECTION — one value drives the inside toggle, the filter row
  * and the feed. "map" is NOT a seat: it means Community (everything) shown in
  * the map view. "mine" remains a
- * legacy voice scope routed to My G activity, never a lower seat.
+ * own-only lower My G scope at twelve.
  */
 export type CgSelection = CgMode | "map" | "mine";
 
@@ -16,6 +16,7 @@ export const CG_FILTERS: { value: CgSelection; word: string }[] = [
   { value: "trade", word: "trades" },
   { value: "lend", word: "lends" },
   { value: "give", word: "gives" },
+  { value: "mine", word: "my g" },
 ];
 
 const RULES: [RegExp, CgSelection][] = [

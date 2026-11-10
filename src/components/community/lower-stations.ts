@@ -5,11 +5,12 @@ import type { CgMode } from "@/data/communigy";
 /** "back" is the outside S-curve destination past 12 o'clock (the loop's open end).
  * COMMUNI-G NAV (29 Oct 2026): the loop is entered at ITS 6:00, "everything",
  * labelled "communi-g". The map is no longer a station (it is a list/map view
- * inside Communi-G) and nothing rests at the lower loop's 12:00. */
-export type CgStation = CgMode | "back";
+ * inside Communi-G). November 10: twelve is own-only My G. */
+export type CgStation = CgMode | "mine" | "back";
 export const BACK_ANGLE = 60;
 export const LOWER_STATIONS: { value: CgStation; angle: number }[] = [
   { value: "back", angle: BACK_ANGLE },
+  { value: "mine", angle: 0 },
   { value: "wish", angle: -45 },
   { value: "borrow", angle: -90 },
   { value: "fund", angle: -135 },
@@ -26,5 +27,5 @@ export const clampLower = (angle: number) => Math.max(LOWER_MIN, Math.min(LOWER_
 export const lowerAngle = (value: CgStation) => LOWER_STATIONS.find(s => s.value === value)?.angle ?? 0;
 export const nearestLower = (angle: number): CgStation => LOWER_STATIONS.reduce((best, s) =>
   Math.abs(clampLower(angle) - s.angle) < Math.abs(clampLower(angle) - lowerAngle(best)) ? s.value : best, "everything" as CgStation);
-export const lowerToken = (value: CgStation) => `--mode-${value === "everything" || value === "back" ? "communigy" : value}`;
-export const lowerWord = (value: CgStation) => value === "back" ? "my g" : value === "everything" ? "communi-g" : value;
+export const lowerToken = (value: CgStation) => `--mode-${value === "mine" ? "giver" : value === "everything" || value === "back" ? "communigy" : value}`;
+export const lowerWord = (value: CgStation) => value === "back" ? "living g" : value === "mine" ? "my g" : value === "everything" ? "communi-g" : value;

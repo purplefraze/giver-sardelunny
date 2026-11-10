@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { BackArrow } from "@/components/BackArrow";
 import { memberById } from "@/data/giver";
 import { ACTIVITY_FILL, ME_ID, itemLine } from "@/data/items";
@@ -50,6 +51,7 @@ export function Conversation({
   const items = useItems();
   const me = useMyProfile();
   const [draft, setDraft] = useState("");
+  const [listingOpen, setListingOpen] = useState(false);
   const [usedStarter, setUsedStarter] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
@@ -114,8 +116,8 @@ export function Conversation({
 
   return (
     <div
-      data-world={STATE_WORLD[state]}
-      className="relative flex h-full w-full flex-col overflow-y-auto px-6 pb-5 pt-16"
+      data-world="me"
+      className="relative flex h-full w-full flex-col overflow-hidden px-6 pb-5 pt-16"
       style={{ background: "var(--world-bg)", color: "var(--world-ink)" }}
     >
       <BackArrow onClick={onClose} label="back" />
@@ -128,9 +130,14 @@ export function Conversation({
       {/* WHAT, AND ITS PARAMETERS — one quiet line, carried through from the give. */}
       {item ? (
         <>
-          <p className="mt-2 g-name" style={{ color: stateColour }}>
+          <Button variant="ghost" className="mt-2 h-auto justify-start whitespace-normal p-0 text-left g-name" aria-expanded={listingOpen} onClick={()=>setListingOpen(v=>!v)} data-conversation-listing="">
             {itemLine(item)}
-          </p>
+          </Button>
+          {listingOpen ? <div className="g-meta mt-2" data-linked-listing="">
+            <p>{item.note}</p>
+            {item.photos?.[0] ? <img src={item.photos[0]} alt={itemLine(item)} className="h-16 w-16 object-cover" /> : null}
+            <p>{memberById(item.ownerId)?.username ?? "you"} · {item.status === "active" ? "open · owner chooses recipient" : item.status}</p>
+          </div> : null}
           {facts.length ? (
             <p className="mt-2 g-meta" style={{ color: stateColour, opacity: 0.75 }}>
               {facts.map((f) => f.value).join(" · ")}
@@ -141,7 +148,7 @@ export function Conversation({
 
 
       {/* THE THREAD. It runs downward, and the composer follows it immediately. */}
-      <ul className="g-rule mt-5 space-y-5 pt-5">
+      <ul className="g-rule mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pt-3" data-message-list="">
         {messages.map((m) => (
           <li key={m.id} className={m.fromId === ME_ID ? "text-right" : "text-left"}>
             <span className="g-meta block" style={{ color: nameColour(m.fromId) }}>
@@ -170,7 +177,7 @@ export function Conversation({
         That confirmation is what lifts the giver's three-gives cap.
       */}
       {c.state !== "cancelled" && c.state !== "verified" ? (
-        <div className="g-rule mt-6 pt-5" data-testid="did-it-happen">
+        <div className="g-rule mt-3 shrink-0 pt-3" data-testid="did-it-happen">
           {/* A BORROW IS NOT FINISHED AT PICKUP. Both halves of the cycle first. */}
           {c.type === "borrow" && c.state !== "awaiting" ? (
             <div className="mb-4 flex flex-wrap items-baseline gap-5">
@@ -313,7 +320,7 @@ export function Conversation({
               type="button"
               onClick={send}
               disabled={!draft.trim()}
-              className="shrink-0 pb-1 text-[15px] font-black lowercase tracking-[0.22em] disabled:opacity-25"
+              className="shrink-0 pb-1 g-meta disabled:opacity-25"
               style={{ color: stateColour }}
             >
               send

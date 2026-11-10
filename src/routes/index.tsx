@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { SpatialCamera, type CameraTravel } from "@/components/living-g/SpatialCamera";
 import { GDepthStack } from "@/components/living-g/GDepthStack";
 import { VoiceEnclosure } from "@/components/living-g/GEnclosure";
 import { GStage } from "@/components/living-g/GStage";
@@ -319,6 +320,26 @@ function Index() {
    * alive inside the loop. Forms are never appended beneath the G.
    */
   const [wishJourney, setWishJourney] = useState(false);
+  const [postTravel, setPostTravel] = useState<CameraTravel | null>(null);
+  const pendingPost = useRef<GiverAction | null>(null);
+  const postOrigin = useRef(false);
+  const createFromCommunity = (action: GiverAction) => {
+    pendingPost.current = action; postOrigin.current = true;
+    setPostTravel({ from: "bottom", to: "middle", key: performance.now(), colour: `var(--mode-${action})` });
+  };
+  const completePostTravel = () => {
+    setPostTravel(null);
+    const action = pendingPost.current; pendingPost.current = null;
+    if (!action) return;
+    setSeat(action);
+    if (action === "wish") setWishJourney(true); else conversation.openForm(action);
+  };
+  const returnFromPost = () => {
+    if (postOrigin.current) {
+      postOrigin.current = false;
+      setPostTravel({from:"middle",to:"bottom",key:performance.now(),colour:"var(--mode-communigy)"});
+    }
+  };
   const [editor, setEditor] = useState<
     | { kind: "about" }
     | { kind: "category"; category: Category; side?: BorrowSide; prefillId?: string; seed?: FormSeed }
@@ -353,7 +374,7 @@ function Index() {
   useEffect(() => {
     const cg = talk.session?.community;
     if (!cg || talk.session?.search) return;
-    if (cg === "mine") { conversation.close(); setMyGArea({ id: "activity", n: Date.now() }); setMyG(true); return; }
+    if (cg === "mine") { conversation.close(); setBrowse({ type: null, selection: "mine" }); return; }
     conversation.close();
     setBrowse({ type: null, selection: cg });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -858,6 +879,7 @@ function Index() {
 
   return (
     <main className="g-canvas-h g-canvas-w relative mx-auto overflow-hidden">
+      <SpatialCamera travel={postTravel} onFinish={completePostTravel} />
 
       {/* COLD OPEN IS ONLY THE WORDMARK: no dev corner or @name/sign-in seal
          over the launch/auth screens. Both return once the G is showing.
@@ -865,7 +887,7 @@ function Index() {
          replays AuthGate → the opening (LaunchScreen), never PlayIntro.) */}
       {entered && !chromeQuiet && !reviewing ? <DevControls /> : null}
       {reviewing && !reSignIn ? (
-        <VoiceEnclosure seat={talk.session?.action ?? seat} onFold={() => conversation.closeForm()} onFoldStart={() => conversation.stopLocked()}>
+        <VoiceEnclosure seat={talk.session?.action ?? seat} onFold={() => { conversation.closeForm(); returnFromPost(); }} onFoldStart={() => conversation.stopLocked()}>
           <VoiceReview
             onDone={() => conversation.discard()}
             onSeeInCommunity={(itemId) => {
@@ -880,7 +902,7 @@ function Index() {
         </VoiceEnclosure>
       ) : null}
       {wishJourney && !reviewing && !reSignIn ? (
-        <VoiceEnclosure seat="wish" onFold={() => setWishJourney(false)}>
+        <VoiceEnclosure seat="wish" onFold={() => { setWishJourney(false); returnFromPost(); }}>
           <WishJourney onExit={() => document.querySelector("[data-voice-frame]")?.dispatchEvent(new Event("giver:fold"))} />
         </VoiceEnclosure>
       ) : null}
@@ -1072,7 +1094,7 @@ function Index() {
             identical movement in reverse. No screen ever simply replaces the G.
           */}
           <GDepthStack
-            gestures={!myG && !browse}
+            gestures={talking !== null || (!myG && !browse)}
             onPop={(id) => {
               if (id === "talking") setTalking(null);
               else if (id === "detail") setDetail(null);
@@ -1385,7 +1407,8 @@ function Index() {
                     onSectionChange={() => { setDetail(null); setPersonFocus(null); setPerson(null); }}
                     onOpenConnection={(id) => setTalking(id)}
                     onNeedGive={() => { setDetail(null); setBrowse(null); setLocked(true); }}
-                    onStartGive={() => { setDetail(null); setBrowse(null); setSeat("give"); conversation.openForm("give"); }}
+                    onStartGive={() => createFromCommunity("give")}
+                    onCreate={createFromCommunity}
                     onOpenProfile={(ownerId) => {
                       setPersonFocus(null);
                       setPerson(ownerId);
@@ -1402,7 +1425,7 @@ function Index() {
                       });
                     }}
                     onClose={() => setBrowse(null)}
-                    /* Explicit settled return to whole G; lower12 is overview, not profile. */
+                    /* Lower12 owns My G posts; outside S returns to the whole G. */
                     onExit={() => {
                       setBrowse(null);
                       setSeat("map");
@@ -1419,7 +1442,7 @@ function Index() {
               {
                 id: "person",
                 open: person !== null,
-                anchor: "middle",
+                anchor: "top",
                 world: person === ME_ID ? "me" : "others",
                 children: person
                   ? (() => {
@@ -1487,8 +1510,8 @@ function Index() {
               {
                 id: "talking",
                 open: talking !== null,
-                anchor: "bottom",
-                world: "connection",
+                anchor: "top",
+                world: "me",
                 children: talking ? (
                   <Conversation connectionId={talking} onClose={() => setTalking(null)} />
                 ) : null,

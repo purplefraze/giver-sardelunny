@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { GStage } from "./GStage";
-import { GThinMask } from "./g-weight";
+import { CanonicalPaint } from "./CanonicalPaint";
 import { MiddleLoopClose } from "./loop-close";
 import { LIVING_G_PATH, LIVING_G_TRANSFORM, LIVING_G_VIEWBOX } from "./g-path";
 import { CAMERA, LENS, anchorLens, anchorOrigin, levelInset, type GAnchorKey } from "./g-depth";
@@ -128,7 +128,7 @@ export function GDepthLevel({
         // way IN is short and early: the level must be fully opaque while the
         // aperture is still travelling, or the parent depth reads through the
         // incoming text. Going out it fades on the whole fold.
-        opacity: unfurled ? 1 : 0,
+        opacity: 1,
         transform: `scale(${pushed * pull})`,
         transformOrigin: `${origin.x}% ${origin.y}%`,
         transition: `opacity ${Math.round(ms * (open ? 0.18 : 0.5))}ms ease-out, transform ${
@@ -167,17 +167,7 @@ export function GDepthLevel({
           }}
         >
           <GStage>
-            <svg viewBox={LIVING_G_VIEWBOX} className="h-full w-full overflow-visible">
-              {/* The same middle weight as the G it unfurls from (g-weight.tsx). */}
-              <defs>
-                <GThinMask id={`g-depth-thin-${depth}`} weight="middle" />
-              </defs>
-              <g transform={LIVING_G_TRANSFORM} fill="var(--world-g)">
-                <path d={LIVING_G_PATH} mask={`url(#g-depth-thin-${depth})`} />
-              </g>
-              {/* The middle loop stays closed as the G unfurls (loop-close.tsx). */}
-              <MiddleLoopClose weight="middle" />
-            </svg>
+            <CanonicalPaint />
           </GStage>
         </div>
       </div>
@@ -195,7 +185,7 @@ export function GDepthLevel({
           ...inset,
           borderRadius: bare ? 0 : "2.25rem",
           clipPath: `circle(${unfurled ? lens.end : lens.start}% at ${lens.x}% ${lens.y}%)`,
-          opacity: unfurled ? 1 : 0,
+          opacity: 1,
           transform: `scale(${unfurled ? 1 : 0.965})`,
           transition: `clip-path ${ms}ms ${ease}, opacity ${Math.round(ms * 0.55)}ms ease-out ${
             open ? Math.round(ms * 0.2) : 0
@@ -267,7 +257,7 @@ export function GDepthLevel({
         className="pointer-events-none absolute inset-0"
         style={{
           background: "var(--world-bg)",
-          opacity: above > 0 ? Math.min(CAMERA.veil * above, 0.62) : 0,
+          opacity: 0,
           transition: `opacity ${ms}ms ${ease}`,
         }}
       />

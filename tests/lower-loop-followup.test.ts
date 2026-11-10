@@ -6,8 +6,8 @@ import { reviseFundFixture, DEMO_FUND_ID } from "../src/data/fund-fixture";
 import type { Item } from "../src/data/items";
 
 test("top overview to Give follows the counterclockwise wire without moving Trade", () => {
-  // Communi-G nav: entered at the lower loop's 6:00 (Community); no map station, nothing at 12:00.
-  expect(LOWER_STATIONS.map(s => s.value)).toEqual(["back", "wish", "borrow", "fund", "everything", "trade", "lend", "give"]);
+  // Communi-G nav: entered at the lower loop's 6:00 (Community); no map station, own My G at12.
+  expect(LOWER_STATIONS.map(s => s.value)).toEqual(["back", "mine", "wish", "borrow", "fund", "everything", "trade", "lend", "give"]);
   expect(lowerAngle("everything")).toBe(-180);
   expect(lowerAngle("trade")).toBe(-225);
   expect(lowerAngle("give")).toBe(-315);

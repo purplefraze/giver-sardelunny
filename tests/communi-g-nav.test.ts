@@ -8,10 +8,10 @@ test("6:00 seat is communi-g; 12:00 is My G", () => {
   expect(SEAT_TITLE.giver).toBe("my g");
   expect(Math.round((SEAT_ANGLE.giver * 180) / Math.PI)).toBe(-90);
 });
-test("lower loop opens at its 6:00, labelled communi-g; no map seat, no 12:00 entry", () => {
+test("lower loop opens at its 6:00, labelled communi-g; no map seat, own My G at12", () => {
   expect(lowerAngle("everything")).toBe(-180);
   expect(lowerWord("everything")).toBe("communi-g");
   expect(LOWER_STATIONS.some(s => (s.value as string) === "map")).toBe(false);
-  expect(LOWER_STATIONS.some(s => s.angle === 0)).toBe(false);
+  expect(LOWER_STATIONS.find(s => s.angle === 0)?.value).toBe("mine");
   expect(nearestLower(-180)).toBe("everything");
 });

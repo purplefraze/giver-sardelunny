@@ -8,7 +8,7 @@ import { kmBetween, itemMode, listingPin, DEMO_REGION, isDemoListing, CG_WORD, t
 const CommunigyMap = lazy(() => import("./CommunigyMap").then(m => ({ default: m.CommunigyMap })));
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { seatPlacement } from "@/intelligence/seat-placement";
-const CG_CLOCK: Record<string, number> = { map: 180, mine: 0, give: 45, lend: 90, trade: 135, everything: 0, fund: 225, borrow: 270, wish: 315 };
+const CG_CLOCK: Record<string, number> = { map: 180, mine: 0, give: 45, lend: 90, trade: 135, everything: 180, fund: 225, borrow: 270, wish: 315 };
 
 import { PerimeterToggle, type CgStation } from "@/components/community/PerimeterToggle";
 import { WishMatch } from "@/components/community/WishMatch";
@@ -23,7 +23,7 @@ import { haptics } from "@/lib/haptics";
 
 /**
  * COMMUNI-G — the lower loop. ONE selection drives the inside toggle, the
- * filter row and feed. 12:00 = red overview list; 6:00 = explicit blue all-types map.
+ * filter row and feed. 6:00 = red communi-g home; 12:00 = own-only My G. Map is a contextual view.
  *
  * SECTION CHANGES DISMISS THE OPEN LISTING: any deliberate change of station
  * (toggle crossing, filter tap, voice filter, a new initialSelection) closes
@@ -33,7 +33,7 @@ import { haptics } from "@/lib/haptics";
 type Scope = "everyone" | "mine";
 type View = "list" | "map";
 
-const toStation = (s: CgSelection): CgStation => (s === "mine" || s === "map" ? "everything" : s);
+const toStation = (s: CgSelection): CgStation => (s === "map" ? "everything" : s);
 const fromStation = (s: CgStation): CgSelection => (s === "back" ? "everything" : s);
 
 /** Pure: what the feed lists for one selection. Only active, published posts. */
@@ -53,7 +53,7 @@ export function sectionChange(current: CgSelection, next: CgSelection): { sel: C
 }
 
 /** The visible heading word for a selection (always lowercase). */
-export const sectionWord = (s: CgSelection) => (s === "map" || s === "everything" ? "communi-g" : s === "mine" ? "my communi-g" : `communi-g ${CG_WORD[s]}`);
+export const sectionWord = (s: CgSelection) => (s === "map" || s === "everything" ? "communi-g" : s === "mine" ? "my g" : `communi-g ${CG_WORD[s]}`);
 
 export function CommunityFeed({
   initialType = null,
@@ -73,6 +73,9 @@ export function CommunityFeed({
   onOpenProfile,
   onNeedGive,
   onStartGive,
+  onCreate,
+  previewOnly = false,
+  onPreviewContact,
 }: {
   initialType?: ItemType | null;
   initialScope?: Scope;
@@ -94,6 +97,9 @@ export function CommunityFeed({
   onOpenConnection?: (id: string) => void;
   onNeedGive?: () => void;
   onStartGive?: () => void;
+  onCreate?: (mode: Exclude<CgSelection, "mine" | "map" | "everything">) => void;
+  previewOnly?: boolean;
+  onPreviewContact?: (itemId: string) => void;
 }) {
   const [sel, setSel] = useState<CgSelection>(
     (initialSelection === "map" ? "everything" : initialSelection) ?? (initialScope === "mine" ? "mine" : initialType ? modeFor(initialType, initialSide) : "everything"),
@@ -175,7 +181,7 @@ export function CommunityFeed({
     let d0 = 0, p = 0, active = false, raf = 0;
     const onMap = (t: Touch) => !!(t.target as Element | null)?.closest?.(".leaflet-container");
     const dist = (e: TouchEvent) => Math.hypot(e.touches[0]!.clientX - e.touches[1]!.clientX, e.touches[0]!.clientY - e.touches[1]!.clientY);
-    const paint = (k: number) => { el.style.transform = k ? `scale(${1 - 0.55 * k})` : ""; el.style.opacity = k ? String(1 - 0.6 * k) : ""; el.dataset["cgPinch"] = k.toFixed(2); };
+    const paint = (k: number) => { el.style.transform = k ? `scale(${1 - 0.55 * k})` : ""; el.style.opacity = ""; el.dataset["cgPinch"] = k.toFixed(2); };
     const start = (e: TouchEvent) => {
       if (e.touches.length !== 2 || active || onMap(e.touches[0]!) || onMap(e.touches[1]!)) return;
       active = true; d0 = dist(e) || 1; p = 0; cancelAnimationFrame(raf);
@@ -262,6 +268,10 @@ export function CommunityFeed({
         onBack={onExit ?? onClose}
         header={showDetail ? undefined : <div className="cg-heading-row" data-align={align}><p className="cg-head" data-cg-head=""><span className="cg-head-cat" style={{ color: ink }}>{sectionWord(sel)}</span></p><Button variant="ghost" className="cg-filter" data-cg-map-view="" aria-pressed={view === "map"} data-cg-view-toggle={view} onClick={() => setCategoryView(view === "map" ? "list" : "map")}>{view === "map" ? "list" : "map"}</Button></div>}
         controls={showDetail ? undefined : <div data-cg-upper-tools="" data-align={align}>
+          <div className="cg-tools" data-cg-safe-band="">
+            <input aria-label="search listings" type="search" placeholder="search listings" value={term} onChange={e=>setTerm(e.target.value)} className="cg-search" />
+            {onCreate ? <Button variant="ghost" className="cg-filter" aria-label={`add a ${sel === "everything" || sel === "mine" || sel === "map" ? "give" : sel}`} onClick={()=>onCreate(sel === "everything" || sel === "mine" || sel === "map" ? "give" : sel)}><span aria-hidden="true">+</span></Button> : null}
+          </div>
           <div role="tablist" aria-label="community filter" className="cg-filters" data-cg-safe-band="">
             {CG_FILTERS.map(f => <Button variant="ghost" key={f.value} ref={f.value === sel ? selectedTab : undefined} role="tab" aria-selected={f.value === sel} data-cg-filter={f.value} onClick={() => choose(f.value)} className="cg-filter">{f.word}</Button>)}
           </div>
@@ -287,7 +297,7 @@ export function CommunityFeed({
         }}
       >
         <div className="relative h-full w-full" ref={listBox} style={{ pointerEvents: view === "map" && !showDetail ? "none" : "auto" }}>
-        {showDetail && detailId ? <div className="absolute inset-0 z-[2]"><ActivityDetail key={detailId} itemId={detailId} embedded onClose={onCloseDetail ?? onClose} onOpenConnection={onOpenConnection ?? (() => {})} onOpenProfile={onOpenProfile} onNeedGive={onNeedGive} onStartGive={onStartGive} /></div> : null}
+        {showDetail && detailId ? <div className="absolute inset-0 z-[2]"><ActivityDetail key={detailId} itemId={detailId} embedded onClose={onCloseDetail ?? onClose} onOpenConnection={onOpenConnection ?? (() => {})} onOpenProfile={onOpenProfile} onNeedGive={onNeedGive} onStartGive={onStartGive} previewOnly={previewOnly} onPreviewContact={onPreviewContact} /></div> : null}
          <div className="flex h-full w-full flex-col overflow-hidden" data-cg-interior-page="" data-cg-view={view} data-align={align} style={{ textAlign: align, ...(showDetail ? { visibility: "hidden", pointerEvents: "none" } : {}) }} aria-hidden={showDetail || undefined} {...(showDetail ? { inert: true } : {})}>
           <Button variant="ghost" type="button" className="sr-only focus:not-sr-only" onClick={() => (onExit ?? onClose)()}>back to the living g</Button>
           {(radius !== null || sort === "nearest" || (view === "map" && !samplePins)) && !centre ? <div className="cg-location" data-cg-safe-band="">
@@ -352,7 +362,7 @@ export function CommunityFeed({
                 {term ? `nothing matching “${term}” here yet.` : sel === "mine" ? "no active posts of yours in communi-g yet." : `no active ${where} right now.`}
               </li>
             ) : null}
-            {sel === "wish" ? <li className="pt-4"><WishMatch onOpen={openItem} /></li> : null}
+            {sel === "wish" ? <li className="pt-4"><WishMatch onOpen={openItem} centre={centre} radiusKm={radius} /></li> : null}
           </ul>}
           </div>
         </div>

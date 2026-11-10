@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GDepthLevel } from "./GDepthLevel";
 import { PINCH, isEditingTarget, type GDepthSlot } from "./g-depth";
+import { SpatialCamera, type CameraTravel } from "./SpatialCamera";
 import { haptics } from "@/lib/haptics";
 
 /**
@@ -29,9 +30,20 @@ export function GDepthStack({
   const root = useRef<HTMLDivElement | null>(null);
   /** Live pinch progress on the deepest depth (0..1). */
   const [retreat, setRetreat] = useState(0);
+  const [travel, setTravel] = useState<CameraTravel | null>(null);
+  const previous = useRef<{ id: string; anchor: NonNullable<GDepthSlot["anchor"]> } | null>(null);
 
   const openIds = slots.filter((s) => s.open).map((s) => s.id);
-  const deepest = openIds.length ? openIds[openIds.length - 1]! : null;
+  const deepest = openIds.length ? openIds.at(-1) ?? null : null;
+
+  useEffect(() => {
+    const next = slots.find(s=>s.id === deepest);
+    const before = previous.current;
+    if (before?.id === next?.id) return;
+    previous.current = next ? { id: next.id, anchor: next.anchor ?? "middle" } : null;
+    if (before && next && before.anchor === (next.anchor ?? "middle")) return;
+    setTravel({ from: before?.anchor ?? null, to: next?.anchor ?? null, key: performance.now(), colour: next?.anchor === "top" ? "var(--mode-giver)" : next?.anchor === "bottom" ? "var(--mode-communigy)" : "var(--world-g)" });
+  }, [deepest]);
 
   const pop = useRef<(() => void) | null>(null);
   pop.current = deepest ? () => onPop(deepest) : null;
@@ -140,7 +152,8 @@ export function GDepthStack({
   }, [gestures, leave]);
 
   return (
-    <div ref={root} className="pointer-events-none absolute inset-0">
+    <div ref={root} className="pointer-events-none absolute inset-0" onKeyDown={e=>{ if(e.key === "Escape" && !isEditingTarget(e.target)) { e.preventDefault(); leave(); } }}>
+      <SpatialCamera travel={travel} onFinish={()=>setTravel(null)} />
       {slots.map((slot) => {
         const index = openIds.indexOf(slot.id);
         /* Closed depths keep the depth they had, so the fold back is exact. */

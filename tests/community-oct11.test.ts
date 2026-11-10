@@ -6,8 +6,8 @@ import { FULL_G_PAINT_STROKE, G_STROKE } from "../src/components/living-g/g-weig
 import { NEIGHBOURHOOD_ZOOM, mapCameraKey } from "../src/components/community/map-view";
 import { hollowBounds, communityBands, COMMUNITY_TOP } from "../src/components/community/hollow-layout";
 test("categories follow physical wheel, without a map category", () => {
-  expect(CG_FILTERS.map(f => f.value)).toEqual(["wish","borrow","fund","everything","trade","lend","give"]);
-  expect(CG_FILTERS.map(f => lowerAngle(f.value === "mine" ? "everything" : f.value))).toEqual([-45,-90,-135,-180,-225,-270,-315]);
+  expect(CG_FILTERS.map(f => f.value)).toEqual(["wish","borrow","fund","everything","trade","lend","give","mine"]);
+  expect(CG_FILTERS.map(f => lowerAngle(f.value === "map" ? "everything" : f.value))).toEqual([-45,-90,-135,-180,-225,-270,-315,0]);
 });
 test("all sections use one app-frame reference independent of lower list bounds", () => {
   expect(COMMUNITY_TOP).toBe(56);

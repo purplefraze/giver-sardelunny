@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { itemMode, CG_INK } from "@/data/communigy";
+import { Button } from "@/components/ui/button";
 import { useFund } from "@/hooks/use-fund";
 import { fundedTotal, wishTarget } from "@/data/fund";
 import { formatCents } from "@/data/fund-rules";
@@ -9,9 +10,7 @@ import { ACTIVITY_FILL, ME_ID, itemLine, visibleToOthers, type Item, type ItemTy
 import {
   STATE_WORD,
   activityStatus,
-  connectionsForItem,
   connectionsStore,
-  isOpen,
   myConnectionFor,
 } from "@/data/connections";
 import { useConnections } from "@/hooks/use-connections";
@@ -64,6 +63,8 @@ export function ActivityDetail({
   onStartGive,
   onClose,
   embedded = false,
+  previewOnly = false,
+  onPreviewContact,
 }: {
   itemId: string;
   onOpenConnection: (connectionId: string) => void;
@@ -75,6 +76,8 @@ export function ActivityDetail({
   onStartGive?: (() => void) | undefined;
   onClose: () => void;
   embedded?: boolean;
+  previewOnly?: boolean;
+  onPreviewContact?: ((itemId: string) => void) | undefined;
 }) {
   const items = useItems();
   const fund = useFund();
@@ -133,9 +136,6 @@ export function ActivityDetail({
   const who = isMine ? "you" : (owner?.username ?? "someone");
   const mine = myConnectionFor(links, item.id);
   const status = activityStatus(links, item.id, item.status);
-  const others = connectionsForItem(links, item.id).filter(
-    (c) => isOpen(c) && c.helperId !== ME_ID,
-  ).length;
   const fill = CG_INK[itemMode(item)];
   const target = itemMode(item) === "fund" ? wishTarget(item) : null;
   /* ACTING on someone else's give is blocked at the cap; looking never is.
@@ -150,6 +150,7 @@ export function ActivityDetail({
    */
   const open = async () => {
     buzz();
+    if (previewOnly) { onPreviewContact?.(item.id); return; }
     if (mine) {
       onOpenConnection(mine.id);
       return;
@@ -180,7 +181,7 @@ export function ActivityDetail({
   };
 
   const personInk = OTHER_PERSON_COLOUR[exchangeState(item.type)];
-  const statusWord = status === "completed" ? "completed and verified" : mine ? STATE_WORD[mine.state] : status === "connecting" ? `${others} ${others === 1 ? "person" : "people"} talking · still open` : "open";
+  const statusWord = status === "completed" ? "completed and verified" : mine ? STATE_WORD[mine.state] : status === "connecting" ? "open · private conversations" : "open";
   const facts = itemFacts(item);
   const title = itemLine(item);
   /* ONE COMPACT RECORD FOR EVERY ENTRY PATH (community hollow, a profile, my g). */
@@ -205,13 +206,13 @@ export function ActivityDetail({
       <h1 className="cg-d-title" style={{ color: fill }} data-cg-d-title="">{title}</h1>
       {target !== null ? <p className="cg-d-fund" data-cg-d-fund=""><span>{formatCents(fundedTotal(fund, item.id))} pledged · {formatCents(target)} target</span><span className="cg-d-meta">{item.id.startsWith("seed-") ? "demo cause · demo pledges only · no payments collected" : "pledges only · no payments collected"}</span></p> : null}
       {!isMine && owner ? (
-        <button type="button" className="cg-d-owner" aria-label={`see ${owner.username}'s whole profile`} onClick={() => { buzz(); onOpenProfile?.(owner.id); }} data-cg-d-owner="">
+        <Button variant="ghost" type="button" className="cg-d-owner" aria-label={`see ${owner.username}'s whole profile`} onClick={() => { buzz(); onOpenProfile?.(owner.id); }} data-cg-d-owner="">
           {owner.photo ? <img src={owner.photo} alt="" className="cg-d-avatar" /> : <span aria-hidden className="cg-d-avatar" style={{ background: "var(--giver-ink)", opacity: 0.08 }} />}
           <span className="min-w-0">
             <span className="cg-d-name" style={{ color: personInk }}>{owner.username}</span>
-            <span className="cg-d-meta">{[owner.age || null, owner.gender || null, item.distanceKm === undefined ? owner.distance || null : `${item.distanceKm} km away`, statusWord].filter(Boolean).join(" · ")}</span>
+            <span className="cg-d-meta">{[item.distanceKm === undefined ? owner.distance || null : `${item.distanceKm} km away`, statusWord].filter(Boolean).join(" · ")}</span>
           </span>
-        </button>
+        </Button>
       ) : <p className="cg-d-meta">{who} · {statusWord}</p>}
       {item.photos?.length ? <div className="cg-d-photos">{item.photos.map((p, i) => <img key={i} src={p} alt={`${title} photo ${i + 1}`} />)}</div> : null}
       {facts.length ? <dl className="cg-d-facts" data-cg-d-facts="">{facts.map(f => <div key={`${f.label}-${f.value}`}><dt>{f.label}</dt><dd style={{ color: fill }}>{f.value}</dd></div>)}</dl> : null}
@@ -219,13 +220,13 @@ export function ActivityDetail({
       {problem ? <p className="cg-d-note" role="alert" style={{ color: fill }}>{problem}</p> : null}
       <div className="cg-d-actions" data-cg-d-actions="">
         {status === "completed" ? <p className="cg-d-meta">this one already happened.</p> : isMine ? <p className="cg-d-meta">this one is yours.</p> : <>
-          <button type="button" onClick={open} className={`cg-d-primary ${capBlocks ? "gf-faded" : ""}`} style={{ color: fill }}>{mine ? "open the conversation" : target !== null ? "talk about this cause" : actionWord(item)}</button>
-          <button type="button" onClick={open} className={`cg-d-quiet ${capBlocks ? "gf-faded" : ""}`} style={{ color: "var(--giver-messages)" }}>{`message ${who}`}</button>
+          <Button variant="ghost" type="button" onClick={open} className={`cg-d-primary ${capBlocks ? "gf-faded" : ""}`} style={{ color: fill }}>{mine ? "open the conversation" : target !== null ? "talk about this cause" : "i’m interested"}</Button>
+          <Button variant="ghost" type="button" onClick={open} className={`cg-d-quiet ${capBlocks ? "gf-faded" : ""}`} style={{ color: "var(--giver-messages)" }}>{`message ${who}`}</Button>
         </>}
-        {admin ? <button type="button" onClick={() => { buzz(); setEditing(true); }} className="cg-d-quiet" style={{ color: "var(--giver-me)" }}>edit this activity</button> : null}
+        {admin && !previewOnly ? <button type="button" onClick={() => { buzz(); setEditing(true); }} className="cg-d-quiet" style={{ color: "var(--giver-me)" }}>edit this activity</button> : null}
       </div>
       {capOpen ? <CapScreen kind={cap.waiting ? "waiting" : "prompt"} onBack={() => setCapOpen(false)} onGive={() => { setCapOpen(false); onStartGive?.(); }} /> : null}
-      {admin && editing ? <AdminItemEditor itemId={item.id} onClose={() => setEditing(false)} /> : null}
+      {admin && !previewOnly && editing ? <AdminItemEditor itemId={item.id} onClose={() => setEditing(false)} /> : null}
     </div>
     </div>
   );

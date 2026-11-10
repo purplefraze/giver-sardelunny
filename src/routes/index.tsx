@@ -1511,6 +1511,7 @@ function Index() {
                 id: "talking",
                 open: talking !== null,
                 anchor: "top",
+                bare: true,
                 world: "me",
                 children: talking ? (
                   <Conversation connectionId={talking} onClose={() => setTalking(null)} />

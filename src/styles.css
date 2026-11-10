@@ -2367,3 +2367,12 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .wj-select-wrap > .wj-select { width: 100%; }
 .wj > .wj-field { width: calc(280 / 390 * 100cqw); }
 .wj-select-wrap { margin-top: 18px; } .wj-select-wrap > .wj-select { margin-top: 0; } .wj-select-wrap > .wj-caret { top: 50%; }
+
+/* November 10: one optical camera, no opacity choreography. */
+.spatial-camera { position:absolute; inset:0; z-index:90; overflow:hidden; pointer-events:auto; background:var(--background); }
+.cg-search { flex:1; min-width:0; width:120px; background:var(--background); color:var(--foreground); border:0; border-bottom:1px solid var(--border); padding:8px 0; font:400 16px var(--giver-font); }
+.cg-suggestions { color:var(--foreground); font:400 16px var(--giver-font); padding:8px 0; }
+.cg-suggestions input { font:400 16px var(--giver-font); }
+.cg-d-actions > button { height:auto; min-height:36px; white-space:normal; justify-content:flex-start; padding:4px 0; }
+.cg-d-owner { height:auto; justify-content:flex-start; white-space:normal; padding:0; }
+@media (prefers-reduced-motion: reduce) { [data-g-depth], [data-g-depth] * { transition:none !important; animation:none !important; } }

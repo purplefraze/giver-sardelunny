@@ -77,7 +77,7 @@ export function ActivityDetail({
   onClose: () => void;
   embedded?: boolean;
   previewOnly?: boolean;
-  onPreviewContact?: (itemId: string) => void;
+  onPreviewContact?: ((itemId: string) => void) | undefined;
 }) {
   const items = useItems();
   const fund = useFund();

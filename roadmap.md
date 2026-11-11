@@ -160,3 +160,9 @@
 - [ ] Actual upward canonical S route beyond lower map, outside-right My G return (whole G, not Profile).
 - [ ] Main giver seat label/accessibility Profile; readable word-fitted toggle labels at 320/390/430.
 - [ ] Actual main/community browser verification, rendered font sizes and preview commit; no real writes/publish.
+
+## Nov 11 Figma payload 1/2
+- [x] Give 131:2 — all 7 branches, Q/S/P, skip, back retention, review edit, share→ready (preview only, no publish). /review/give
+- [ ] Wish 196:2665 + Fund — blocked: payload lists frame names only, not question/picker wording (Fund 7 questions, target/error rules)
+- [ ] Trade/Lend/Borrow, My G screens, communi-g refined, onboarding — awaiting payload 2/2
+- [ ] Give picker option lists (area/format/handoff) — awaiting source; free-text for now

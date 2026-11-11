@@ -7,5 +7,5 @@ export function wishReviewOpen(env: { DEV?: boolean }, hostname: string): boolea
 }
 
 export function isWishReviewPath(pathname: string): boolean {
-  return [WISH_REVIEW_PATH, "/review/november"].some(path => pathname === path || pathname === `${path}/`);
+  return [WISH_REVIEW_PATH, "/review/november", "/review/give"].some(path => pathname === path || pathname === `${path}/`);
 }

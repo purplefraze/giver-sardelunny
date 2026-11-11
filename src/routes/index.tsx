@@ -29,6 +29,7 @@ import { seatCentre as myGSeatCentre } from "@/components/living-g/EarSelector";
 const MY_G_FOCUS = myGSeatCentre("giver");
 import { CategoryForm } from "@/components/profile/CategoryForm";
 import { WishJourney } from "@/intelligence/WishJourney";
+import { GiveJourney } from "@/intelligence/GiveJourney";
 import { GiveFlow } from "@/components/give/GiveFlow";
 import { IntentIntake } from "@/intelligence/IntentIntake";
 import { VoiceIntake } from "@/intelligence/VoiceIntake";
@@ -320,6 +321,7 @@ function Index() {
    * alive inside the loop. Forms are never appended beneath the G.
    */
   const [wishJourney, setWishJourney] = useState(false);
+  const [giveJourney, setGiveJourney] = useState(false);
   const [postTravel, setPostTravel] = useState<CameraTravel | null>(null);
   const pendingPost = useRef<GiverAction | null>(null);
   const postOrigin = useRef(false);
@@ -332,7 +334,7 @@ function Index() {
     const action = pendingPost.current; pendingPost.current = null;
     if (!action) return;
     setSeat(action);
-    if (action === "wish") setWishJourney(true); else conversation.openForm(action);
+    if (action === "wish") setWishJourney(true); else if (action === "give") setGiveJourney(true); else conversation.openForm(action);
   };
   const returnFromPost = () => {
     if (postOrigin.current) {
@@ -839,6 +841,7 @@ function Index() {
        kept draft. Never listens, never saves. */
     haptics.light();
     /* FIGMA HANDOFF PHASE 1: Wish opens the approved guided journey, not the old form. */
+    if (seat === "give") { setGiveJourney(true); return; }
     if (seat === "wish") {
       setWishJourney(true);
       return;
@@ -904,6 +907,11 @@ function Index() {
       {wishJourney && !reviewing && !reSignIn ? (
         <VoiceEnclosure seat="wish" onFold={() => { setWishJourney(false); returnFromPost(); }}>
           <WishJourney onExit={() => document.querySelector("[data-voice-frame]")?.dispatchEvent(new Event("giver:fold"))} />
+        </VoiceEnclosure>
+      ) : null}
+      {giveJourney && !reviewing && !reSignIn ? (
+        <VoiceEnclosure seat="give" onFold={() => { setGiveJourney(false); returnFromPost(); }}>
+          <GiveJourney onExit={() => document.querySelector("[data-voice-frame]")?.dispatchEvent(new Event("giver:fold"))} />
         </VoiceEnclosure>
       ) : null}
       {entered && !chromeQuiet && !browse && !reviewing ? <DevSeal /> : null}

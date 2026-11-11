@@ -2376,3 +2376,14 @@ html[data-giver-form="1"] [data-living-g] { visibility:hidden; }
 .cg-d-actions > button { height:auto; min-height:36px; white-space:normal; justify-content:flex-start; padding:4px 0; }
 .cg-d-owner { height:auto; flex-shrink:0; justify-content:flex-start; white-space:normal; padding:6px 0; }
 @media (prefers-reduced-motion: reduce) { [data-g-depth], [data-g-depth] * { transition:none !important; animation:none !important; } }
+
+/* GIVE JOURNEY (Figma 131:2) — reuses the wj layout; green submitted answers. */
+.gj { --wish-heading: var(--mode-give); }
+.gj-code { margin-top: 4px; font-size: 12px; color: var(--wish-question); }
+.gj-submitted { color: var(--mode-give); }
+.gj-picker { margin-top: 10px; font-size: 15px; }
+.gj-thumb { margin-top: 10px; width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
+.gj-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 46cqh; overflow: hidden; }
+.gj-row { display: block; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; }
+.gj-row dt { font-size: 12px; color: var(--wish-question); }
+.gj-row dd { font-size: 14px; font-weight: 500; color: var(--mode-give); }

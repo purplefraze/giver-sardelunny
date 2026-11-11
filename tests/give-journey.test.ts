@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { EMPTY_GIVE, GIVE_TYPES, back, choose, current, editFromReview, screenCode, setAnswer, share, skip, start, submit, valueOf } from "@/intelligence/give-journey";
 
 const run = (type: any) => {
